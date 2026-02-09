@@ -6,6 +6,7 @@
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/io/stream_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
+#include "domain/sensors/sensor_state.hpp"
 
 namespace {
 
@@ -65,7 +66,8 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
 }  // namespace
 
 TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
-  domain::sensors::Sensor sensors[] = {domain::sensors::Sensor(1), domain::sensors::Sensor(2)};
+  domain::sensors::SensorState sensors[] = {domain::sensors::SensorState{.id = 1},
+                                            domain::sensors::SensorState{.id = 2}};
   domain::sensors::SensorRegistry registry(sensors, 2);
   ControlMock control;
   app::shell::commands::SensorRttCommand cmd(registry, control);

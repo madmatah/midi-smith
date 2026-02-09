@@ -35,7 +35,6 @@ add_executable(unit_tests
     domain/shell/shell_engine.test.cpp
     domain/shell/commands/version_command.test.cpp
     domain/sensors/processed_sensor_group.test.cpp
-    domain/sensors/sensor_group.test.cpp
     domain/sensors/sensor_registry.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp

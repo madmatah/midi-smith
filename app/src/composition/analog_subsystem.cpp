@@ -1,7 +1,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <new>
 
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/composition/subsystems.hpp"
@@ -13,6 +12,7 @@
 #include "bsp/time/tim2_timestamp_counter.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "domain/sensors/sensor_registry.hpp"
+#include "domain/sensors/sensor_state.hpp"
 #include "os/queue.hpp"
 
 namespace app::composition {
@@ -36,23 +36,21 @@ app::analog::QueueAcquisitionControl& AdcControl() noexcept {
   return control;
 }
 
-domain::sensors::Sensor* SensorsArray() noexcept {
-  alignas(domain::sensors::Sensor) static std::uint8_t
-      sensors_storage[sizeof(domain::sensors::Sensor) * app::config_sensors::kSensorCount];
-  static domain::sensors::Sensor* sensors =
-      reinterpret_cast<domain::sensors::Sensor*>(sensors_storage);
-  static bool sensors_constructed = false;
-  if (!sensors_constructed) {
+std::array<domain::sensors::SensorState, app::config_sensors::kSensorCount>&
+SensorsArray() noexcept {
+  static std::array<domain::sensors::SensorState, app::config_sensors::kSensorCount> sensors{};
+  static bool sensors_initialized = false;
+  if (!sensors_initialized) {
     for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
-      new (&sensors[i]) domain::sensors::Sensor(app::config_sensors::kSensorIds[i]);
+      sensors[i].id = app::config_sensors::kSensorIds[i];
     }
-    sensors_constructed = true;
+    sensors_initialized = true;
   }
   return sensors;
 }
 
 domain::sensors::SensorRegistry& SensorsRegistry() noexcept {
-  static domain::sensors::SensorRegistry registry(SensorsArray(),
+  static domain::sensors::SensorRegistry registry(SensorsArray().data(),
                                                   app::config_sensors::kSensorCount);
   return registry;
 }
@@ -103,15 +101,10 @@ AdcControlContext CreateAnalogSubsystem() noexcept {
   static_assert(app::config_sensors::kAdc3RankCount == bsp::adc::AdcDma::kAdc3RanksPerSequence,
                 "ADC3 rank count must match AdcDma ranks");
 
-  static domain::sensors::Sensor* sensors_ptrs[app::config_sensors::kSensorCount];
   static std::array<Processor, app::config_sensors::kSensorCount> processors{};
 
-  domain::sensors::SensorRegistry& registry = SensorsRegistry();
-  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
-    sensors_ptrs[i] = registry.FindById(app::config_sensors::kSensorIds[i]);
-  }
-
-  static ProcessedSensorGroup analog_group(sensors_ptrs, processors.data(),
+  auto& sensors = SensorsArray();
+  static ProcessedSensorGroup analog_group(sensors.data(), processors.data(),
                                            app::config_sensors::kSensorCount);
 
   StartAnalogAcquisitionTask(analog_group);

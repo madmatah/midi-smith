@@ -1,12 +1,11 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
 #include "domain/dsp/concepts.hpp"
-#include "domain/sensors/sensor.hpp"
+#include "domain/sensors/sensor_state.hpp"
 
 namespace domain::sensors {
 
@@ -15,20 +14,14 @@ class ProcessedSensorGroup {
  public:
   static_assert(domain::dsp::concepts::SignalTransformer<ProcessorT, ContextT>,
                 "ProcessorT must satisfy SignalTransformer for ContextT");
-  static_assert(std::is_constructible_v<ContextT, std::uint32_t, std::uint8_t>,
-                "ContextT must be constructible from (timestamp_ticks, sensor_id)");
+  static_assert(std::is_constructible_v<ContextT, std::uint32_t, SensorState&>,
+                "ContextT must be constructible from (timestamp_ticks, sensor_state)");
 
   using Context = ContextT;
 
-  ProcessedSensorGroup(Sensor* const* sensors, ProcessorT* processors,
+  ProcessedSensorGroup(SensorState* sensors, ProcessorT* processors,
                        std::size_t sensor_count) noexcept
-      : sensors_(sensors), processors_(processors), sensor_count_(sensor_count) {
-    if (sensors_ != nullptr) {
-      for (std::size_t i = 0; i < sensor_count_; ++i) {
-        assert(sensors_[i] != nullptr);
-      }
-    }
-  }
+      : sensors_(sensors), processors_(processors), sensor_count_(sensor_count) {}
 
   std::size_t count() const noexcept {
     return sensor_count_;
@@ -39,22 +32,21 @@ class ProcessedSensorGroup {
     if (sensors_ == nullptr || processors_ == nullptr || index >= sensor_count_) {
       return;
     }
-    Sensor* s = sensors_[index];
-    if (s == nullptr) {
-      return;
-    }
+    SensorState& state = sensors_[index];
 
     ProcessorT& processor = processors_[index];
     const float raw_float = static_cast<float>(raw_value);
-    const ContextT ctx{timestamp_ticks, s->id()};
+    const ContextT ctx{timestamp_ticks, state};
 
     const float processed_value = processor.Transform(raw_float, ctx);
 
-    s->Update(raw_value, processed_value, timestamp_ticks);
+    state.last_raw_value = raw_value;
+    state.last_processed_value = processed_value;
+    state.last_timestamp_ticks = timestamp_ticks;
   }
 
  private:
-  Sensor* const* sensors_ = nullptr;
+  SensorState* sensors_ = nullptr;
   ProcessorT* processors_ = nullptr;
   std::size_t sensor_count_ = 0;
 };
