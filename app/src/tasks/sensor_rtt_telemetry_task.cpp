@@ -53,7 +53,7 @@ void SensorRttTelemetryTask::ApplyCommand(
   }
 
   if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kObserve) {
-    const domain::sensors::Sensor* sensor = registry_.FindById(cmd.sensor_id);
+    const domain::sensors::SensorState* sensor = registry_.FindById(cmd.sensor_id);
     if (sensor == nullptr) {
       enabled_ = false;
       sensor_id_ = 0;
@@ -88,7 +88,7 @@ void SensorRttTelemetryTask::run() noexcept {
     }
 
     const std::uint8_t id = sensor_id_;
-    domain::sensors::Sensor* sensor = registry_.FindById(id);
+    domain::sensors::SensorState* sensor = registry_.FindById(id);
     if (sensor == nullptr) {
       enabled_ = false;
       sensor_id_ = 0;
@@ -107,10 +107,10 @@ void SensorRttTelemetryTask::run() noexcept {
 
     switch (mode_) {
       case domain::sensors::SensorRttMode::kRaw:
-        telemetry_sender_.Send(static_cast<float>(sensor->last_raw_value()));
+        telemetry_sender_.Send(static_cast<float>(sensor->last_raw_value));
         break;
       case domain::sensors::SensorRttMode::kProcessed:
-        telemetry_sender_.Send(sensor->last_processed_value() * 1000.0f);
+        telemetry_sender_.Send(sensor->last_processed_value * 1000.0f);
         break;
     }
   }
