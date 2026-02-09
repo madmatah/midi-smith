@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "domain/signal/filters/ema_filter.hpp"
-#include "domain/signal/filters/identity_filter.hpp"
-#include "domain/signal/processing_pipeline/signal_processing_pipeline.hpp"
-#include "domain/signal/processors/tia_current_converter.hpp"
+#include "domain/dsp/converters/tia_current_converter.hpp"
+#include "domain/dsp/engine/workflow.hpp"
+#include "domain/dsp/filters/ema_filter.hpp"
+#include "domain/dsp/filters/identity_filter.hpp"
 
 namespace app::config {
 
@@ -21,12 +21,11 @@ constexpr std::uint8_t SIGNAL_DECIMATION_FACTOR = 1;
 
 namespace signal_filtering_detail {
 
-using FilteringEnabledPipeline =
-    domain::signal::processing_pipeline::ContinuousPipeline<domain::signal::filters::EmaFilterRatio<
-        SIGNAL_EMA_ALPHA_NUMERATOR, SIGNAL_EMA_ALPHA_DENOMINATOR>>;
+using FilteringEnabledPipeline = domain::dsp::engine::Workflow<
+    domain::dsp::filters::EmaFilterRatio<SIGNAL_EMA_ALPHA_NUMERATOR, SIGNAL_EMA_ALPHA_DENOMINATOR>>;
 
-using FilteringDisabledPipeline = domain::signal::processing_pipeline::ContinuousPipeline<
-    domain::signal::filters::IdentityFilter>;
+using FilteringDisabledPipeline =
+    domain::dsp::engine::Workflow<domain::dsp::filters::IdentityFilter>;
 
 using FilteringPipeline =
     std::conditional_t<SIGNAL_FILTERING_ENABLED, signal_filtering_detail::FilteringEnabledPipeline,
@@ -34,8 +33,8 @@ using FilteringPipeline =
 
 }  // namespace signal_filtering_detail
 
-using AnalogSensorProcessor = domain::signal::processing_pipeline::SignalProcessingPipeline<
-    domain::signal::processors::TiaCurrentConverter<2048, 16, 1800>,
-    signal_filtering_detail::FilteringPipeline>;
+using AnalogSensorProcessor =
+    domain::dsp::engine::Workflow<domain::dsp::converters::TiaCurrentConverter<2048, 16, 1800>,
+                                  signal_filtering_detail::FilteringPipeline>;
 
 }  // namespace app::config

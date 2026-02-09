@@ -2,7 +2,12 @@
 
 #include <cstdint>
 
-namespace domain::signal::processing_pipeline::test {
+namespace domain::dsp::engine::test {
+
+struct TestContext {
+  std::uint32_t consume_count = 0;
+  float last_value = 0.0f;
+};
 
 class CounterStage {
  public:
@@ -13,17 +18,20 @@ class CounterStage {
     reset_count++;
   }
 
-  void Push(float sample) noexcept {
+  void Push(float sample, const TestContext& ctx) noexcept {
     (void) sample;
+    (void) ctx;
     push_count++;
   }
 
-  float ComputeOrRaw(float sample) const noexcept {
+  float Compute(float sample, const TestContext& ctx) const noexcept {
+    (void) ctx;
     compute_count++;
     return sample + 1.0f;
   }
 
-  float Process(float sample) noexcept {
+  float Transform(float sample, const TestContext& ctx) noexcept {
+    (void) ctx;
     process_count++;
     return sample + 1.0f;
   }
@@ -45,7 +53,8 @@ class PlusTenStage {
  public:
   void Reset() noexcept {}
 
-  float Process(float sample) noexcept {
+  float Transform(float sample, const TestContext& ctx) noexcept {
+    (void) ctx;
     return sample + 10.0f;
   }
 };
@@ -54,30 +63,20 @@ class TimesTwoStage {
  public:
   void Reset() noexcept {}
 
-  float Process(float sample) noexcept {
+  float Transform(float sample, const TestContext& ctx) noexcept {
+    (void) ctx;
     return sample * 2.0f;
   }
 };
 
-class PlusTenDecimatedStage {
+class ConsumerStage {
  public:
-  void Reset() noexcept {
-    last_sample_ = 0.0f;
-    has_sample_ = false;
-  }
+  void Reset() noexcept {}
 
-  void Push(float sample) noexcept {
-    last_sample_ = sample;
-    has_sample_ = true;
+  void Execute(float sample, TestContext& ctx) noexcept {
+    ctx.consume_count++;
+    ctx.last_value = sample;
   }
-
-  float ComputeOrRaw(float sample) const noexcept {
-    return has_sample_ ? (last_sample_ + 10.0f) : (sample + 10.0f);
-  }
-
- private:
-  float last_sample_ = 0.0f;
-  bool has_sample_ = false;
 };
 
-}  // namespace domain::signal::processing_pipeline::test
+}  // namespace domain::dsp::engine::test

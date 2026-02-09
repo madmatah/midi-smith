@@ -58,7 +58,8 @@ domain::sensors::SensorRegistry& SensorsRegistry() noexcept {
 }
 
 using Processor = app::config::AnalogSensorProcessor;
-using ProcessedSensorGroup = domain::sensors::ProcessedSensorGroup<Processor>;
+using ProcessedSensorGroup =
+    domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
 
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
   static os::Queue<bsp::adc::AdcFrameDescriptor, 8> adc_frame_queue;
