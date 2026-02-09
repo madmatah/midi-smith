@@ -5,6 +5,7 @@
 #include "app/analog/acquisition_command.hpp"
 #include "app/analog/acquisition_state.hpp"
 #include "app/analog/adc_rank_mapped_frame_decoder.hpp"
+#include "app/analog/signal_context.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/signal_processing.hpp"
 #include "app/time/timestamp_counter_requirements.hpp"
@@ -22,7 +23,8 @@ namespace app::Tasks {
 class AnalogAcquisitionTask {
  public:
   using Processor = app::config::AnalogSensorProcessor;
-  using ProcessedSensorGroup = domain::sensors::ProcessedSensorGroup<Processor>;
+  using ProcessedSensorGroup =
+      domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
 
   AnalogAcquisitionTask(os::Queue<bsp::adc::AdcFrameDescriptor, 8>& queue,
                         os::Queue<app::analog::AcquisitionCommand, 4>& control_queue,

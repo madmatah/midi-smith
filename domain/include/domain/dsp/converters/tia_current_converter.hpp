@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "domain/signal/signal_processor_concepts.hpp"
+#include "domain/dsp/concepts.hpp"
 
-namespace domain::signal::processors {
+namespace domain::dsp::converters {
 
 /**
  * @brief Converts raw ADC counts from a TIA stage into physical current (mA).
@@ -25,11 +25,11 @@ class TiaCurrentConverter {
  public:
   void Reset() noexcept {}
 
-  float Process(float raw_adc_counts) noexcept {
+  template <typename ContextT>
+  float Transform(float raw_adc_counts, const ContextT& ctx) noexcept {
+    (void) ctx;
     return (kAdcMaxValue - raw_adc_counts) * kScaleFactor;
   }
 };
 
-static_assert(domain::signal::is_signal_processor<TiaCurrentConverter<2048, 16, 1800>>::value);
-
-}  // namespace domain::signal::processors
+}  // namespace domain::dsp::converters

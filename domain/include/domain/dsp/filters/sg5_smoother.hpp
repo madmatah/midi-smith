@@ -2,9 +2,7 @@
 
 #include <array>
 
-#include "domain/signal/signal_processor_concepts.hpp"
-
-namespace domain::signal::filters {
+namespace domain::dsp::filters {
 
 // Savitzky-Golay smoothing filter (with 5-point window)
 class Sg5Smoother {
@@ -17,12 +15,15 @@ class Sg5Smoother {
     filled_ = 0;
   }
 
-  float Process(float sample) noexcept {
-    Push(sample);
-    return ComputeOrRaw(sample);
+  template <typename ContextT>
+  float Transform(float sample, const ContextT& ctx) noexcept {
+    Push(sample, ctx);
+    return Compute(sample, ctx);
   }
 
-  void Push(float sample) noexcept {
+  template <typename ContextT>
+  void Push(float sample, const ContextT& ctx) noexcept {
+    (void) ctx;
     history_[next_index_] = sample;
     next_index_ = NextIndex(next_index_);
     if (filled_ < kWindowSize) {
@@ -30,7 +31,9 @@ class Sg5Smoother {
     }
   }
 
-  float ComputeOrRaw(float raw_fallback) const noexcept {
+  template <typename ContextT>
+  float Compute(float raw_fallback, const ContextT& ctx) const noexcept {
+    (void) ctx;
     if (filled_ < kWindowSize) {
       return raw_fallback;
     }
@@ -71,9 +74,4 @@ class Sg5Smoother {
   std::size_t filled_ = 0;
 };
 
-static_assert(domain::signal::is_signal_processor<Sg5Smoother>::value,
-              "Sg5Smoother must satisfy SignalProcessor concept");
-static_assert(domain::signal::is_decimation_compatible<Sg5Smoother>::value,
-              "Sg5Smoother must satisfy DecimationCompatibleSignalProcessor concept");
-
-}  // namespace domain::signal::filters
+}  // namespace domain::dsp::filters
