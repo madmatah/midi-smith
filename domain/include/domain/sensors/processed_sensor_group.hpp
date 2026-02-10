@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -21,7 +22,10 @@ class ProcessedSensorGroup {
 
   ProcessedSensorGroup(SensorState* sensors, ProcessorT* processors,
                        std::size_t sensor_count) noexcept
-      : sensors_(sensors), processors_(processors), sensor_count_(sensor_count) {}
+      : sensors_(sensors), processors_(processors), sensor_count_(sensor_count) {
+    assert(sensors != nullptr);
+    assert(processors != nullptr);
+  }
 
   std::size_t count() const noexcept {
     return sensor_count_;
@@ -29,9 +33,7 @@ class ProcessedSensorGroup {
 
   void UpdateAt(std::size_t index, std::uint16_t raw_value,
                 std::uint32_t timestamp_ticks) noexcept {
-    if (sensors_ == nullptr || processors_ == nullptr || index >= sensor_count_) {
-      return;
-    }
+    assert(index < sensor_count_);
     SensorState& state = sensors_[index];
 
     ProcessorT& processor = processors_[index];
