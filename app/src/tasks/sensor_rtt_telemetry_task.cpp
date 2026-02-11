@@ -75,7 +75,7 @@ void SensorRttTelemetryTask::ApplyCommand(
 void SensorRttTelemetryTask::run() noexcept {
   enabled_ = false;
   sensor_id_ = 0;
-  mode_ = domain::sensors::SensorRttMode::kRaw;
+  mode_ = domain::sensors::SensorRttMode::kPosition;
   period_ms_ = app::config::RTT_TELEMETRY_SENSOR_PERIOD_MS;
 
   for (;;) {
@@ -106,11 +106,17 @@ void SensorRttTelemetryTask::run() noexcept {
     }
 
     switch (mode_) {
-      case domain::sensors::SensorRttMode::kRaw:
+      case domain::sensors::SensorRttMode::kAdc:
         telemetry_sender_.Send(static_cast<float>(sensor->last_raw_value));
         break;
-      case domain::sensors::SensorRttMode::kProcessed:
-        telemetry_sender_.Send(sensor->last_processed_value * 1000.0f);
+      case domain::sensors::SensorRttMode::kRawCurrent:
+        telemetry_sender_.Send(sensor->last_current_ma * 1000.0f);
+        break;
+      case domain::sensors::SensorRttMode::kCurrent:
+        telemetry_sender_.Send(sensor->last_filtered_current_ma * 1000.0f);
+        break;
+      case domain::sensors::SensorRttMode::kPosition:
+        telemetry_sender_.Send(sensor->last_normalized_position * 1000.0f);
         break;
     }
   }

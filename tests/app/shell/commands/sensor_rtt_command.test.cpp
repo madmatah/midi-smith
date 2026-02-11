@@ -59,7 +59,7 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
   bool observe_requested = false;
   bool period_requested = false;
   std::uint8_t last_observe_id = 0;
-  domain::sensors::SensorRttMode last_mode = domain::sensors::SensorRttMode::kRaw;
+  domain::sensors::SensorRttMode last_mode = domain::sensors::SensorRttMode::kPosition;
   std::uint32_t last_period_ms = 0;
 };
 
@@ -108,41 +108,61 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
       SECTION("Should display status 'on' when enabled") {
         control.status.enabled = true;
         control.status.sensor_id = 1;
-        control.status.mode = domain::sensors::SensorRttMode::kProcessed;
+        control.status.mode = domain::sensors::SensorRttMode::kPosition;
         control.status.period_ms = 10;
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("status")};
         cmd.Run(2, argv, stream);
-        REQUIRE(stream.GetOutput() == "on id=1 mode=processed period_ms=10\r\n");
+        REQUIRE(stream.GetOutput() == "on id=1 mode=position period_ms=10\r\n");
       }
     }
 
     SECTION("When called with a valid sensor id") {
-      SECTION("Should request observe for that id with default mode 'processed'") {
+      SECTION("Should request observe for that id with default mode 'position'") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2")};
         cmd.Run(2, argv, stream);
         REQUIRE(control.observe_requested);
         REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kProcessed);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kPosition);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
-      SECTION("Should request observe for that id with mode 'raw'") {
+      SECTION("Should request observe for that id with mode 'adc'") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("raw")};
+                        const_cast<char*>("adc")};
         cmd.Run(3, argv, stream);
         REQUIRE(control.observe_requested);
         REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kRaw);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kAdc);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
-      SECTION("Should request observe for that id with mode 'processed'") {
+      SECTION("Should request observe for that id with mode 'raw_current'") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("processed")};
+                        const_cast<char*>("raw_current")};
         cmd.Run(3, argv, stream);
         REQUIRE(control.observe_requested);
         REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kProcessed);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kRawCurrent);
+        REQUIRE(stream.GetOutput() == "ok\r\n");
+      }
+
+      SECTION("Should request observe for that id with mode 'current'") {
+        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
+                        const_cast<char*>("current")};
+        cmd.Run(3, argv, stream);
+        REQUIRE(control.observe_requested);
+        REQUIRE(control.last_observe_id == 2);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kCurrent);
+        REQUIRE(stream.GetOutput() == "ok\r\n");
+      }
+
+      SECTION("Should request observe for that id with mode 'position'") {
+        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
+                        const_cast<char*>("position")};
+        cmd.Run(3, argv, stream);
+        REQUIRE(control.observe_requested);
+        REQUIRE(control.last_observe_id == 2);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kPosition);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 

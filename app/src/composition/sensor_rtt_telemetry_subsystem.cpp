@@ -20,7 +20,7 @@ SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
   static os::Queue<app::telemetry::SensorRttTelemetryCommand, 4> control_queue;
   static volatile bool enabled = false;
   static volatile std::uint8_t sensor_id = 0;
-  static volatile domain::sensors::SensorRttMode mode = domain::sensors::SensorRttMode::kRaw;
+  static volatile domain::sensors::SensorRttMode mode = domain::sensors::SensorRttMode::kPosition;
   static volatile std::uint32_t period_ms = app::config::RTT_TELEMETRY_SENSOR_PERIOD_MS;
   static app::telemetry::QueueSensorRttTelemetryControl control(control_queue, enabled, sensor_id,
                                                                 mode, period_ms);

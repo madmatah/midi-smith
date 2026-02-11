@@ -23,7 +23,8 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
 }
 
 void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
-  out.Write("usage: sensor_rtt <id> [raw|processed]\r\n");
+  out.Write("usage: sensor_rtt <id> [adc|raw_current|current|position]\r\n");
+  out.Write("       default metric is position\r\n");
   out.Write("       sensor_rtt freq [value]\r\n");
   out.Write("       sensor_rtt off\r\n");
   out.Write("       sensor_rtt status\r\n");
@@ -91,7 +92,7 @@ struct SensorRttParsedCommand {
 
   Kind kind{Kind::kStatus};
   std::uint8_t sensor_id{0};
-  domain::sensors::SensorRttMode mode{domain::sensors::SensorRttMode::kRaw};
+  domain::sensors::SensorRttMode mode{domain::sensors::SensorRttMode::kPosition};
   std::uint32_t period_ms{0};
 };
 
@@ -105,11 +106,17 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
   WriteUint32(out, status.sensor_id);
   out.Write(" mode=");
   switch (status.mode) {
-    case domain::sensors::SensorRttMode::kRaw:
-      out.Write("raw");
+    case domain::sensors::SensorRttMode::kAdc:
+      out.Write("adc");
       break;
-    case domain::sensors::SensorRttMode::kProcessed:
-      out.Write("processed");
+    case domain::sensors::SensorRttMode::kRawCurrent:
+      out.Write("raw_current");
+      break;
+    case domain::sensors::SensorRttMode::kCurrent:
+      out.Write("current");
+      break;
+    case domain::sensors::SensorRttMode::kPosition:
+      out.Write("position");
       break;
   }
   out.Write(" period_ms=");
@@ -159,10 +166,14 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
   parsed.sensor_id = static_cast<std::uint8_t>(sensor_id_u32);
 
   const std::string_view mode_arg = Arg(argc, argv, 2);
-  if (mode_arg.empty() || mode_arg == "processed" || mode_arg == "p") {
-    parsed.mode = domain::sensors::SensorRttMode::kProcessed;
-  } else if (mode_arg == "raw") {
-    parsed.mode = domain::sensors::SensorRttMode::kRaw;
+  if (mode_arg.empty() || mode_arg == "position") {
+    parsed.mode = domain::sensors::SensorRttMode::kPosition;
+  } else if (mode_arg == "adc") {
+    parsed.mode = domain::sensors::SensorRttMode::kAdc;
+  } else if (mode_arg == "raw_current") {
+    parsed.mode = domain::sensors::SensorRttMode::kRawCurrent;
+  } else if (mode_arg == "current") {
+    parsed.mode = domain::sensors::SensorRttMode::kCurrent;
   } else {
     WriteUsage(out);
     return false;

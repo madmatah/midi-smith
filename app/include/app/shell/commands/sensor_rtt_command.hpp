@@ -19,7 +19,7 @@ class SensorRttCommand final : public ::shell::CommandRequirements {
     return "sensor_rtt";
   }
   std::string_view Help() const noexcept override {
-    return "Stream one sensor raw value over RTT";
+    return "Stream one sensor metric over RTT";
   }
 
   void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept override;
