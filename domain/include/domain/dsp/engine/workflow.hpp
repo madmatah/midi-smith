@@ -15,6 +15,16 @@ class Workflow {
     detail::ResetAll(stages_, std::make_index_sequence<sizeof...(StageTs)>{});
   }
 
+  template <std::size_t I>
+  auto& Stage() noexcept {
+    return std::get<I>(stages_);
+  }
+
+  template <std::size_t I>
+  const auto& Stage() const noexcept {
+    return std::get<I>(stages_);
+  }
+
   template <typename ContextT>
   float Transform(float input, ContextT& ctx) noexcept {
     return detail::InvokeAll(stages_, input, ctx, std::make_index_sequence<sizeof...(StageTs)>{});

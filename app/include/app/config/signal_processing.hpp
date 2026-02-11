@@ -1,12 +1,15 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
+#include "app/config/sensor_linearization.hpp"
 #include "domain/dsp/converters/tia_current_converter.hpp"
 #include "domain/dsp/engine/workflow.hpp"
 #include "domain/dsp/filters/ema_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
+#include "domain/sensors/linearization/sensor_linear_processor.hpp"
 
 namespace app::config {
 
@@ -33,8 +36,14 @@ using FilteringPipeline =
 
 }  // namespace signal_filtering_detail
 
+using AnalogSensorLinearizer =
+    domain::sensors::linearization::SensorLinearProcessor<kSensorLookupTableSize>;
+
+constexpr std::size_t kAnalogSensorProcessorLinearizerStageIndex = 2u;
+
 using AnalogSensorProcessor =
     domain::dsp::engine::Workflow<domain::dsp::converters::TiaCurrentConverter<2048, 16, 1800>,
-                                  signal_filtering_detail::FilteringPipeline>;
+                                  signal_filtering_detail::FilteringPipeline,
+                                  AnalogSensorLinearizer>;
 
 }  // namespace app::config
