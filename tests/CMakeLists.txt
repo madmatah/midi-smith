@@ -39,6 +39,7 @@ add_executable(unit_tests
     domain/sensors/sensor_registry.test.cpp
     domain/sensors/linearization/sensor_response_curve.test.cpp
     domain/sensors/linearization/sensor_linear_processor.test.cpp
+    domain/sensors/capture_sensor_state.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
     app/shell/commands/sensor_rtt_command.test.cpp
