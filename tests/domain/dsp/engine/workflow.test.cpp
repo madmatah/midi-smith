@@ -5,10 +5,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
+#include "domain/dsp/engine/tap.hpp"
 #include "test_stubs.hpp"
 
 TEST_CASE("The Workflow class") {
   using Catch::Matchers::WithinAbs;
+  using domain::dsp::engine::Tap;
   using domain::dsp::engine::Workflow;
   using domain::dsp::engine::test::ConsumerStage;
   using domain::dsp::engine::test::CounterStage;
@@ -38,7 +40,7 @@ TEST_CASE("The Workflow class") {
     }
 
     SECTION("When processed with a consumer stage") {
-      Workflow<PlusTenStage, ConsumerStage, TimesTwoStage> pipeline;
+      Workflow<PlusTenStage, Tap<ConsumerStage>, TimesTwoStage> pipeline;
       TestContext ctx{};
 
       SECTION("Should execute the consumer and keep value propagation") {
@@ -46,17 +48,6 @@ TEST_CASE("The Workflow class") {
         REQUIRE(ctx.consume_count == 1);
         REQUIRE_THAT(ctx.last_value, WithinAbs(15.0f, 0.001f));
       }
-    }
-  }
-
-  SECTION("The Execute() method") {
-    Workflow<PlusTenStage, ConsumerStage> pipeline;
-    TestContext ctx{};
-
-    SECTION("Should run the stages and ignore the output") {
-      pipeline.Execute(5.0f, ctx);
-      REQUIRE(ctx.consume_count == 1);
-      REQUIRE_THAT(ctx.last_value, WithinAbs(15.0f, 0.001f));
     }
   }
 

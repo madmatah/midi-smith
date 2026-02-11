@@ -26,20 +26,10 @@ class Workflow {
   }
 
   template <typename ContextT>
-  float Transform(float input, ContextT& ctx) noexcept {
-    return detail::InvokeAll(stages_, input, ctx, std::make_index_sequence<sizeof...(StageTs)>{});
-  }
-
-  template <typename ContextT>
   float Transform(float input, const ContextT& ctx) noexcept
     requires((domain::dsp::concepts::SignalTransformer<StageTs, ContextT>) && ...)
   {
     return detail::InvokeAll(stages_, input, ctx, std::make_index_sequence<sizeof...(StageTs)>{});
-  }
-
-  template <typename ContextT>
-  void Execute(float input, ContextT& ctx) noexcept {
-    (void) detail::InvokeAll(stages_, input, ctx, std::make_index_sequence<sizeof...(StageTs)>{});
   }
 
  private:

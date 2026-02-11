@@ -15,11 +15,6 @@ concept SignalTransformer = requires(T t, float input, const ContextT& ctx) {
 };
 
 template <typename T, typename ContextT>
-concept SignalConsumer = requires(T t, float input, ContextT& ctx) {
-  { t.Execute(input, ctx) } -> std::same_as<void>;
-};
-
-template <typename T, typename ContextT>
 concept DecimatableSignalTransformer = requires(T t, float input, const ContextT& ctx) {
   { t.Push(input, ctx) } -> std::same_as<void>;
   { t.Compute(input, ctx) } -> std::same_as<float>;

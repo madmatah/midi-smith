@@ -27,6 +27,7 @@ add_executable(unit_tests
     domain/dsp/filters/ema_filter.test.cpp
     domain/dsp/engine/workflow.test.cpp
     domain/dsp/engine/decimated.test.cpp
+    domain/dsp/engine/observers.test.cpp
     domain/dsp/filters/identity_filter.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
     domain/shell/command_parser.test.cpp
