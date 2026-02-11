@@ -4,12 +4,14 @@
 
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/composition/subsystems.hpp"
+#include "app/config/sensor_linearization_validation.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
 #include "app/tasks/analog_acquisition_task.hpp"
 #include "bsp/adc/adc_dma.hpp"
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
+#include "domain/sensors/linearization/lookup_table_generator.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -59,6 +61,62 @@ using Processor = app::config::AnalogSensorProcessor;
 using ProcessedSensorGroup =
     domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
 
+using LookupTable =
+    domain::sensors::linearization::SensorLookupTable<app::config::kSensorLookupTableSize>;
+using SensorCalibration = domain::sensors::linearization::SensorCalibration;
+using LinearizerConfiguration = domain::sensors::linearization::SensorLinearProcessorConfiguration<
+    app::config::kSensorLookupTableSize>;
+
+std::array<LookupTable, app::config_sensors::kSensorCount>& LookupTablesA() noexcept {
+  static std::array<LookupTable, app::config_sensors::kSensorCount> lookup_tables_a{};
+  return lookup_tables_a;
+}
+
+std::array<LinearizerConfiguration, app::config_sensors::kSensorCount>&
+LinearizerConfigurationsA() noexcept {
+  static std::array<LinearizerConfiguration, app::config_sensors::kSensorCount> configurations_a{};
+  return configurations_a;
+}
+
+std::array<Processor, app::config_sensors::kSensorCount>& ProcessorsArray() noexcept {
+  static std::array<Processor, app::config_sensors::kSensorCount> processors{};
+  return processors;
+}
+
+void GenerateAnalogSensorLookupTables(
+    std::array<Processor, app::config_sensors::kSensorCount>& processors,
+    std::array<LookupTable, app::config_sensors::kSensorCount>& lookup_tables,
+    std::array<LinearizerConfiguration, app::config_sensors::kSensorCount>& configurations,
+    const std::array<SensorCalibration, app::config_sensors::kSensorCount>&
+        calibration_by_index) noexcept {
+  const auto sensorResponseCurve = app::config::kSensorResponseCurveProvider();
+  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
+    const auto result = domain::sensors::linearization::LookupTableGenerator::Generate(
+        sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
+
+    configurations[i] = result.configuration;
+
+    auto& linearizer =
+        processors[i].Stage<app::config::kAnalogSensorProcessorLinearizerStageIndex>();
+    linearizer.ApplyConfiguration(&configurations[i]);
+  }
+}
+
+void ConfigureAnalogSensorProcessorsOnce() noexcept {
+  static bool configured = false;
+  if (configured) {
+    return;
+  }
+
+  auto& processors = ProcessorsArray();
+  auto& lookup_tables_a = LookupTablesA();
+  auto& configurations_a = LinearizerConfigurationsA();
+  GenerateAnalogSensorLookupTables(processors, lookup_tables_a, configurations_a,
+                                   app::config::kSensorCalibrationByIndex);
+
+  configured = true;
+}
+
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
   static os::Queue<bsp::adc::AdcFrameDescriptor, 8> adc_frame_queue;
   static bsp::adc::AdcDma adc_dma(adc_frame_queue);
@@ -91,6 +149,20 @@ SensorsContext CreateSensorsContext() noexcept {
   return SensorsContext{SensorsRegistry()};
 }
 
+bool RegenerateAnalogSensorLookupTables(
+    const std::array<domain::sensors::linearization::SensorCalibration,
+                     app::config_sensors::kSensorCount>& calibration_by_index) noexcept {
+  if (AdcState() != app::analog::AcquisitionState::kDisabled) {
+    return false;
+  }
+
+  auto& processors = ProcessorsArray();
+  auto& lookup_tables = LookupTablesA();
+  auto& configurations = LinearizerConfigurationsA();
+  GenerateAnalogSensorLookupTables(processors, lookup_tables, configurations, calibration_by_index);
+  return true;
+}
+
 AdcControlContext CreateAnalogSubsystem() noexcept {
   static_assert(app::config_sensors::kSensorCount > 0u, "Sensor count must be > 0");
   static_assert(app::config_sensors::kSensorCount == 22u, "Expected 22 sensors");
@@ -101,7 +173,8 @@ AdcControlContext CreateAnalogSubsystem() noexcept {
   static_assert(app::config_sensors::kAdc3RankCount == bsp::adc::AdcDma::kAdc3RanksPerSequence,
                 "ADC3 rank count must match AdcDma ranks");
 
-  static std::array<Processor, app::config_sensors::kSensorCount> processors{};
+  ConfigureAnalogSensorProcessorsOnce();
+  auto& processors = ProcessorsArray();
 
   auto& sensors = SensorsArray();
   static ProcessedSensorGroup analog_group(sensors.data(), processors.data(),

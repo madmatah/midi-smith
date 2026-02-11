@@ -72,6 +72,20 @@ TEST_CASE("The Workflow class") {
       REQUIRE(CounterStage::reset_count == 1);
     }
   }
+
+  SECTION("The Stage() accessor") {
+    Workflow<PlusTenStage, TimesTwoStage> pipeline;
+
+    SECTION("Should return stable references to stages") {
+      auto& stage0 = pipeline.Stage<0>();
+      auto& stage0_again = pipeline.Stage<0>();
+      REQUIRE(&stage0 == &stage0_again);
+
+      const auto& const_pipeline = pipeline;
+      const auto& const_stage1 = const_pipeline.Stage<1>();
+      (void) const_stage1;
+    }
+  }
 }
 
 #endif
