@@ -10,6 +10,13 @@ namespace domain::dsp::engine {
 template <typename T, std::uint8_t kFactor>
 class Decimated {
   static_assert(kFactor > 0u, "kFactor must be > 0");
+  static constexpr bool kTransparent = []() consteval {
+    if constexpr (requires { T::kTransparent; }) {
+      return static_cast<bool>(T::kTransparent);
+    } else {
+      return false;
+    }
+  }();
 
  public:
   void Reset() noexcept {
@@ -31,25 +38,23 @@ class Decimated {
         has_value_ = true;
       }
       AdvancePhase();
-      return has_value_ ? last_value_ : input;
+      if constexpr (kTransparent) {
+        return input;
+      } else {
+        return has_value_ ? last_value_ : input;
+      }
     } else {
       if (phase_ == 0u) {
         last_value_ = stage_.Transform(input, ctx);
         has_value_ = true;
       }
       AdvancePhase();
-      return has_value_ ? last_value_ : input;
+      if constexpr (kTransparent) {
+        return input;
+      } else {
+        return has_value_ ? last_value_ : input;
+      }
     }
-  }
-
-  template <typename ContextT>
-  void Execute(float input, ContextT& ctx) noexcept
-    requires(domain::dsp::concepts::SignalConsumer<T, ContextT>)
-  {
-    if (phase_ == 0u) {
-      stage_.Execute(input, ctx);
-    }
-    AdvancePhase();
   }
 
  private:

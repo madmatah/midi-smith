@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include <utility>
 
 #include "domain/dsp/concepts.hpp"
@@ -16,29 +17,6 @@ inline void ResetIfPresent(StageT& stage) noexcept {
 template <typename TupleT, std::size_t... kIs>
 inline void ResetAll(TupleT& stages, std::index_sequence<kIs...>) noexcept {
   (ResetIfPresent(std::get<kIs>(stages)), ...);
-}
-
-template <typename StageT, typename ContextT>
-inline float InvokeStage(StageT& stage, float input, ContextT& ctx) noexcept {
-  if constexpr (domain::dsp::concepts::SignalTransformer<StageT, ContextT>) {
-    return stage.Transform(input, ctx);
-  } else if constexpr (domain::dsp::concepts::SignalConsumer<StageT, ContextT>) {
-    stage.Execute(input, ctx);
-    return input;
-  } else {
-    static_assert(domain::dsp::concepts::SignalTransformer<StageT, ContextT> ||
-                      domain::dsp::concepts::SignalConsumer<StageT, ContextT>,
-                  "StageT must satisfy SignalTransformer or SignalConsumer");
-    return input;
-  }
-}
-
-template <typename TupleT, typename ContextT, std::size_t... kIs>
-inline float InvokeAll(TupleT& stages, float input, ContextT& ctx,
-                       std::index_sequence<kIs...>) noexcept {
-  float x = input;
-  ((x = InvokeStage(std::get<kIs>(stages), x, ctx)), ...);
-  return x;
 }
 
 template <typename StageT, typename ContextT>

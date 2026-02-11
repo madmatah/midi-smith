@@ -38,7 +38,7 @@ class ProcessedSensorGroup {
 
     ProcessorT& processor = processors_[index];
     const float raw_float = static_cast<float>(raw_value);
-    const ContextT ctx{timestamp_ticks, state};
+    ContextT ctx{timestamp_ticks, state};
 
     const float processed_value = processor.Transform(raw_float, ctx);
 
