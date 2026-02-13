@@ -24,30 +24,22 @@ constexpr std::int32_t TIA_FEEDBACK_RESISTOR_OHMS = 1800;
 
 constexpr bool SIGNAL_FILTERING_ENABLED = true;
 
-constexpr std::int32_t SIGNAL_EMA_ALPHA_NUMERATOR = 1;
-constexpr std::int32_t SIGNAL_EMA_ALPHA_DENOMINATOR = 8;
+constexpr float SIGNAL_NOTCH_CUTOFF_HZ = 293.9f;
+constexpr float SIGNAL_NOTCH_Q_FACTOR = 100.0f;
 
 constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ = 400;
 constexpr float SIGNAL_LOW_PASS_Q_FACTOR = 0.707f;
 
-// Decimation factor is applied on segments of the pipeline to reduce processing frequency.
-// Set to 1 to disable decimation.
-constexpr std::uint8_t SIGNAL_DECIMATION_FACTOR = 1;
 
 namespace signal_processing_detail {
 
 using LowPassFilter = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
     ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ, SIGNAL_LOW_PASS_Q_FACTOR>>;
-using EmaFilter =
-    domain::dsp::filters::EmaFilterRatio<SIGNAL_EMA_ALPHA_NUMERATOR, SIGNAL_EMA_ALPHA_DENOMINATOR>;
 
-using NotchFilter1 = domain::dsp::filters::Biquad<
-    domain::dsp::filters::NotchStrategy<3500u, 97u, 25.0f>>;  // remove peak at 97.4 Hz
-using NotchFilter2 = domain::dsp::filters::Biquad<
-    domain::dsp::filters::NotchStrategy<3500u, 294u, 25.0f>>;  // remove peak at 293.9 Hz
+using NotchFilter = domain::dsp::filters::Biquad<domain::dsp::filters::NotchStrategy<
+    ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_NOTCH_CUTOFF_HZ, SIGNAL_NOTCH_Q_FACTOR>>;
 
-using FilteringEnabledPipeline =
-    domain::dsp::engine::Workflow<NotchFilter1, NotchFilter2, LowPassFilter>;
+using FilteringEnabledPipeline = domain::dsp::engine::Workflow<NotchFilter, LowPassFilter>;
 
 
 using FilteringDisabledPipeline =

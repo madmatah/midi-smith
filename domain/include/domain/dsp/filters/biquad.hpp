@@ -154,27 +154,26 @@ class LowPassStrategy {
   }
 };
 
-template <std::uint32_t kSampleRateHz, std::uint32_t kCutoffHz, float kQ>
+template <std::uint32_t kSampleRateHz, float kCutoffHz, float kQ>
 class NotchStrategy {
   static_assert(kSampleRateHz > 0u, "kSampleRateHz must be > 0");
   static_assert(kCutoffHz > 0u, "kCutoffHz must be > 0");
-  static_assert(kCutoffHz < (kSampleRateHz / 2u), "kCutoffHz must be < Nyquist");
+  static_assert(kCutoffHz < (kSampleRateHz / 2.0f), "kCutoffHz must be < Nyquist");
   static_assert(kQ > 0.0f, "kQ must be > 0");
 
  public:
   BiquadCoefficients Coefficients() const noexcept {
     const float sample_rate_hz = static_cast<float>(kSampleRateHz);
-    const float cutoff_hz = static_cast<float>(kCutoffHz);
 
     float sin_w0 = 0.0f;
     float cos_w0 = 0.0f;
 
 #if DOMAIN_DSP_FILTERS_BIQUAD_USE_CMSIS_DSP
-    const float w0_deg = 360.0f * cutoff_hz / sample_rate_hz;
+    const float w0_deg = 360.0f * kCutoffHz / sample_rate_hz;
     arm_sin_cos_f32(w0_deg, &sin_w0, &cos_w0);
 #else
     constexpr float kPi = 3.14159265358979323846f;
-    const float w0 = 2.0f * kPi * cutoff_hz / sample_rate_hz;
+    const float w0 = 2.0f * kPi * kCutoffHz / sample_rate_hz;
     sin_w0 = std::sin(w0);
     cos_w0 = std::cos(w0);
 #endif
