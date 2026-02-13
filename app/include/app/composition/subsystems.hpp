@@ -6,6 +6,7 @@
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
 #include "app/logging/logger_requirements.hpp"
+#include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/io/stream_requirements.hpp"
 #include "domain/sensors/linearization/sensor_calibration.hpp"
@@ -37,7 +38,7 @@ struct SensorRttTelemetryControlContext {
   app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
 
-AdcControlContext CreateAnalogSubsystem() noexcept;
+AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture) noexcept;
 AdcStateContext CreateAdcStateContext() noexcept;
 SensorsContext CreateSensorsContext() noexcept;
 
@@ -46,7 +47,8 @@ bool RegenerateAnalogSensorLookupTables(
                      app::config_sensors::kSensorCount>& calibration_by_index) noexcept;
 
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
-    SensorsContext& sensors, AdcStateContext& adc_state) noexcept;
+    SensorsContext& sensors, AdcStateContext& adc_state,
+    app::telemetry::SensorRttStreamCapture& capture) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, AdcControlContext& adc_control,
                           SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;

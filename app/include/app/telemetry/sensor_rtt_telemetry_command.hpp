@@ -9,14 +9,14 @@ namespace app::telemetry {
 enum class SensorRttTelemetryCommandKind : std::uint8_t {
   kOff = 0,
   kObserve = 1,
-  kSetPeriod = 2,
+  kSetOutputHz = 2,
 };
 
 struct SensorRttTelemetryCommand {
   SensorRttTelemetryCommandKind kind{SensorRttTelemetryCommandKind::kOff};
   std::uint8_t sensor_id{0};
   domain::sensors::SensorRttMode mode{domain::sensors::SensorRttMode::kPosition};
-  std::uint32_t period_ms{0};
+  std::uint32_t output_hz{0};
 };
 
 }  // namespace app::telemetry

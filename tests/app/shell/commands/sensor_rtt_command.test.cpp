@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <string>
 
+#include "app/config/analog_acquisition.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/io/stream_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
@@ -45,9 +46,9 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
     observe_requested = true;
     return true;
   }
-  bool RequestSetPeriod(std::uint32_t period_ms) noexcept override {
-    last_period_ms = period_ms;
-    period_requested = true;
+  bool RequestSetOutputHz(std::uint32_t output_hz) noexcept override {
+    last_output_hz = output_hz;
+    output_hz_requested = true;
     return true;
   }
   app::telemetry::SensorRttTelemetryStatus GetStatus() const noexcept override {
@@ -57,10 +58,10 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
   app::telemetry::SensorRttTelemetryStatus status{};
   bool off_requested = false;
   bool observe_requested = false;
-  bool period_requested = false;
+  bool output_hz_requested = false;
   std::uint8_t last_observe_id = 0;
   domain::sensors::SensorRttMode last_mode = domain::sensors::SensorRttMode::kPosition;
-  std::uint32_t last_period_ms = 0;
+  std::uint32_t last_output_hz = 0;
 };
 
 }  // namespace
@@ -109,10 +110,13 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         control.status.enabled = true;
         control.status.sensor_id = 1;
         control.status.mode = domain::sensors::SensorRttMode::kPosition;
-        control.status.period_ms = 10;
+        control.status.output_hz = 2000;
+        control.status.dropped_frames = 3;
+        control.status.backlog_frames = 7;
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("status")};
         cmd.Run(2, argv, stream);
-        REQUIRE(stream.GetOutput() == "on id=1 mode=position period_ms=10\r\n");
+        REQUIRE(stream.GetOutput() ==
+                "on id=1 mode=position output_hz=2000 dropped=3 backlog=7\r\n");
       }
     }
 
@@ -136,13 +140,13 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
-      SECTION("Should request observe for that id with mode 'raw_current'") {
+      SECTION("Should request observe for that id with mode 'adc_filtered'") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("raw_current")};
+                        const_cast<char*>("adc_filtered")};
         cmd.Run(3, argv, stream);
         REQUIRE(control.observe_requested);
         REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kRawCurrent);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kAdcFiltered);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
@@ -186,7 +190,7 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
 
     SECTION("When called with 'freq'") {
       SECTION("Without value, should return current frequency in Hz") {
-        control.status.period_ms = 10;  // 100Hz
+        control.status.output_hz = 100;
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("freq")};
         cmd.Run(2, argv, stream);
         REQUIRE(stream.GetOutput() == "100\r\n");
@@ -196,8 +200,17 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("freq"),
                         const_cast<char*>("200")};
         cmd.Run(3, argv, stream);
-        REQUIRE(control.period_requested);
-        REQUIRE(control.last_period_ms == 5);  // 1000/200 = 5ms
+        REQUIRE(control.output_hz_requested);
+        REQUIRE(control.last_output_hz == 200);
+        REQUIRE(stream.GetOutput() == "ok\r\n");
+      }
+
+      SECTION("With 'max', should set frequency to ADC channel rate") {
+        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("freq"),
+                        const_cast<char*>("max")};
+        cmd.Run(3, argv, stream);
+        REQUIRE(control.output_hz_requested);
+        REQUIRE(control.last_output_hz == ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
@@ -205,7 +218,7 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("freq"),
                         const_cast<char*>("abc")};
         cmd.Run(3, argv, stream);
-        REQUIRE_FALSE(control.period_requested);
+        REQUIRE_FALSE(control.output_hz_requested);
         REQUIRE(stream.GetOutput().find("usage:") != std::string::npos);
       }
 
@@ -213,7 +226,7 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("freq"),
                         const_cast<char*>("0")};
         cmd.Run(3, argv, stream);
-        REQUIRE_FALSE(control.period_requested);
+        REQUIRE_FALSE(control.output_hz_requested);
         REQUIRE(stream.GetOutput().find("usage:") != std::string::npos);
       }
     }

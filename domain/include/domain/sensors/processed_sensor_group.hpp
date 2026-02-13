@@ -36,15 +36,16 @@ class ProcessedSensorGroup {
     assert(index < sensor_count_);
     SensorState& state = sensors_[index];
 
+    state.last_raw_value = raw_value;
+    state.last_timestamp_ticks = timestamp_ticks;
+
     ProcessorT& processor = processors_[index];
     const float raw_float = static_cast<float>(raw_value);
     ContextT ctx{timestamp_ticks, state};
 
     const float processed_value = processor.Transform(raw_float, ctx);
 
-    state.last_raw_value = raw_value;
     state.last_processed_value = processed_value;
-    state.last_timestamp_ticks = timestamp_ticks;
   }
 
  private:

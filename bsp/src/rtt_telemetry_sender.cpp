@@ -11,8 +11,12 @@ RttTelemetrySender::RttTelemetrySender(unsigned channel, const char* name, void*
   (void) SEGGER_RTT_ConfigUpBuffer(_channel, name, buffer, size, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 }
 
-void RttTelemetrySender::Send(std::span<const std::uint8_t> data) noexcept {
-  (void) SEGGER_RTT_Write(_channel, data.data(), data.size());
+std::size_t RttTelemetrySender::Send(std::span<const std::uint8_t> data) noexcept {
+  const int written = SEGGER_RTT_Write(_channel, data.data(), data.size());
+  if (written <= 0) {
+    return 0u;
+  }
+  return static_cast<std::size_t>(written);
 }
 
 }  // namespace bsp
