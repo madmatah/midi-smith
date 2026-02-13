@@ -22,8 +22,8 @@ inline constexpr SensorResponseCurveProvider kSensorResponseCurveProvider =
     domain::sensors::linearization::Cny70DatasheetSensorResponseCurve;
 
 inline constexpr domain::sensors::linearization::SensorCalibration kDefaultSensorCalibration{
-    .rest_current_ma = 0.045f,
-    .strike_current_ma = 1.000f,
+    .rest_current_ma = 0.090f,
+    .strike_current_ma = 0.642f,
     .rest_distance_mm = 10.0f,
     .strike_distance_mm = 0.5f,
 };

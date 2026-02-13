@@ -94,7 +94,8 @@ TEST_CASE("The Biquad class") {
         constexpr std::uint32_t kSamplesPerPeriod = kSampleRateHz / kCutoffHz;
         static_assert(kSamplesPerPeriod > 0u);
 
-        using Notch = domain::dsp::filters::NotchStrategy<kSampleRateHz, kCutoffHz, 5.0f>;
+        using Notch =
+            domain::dsp::filters::NotchStrategy<kSampleRateHz, static_cast<float>(kCutoffHz), 5.0f>;
         domain::dsp::filters::Biquad<Notch> filter;
         TestContext ctx{};
 
