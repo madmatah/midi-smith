@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "app/analog/acquisition_state_requirements.hpp"
+#include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_command.hpp"
 #include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
@@ -16,9 +17,7 @@ class SensorRttTelemetryTask {
                          domain::sensors::SensorRegistry& registry,
                          app::analog::AcquisitionStateRequirements& adc_state,
                          app::telemetry::TelemetrySenderRequirements& telemetry_sender,
-                         volatile bool& enabled, volatile std::uint8_t& sensor_id,
-                         volatile domain::sensors::SensorRttMode& mode,
-                         volatile std::uint32_t& period_ms) noexcept;
+                         app::telemetry::SensorRttStreamCapture& capture) noexcept;
 
   bool start() noexcept;
 
@@ -32,11 +31,7 @@ class SensorRttTelemetryTask {
   domain::sensors::SensorRegistry& registry_;
   app::analog::AcquisitionStateRequirements& adc_state_;
   app::telemetry::TelemetrySenderRequirements& telemetry_sender_;
-
-  volatile bool& enabled_;
-  volatile std::uint8_t& sensor_id_;
-  volatile domain::sensors::SensorRttMode& mode_;
-  volatile std::uint32_t& period_ms_;
+  app::telemetry::SensorRttStreamCapture& capture_;
 };
 
 }  // namespace app::Tasks

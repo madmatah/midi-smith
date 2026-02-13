@@ -43,6 +43,7 @@ add_executable(unit_tests
     domain/sensors/capture_sensor_state.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
+    app/telemetry/sensor_rtt_stream_capture.test.cpp
     app/shell/commands/sensor_rtt_command.test.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/sensor_rtt_command.cpp
 )

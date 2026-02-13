@@ -1,23 +1,26 @@
 #include "app/tasks/sensor_rtt_telemetry_task.hpp"
 
 #include <cstdint>
+#include <span>
 
+#include "app/config/analog_acquisition.hpp"
 #include "app/config/config.hpp"
+#include "os/clock.hpp"
 #include "os/task.hpp"
 
 namespace app::Tasks {
 namespace {
 
-constexpr std::uint32_t ClampPeriodMs(std::uint32_t period_ms) noexcept {
-  constexpr std::uint32_t kMinPeriodMs = 1;
-  constexpr std::uint32_t kMaxPeriodMs = 1000;
-  if (period_ms < kMinPeriodMs) {
-    return kMinPeriodMs;
+constexpr std::uint32_t ClampOutputHz(std::uint32_t hz) noexcept {
+  constexpr std::uint32_t kMinHz = 1u;
+  const std::uint32_t kMaxHz = ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
+  if (hz < kMinHz) {
+    return kMinHz;
   }
-  if (period_ms > kMaxPeriodMs) {
-    return kMaxPeriodMs;
+  if (hz > kMaxHz) {
+    return kMaxHz;
   }
-  return period_ms;
+  return hz;
 }
 
 }  // namespace
@@ -25,17 +28,13 @@ constexpr std::uint32_t ClampPeriodMs(std::uint32_t period_ms) noexcept {
 SensorRttTelemetryTask::SensorRttTelemetryTask(
     os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue,
     domain::sensors::SensorRegistry& registry, app::analog::AcquisitionStateRequirements& adc_state,
-    app::telemetry::TelemetrySenderRequirements& telemetry_sender, volatile bool& enabled,
-    volatile std::uint8_t& sensor_id, volatile domain::sensors::SensorRttMode& mode,
-    volatile std::uint32_t& period_ms) noexcept
+    app::telemetry::TelemetrySenderRequirements& telemetry_sender,
+    app::telemetry::SensorRttStreamCapture& capture) noexcept
     : control_queue_(control_queue),
       registry_(registry),
       adc_state_(adc_state),
       telemetry_sender_(telemetry_sender),
-      enabled_(enabled),
-      sensor_id_(sensor_id),
-      mode_(mode),
-      period_ms_(period_ms) {}
+      capture_(capture) {}
 
 void SensorRttTelemetryTask::entry(void* ctx) noexcept {
   if (ctx == nullptr) {
@@ -47,77 +46,69 @@ void SensorRttTelemetryTask::entry(void* ctx) noexcept {
 void SensorRttTelemetryTask::ApplyCommand(
     const app::telemetry::SensorRttTelemetryCommand& cmd) noexcept {
   if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kOff) {
-    enabled_ = false;
-    sensor_id_ = 0;
+    capture_.ConfigureOff();
     return;
   }
 
   if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kObserve) {
     const domain::sensors::SensorState* sensor = registry_.FindById(cmd.sensor_id);
     if (sensor == nullptr) {
-      enabled_ = false;
-      sensor_id_ = 0;
+      capture_.ConfigureOff();
       return;
     }
 
-    enabled_ = true;
-    sensor_id_ = cmd.sensor_id;
-    mode_ = cmd.mode;
+    capture_.ConfigureObserve(cmd.sensor_id, cmd.mode);
     return;
   }
 
-  if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kSetPeriod) {
-    period_ms_ = ClampPeriodMs(cmd.period_ms);
+  if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kSetOutputHz) {
+    const std::uint32_t hz = ClampOutputHz(cmd.output_hz);
+    capture_.SetOutputHz(hz);
     return;
   }
 }
 
 void SensorRttTelemetryTask::run() noexcept {
-  enabled_ = false;
-  sensor_id_ = 0;
-  mode_ = domain::sensors::SensorRttMode::kPosition;
-  period_ms_ = app::config::RTT_TELEMETRY_SENSOR_PERIOD_MS;
+  capture_.ConfigureOff();
+  capture_.SetOutputHz(::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
+
+  constexpr std::size_t kMaxFramesPerWrite = 80u;
+  static_assert(kMaxFramesPerWrite > 0u);
+
+  const auto* frame_ptr = static_cast<const app::telemetry::SensorRttSampleFrame*>(nullptr);
+  std::size_t available_frames = 0u;
 
   for (;;) {
-    if (!enabled_) {
-      app::telemetry::SensorRttTelemetryCommand cmd{};
-      if (control_queue_.Receive(cmd, os::kWaitForever)) {
-        ApplyCommand(cmd);
-      }
-      continue;
-    }
-
-    const std::uint8_t id = sensor_id_;
-    domain::sensors::SensorState* sensor = registry_.FindById(id);
-    if (sensor == nullptr) {
-      enabled_ = false;
-      sensor_id_ = 0;
-      continue;
-    }
-
     app::telemetry::SensorRttTelemetryCommand cmd{};
-    if (control_queue_.Receive(cmd, period_ms_)) {
+    while (control_queue_.Receive(cmd, os::kNoWait)) {
       ApplyCommand(cmd);
-      continue;
     }
 
     if (adc_state_.GetState() != app::analog::AcquisitionState::kEnabled) {
+      os::Clock::delay_ms(1);
       continue;
     }
 
-    switch (mode_) {
-      case domain::sensors::SensorRttMode::kAdc:
-        telemetry_sender_.Send(static_cast<float>(sensor->last_raw_value));
-        break;
-      case domain::sensors::SensorRttMode::kRawCurrent:
-        telemetry_sender_.Send(sensor->last_current_ma * 1000.0f);
-        break;
-      case domain::sensors::SensorRttMode::kCurrent:
-        telemetry_sender_.Send(sensor->last_filtered_current_ma * 1000.0f);
-        break;
-      case domain::sensors::SensorRttMode::kPosition:
-        telemetry_sender_.Send(sensor->last_normalized_position * 1000.0f);
-        break;
+    frame_ptr = capture_.PeekContiguousFrames(kMaxFramesPerWrite, available_frames);
+    if (frame_ptr == nullptr || available_frames == 0u) {
+      os::Clock::delay_ms(1);
+      continue;
+    }
+
+    const std::size_t bytes_to_write =
+        available_frames * sizeof(app::telemetry::SensorRttSampleFrame);
+    const auto bytes = std::span<const std::uint8_t>(
+        reinterpret_cast<const std::uint8_t*>(frame_ptr), bytes_to_write);
+
+    const std::size_t written = telemetry_sender_.Send(bytes);
+    if (written == 0u) {
+      os::Clock::delay_ms(1);
+      continue;
+    }
+
+    const std::size_t frames_written = written / sizeof(app::telemetry::SensorRttSampleFrame);
+    if (frames_written > 0u) {
+      capture_.ConsumeFrames(frames_written);
     }
   }
 }

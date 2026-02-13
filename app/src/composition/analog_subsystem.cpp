@@ -8,6 +8,7 @@
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
 #include "app/tasks/analog_acquisition_task.hpp"
+#include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "bsp/adc/adc_dma.hpp"
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
@@ -117,6 +118,15 @@ void ConfigureAnalogSensorProcessorsOnce() noexcept {
   configured = true;
 }
 
+void AttachSensorRttStreamCaptureToProcessors(
+    std::array<Processor, app::config_sensors::kSensorCount>& processors,
+    app::telemetry::SensorRttStreamCapture& capture) noexcept {
+  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
+    auto& tap = processors[i].Stage<app::config::kAnalogSensorProcessorRttTapStageIndex>();
+    tap.SetCapture(&capture);
+  }
+}
+
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
   static os::Queue<bsp::adc::AdcFrameDescriptor, 8> adc_frame_queue;
   static bsp::adc::AdcDma adc_dma(adc_frame_queue);
@@ -163,7 +173,7 @@ bool RegenerateAnalogSensorLookupTables(
   return true;
 }
 
-AdcControlContext CreateAnalogSubsystem() noexcept {
+AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture) noexcept {
   static_assert(app::config_sensors::kSensorCount > 0u, "Sensor count must be > 0");
   static_assert(app::config_sensors::kSensorCount == 22u, "Expected 22 sensors");
   static_assert(app::config_sensors::kAdc1RankCount == bsp::adc::AdcDma::kAdc1RanksPerSequence,
@@ -175,6 +185,7 @@ AdcControlContext CreateAnalogSubsystem() noexcept {
 
   ConfigureAnalogSensorProcessorsOnce();
   auto& processors = ProcessorsArray();
+  AttachSensorRttStreamCaptureToProcessors(processors, capture);
 
   auto& sensors = SensorsArray();
   static ProcessedSensorGroup analog_group(sensors.data(), processors.data(),

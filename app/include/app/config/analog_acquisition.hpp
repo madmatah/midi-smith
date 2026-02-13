@@ -19,7 +19,7 @@ namespace app::config {
 
 
 // Target acquisition rate per channel
-constexpr std::uint32_t ANALOG_ACQUISITION_CHANNEL_RATE_HZ = 1000;
+constexpr std::uint32_t ANALOG_ACQUISITION_CHANNEL_RATE_HZ = 3500;
 
 // ADC kernel clock limit
 // According to AN5354, STM32H743 using 3 ADC simultaneously at 16-bit, with

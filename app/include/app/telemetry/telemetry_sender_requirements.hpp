@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 
@@ -9,11 +10,12 @@ class TelemetrySenderRequirements {
  public:
   virtual ~TelemetrySenderRequirements() = default;
 
-  virtual void Send(std::span<const std::uint8_t> data) noexcept = 0;
+  virtual std::size_t Send(std::span<const std::uint8_t> data) noexcept = 0;
 
   template <typename T>
-  void Send(const T& value) noexcept {
-    Send(std::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(&value), sizeof(T)));
+  std::size_t Send(const T& value) noexcept {
+    return Send(
+        std::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(&value), sizeof(T)));
   }
 };
 

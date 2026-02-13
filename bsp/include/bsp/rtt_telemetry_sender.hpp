@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 
@@ -11,7 +12,7 @@ class RttTelemetrySender final : public app::telemetry::TelemetrySenderRequireme
  public:
   RttTelemetrySender(unsigned channel, const char* name, void* buffer, unsigned size) noexcept;
 
-  void Send(std::span<const std::uint8_t> data) noexcept override;
+  std::size_t Send(std::span<const std::uint8_t> data) noexcept override;
 
  private:
   unsigned _channel;

@@ -58,8 +58,11 @@ class RttClient:
             self.is_connected = False
             return False
 
-    def receive_data(self, buffer_size: int = 8192) -> Optional[bytes]:
-        """Receives raw data from the socket and appends it to the internal buffer."""
+    def receive_aligned_data(self, frame_size_bytes: int, buffer_size: int = 8192) -> Optional[bytes]:
+        """Receives raw data from the socket and returns a byte string aligned on frame boundaries."""
+        if frame_size_bytes <= 0:
+            return None
+
         if not self.is_connected:
             self._attempt_reconnect_if_needed()
             return None
@@ -72,11 +75,11 @@ class RttClient:
             self.total_bytes_received += len(data)
             self._buffer.extend(data)
 
-            # Return all complete 4-byte frames current in buffer
-            num_frames = len(self._buffer) // 4
-            if num_frames > 0:
-                result = bytes(self._buffer[:num_frames * 4])
-                self._buffer = self._buffer[num_frames * 4:]
+            frame_count = len(self._buffer) // frame_size_bytes
+            if frame_count > 0:
+                aligned_byte_count = frame_count * frame_size_bytes
+                result = bytes(self._buffer[:aligned_byte_count])
+                self._buffer = self._buffer[aligned_byte_count:]
                 return result
             return None
         except BlockingIOError:
@@ -85,6 +88,9 @@ class RttClient:
             print(f"Connection lost: {e}")
             self.close()
             return None
+
+    def receive_data(self, buffer_size: int = 8192) -> Optional[bytes]:
+        return self.receive_aligned_data(frame_size_bytes=4, buffer_size=buffer_size)
 
     def _attempt_reconnect_if_needed(self) -> None:
         """Attempts to reconnect if the interval has passed."""
@@ -215,6 +221,8 @@ class RttScope:
         # Data buffer
         self.signal_buffer = np.zeros((self.buffer_size, 2), dtype=np.float32)
         self.signal_buffer[:, 0] = np.arange(-self.buffer_size + sample_count, sample_count)
+        self.seq_buffer = np.zeros(self.buffer_size, dtype=np.uint32)
+        self.timestamp_us_buffer = np.zeros(self.buffer_size, dtype=np.uint32)
 
         # View State
         self.view_offset = 0
@@ -226,6 +234,8 @@ class RttScope:
         self.throughput_kbps = 0.0
 
         self.hover_data = None  # (index, value)
+        self.hover_seq = None
+        self.hover_timestamp_us = None
 
         # Snapshot feedback
         self.snapshot_message = ""
@@ -427,6 +437,44 @@ class RttScope:
 
         self._update_plot()
 
+    def process_incoming_sensor_frames(self, seqs, timestamps_us, values) -> None:
+        count = len(values)
+        if count == 0:
+            return
+        if len(seqs) != count or len(timestamps_us) != count:
+            return
+
+        self.total_samples_received += count
+
+        if count >= self.buffer_size:
+            self.signal_buffer[:, 1] = values[-self.buffer_size:]
+            self.seq_buffer[:] = seqs[-self.buffer_size:]
+            self.timestamp_us_buffer[:] = timestamps_us[-self.buffer_size:]
+
+            end_idx = self.total_samples_received
+            start_idx = end_idx - self.buffer_size
+            self.signal_buffer[:, 0] = np.arange(start_idx, end_idx)
+        else:
+            self.signal_buffer = np.roll(self.signal_buffer, -count, axis=0)
+            self.seq_buffer = np.roll(self.seq_buffer, -count)
+            self.timestamp_us_buffer = np.roll(self.timestamp_us_buffer, -count)
+
+            self.signal_buffer[-count:, 1] = values
+            self.seq_buffer[-count:] = seqs
+            self.timestamp_us_buffer[-count:] = timestamps_us
+
+            buffer_end_time = self.total_samples_received
+            buffer_start_time = buffer_end_time - self.buffer_size
+            self.signal_buffer[:, 0] = np.linspace(buffer_start_time, buffer_end_time - 1, self.buffer_size)
+
+        if self.view_offset > 0:
+            self.view_offset += count
+            max_offset = self.buffer_size - self.sample_count
+            if self.view_offset > max_offset:
+                self.view_offset = max_offset
+
+        self._update_plot()
+
     def _update_plot(self) -> None:
         end_idx = self.buffer_size - int(self.view_offset)
         start_idx = end_idx - self.sample_count
@@ -524,6 +572,17 @@ class RttScope:
                         real_x = view_data[idx_in_slice, 0]
 
                         self.hover_data = (real_x, val)
+                        if self.data_format == "sensor_frame":
+                            idx_in_buffer = start_idx + idx_in_slice
+                            if 0 <= idx_in_buffer < self.buffer_size:
+                                self.hover_seq = int(self.seq_buffer[idx_in_buffer])
+                                self.hover_timestamp_us = int(self.timestamp_us_buffer[idx_in_buffer])
+                            else:
+                                self.hover_seq = None
+                                self.hover_timestamp_us = None
+                        else:
+                            self.hover_seq = None
+                            self.hover_timestamp_us = None
                         self.hover_v_line.set_data(pos=real_x)
                         self.hover_v_line.visible = True
 
@@ -540,6 +599,8 @@ class RttScope:
         self.hover_v_line.visible = False
         self.hover_marker.visible = False
         self.hover_data = None
+        self.hover_seq = None
+        self.hover_timestamp_us = None
         if self.view_offset > 0:
              self.update_ui_status(True, self.last_bytes_count, force=True)
 
@@ -719,6 +780,8 @@ class RttScope:
         elif self.hover_data and self.view_offset > 0:
             val = self.hover_data[1]
             text += f" | Value: {val:.0f}"
+            if self.hover_seq is not None and self.hover_timestamp_us is not None:
+                text += f" | Seq: {self.hover_seq} | Ts(us): {self.hover_timestamp_us}"
 
         self.status_text.text = text
         self.status_text.color = status_color
@@ -735,8 +798,8 @@ def main():
     parser.add_argument("--points", type=int, default=10000, help="Number of points to display")
     parser.add_argument("--y-max", type=float, default=16384, help="Initial Y axis maximum")
     parser.add_argument("--no-auto-scale", action="store_true", help="Disable auto-scaling on startup")
-    parser.add_argument("--format", choices=["float32", "uint32"], default="float32",
-                        help="Data format (default: float32)")
+    parser.add_argument("--format", choices=["sensor_frame", "float32", "uint32"],
+                        default="sensor_frame", help="Data format (default: sensor_frame)")
 
     args = parser.parse_args()
 
@@ -748,18 +811,29 @@ def main():
     )
 
     with RttClient(args.host, args.port) as client:
+        sensor_frame_struct = struct.Struct("<IIf")
+
         def update_callback(_event):
             try:
-                # 1. Update Plot Data
-                raw_data = client.receive_data()
                 processed = False
-                if raw_data:
-                    value_count = len(raw_data) // 4
-                    if value_count > 0:
-                        fmt_char = 'f' if args.format == 'float32' else 'I'
-                        new_values = struct.unpack('<' + fmt_char * value_count, raw_data[:value_count*4])
-                        scope.process_incoming_values(new_values)
-                        processed = True
+
+                if args.format == "sensor_frame":
+                    raw_data = client.receive_aligned_data(frame_size_bytes=12)
+                    if raw_data:
+                        frames = list(sensor_frame_struct.iter_unpack(raw_data))
+                        if frames:
+                            seqs, timestamps_us, values = zip(*frames)
+                            scope.process_incoming_sensor_frames(seqs, timestamps_us, values)
+                            processed = True
+                else:
+                    raw_data = client.receive_aligned_data(frame_size_bytes=4)
+                    if raw_data:
+                        value_count = len(raw_data) // 4
+                        if value_count > 0:
+                            fmt_char = 'f' if args.format == 'float32' else 'I'
+                            new_values = struct.unpack('<' + fmt_char * value_count, raw_data[:value_count*4])
+                            scope.process_incoming_values(new_values)
+                            processed = True
 
                 # If we didn't process data (or even if we did, to ensure frequent UI updates)
                 if not processed or scope.view_offset > 0:

@@ -1,6 +1,7 @@
 #include "app/application.hpp"
 
 #include "app/composition/subsystems.hpp"
+#include "app/config/analog_acquisition.hpp"
 #include "bsp/board.hpp"
 #include "bsp/memory_sections.hpp"
 #include "bsp/rtt_logger.hpp"
@@ -15,6 +16,8 @@ void Application::init() noexcept {
 
 void Application::create_tasks() noexcept {
   static bsp::RttLogger logger;
+  static app::telemetry::SensorRttStreamCapture sensor_rtt_capture;
+  sensor_rtt_capture.SetOutputHz(::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
 
   // Console Stream (USART1)
   alignas(32) BSP_AXI_SRAM_NOCACHE static bsp::serial::UartStream<256, 1024> console_stream(huart1);
@@ -22,12 +25,13 @@ void Application::create_tasks() noexcept {
 
   app::composition::ConsoleContext console{console_stream};
 
-  app::composition::AdcControlContext adc_control = app::composition::CreateAnalogSubsystem();
+  app::composition::AdcControlContext adc_control =
+      app::composition::CreateAnalogSubsystem(sensor_rtt_capture);
   app::composition::AdcStateContext adc_state = app::composition::CreateAdcStateContext();
   app::composition::SensorsContext sensors = app::composition::CreateSensorsContext();
 
   app::composition::SensorRttTelemetryControlContext sensor_rtt =
-      app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state);
+      app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state, sensor_rtt_capture);
   app::composition::CreateShellSubsystem(console, adc_control, sensors, sensor_rtt);
 }
 

@@ -5,6 +5,7 @@
 #include <string_view>
 #include <system_error>
 
+#include "app/config/analog_acquisition.hpp"
 
 namespace app::shell::commands {
 namespace {
@@ -23,9 +24,9 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
 }
 
 void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
-  out.Write("usage: sensor_rtt <id> [adc|raw_current|current|position]\r\n");
+  out.Write("usage: sensor_rtt <id> [adc|adc_filtered|current|position]\r\n");
   out.Write("       default metric is position\r\n");
-  out.Write("       sensor_rtt freq [value]\r\n");
+  out.Write("       sensor_rtt freq [hz|max]\r\n");
   out.Write("       sensor_rtt off\r\n");
   out.Write("       sensor_rtt status\r\n");
 }
@@ -56,21 +57,6 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   out_value = value;
   return true;
 }
-bool ParsePeriodMsFromHzArg(std::string_view arg, std::uint32_t& out_period_ms) noexcept {
-  if (arg.empty()) {
-    return false;
-  }
-
-  std::uint32_t hz = 0;
-  if (!ParseUint32(arg, hz)) {
-    return false;
-  }
-  if (hz == 0u) {
-    return false;
-  }
-  out_period_ms = (1000u + (hz / 2u)) / hz;
-  return true;
-}
 
 void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
   char buf[16]{};
@@ -93,7 +79,7 @@ struct SensorRttParsedCommand {
   Kind kind{Kind::kStatus};
   std::uint8_t sensor_id{0};
   domain::sensors::SensorRttMode mode{domain::sensors::SensorRttMode::kPosition};
-  std::uint32_t period_ms{0};
+  std::uint32_t output_hz{0};
 };
 
 void WriteStatus(domain::io::WritableStreamRequirements& out,
@@ -109,8 +95,8 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
     case domain::sensors::SensorRttMode::kAdc:
       out.Write("adc");
       break;
-    case domain::sensors::SensorRttMode::kRawCurrent:
-      out.Write("raw_current");
+    case domain::sensors::SensorRttMode::kAdcFiltered:
+      out.Write("adc_filtered");
       break;
     case domain::sensors::SensorRttMode::kCurrent:
       out.Write("current");
@@ -119,8 +105,12 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
       out.Write("position");
       break;
   }
-  out.Write(" period_ms=");
-  WriteUint32(out, status.period_ms);
+  out.Write(" output_hz=");
+  WriteUint32(out, status.output_hz);
+  out.Write(" dropped=");
+  WriteUint32(out, status.dropped_frames);
+  out.Write(" backlog=");
+  WriteUint32(out, status.backlog_frames);
   out.Write("\r\n");
 }
 
@@ -148,7 +138,9 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
       parsed.kind = SensorRttParsedCommand::Kind::kGetFreq;
       return true;
     }
-    if (!ParsePeriodMsFromHzArg(freq_arg, parsed.period_ms)) {
+    if (freq_arg == "max") {
+      parsed.output_hz = ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
+    } else if (!ParseUint32(freq_arg, parsed.output_hz) || parsed.output_hz == 0u) {
       WriteUsage(out);
       return false;
     }
@@ -170,8 +162,8 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
     parsed.mode = domain::sensors::SensorRttMode::kPosition;
   } else if (mode_arg == "adc") {
     parsed.mode = domain::sensors::SensorRttMode::kAdc;
-  } else if (mode_arg == "raw_current") {
-    parsed.mode = domain::sensors::SensorRttMode::kRawCurrent;
+  } else if (mode_arg == "adc_filtered") {
+    parsed.mode = domain::sensors::SensorRttMode::kAdcFiltered;
   } else if (mode_arg == "current") {
     parsed.mode = domain::sensors::SensorRttMode::kCurrent;
   } else {
@@ -207,17 +199,13 @@ void SensorRttCommand::Run(int argc, char** argv,
 
   if (parsed.kind == SensorRttParsedCommand::Kind::kGetFreq) {
     const auto status = control_.GetStatus();
-    if (status.period_ms > 0) {
-      WriteUint32(out, 1000u / status.period_ms);
-    } else {
-      out.Write("0");
-    }
+    WriteUint32(out, status.output_hz);
     out.Write("\r\n");
     return;
   }
 
   if (parsed.kind == SensorRttParsedCommand::Kind::kSetFreq) {
-    if (!control_.RequestSetPeriod(parsed.period_ms)) {
+    if (!control_.RequestSetOutputHz(parsed.output_hz)) {
       WriteRejected(out);
       return;
     }

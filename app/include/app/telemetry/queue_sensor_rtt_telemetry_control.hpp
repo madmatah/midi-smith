@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_command.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "os/queue.hpp"
@@ -11,19 +12,10 @@ namespace app::telemetry {
 class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlRequirements {
  public:
   QueueSensorRttTelemetryControl(os::Queue<SensorRttTelemetryCommand, 4>& queue,
-                                 volatile bool& enabled, volatile std::uint8_t& sensor_id,
-                                 volatile domain::sensors::SensorRttMode& mode,
-                                 volatile std::uint32_t& period_ms) noexcept
-      : queue_(queue),
-        enabled_(enabled),
-        sensor_id_(sensor_id),
-        mode_(mode),
-        period_ms_(period_ms) {}
+                                 SensorRttStreamCapture& capture) noexcept
+      : queue_(queue), capture_(capture) {}
 
   bool RequestOff() noexcept override {
-    if (!enabled_) {
-      return true;
-    }
     SensorRttTelemetryCommand cmd{};
     cmd.kind = SensorRttTelemetryCommandKind::kOff;
     return queue_.Send(cmd, os::kNoWait);
@@ -38,28 +30,28 @@ class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlReq
     return queue_.Send(cmd, os::kNoWait);
   }
 
-  bool RequestSetPeriod(std::uint32_t period_ms) noexcept override {
+  bool RequestSetOutputHz(std::uint32_t output_hz) noexcept override {
     SensorRttTelemetryCommand cmd{};
-    cmd.kind = SensorRttTelemetryCommandKind::kSetPeriod;
-    cmd.period_ms = period_ms;
+    cmd.kind = SensorRttTelemetryCommandKind::kSetOutputHz;
+    cmd.output_hz = output_hz;
     return queue_.Send(cmd, os::kNoWait);
   }
 
   SensorRttTelemetryStatus GetStatus() const noexcept override {
     SensorRttTelemetryStatus s{};
-    s.enabled = enabled_;
-    s.sensor_id = sensor_id_;
-    s.mode = const_cast<domain::sensors::SensorRttMode&>(mode_);
-    s.period_ms = period_ms_;
+    const auto st = capture_.GetStatus();
+    s.enabled = st.enabled;
+    s.sensor_id = st.sensor_id;
+    s.mode = st.mode;
+    s.output_hz = st.output_hz;
+    s.dropped_frames = st.dropped_frames;
+    s.backlog_frames = st.backlog_frames;
     return s;
   }
 
  private:
   os::Queue<SensorRttTelemetryCommand, 4>& queue_;
-  volatile bool& enabled_;
-  volatile std::uint8_t& sensor_id_;
-  volatile domain::sensors::SensorRttMode& mode_;
-  volatile std::uint32_t& period_ms_;
+  SensorRttStreamCapture& capture_;
 };
 
 }  // namespace app::telemetry
