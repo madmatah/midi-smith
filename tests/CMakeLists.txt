@@ -31,6 +31,7 @@ add_executable(unit_tests
     domain/dsp/engine/observers.test.cpp
     domain/dsp/filters/identity_filter.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
+    domain/dsp/math/sliding_linear_regression.test.cpp
     domain/shell/command_parser.test.cpp
     domain/shell/line_editor.test.cpp
     domain/shell/command_dispatcher.test.cpp

@@ -11,6 +11,7 @@
 #include "domain/dsp/filters/biquad.hpp"
 #include "domain/dsp/filters/ema_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
+#include "domain/dsp/math/sliding_linear_regression.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -30,8 +31,11 @@ constexpr float SIGNAL_NOTCH_Q_FACTOR = 100.0f;
 constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ = 400;
 constexpr float SIGNAL_LOW_PASS_Q_FACTOR = 0.707f;
 
+constexpr std::size_t SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE = 5u;
+
 
 namespace signal_processing_detail {
+
 
 using LowPassFilter = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
     ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ, SIGNAL_LOW_PASS_Q_FACTOR>>;
@@ -57,11 +61,16 @@ using TiaCurrentConverter =
 using AnalogSensorLinearizer =
     domain::sensors::linearization::SensorLinearProcessor<kSensorLookupTableSize>;
 
+using HammerSpeedEstimator =
+    domain::dsp::math::SlidingLinearRegression<SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE>;
 
 using SensorState = domain::sensors::SensorState;
 
 template <auto SensorMemberPtr>
 using CaptureState = domain::sensors::CaptureSensorState<SensorMemberPtr>;
+
+using HammerSpeedStage = domain::dsp::engine::Tap<domain::dsp::engine::Workflow<
+    HammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>>>;
 
 
 // clang-format off
@@ -72,6 +81,7 @@ using SignalProcessingWorkflow = domain::dsp::engine::Workflow<
     CaptureState<&SensorState::last_current_ma>,
     AnalogSensorLinearizer,
     CaptureState<&SensorState::last_normalized_position>,
+    HammerSpeedStage,
     app::telemetry::SensorRttStreamTap
 >;
 // clang-format on
@@ -80,7 +90,7 @@ using SignalProcessingWorkflow = domain::dsp::engine::Workflow<
 
 
 constexpr std::size_t kAnalogSensorProcessorLinearizerStageIndex = 4u;
-constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 6u;
+constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 7u;
 using AnalogSensorProcessor = signal_processing_detail::SignalProcessingWorkflow;
 
 }  // namespace app::config
