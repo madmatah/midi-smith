@@ -103,7 +103,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     bsp/src/rtt_telemetry_sender.cpp
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
+    app/src/shell/commands/ps_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
+    app/src/shell/commands/status_command.cpp
     Third_Party/SEGGER/RTT/RTT/SEGGER_RTT.c
     Third_Party/SEGGER/RTT/RTT/SEGGER_RTT_printf.c
     os/src/clock.cpp
@@ -111,6 +113,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     os/src/queue.cpp
     os/src/binary_semaphore.cpp
     os/src/memory.cpp
+    os/src/runtime_stats.cpp
     os/src/this_task.cpp
 )
 
@@ -211,4 +214,3 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
         "${CMAKE_BINARY_DIR}"
         "${CMAKE_SOURCE_DIR}/build/current")
 endif()
-

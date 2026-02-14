@@ -497,6 +497,21 @@ If you use them, repeat the configuration above with the same parameters (115200
 2. **Tasks and Queues**: Increase the stack size of `defaultTask` to at least **1024 words**.
    * *Why? Peripheral initialization takes place in this task and consumes a lot of stack. A value that is too low causes an immediate HardFault at startup.*
 
+### 11.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
+
+Objective: expose MCU CPU load and per-task runtime usage in the shell (`status` / `ps` commands).
+
+In **[`Middlewares and Software Packs` > `FREERTOS`]**:
+
+1. Open the FreeRTOS configuration parameters.
+2. Enable **`configGENERATE_RUN_TIME_STATS`** = `1`.
+3. Keep **`configUSE_TRACE_FACILITY`** = `1` (required by `uxTaskGetSystemState`).
+
+Notes:
+
+- No CubeMX timer configuration is required for runtime stats in this project because the runtime
+  counter uses the Cortex-M DWT cycle counter.
+
 ---
 
 ## 12. Project Generation (Project Manager)
