@@ -51,7 +51,11 @@ add_executable(unit_tests
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp
     app/shell/commands/sensor_rtt_command.test.cpp
+    app/shell/commands/status_command.test.cpp
+    app/shell/commands/ps_command.test.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/sensor_rtt_command.cpp
+    ${CMAKE_SOURCE_DIR}/app/src/shell/commands/status_command.cpp
+    ${CMAKE_SOURCE_DIR}/app/src/shell/commands/ps_command.cpp
 )
 target_link_libraries(unit_tests PRIVATE
     Catch2::Catch2WithMain
@@ -61,6 +65,7 @@ target_link_libraries(unit_tests PRIVATE
 target_include_directories(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/app/include
     ${CMAKE_SOURCE_DIR}/bsp/include
+    ${CMAKE_SOURCE_DIR}/os/include
 )
 target_compile_definitions(unit_tests PRIVATE UNIT_TESTS=1)
 target_compile_features(unit_tests PRIVATE cxx_std_17)

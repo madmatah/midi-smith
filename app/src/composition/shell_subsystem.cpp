@@ -3,9 +3,12 @@
 
 #include "app/composition/subsystems.hpp"
 #include "app/shell/commands/adc_command.hpp"
+#include "app/shell/commands/ps_command.hpp"
 #include "app/shell/commands/sensor_rtt_command.hpp"
+#include "app/shell/commands/status_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
+#include "os/runtime_stats.hpp"
 #include "shell/commands/version_command.hpp"
 
 namespace app::composition {
@@ -30,6 +33,14 @@ void CreateShellSubsystem(ConsoleContext& console, AdcControlContext& adc_contro
 
     static app::shell::commands::AdcCommand adc_cmd(adc_control.control);
     shell_task_ptr->RegisterCommand(adc_cmd);
+
+    static os::RuntimeStats runtime_stats;
+
+    static app::shell::commands::StatusCommand status_cmd(runtime_stats);
+    shell_task_ptr->RegisterCommand(status_cmd);
+
+    static app::shell::commands::PsCommand ps_cmd(runtime_stats);
+    shell_task_ptr->RegisterCommand(ps_cmd);
 
     static app::shell::commands::SensorRttCommand sensor_rtt_cmd(sensors.registry,
                                                                  sensor_rtt.control);
