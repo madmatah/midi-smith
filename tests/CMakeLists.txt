@@ -26,11 +26,14 @@ add_executable(unit_tests
     domain/dsp/filters/biquad.test.cpp
     domain/dsp/filters/sg5_smoother.test.cpp
     domain/dsp/filters/ema_filter.test.cpp
+    domain/dsp/filters/constant_filter.test.cpp
     domain/dsp/engine/workflow.test.cpp
     domain/dsp/engine/decimated.test.cpp
     domain/dsp/engine/observers.test.cpp
     domain/dsp/filters/identity_filter.test.cpp
     domain/dsp/logic/input_gate.test.cpp
+    domain/dsp/logic/gate_open_predicate.test.cpp
+    domain/dsp/logic/switch.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
     domain/dsp/math/sliding_linear_regression.test.cpp
     domain/shell/command_parser.test.cpp
