@@ -33,7 +33,7 @@ constexpr std::uint32_t ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ = 12'000'000;
 //      (e.g. ~3000 IRQ/s at 1kHz).
 // - Higher: Groups multiple scans before notifying the CPU.
 //      Reduces CPU overhead by processing data in larger batches, but adds latency.
-constexpr std::uint32_t ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER = 1;
+constexpr std::uint32_t ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER = 8;
 
 // Phase shifts applied to the trigger schedule.
 //
