@@ -9,8 +9,11 @@
 #include "domain/dsp/converters/tia_current_converter.hpp"
 #include "domain/dsp/engine/workflow.hpp"
 #include "domain/dsp/filters/biquad.hpp"
+#include "domain/dsp/filters/constant_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
+#include "domain/dsp/logic/gate_open_predicate.hpp"
 #include "domain/dsp/logic/input_gate.hpp"
+#include "domain/dsp/logic/switch.hpp"
 #include "domain/dsp/math/sliding_linear_regression.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
@@ -32,8 +35,10 @@ constexpr bool SIGNAL_FILTERING_ENABLED = true;
 constexpr float SIGNAL_NOTCH_CUTOFF_HZ = 293.9f;
 constexpr float SIGNAL_NOTCH_Q_FACTOR = 100.0f;
 
-constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ = 300;
+constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ = 600;
 constexpr float SIGNAL_LOW_PASS_Q_FACTOR = 0.707f;
+
+constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ_2 = 1000;
 
 constexpr std::size_t SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE = 5u;
 
@@ -44,15 +49,22 @@ template <typename... StageTs>
 using Workflow = domain::dsp::engine::Workflow<StageTs...>;
 template <typename ContentT>
 using Tap = domain::dsp::engine::Tap<ContentT>;
+template <typename PredicateT, typename TrueStageT, typename FalseStageT>
+using Switch = domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
+template <float kValue>
+using ConstantFilter = domain::dsp::filters::ConstantFilter<kValue>;
 
 
 using LowPassFilter = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
     ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ, SIGNAL_LOW_PASS_Q_FACTOR>>;
 
+using LowPassFilter2 = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
+    ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ_2, SIGNAL_LOW_PASS_Q_FACTOR>>;
+
 using NotchFilter = domain::dsp::filters::Biquad<domain::dsp::filters::NotchStrategy<
     ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_NOTCH_CUTOFF_HZ, SIGNAL_NOTCH_Q_FACTOR>>;
 
-using FilteringEnabledPipeline = Workflow<NotchFilter, LowPassFilter>;
+using FilteringEnabledPipeline = Workflow<LowPassFilter, LowPassFilter2>;
 
 
 using FilteringDisabledPipeline = Workflow<domain::dsp::filters::IdentityFilter>;
@@ -81,11 +93,15 @@ template <auto SensorMemberPtr>
 using SensorMemberReader = domain::sensors::SensorMemberReader<SensorMemberPtr>;
 
 
-using HammerSpeedGate =
-    domain::dsp::logic::InputGate<HAMMER_POSITION_DAMPER,
-                                  SensorMemberReader<&SensorState::last_normalized_position>{}>;
-using HammerSpeedStage = Workflow<HammerSpeedEstimator, HammerSpeedGate,
-                                  CaptureState<&SensorState::last_speed_units_per_ms>>;
+using HammerPositionReader = SensorMemberReader<&SensorState::last_normalized_position>;
+using IsHammerInActiveZone =
+    domain::dsp::logic::GateOpenPredicate<HAMMER_POSITION_DAMPER, HammerPositionReader{}>;
+
+using SmartHammerSpeedEstimator =
+    Switch<IsHammerInActiveZone, HammerSpeedEstimator, ConstantFilter<0.0f>>;
+
+using HammerSpeedStage =
+    Workflow<SmartHammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>>;
 
 
 // clang-format off
