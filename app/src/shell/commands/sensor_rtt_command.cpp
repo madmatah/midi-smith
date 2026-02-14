@@ -24,7 +24,7 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
 }
 
 void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
-  out.Write("usage: sensor_rtt <id> [adc|adc_filtered|current|position]\r\n");
+  out.Write("usage: sensor_rtt <id> [adc|adc_filtered|current|position|speed]\r\n");
   out.Write("       default metric is position\r\n");
   out.Write("       sensor_rtt freq [hz|max]\r\n");
   out.Write("       sensor_rtt off\r\n");
@@ -104,6 +104,9 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
     case domain::sensors::SensorRttMode::kPosition:
       out.Write("position");
       break;
+    case domain::sensors::SensorRttMode::kSpeed:
+      out.Write("speed");
+      break;
   }
   out.Write(" output_hz=");
   WriteUint32(out, status.output_hz);
@@ -166,6 +169,8 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
     parsed.mode = domain::sensors::SensorRttMode::kAdcFiltered;
   } else if (mode_arg == "current") {
     parsed.mode = domain::sensors::SensorRttMode::kCurrent;
+  } else if (mode_arg == "speed") {
+    parsed.mode = domain::sensors::SensorRttMode::kSpeed;
   } else {
     WriteUsage(out);
     return false;
