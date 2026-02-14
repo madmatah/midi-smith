@@ -30,6 +30,7 @@ add_executable(unit_tests
     domain/dsp/engine/decimated.test.cpp
     domain/dsp/engine/observers.test.cpp
     domain/dsp/filters/identity_filter.test.cpp
+    domain/dsp/logic/input_gate.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
     domain/dsp/math/sliding_linear_regression.test.cpp
     domain/shell/command_parser.test.cpp
@@ -42,6 +43,7 @@ add_executable(unit_tests
     domain/sensors/linearization/sensor_response_curve.test.cpp
     domain/sensors/linearization/sensor_linear_processor.test.cpp
     domain/sensors/capture_sensor_state.test.cpp
+    domain/sensors/sensor_member_reader.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp
