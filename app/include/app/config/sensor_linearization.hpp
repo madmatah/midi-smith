@@ -24,8 +24,8 @@ inline constexpr SensorResponseCurveProvider kSensorResponseCurveProvider =
 inline constexpr domain::sensors::linearization::SensorCalibration kDefaultSensorCalibration{
     .rest_current_ma = 0.090f,
     .strike_current_ma = 0.642f,
-    .rest_distance_mm = 10.0f,
-    .strike_distance_mm = 0.5f,
+    .rest_distance_mm = 8.0f,
+    .strike_distance_mm = 1.9f,
 };
 
 inline constexpr std::array<domain::sensors::linearization::SensorCalibration,
