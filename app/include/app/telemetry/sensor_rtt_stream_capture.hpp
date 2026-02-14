@@ -143,6 +143,8 @@ class SensorRttStreamCapture final {
         return ctx.sensor.last_current_ma * 1000.0f;
       case domain::sensors::SensorRttMode::kPosition:
         return ctx.sensor.last_normalized_position * 1000.0f;
+      case domain::sensors::SensorRttMode::kSpeed:
+        return ctx.sensor.last_speed_units_per_ms * 1000.0f;
     }
     return 0.0f;
   }

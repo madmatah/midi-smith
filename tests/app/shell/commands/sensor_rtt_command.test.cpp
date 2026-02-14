@@ -170,6 +170,16 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
+      SECTION("Should request observe for that id with mode 'speed'") {
+        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
+                        const_cast<char*>("speed")};
+        cmd.Run(3, argv, stream);
+        REQUIRE(control.observe_requested);
+        REQUIRE(control.last_observe_id == 2);
+        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kSpeed);
+        REQUIRE(stream.GetOutput() == "ok\r\n");
+      }
+
       SECTION("With an invalid mode, should show usage") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
                         const_cast<char*>("invalid")};

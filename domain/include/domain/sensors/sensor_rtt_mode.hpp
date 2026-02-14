@@ -10,6 +10,7 @@ enum class SensorRttMode : std::uint8_t {
   kAdcFiltered = 1,
   kCurrent = 2,
   kPosition = 3,
+  kSpeed = 4,
 };
 
 }  // namespace domain::sensors

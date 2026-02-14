@@ -56,6 +56,18 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     REQUIRE(frames == 1u);
     REQUIRE(p[0].seq == 1u);
     REQUIRE(p[0].value == 1200.0f);
+
+    capture.ConsumeFrames(1u);
+
+    s.last_speed_units_per_ms = 12.5f;
+    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kSpeed);
+    capture.MaybeCapture(ctx, kSourceHz);
+
+    p = capture.PeekContiguousFrames(8, frames);
+    REQUIRE(p != nullptr);
+    REQUIRE(frames == 1u);
+    REQUIRE(p[0].seq == 1u);
+    REQUIRE(p[0].value == 12500.0f);
   }
 
   SECTION("Drops frames on overflow and reports a drop count") {
