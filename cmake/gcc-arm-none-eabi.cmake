@@ -37,9 +37,9 @@ else()
 endif()
 
 set(CMAKE_C_FLAGS_DEBUG "-Og -g3")
-set(CMAKE_C_FLAGS_RELEASE "-Os ${RELEASE_DEBUG_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math ${RELEASE_DEBUG_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-Og -g3")
-set(CMAKE_CXX_FLAGS_RELEASE "-Os ${RELEASE_DEBUG_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math ${RELEASE_DEBUG_FLAGS}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -fno-threadsafe-statics")
 
