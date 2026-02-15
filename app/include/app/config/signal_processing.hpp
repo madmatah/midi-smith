@@ -117,7 +117,7 @@ using VelocityKinematicsStage =
 
 using HammerSpeedStage =
     Workflow<SmartHammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>,
-             VelocityKinematicsStage, CaptureState<&SensorState::last_speed_m_per_s>>;
+             VelocityKinematicsStage, CaptureState<&SensorState::last_hammer_speed_m_per_s>>;
 
 using MidiVelocityEngineStage =
     domain::music::piano::MidiVelocityEngine<HAMMER_POSITION_DAMPER, HAMMER_POSITION_LETOFF,

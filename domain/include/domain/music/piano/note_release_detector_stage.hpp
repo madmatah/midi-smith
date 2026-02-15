@@ -36,7 +36,7 @@ class NoteReleaseDetectorStage {
       latched_release_speed_m_per_s_ = 0.0f;
 
       if (is_note_on && position < kReleaseThreshold) {
-        const float speed_m_per_s = ctx.sensor.last_speed_m_per_s;
+        const float speed_m_per_s = ctx.sensor.last_hammer_speed_m_per_s;
         if (speed_m_per_s > 0.0f) {
           latched_release_speed_m_per_s_ = speed_m_per_s;
         }
@@ -52,7 +52,7 @@ class NoteReleaseDetectorStage {
     }
 
     if (is_note_on && position < kReleaseThreshold) {
-      const float speed_m_per_s = ctx.sensor.last_speed_m_per_s;
+      const float speed_m_per_s = ctx.sensor.last_hammer_speed_m_per_s;
       if (speed_m_per_s > 0.0f) {
         latched_release_speed_m_per_s_ = speed_m_per_s;
       }

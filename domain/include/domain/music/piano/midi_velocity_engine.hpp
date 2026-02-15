@@ -36,7 +36,7 @@ class MidiVelocityEngine {
       return;
     }
 
-    const float speed_m_per_s = ctx.sensor.last_speed_m_per_s;
+    const float speed_m_per_s = ctx.sensor.last_hammer_speed_m_per_s;
 
     switch (state_) {
       case State::IDLE:

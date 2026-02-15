@@ -39,7 +39,7 @@ struct SensorRttDataPayload {
   float adc_filtered = 0.0f;
   float current_ma = 0.0f;
   float position_norm = 0.0f;
-  float speed_m_per_s = 0.0f;
+  float hammer_speed_m_per_s = 0.0f;
 };
 static_assert(sizeof(SensorRttDataPayload) == 24u, "Expected 24-byte sensor RTT data payload");
 static_assert(std::is_trivially_copyable_v<SensorRttDataPayload>,
@@ -100,7 +100,7 @@ constexpr std::array<SensorRttMetricDescriptor, 5u> kSensorRttDataPayloadMetrics
     SensorRttMetricDescriptor{
         4u,
         SensorRttValueType::kFloat32,
-        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, speed_m_per_s)),
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, hammer_speed_m_per_s)),
         "Hammer Speed (m/s)",
     },
 };

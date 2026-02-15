@@ -10,7 +10,7 @@ struct SensorState {
   float last_normalized_position = 0.0f;
   float last_processed_value = 0.0f;
   float last_speed_units_per_ms = 0.0f;
-  float last_speed_m_per_s = 0.0f;
+  float last_hammer_speed_m_per_s = 0.0f;
   std::uint32_t last_timestamp_ticks = 0;
   std::uint16_t last_raw_value = 0;
   std::uint8_t last_midi_velocity = 0;
