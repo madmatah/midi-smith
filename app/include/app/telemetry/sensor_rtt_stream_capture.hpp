@@ -185,8 +185,7 @@ class SensorRttStreamCapture final {
 
   std::atomic<bool> enabled_{false};
   std::atomic<std::uint8_t> sensor_id_{0u};
-  std::atomic<std::uint8_t> mode_{
-      static_cast<std::uint8_t>(domain::sensors::SensorRttMode::kPosition)};
+  std::atomic<std::uint8_t> mode_{static_cast<std::uint8_t>(domain::sensors::SensorRttMode::kAdc)};
   std::atomic<std::uint32_t> output_hz_{0u};
 
   std::atomic<std::uint32_t> seq_counter_{0u};

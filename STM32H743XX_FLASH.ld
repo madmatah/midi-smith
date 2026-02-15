@@ -234,6 +234,13 @@ SECTIONS
     __d3_sram_nocache_end__ = .;
   } >RAM_D3
 
+  .axi_sram_bss (NOLOAD) : ALIGN(4)
+  {
+    *(.axi_sram_bss)
+    *(.axi_sram_bss*)
+    . = ALIGN(4);
+  } >AXI_SRAM
+
   .rtt (NOLOAD) : ALIGN(4)
   {
     *(.rtt)

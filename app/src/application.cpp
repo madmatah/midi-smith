@@ -16,7 +16,7 @@ void Application::init() noexcept {
 
 void Application::create_tasks() noexcept {
   static bsp::RttLogger logger;
-  static app::telemetry::SensorRttStreamCapture sensor_rtt_capture;
+  BSP_AXI_SRAM static app::telemetry::SensorRttStreamCapture sensor_rtt_capture;
   sensor_rtt_capture.SetOutputHz(::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
 
   // Console Stream (USART1)
