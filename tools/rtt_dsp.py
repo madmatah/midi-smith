@@ -477,6 +477,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._plot_time = self._graphics_layout.addPlot(
             title="Time domain (raw vs filtered)"
         )
+        self._plot_time.getViewBox().setLimits(minYRange=1e-3)
         self._plot_time.addLegend()
         self._curve_raw = self._plot_time.plot(
             pen=pg.mkPen("g", width=1, alpha=150), name="Raw"
@@ -511,6 +512,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._graphics_layout.nextRow()
 
         self._plot_frequency = self._graphics_layout.addPlot(title="FFT spectrum")
+        self._plot_frequency.getViewBox().setLimits(minYRange=1e-3)
         self._curve_fft_raw = self._plot_frequency.plot(pen=pg.mkPen("g", alpha=80))
         self._curve_fft_filtered = self._plot_frequency.plot(
             pen=pg.mkPen("c", width=1.5)
