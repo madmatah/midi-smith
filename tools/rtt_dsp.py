@@ -16,8 +16,8 @@ DEFAULT_FILTER_CONFIGS = [
 ]
 
 LOWPASS_ORDER = 2
-DISPLAY_CHUNK_SIZE_SAMPLES = 1000
-HISTORY_SIZE_SAMPLES = 7000
+DEFAULT_HISTORY_MS = 10000
+DEFAULT_INITIAL_VIEW_MS = 2000
 RECEIVE_BUFFER_SIZE_BYTES = 16384
 TIMER_INTERVAL_MS = 33
 WELCH_NPERSEG = 1024
@@ -316,18 +316,19 @@ class FilterEditorDialog(QtWidgets.QDialog):
 
 
 class RttLiveScope(QtWidgets.QMainWindow):
-    def __init__(self, host, port, sample_rate_hz, filter_chain):
+    def __init__(self, host, port, sample_rate_hz, filter_chain, history_size_samples, view_size_samples):
         super().__init__()
         self._host = host
         self._port = port
         self._sample_rate_hz = sample_rate_hz
         self._filter_chain = filter_chain
+        self._history_size_samples = history_size_samples
 
         self._is_paused = False
         self._placement_state = 0  # 0: Idle, 1: Placing C1, 2: Placing C2
-        self._display_window_samples = DISPLAY_CHUNK_SIZE_SAMPLES
-        self._raw_buffer = np.zeros(HISTORY_SIZE_SAMPLES)
-        self._filtered_buffer = np.zeros(HISTORY_SIZE_SAMPLES)
+        self._display_window_samples = view_size_samples
+        self._raw_buffer = np.zeros(self._history_size_samples)
+        self._filtered_buffer = np.zeros(self._history_size_samples)
 
         self._set_window_title_live()
         self.resize(1200, 800)
@@ -462,7 +463,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         display_layout.addRow(self._window_size_label)
 
         self._window_size_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
-        self._window_size_slider.setRange(100, HISTORY_SIZE_SAMPLES)
+        self._window_size_slider.setRange(100, self._history_size_samples)
         self._window_size_slider.setValue(self._display_window_samples)
         self._window_size_slider.valueChanged.connect(self._recalculate_display_window_from_slider)
         display_layout.addRow(self._window_size_slider)
@@ -491,13 +492,13 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._plot_time.scene().sigMouseClicked.connect(self._handle_plot_click)
 
         self._cursor1 = pg.InfiniteLine(
-            pos=DISPLAY_CHUNK_SIZE_SAMPLES // 3,
+            pos=self._display_window_samples // 3,
             angle=90,
             movable=True,
             pen=pg.mkPen("y", width=1, style=QtCore.Qt.PenStyle.DashLine),
         )
         self._cursor2 = pg.InfiniteLine(
-            pos=2 * DISPLAY_CHUNK_SIZE_SAMPLES // 3,
+            pos=2 * self._display_window_samples // 3,
             angle=90,
             movable=True,
             pen=pg.mkPen("m", width=1, style=QtCore.Qt.PenStyle.DashLine),
@@ -867,6 +868,18 @@ def main():
         type=parse_filter_argument,
         help="Filter to apply. Can be 'lowpass:cutoff_hz' or 'notch:cutoff_hz:quality_factor'",
     )
+    parser.add_argument(
+        "--history-ms",
+        type=int,
+        default=DEFAULT_HISTORY_MS,
+        help=f"History size in ms (default: {DEFAULT_HISTORY_MS})",
+    )
+    parser.add_argument(
+        "--initial-view-ms",
+        type=int,
+        default=DEFAULT_INITIAL_VIEW_MS,
+        help=f"Initial view window in ms (default: {DEFAULT_INITIAL_VIEW_MS})",
+    )
 
     args = parser.parse_args()
 
@@ -895,9 +908,12 @@ def main():
                 )
             )
 
+    history_size_samples = int(args.history_ms * args.sample_rate / 1000)
+    initial_view_samples = int(args.initial_view_ms * args.sample_rate / 1000)
+
     application = QtWidgets.QApplication(sys.argv)
     window = RttLiveScope(
-        args.host, args.port, args.sample_rate, filter_chain
+        args.host, args.port, args.sample_rate, filter_chain, history_size_samples, initial_view_samples
     )
     window.show()
     sys.exit(application.exec())
