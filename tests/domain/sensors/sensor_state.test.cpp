@@ -14,8 +14,12 @@ TEST_CASE("The SensorState struct") {
         domain::sensors::SensorState state{};
 
         REQUIRE(state.id == 0);
+        REQUIRE(state.is_note_on == false);
         REQUIRE(state.last_raw_value == 0);
+        REQUIRE(state.last_midi_velocity == 0);
         REQUIRE_THAT(state.last_processed_value, WithinAbs(0.0f, 0.001f));
+        REQUIRE_THAT(state.last_speed_units_per_ms, WithinAbs(0.0f, 0.001f));
+        REQUIRE_THAT(state.last_speed_m_per_s, WithinAbs(0.0f, 0.001f));
         REQUIRE(state.last_timestamp_ticks == 0);
       }
     }

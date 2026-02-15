@@ -15,7 +15,9 @@
 #include "domain/dsp/logic/input_gate.hpp"
 #include "domain/dsp/logic/switch.hpp"
 #include "domain/dsp/math/sliding_linear_regression.hpp"
+#include "domain/music/piano/midi_velocity_engine.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
+#include "domain/sensors/kinematics/velocity_kinematics_stage.hpp"
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -29,6 +31,15 @@ constexpr std::int32_t TIA_FEEDBACK_RESISTOR_OHMS = 1800;
 constexpr float HAMMER_POSITION_DAMPER = 0.45f;
 constexpr float HAMMER_POSITION_CATCH = 0.385f;
 constexpr float HAMMER_POSITION_LETOFF = 0.0292f;
+constexpr float HAMMER_POSITION_DROP = 0.04f;
+constexpr float HAMMER_POSITION_STRIKE = 0.005f;
+constexpr float HAMMER_POSITION_REARM = 0.1;
+
+constexpr float R_hammer_mm = 126.0f;
+constexpr float R_sensor_mm = 17.5f;
+constexpr float L_ratio = R_hammer_mm / R_sensor_mm;
+constexpr float Delta_d_mm =
+    kDefaultSensorCalibration.rest_distance_mm - kDefaultSensorCalibration.strike_distance_mm;
 
 constexpr bool SIGNAL_FILTERING_ENABLED = true;
 
@@ -100,8 +111,17 @@ using IsHammerInActiveZone =
 using SmartHammerSpeedEstimator =
     Switch<IsHammerInActiveZone, HammerSpeedEstimator, ConstantFilter<0.0f>>;
 
+using VelocityKinematicsStage =
+    domain::sensors::kinematics::VelocityKinematicsStage<Delta_d_mm, L_ratio>;
+
 using HammerSpeedStage =
-    Workflow<SmartHammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>>;
+    Workflow<SmartHammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>,
+             VelocityKinematicsStage, CaptureState<&SensorState::last_speed_m_per_s>>;
+
+using MidiVelocityEngineStage =
+    domain::music::piano::MidiVelocityEngine<HAMMER_POSITION_DAMPER, HAMMER_POSITION_LETOFF,
+                                             HAMMER_POSITION_STRIKE, HAMMER_POSITION_DROP,
+                                             HAMMER_POSITION_REARM>;
 
 
 // clang-format off
@@ -113,6 +133,7 @@ using SignalProcessingWorkflow = Workflow<
     AnalogSensorLinearizer,
     CaptureState<&SensorState::last_normalized_position>,
     Tap<HammerSpeedStage>,
+    Tap<MidiVelocityEngineStage>,
     app::telemetry::SensorRttStreamTap
 >;
 // clang-format on
@@ -121,7 +142,8 @@ using SignalProcessingWorkflow = Workflow<
 
 
 constexpr std::size_t kAnalogSensorProcessorLinearizerStageIndex = 4u;
-constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 7u;
+constexpr std::size_t kAnalogSensorProcessorMidiVelocityTapStageIndex = 7u;
+constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 8u;
 using AnalogSensorProcessor = signal_processing_detail::SignalProcessingWorkflow;
 
 }  // namespace app::config

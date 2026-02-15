@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "app/analog/queue_acquisition_control.hpp"
+#include "app/analog/sensors/logging_sensor_event_handler.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/sensor_linearization_validation.hpp"
 #include "app/config/sensors.hpp"
@@ -127,6 +128,27 @@ void AttachSensorRttStreamCaptureToProcessors(
   }
 }
 
+std::array<app::analog::sensors::LoggingSensorEventHandler, app::config_sensors::kSensorCount>&
+VelocityHandlers() noexcept {
+  static std::array<app::analog::sensors::LoggingSensorEventHandler,
+                    app::config_sensors::kSensorCount>
+      handlers{};
+  return handlers;
+}
+
+void AttachSensorVelocityHandlersToProcessors(
+    std::array<Processor, app::config_sensors::kSensorCount>& processors,
+    app::Logging::LoggerRequirements& logger) noexcept {
+  auto& handlers = VelocityHandlers();
+  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
+    handlers[i].SetLogger(&logger);
+    handlers[i].SetSensorId(app::config_sensors::kSensorIds[i]);
+
+    auto& tap = processors[i].Stage<app::config::kAnalogSensorProcessorMidiVelocityTapStageIndex>();
+    tap.Content().SetKeyActionHandler(&handlers[i]);
+  }
+}
+
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
   static os::Queue<bsp::adc::AdcFrameDescriptor, 8> adc_frame_queue;
   static bsp::adc::AdcDma adc_dma(adc_frame_queue);
@@ -173,7 +195,8 @@ bool RegenerateAnalogSensorLookupTables(
   return true;
 }
 
-AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture) noexcept {
+AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture,
+                                        app::Logging::LoggerRequirements& logger) noexcept {
   static_assert(app::config_sensors::kSensorCount > 0u, "Sensor count must be > 0");
   static_assert(app::config_sensors::kSensorCount == 22u, "Expected 22 sensors");
   static_assert(app::config_sensors::kAdc1RankCount == bsp::adc::AdcDma::kAdc1RanksPerSequence,
@@ -186,6 +209,7 @@ AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& 
   ConfigureAnalogSensorProcessorsOnce();
   auto& processors = ProcessorsArray();
   AttachSensorRttStreamCaptureToProcessors(processors, capture);
+  AttachSensorVelocityHandlersToProcessors(processors, logger);
 
   auto& sensors = SensorsArray();
   static ProcessedSensorGroup analog_group(sensors.data(), processors.data(),

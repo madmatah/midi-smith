@@ -26,7 +26,7 @@ void Application::create_tasks() noexcept {
   app::composition::ConsoleContext console{console_stream};
 
   app::composition::AdcControlContext adc_control =
-      app::composition::CreateAnalogSubsystem(sensor_rtt_capture);
+      app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger);
   app::composition::AdcStateContext adc_state = app::composition::CreateAdcStateContext();
   app::composition::SensorsContext sensors = app::composition::CreateSensorsContext();
 
