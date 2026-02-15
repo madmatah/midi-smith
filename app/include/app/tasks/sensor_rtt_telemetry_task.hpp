@@ -1,8 +1,8 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
@@ -31,7 +31,7 @@ class SensorRttTelemetryTask {
   void ApplyPendingCommands() noexcept;
   bool IsAnalogAcquisitionEnabled() const noexcept;
   bool TrySendSchemaFrameIfDue(std::uint32_t schema_interval_us,
-                               std::array<std::uint8_t, 256u>& schema_frame_bytes) noexcept;
+                               std::span<std::uint8_t> schema_frame_bytes) noexcept;
   bool TrySendCapturedDataFrames(std::size_t max_frames_per_write) noexcept;
 
   os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue_;

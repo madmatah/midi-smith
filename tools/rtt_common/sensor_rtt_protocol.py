@@ -18,6 +18,13 @@ DATA_PAYLOAD_STRUCT = struct.Struct("<B3x5f")
 DATA_PAYLOAD_SIZE_BYTES = DATA_PAYLOAD_STRUCT.size
 
 _MAGIC_BYTES = struct.pack("<I", MAGIC)
+LEGACY_METRIC_NAMES = [
+    "adc_raw",
+    "adc_filtered",
+    "current_ma",
+    "position_norm",
+    "speed_m_per_s",
+]
 
 
 @dataclass(frozen=True)
@@ -95,6 +102,42 @@ def decode_schema_payload(payload: bytes) -> Optional[Schema]:
     )
 
 
+def _decode_legacy_payload_values(payload: bytes) -> Dict[str, float]:
+    if len(payload) < DATA_PAYLOAD_SIZE_BYTES:
+        return {}
+
+    _, adc_raw, adc_filtered, current_ma, position_norm, speed_m_per_s = (
+        DATA_PAYLOAD_STRUCT.unpack_from(payload, 0)
+    )
+    values = [adc_raw, adc_filtered, current_ma, position_norm, speed_m_per_s]
+    return {name: float(value) for name, value in zip(LEGACY_METRIC_NAMES, values)}
+
+
+def _has_usable_schema_metrics(payload: bytes, schema: Schema) -> bool:
+    for metric in schema.metrics:
+        if metric.value_type != VALUE_TYPE_FLOAT32:
+            continue
+        if metric.offset_bytes < 0:
+            continue
+        if metric.offset_bytes + 4 > len(payload):
+            continue
+        return True
+    return False
+
+
+def _decode_values_from_schema(payload: bytes, schema: Schema) -> Dict[str, float]:
+    values_by_name: Dict[str, float] = {}
+    for metric in schema.metrics:
+        if metric.value_type != VALUE_TYPE_FLOAT32:
+            continue
+        if metric.offset_bytes < 0:
+            continue
+        if metric.offset_bytes + 4 > len(payload):
+            continue
+        values_by_name[metric.name] = float(struct.unpack_from("<f", payload, metric.offset_bytes)[0])
+    return values_by_name
+
+
 class SensorRttStreamDecoder:
     def __init__(self, max_payload_size_bytes: int = 2048):
         self._buffer = bytearray()
@@ -170,48 +213,26 @@ class SensorRttStreamDecoder:
         return frames
 
     def _decode_data_frame(self, seq: int, timestamp_us: int, payload: bytes) -> Optional[Frame]:
-        if len(payload) < DATA_PAYLOAD_SIZE_BYTES:
+        if not payload:
             return None
 
-        sensor_id, adc_raw, adc_filtered, current_ma, position_norm, speed_m_per_s = (
-            DATA_PAYLOAD_STRUCT.unpack_from(payload, 0)
-        )
+        sensor_id = int(payload[0])
 
         values_by_name: Dict[str, float] = {}
         schema = self.latest_schema
-        if schema is not None and schema.metrics:
-            for metric in schema.metrics:
-                if metric.value_type != VALUE_TYPE_FLOAT32:
-                    continue
-                if metric.offset_bytes + 4 > len(payload):
-                    continue
-                values_by_name[metric.name] = struct.unpack_from(
-                    "<f", payload, metric.offset_bytes
-                )[0]
-        else:
-            values_by_name = {
-                "adc_raw": float(adc_raw),
-                "adc_filtered": float(adc_filtered),
-                "current_ma": float(current_ma),
-                "position_norm": float(position_norm),
-                "speed_m_per_s": float(speed_m_per_s),
-            }
+        if schema is not None and schema.metrics and _has_usable_schema_metrics(payload, schema):
+            values_by_name = _decode_values_from_schema(payload, schema)
 
         if not values_by_name:
-            values_by_name = {
-                "adc_raw": float(adc_raw),
-                "adc_filtered": float(adc_filtered),
-                "current_ma": float(current_ma),
-                "position_norm": float(position_norm),
-                "speed_m_per_s": float(speed_m_per_s),
-            }
+            values_by_name = _decode_legacy_payload_values(payload)
+        if not values_by_name:
+            return None
 
         return Frame(
             kind=KIND_DATA,
             seq=int(seq),
             timestamp_us=int(timestamp_us),
             payload=payload,
-            sensor_id=int(sensor_id),
+            sensor_id=sensor_id,
             values_by_name=values_by_name,
         )
-

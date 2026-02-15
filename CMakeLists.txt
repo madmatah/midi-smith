@@ -85,6 +85,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/src/tasks/shell_task.cpp
     app/src/tasks/analog_acquisition_task.cpp
     app/src/tasks/sensor_rtt_telemetry_task.cpp
+    app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     domain/src/shell/command_parser.cpp
     domain/src/shell/line_editor.cpp
     domain/src/shell/command_dispatcher.cpp
