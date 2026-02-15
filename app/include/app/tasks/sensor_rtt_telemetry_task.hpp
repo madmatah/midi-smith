@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 
 #include "app/analog/acquisition_state_requirements.hpp"
@@ -26,12 +28,22 @@ class SensorRttTelemetryTask {
   void run() noexcept;
 
   void ApplyCommand(const app::telemetry::SensorRttTelemetryCommand& cmd) noexcept;
+  void ApplyPendingCommands() noexcept;
+  bool IsAnalogAcquisitionEnabled() const noexcept;
+  bool TrySendSchemaFrameIfDue(std::uint32_t schema_interval_us,
+                               std::array<std::uint8_t, 256u>& schema_frame_bytes) noexcept;
+  bool TrySendCapturedDataFrames(std::size_t max_frames_per_write) noexcept;
 
   os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue_;
   domain::sensors::SensorRegistry& registry_;
   app::analog::AcquisitionStateRequirements& adc_state_;
   app::telemetry::TelemetrySenderRequirements& telemetry_sender_;
   app::telemetry::SensorRttStreamCapture& capture_;
+
+  bool schema_sent_{false};
+  std::uint32_t last_schema_timestamp_us_{0u};
+  std::uint32_t last_data_timestamp_us_{0u};
+  std::uint8_t active_sensor_id_{0u};
 };
 
 }  // namespace app::Tasks

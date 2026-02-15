@@ -7,16 +7,15 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, QtCore, QtGui
 from scipy import signal
 
+from rtt_common.sensor_rtt_protocol import KIND_DATA, KIND_SCHEMA, SensorRttStreamDecoder
+
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 60001
-DEFAULT_SAMPLE_RATE_HZ = 3500
-DEFAULT_FILTER_CONFIGS = [
-    {"filter_type": "notch", "frequency_hz": 293.9, "quality_factor": 100.0},
-    {"filter_type": "lowpass", "cutoff_hz": 600.0},
-]
+DEFAULT_SAMPLE_RATE_HZ = 5000
+DEFAULT_FILTER_CONFIGS = []
 
 LOWPASS_ORDER = 2
-DEFAULT_HISTORY_MS = 10000
+DEFAULT_HISTORY_MS = 5000
 DEFAULT_INITIAL_VIEW_MS = 2000
 RECEIVE_BUFFER_SIZE_BYTES = 16384
 TIMER_INTERVAL_MS = 33
@@ -95,10 +94,6 @@ class FilterStage:
         self.state = (
             signal.lfilter_zi(self.numerator, self.denominator) * FILTER_INITIAL_STATE_SCALE
         )
-
-
-FRAME_STRUCT = struct.Struct("<IIf")
-FRAME_SIZE_BYTES = 12
 
 
 def build_notch_filter(frequency_hz, quality_factor, sample_rate_hz):
@@ -324,6 +319,10 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._filter_chain = filter_chain
         self._history_size_samples = history_size_samples
 
+        self._decoder = SensorRttStreamDecoder()
+        self._metric_names = []
+        self._selected_metric_name = "position_norm"
+
         self._is_paused = False
         self._placement_state = 0  # 0: Idle, 1: Placing C1, 2: Placing C2
         self._display_window_samples = view_size_samples
@@ -353,6 +352,77 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._both_curves_shortcut = QtGui.QShortcut(QtGui.QKeySequence("B"), self)
         self._both_curves_shortcut.activated.connect(self._display_all_signal_curves)
+
+    def _clear_signal_history(self):
+        self._raw_buffer[:] = 0.0
+        self._filtered_buffer[:] = 0.0
+        for stage in self._filter_chain:
+            stage.reset_state()
+
+        self._plot_time.setTitle(f"Time domain ({self._selected_metric_name})")
+        self._curve_raw.setData(self._raw_buffer[-self._display_window_samples:])
+        self._curve_filtered.setData(self._filtered_buffer[-self._display_window_samples:])
+
+        frequency_hz, power_raw_db = compute_power_spectrum_db(
+            self._raw_buffer, self._sample_rate_hz
+        )
+        _, power_filtered_db = compute_power_spectrum_db(
+            self._filtered_buffer, self._sample_rate_hz
+        )
+        self._curve_fft_raw.setData(frequency_hz, power_raw_db)
+        self._curve_fft_filtered.setData(frequency_hz, power_filtered_db)
+
+        self._automatic_latency_label.setText("Auto Delay: --")
+
+    def _on_metric_radio_toggled(self, button, checked):
+        if not checked:
+            return
+        metric_name = button.property("metric_name")
+        if not metric_name:
+            return
+        if metric_name == self._selected_metric_name:
+            return
+        self._selected_metric_name = metric_name
+        self._clear_signal_history()
+
+    def _set_available_metrics(self, metric_names):
+        if metric_names == self._metric_names:
+            return
+
+        self._metric_names = list(metric_names)
+
+        for old_button in list(self._metric_button_group.buttons()):
+            self._metric_button_group.removeButton(old_button)
+            old_button.deleteLater()
+
+        while self._signal_radio_layout.count():
+            item = self._signal_radio_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        if not self._metric_names:
+            self._signal_placeholder_label.setText("Waiting for schema...")
+            return
+
+        desired_metric_name = (
+            self._selected_metric_name
+            if self._selected_metric_name in self._metric_names
+            else self._metric_names[0]
+        )
+        self._selected_metric_name = desired_metric_name
+        self._signal_placeholder_label.setText("")
+
+        for metric_name in self._metric_names:
+            radio_button = QtWidgets.QRadioButton(metric_name)
+            radio_button.setProperty("metric_name", metric_name)
+            self._metric_button_group.addButton(radio_button)
+            self._signal_radio_layout.addWidget(radio_button)
+            if metric_name == desired_metric_name:
+                radio_button.setChecked(True)
+
+        self._signal_radio_layout.addStretch()
+        self._plot_time.setTitle(f"Time domain ({self._selected_metric_name})")
 
     def _toggle_placement_mode(self):
         if self._placement_state == 0:
@@ -394,11 +464,30 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QtWidgets.QHBoxLayout(central_widget)
 
-        control_panel = QtWidgets.QGroupBox("Filters")
-        self._filter_layout = QtWidgets.QVBoxLayout()
-        control_panel.setLayout(self._filter_layout)
+        control_panel = QtWidgets.QWidget()
+        control_layout = QtWidgets.QVBoxLayout(control_panel)
         control_panel.setFixedWidth(250)
         main_layout.addWidget(control_panel)
+
+        signal_panel = QtWidgets.QGroupBox("Signal")
+        signal_layout = QtWidgets.QVBoxLayout(signal_panel)
+        control_layout.addWidget(signal_panel)
+
+        self._metric_button_group = QtWidgets.QButtonGroup(self)
+        self._metric_button_group.setExclusive(True)
+        self._metric_button_group.buttonToggled.connect(self._on_metric_radio_toggled)
+
+        self._signal_placeholder_label = QtWidgets.QLabel("Waiting for schema...")
+        signal_layout.addWidget(self._signal_placeholder_label)
+
+        self._signal_radio_container = QtWidgets.QWidget()
+        self._signal_radio_layout = QtWidgets.QVBoxLayout(self._signal_radio_container)
+        self._signal_radio_layout.setContentsMargins(0, 0, 0, 0)
+        signal_layout.addWidget(self._signal_radio_container)
+
+        filters_panel = QtWidgets.QGroupBox("Filters")
+        self._filter_layout = QtWidgets.QVBoxLayout(filters_panel)
+        control_layout.addWidget(filters_panel, 1)
 
         self._add_filter_button = QtWidgets.QPushButton("Add Filter")
         self._add_filter_button.clicked.connect(self._add_new_filter)
@@ -722,7 +811,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self._host, self._port))
         self._socket.setblocking(False)
-        self._receive_buffer = bytearray()
+        self._decoder = SensorRttStreamDecoder()
 
     def _start_timer(self):
         self._timer = QtCore.QTimer()
@@ -730,30 +819,28 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._timer.start(TIMER_INTERVAL_MS)
 
     def _receive_available_data(self):
+        decoded_values = []
         try:
             while True:
                 data_chunk = self._socket.recv(RECEIVE_BUFFER_SIZE_BYTES)
                 if not data_chunk:
                     break
-                self._receive_buffer.extend(data_chunk)
+                for frame in self._decoder.feed(data_chunk):
+                    if frame.kind == KIND_SCHEMA and frame.schema is not None:
+                        self._set_available_metrics(frame.schema.metric_names)
+                        continue
+                    if frame.kind != KIND_DATA:
+                        continue
+                    values_by_name = frame.values_by_name or {}
+                    value = values_by_name.get(self._selected_metric_name)
+                    if value is not None:
+                        decoded_values.append(value)
         except BlockingIOError:
             pass
 
-    def _decode_frames_from_buffer(self):
-        frame_count = len(self._receive_buffer) // FRAME_SIZE_BYTES
-        if frame_count == 0:
+        if not decoded_values:
             return None, 0
-
-        total_bytes_to_consume = frame_count * FRAME_SIZE_BYTES
-        decoded_samples = []
-        for frame_index in range(frame_count):
-            _, _, signal_value = FRAME_STRUCT.unpack_from(
-                self._receive_buffer, frame_index * FRAME_SIZE_BYTES
-            )
-            decoded_samples.append(signal_value)
-
-        del self._receive_buffer[:total_bytes_to_consume]
-        return np.array(decoded_samples), frame_count
+        return np.array(decoded_values, dtype=np.float64), len(decoded_values)
 
     def _update_history_buffers(self, buffer, new_samples, count):
         buffer = np.roll(buffer, -count)
@@ -761,8 +848,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         return buffer
 
     def _poll_and_refresh(self):
-        self._receive_available_data()
-        incoming_samples, frame_count = self._decode_frames_from_buffer()
+        incoming_samples, frame_count = self._receive_available_data()
 
         if incoming_samples is None:
             return

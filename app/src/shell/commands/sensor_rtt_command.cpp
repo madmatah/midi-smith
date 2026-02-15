@@ -24,8 +24,7 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
 }
 
 void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
-  out.Write("usage: sensor_rtt <id> [adc|adc_filtered|current|position|speed]\r\n");
-  out.Write("       default metric is position\r\n");
+  out.Write("usage: sensor_rtt <id>\r\n");
   out.Write("       sensor_rtt freq [hz|max]\r\n");
   out.Write("       sensor_rtt off\r\n");
   out.Write("       sensor_rtt status\r\n");
@@ -78,7 +77,6 @@ struct SensorRttParsedCommand {
 
   Kind kind{Kind::kStatus};
   std::uint8_t sensor_id{0};
-  domain::sensors::SensorRttMode mode{domain::sensors::SensorRttMode::kPosition};
   std::uint32_t output_hz{0};
 };
 
@@ -90,24 +88,6 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
   }
   out.Write("on id=");
   WriteUint32(out, status.sensor_id);
-  out.Write(" mode=");
-  switch (status.mode) {
-    case domain::sensors::SensorRttMode::kAdc:
-      out.Write("adc");
-      break;
-    case domain::sensors::SensorRttMode::kAdcFiltered:
-      out.Write("adc_filtered");
-      break;
-    case domain::sensors::SensorRttMode::kCurrent:
-      out.Write("current");
-      break;
-    case domain::sensors::SensorRttMode::kPosition:
-      out.Write("position");
-      break;
-    case domain::sensors::SensorRttMode::kSpeed:
-      out.Write("speed");
-      break;
-  }
   out.Write(" output_hz=");
   WriteUint32(out, status.output_hz);
   out.Write(" dropped=");
@@ -160,18 +140,8 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
   parsed.kind = SensorRttParsedCommand::Kind::kObserve;
   parsed.sensor_id = static_cast<std::uint8_t>(sensor_id_u32);
 
-  const std::string_view mode_arg = Arg(argc, argv, 2);
-  if (mode_arg.empty() || mode_arg == "position") {
-    parsed.mode = domain::sensors::SensorRttMode::kPosition;
-  } else if (mode_arg == "adc") {
-    parsed.mode = domain::sensors::SensorRttMode::kAdc;
-  } else if (mode_arg == "adc_filtered") {
-    parsed.mode = domain::sensors::SensorRttMode::kAdcFiltered;
-  } else if (mode_arg == "current") {
-    parsed.mode = domain::sensors::SensorRttMode::kCurrent;
-  } else if (mode_arg == "speed") {
-    parsed.mode = domain::sensors::SensorRttMode::kSpeed;
-  } else {
+  const std::string_view trailing_arg = Arg(argc, argv, 2);
+  if (!trailing_arg.empty()) {
     WriteUsage(out);
     return false;
   }
@@ -223,7 +193,7 @@ void SensorRttCommand::Run(int argc, char** argv,
     return;
   }
 
-  if (!control_.RequestObserve(parsed.sensor_id, parsed.mode)) {
+  if (!control_.RequestObserve(parsed.sensor_id)) {
     WriteRejected(out);
     return;
   }

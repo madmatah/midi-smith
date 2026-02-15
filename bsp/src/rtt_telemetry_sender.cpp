@@ -12,6 +12,13 @@ RttTelemetrySender::RttTelemetrySender(unsigned channel, const char* name, void*
 }
 
 std::size_t RttTelemetrySender::Send(std::span<const std::uint8_t> data) noexcept {
+  if (data.empty()) {
+    return 0u;
+  }
+  const unsigned available = static_cast<unsigned>(SEGGER_RTT_GetAvailWriteSpace(_channel));
+  if (available < data.size()) {
+    return 0u;
+  }
   const int written = SEGGER_RTT_Write(_channel, data.data(), data.size());
   if (written <= 0) {
     return 0u;

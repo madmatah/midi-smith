@@ -14,12 +14,14 @@ import sys
 import time
 import glfw
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import vispy
 from vispy import app, scene
 from vispy.scene import visuals
+
+from rtt_common.sensor_rtt_protocol import KIND_DATA, KIND_SCHEMA, SensorRttStreamDecoder
 
 # Use GLFW for window management
 vispy.use(app='glfw')
@@ -223,6 +225,11 @@ class RttScope:
         self.signal_buffer[:, 0] = np.arange(-self.buffer_size + sample_count, sample_count)
         self.seq_buffer = np.zeros(self.buffer_size, dtype=np.uint32)
         self.timestamp_us_buffer = np.zeros(self.buffer_size, dtype=np.uint32)
+        self.sensor_id_buffer = np.zeros(self.buffer_size, dtype=np.uint8)
+
+        self.metric_names = []
+        self.selected_metric_index = 0
+        self.metric_values_buffer = np.zeros((self.buffer_size, 1), dtype=np.float32)
 
         # View State
         self.view_offset = 0
@@ -352,7 +359,7 @@ class RttScope:
         )
 
         self.help_keys = scene.Text(
-            "Space\nA\nD\nF\nQ\nH / ?",
+            "Space\nA\nD\nF\nS\nQ\nH / ?",
             color='yellow',
             parent=self.help_window,
             font_size=10,
@@ -365,6 +372,7 @@ class RttScope:
             ": Toggle Auto-scale\n"
             ": Save Snapshot (in Pause)\n"
             ": Toggle Fullscreen\n"
+            ": Select metric\n"
             ": Quit\n"
             ": Show / Hide Help",
             color='white',
@@ -409,6 +417,37 @@ class RttScope:
         self.canvas.events.key_press.connect(self.on_key_press)
         self.canvas.events.resize.connect(self.on_resize)
 
+    def configure_metrics(self, metric_names: List[str]) -> None:
+        metric_names = list(metric_names)
+        if metric_names == self.metric_names:
+            return
+
+        self.metric_names = metric_names
+        self.selected_metric_index = (
+            self.metric_names.index("position_norm") if "position_norm" in self.metric_names else 0
+        )
+
+        metric_count = max(1, len(self.metric_names))
+        self.metric_values_buffer = np.zeros((self.buffer_size, metric_count), dtype=np.float32)
+        self.seq_buffer[:] = 0
+        self.timestamp_us_buffer[:] = 0
+        self.sensor_id_buffer[:] = 0
+        self.signal_buffer[:, 1] = 0
+        self.total_samples_received = 0
+        self.view_offset = 0
+
+    def _refresh_signal_buffer_y(self) -> None:
+        if self.metric_values_buffer.shape[1] <= self.selected_metric_index:
+            return
+        self.signal_buffer[:, 1] = self.metric_values_buffer[:, self.selected_metric_index]
+
+    def _cycle_metric_selection(self) -> None:
+        if not self.metric_names:
+            return
+        self.selected_metric_index = (self.selected_metric_index + 1) % len(self.metric_names)
+        self._refresh_signal_buffer_y()
+        self._update_plot()
+
     def process_incoming_values(self, new_raw_values: Tuple[int, ...]) -> None:
         count = len(new_raw_values)
         if count == 0:
@@ -437,19 +476,30 @@ class RttScope:
 
         self._update_plot()
 
-    def process_incoming_sensor_frames(self, seqs, timestamps_us, values) -> None:
-        count = len(values)
+    def process_incoming_sensor_frames(self, seqs, timestamps_us, sensor_ids, values_matrix) -> None:
+        count = len(seqs)
         if count == 0:
             return
-        if len(seqs) != count or len(timestamps_us) != count:
+        if len(timestamps_us) != count or len(sensor_ids) != count:
+            return
+
+        values_array = np.asarray(values_matrix, dtype=np.float32)
+        if values_array.ndim != 2:
+            return
+        if values_array.shape[0] != count:
+            return
+        if values_array.shape[1] != self.metric_values_buffer.shape[1]:
             return
 
         self.total_samples_received += count
 
         if count >= self.buffer_size:
-            self.signal_buffer[:, 1] = values[-self.buffer_size:]
+            tail_values = values_array[-self.buffer_size:]
+            self.metric_values_buffer[:, :] = tail_values
+            self.signal_buffer[:, 1] = tail_values[:, self.selected_metric_index]
             self.seq_buffer[:] = seqs[-self.buffer_size:]
             self.timestamp_us_buffer[:] = timestamps_us[-self.buffer_size:]
+            self.sensor_id_buffer[:] = sensor_ids[-self.buffer_size:]
 
             end_idx = self.total_samples_received
             start_idx = end_idx - self.buffer_size
@@ -458,10 +508,14 @@ class RttScope:
             self.signal_buffer = np.roll(self.signal_buffer, -count, axis=0)
             self.seq_buffer = np.roll(self.seq_buffer, -count)
             self.timestamp_us_buffer = np.roll(self.timestamp_us_buffer, -count)
+            self.sensor_id_buffer = np.roll(self.sensor_id_buffer, -count)
+            self.metric_values_buffer = np.roll(self.metric_values_buffer, -count, axis=0)
 
-            self.signal_buffer[-count:, 1] = values
+            self.metric_values_buffer[-count:, :] = values_array
+            self.signal_buffer[-count:, 1] = values_array[:, self.selected_metric_index]
             self.seq_buffer[-count:] = seqs
             self.timestamp_us_buffer[-count:] = timestamps_us
+            self.sensor_id_buffer[-count:] = sensor_ids
 
             buffer_end_time = self.total_samples_received
             buffer_start_time = buffer_end_time - self.buffer_size
@@ -648,6 +702,8 @@ class RttScope:
             self._take_snapshot()
         elif text == 'f':
             self._toggle_fullscreen()
+        elif text == 's':
+            self._cycle_metric_selection()
         elif text == 'q':
             self._quit_app()
         elif text == 'h' or text == '?':
@@ -772,6 +828,8 @@ class RttScope:
 
         # Build full status text
         text = f"Status: {conn_status} | Data mode: {data_mode} | Scale: {scale_label} | Format: {self.data_format}"
+        if self.data_format == "sensor_frame" and self.metric_names:
+            text += f" | Metric: {self.metric_names[self.selected_metric_index]}"
 
         # Special overlays (Snapshots / Hover values)
         if self.snapshot_message and current_time < self.snapshot_message_expiry:
@@ -811,20 +869,41 @@ def main():
     )
 
     with RttClient(args.host, args.port) as client:
-        sensor_frame_struct = struct.Struct("<IIf")
+        decoder = SensorRttStreamDecoder()
 
         def update_callback(_event):
             try:
                 processed = False
 
                 if args.format == "sensor_frame":
-                    raw_data = client.receive_aligned_data(frame_size_bytes=12)
+                    raw_data = client.receive_aligned_data(frame_size_bytes=1)
                     if raw_data:
-                        frames = list(sensor_frame_struct.iter_unpack(raw_data))
-                        if frames:
-                            seqs, timestamps_us, values = zip(*frames)
-                            scope.process_incoming_sensor_frames(seqs, timestamps_us, values)
-                            processed = True
+                        frames = decoder.feed(raw_data)
+                        if decoder.latest_schema is not None:
+                            scope.configure_metrics(decoder.latest_schema.metric_names)
+
+                        if scope.metric_names:
+                            seqs = []
+                            timestamps_us = []
+                            sensor_ids = []
+                            values_matrix = []
+
+                            for frame in frames:
+                                if frame.kind != KIND_DATA:
+                                    continue
+                                values_by_name = frame.values_by_name or {}
+                                values_matrix.append(
+                                    [values_by_name.get(name, 0.0) for name in scope.metric_names]
+                                )
+                                seqs.append(frame.seq)
+                                timestamps_us.append(frame.timestamp_us)
+                                sensor_ids.append(frame.sensor_id or 0)
+
+                            if values_matrix:
+                                scope.process_incoming_sensor_frames(
+                                    seqs, timestamps_us, sensor_ids, values_matrix
+                                )
+                                processed = True
                 else:
                     raw_data = client.receive_aligned_data(frame_size_bytes=4)
                     if raw_data:

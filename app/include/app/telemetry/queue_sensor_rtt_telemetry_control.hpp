@@ -21,12 +21,10 @@ class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlReq
     return queue_.Send(cmd, os::kNoWait);
   }
 
-  bool RequestObserve(std::uint8_t sensor_id,
-                      domain::sensors::SensorRttMode mode) noexcept override {
+  bool RequestObserve(std::uint8_t sensor_id) noexcept override {
     SensorRttTelemetryCommand cmd{};
     cmd.kind = SensorRttTelemetryCommandKind::kObserve;
     cmd.sensor_id = sensor_id;
-    cmd.mode = mode;
     return queue_.Send(cmd, os::kNoWait);
   }
 
@@ -42,7 +40,6 @@ class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlReq
     const auto st = capture_.GetStatus();
     s.enabled = st.enabled;
     s.sensor_id = st.sensor_id;
-    s.mode = st.mode;
     s.output_hz = st.output_hz;
     s.dropped_frames = st.dropped_frames;
     s.backlog_frames = st.backlog_frames;
