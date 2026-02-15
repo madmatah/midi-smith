@@ -54,12 +54,14 @@ add_executable(unit_tests
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp
+    app/telemetry/sensor_rtt_schema_frame_builder.test.cpp
     app/shell/commands/sensor_rtt_command.test.cpp
     app/shell/commands/status_command.test.cpp
     app/shell/commands/ps_command.test.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/sensor_rtt_command.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/status_command.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/ps_command.cpp
+    ${CMAKE_SOURCE_DIR}/app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
 )
 target_link_libraries(unit_tests PRIVATE
     Catch2::Catch2WithMain

@@ -2,13 +2,12 @@
 
 #include <array>
 #include <cstdint>
-#include <cstring>
 #include <span>
-#include <string_view>
 
 #include "app/config/analog_acquisition.hpp"
 #include "app/config/config.hpp"
 #include "app/telemetry/sensor_rtt_protocol.hpp"
+#include "app/telemetry/sensor_rtt_schema_frame_builder.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
@@ -26,130 +25,6 @@ constexpr std::uint32_t ClampOutputHz(std::uint32_t hz) noexcept {
     return kMaxHz;
   }
   return hz;
-}
-
-class ByteWriter final {
- public:
-  explicit ByteWriter(std::span<std::uint8_t> out) noexcept
-      : begin_(out.data()), ptr_(out.data()), end_(out.data() + out.size()) {}
-
-  bool Skip(std::size_t bytes) noexcept {
-    if (bytes > Remaining()) {
-      return false;
-    }
-    ptr_ += bytes;
-    return true;
-  }
-
-  bool WriteU8(std::uint8_t value) noexcept {
-    if (Remaining() < 1u) {
-      return false;
-    }
-    *ptr_ = value;
-    ++ptr_;
-    return true;
-  }
-
-  bool WriteU16LE(std::uint16_t value) noexcept {
-    if (Remaining() < 2u) {
-      return false;
-    }
-    ptr_[0] = static_cast<std::uint8_t>(value & 0xFFu);
-    ptr_[1] = static_cast<std::uint8_t>((value >> 8) & 0xFFu);
-    ptr_ += 2;
-    return true;
-  }
-
-  bool WriteU32LE(std::uint32_t value) noexcept {
-    if (Remaining() < 4u) {
-      return false;
-    }
-    ptr_[0] = static_cast<std::uint8_t>(value & 0xFFu);
-    ptr_[1] = static_cast<std::uint8_t>((value >> 8) & 0xFFu);
-    ptr_[2] = static_cast<std::uint8_t>((value >> 16) & 0xFFu);
-    ptr_[3] = static_cast<std::uint8_t>((value >> 24) & 0xFFu);
-    ptr_ += 4;
-    return true;
-  }
-
-  bool WriteBytes(std::string_view text) noexcept {
-    if (text.size() > Remaining()) {
-      return false;
-    }
-    std::memcpy(ptr_, text.data(), text.size());
-    ptr_ += text.size();
-    return true;
-  }
-
-  std::size_t Size() const noexcept {
-    return static_cast<std::size_t>(ptr_ - begin_);
-  }
-
- private:
-  std::size_t Remaining() const noexcept {
-    return static_cast<std::size_t>(end_ - ptr_);
-  }
-
-  std::uint8_t* begin_ = nullptr;
-  std::uint8_t* ptr_ = nullptr;
-  std::uint8_t* end_ = nullptr;
-};
-
-std::size_t BuildSchemaFrame(std::uint8_t sensor_id, std::uint32_t timestamp_us,
-                             std::span<std::uint8_t> out) noexcept {
-  ByteWriter w(out);
-  if (!w.Skip(sizeof(app::telemetry::SensorRttFrameHeader))) {
-    return 0u;
-  }
-
-  constexpr std::uint8_t kMetricCount = 5u;
-  constexpr std::uint16_t kDataPayloadSize =
-      static_cast<std::uint16_t>(sizeof(app::telemetry::SensorRttDataPayload));
-  constexpr std::uint16_t kHeaderSize =
-      static_cast<std::uint16_t>(sizeof(app::telemetry::SensorRttFrameHeader));
-
-  if (!w.WriteU8(sensor_id) || !w.WriteU8(kMetricCount) || !w.WriteU16LE(kDataPayloadSize) ||
-      !w.WriteU16LE(kHeaderSize) || !w.WriteU16LE(0u)) {
-    return 0u;
-  }
-
-  struct MetricDef {
-    std::uint8_t id;
-    std::uint16_t offset_bytes;
-    std::string_view name;
-  };
-
-  constexpr MetricDef kMetrics[] = {
-      MetricDef{0u, 4u, "ADC (raw)"},           MetricDef{1u, 8u, "ADC (filtered)"},
-      MetricDef{2u, 12u, "Current (mA)"},       MetricDef{3u, 16u, "Normalized Position"},
-      MetricDef{4u, 20u, "Hammer Speed (m/s)"},
-  };
-
-  for (const MetricDef& m : kMetrics) {
-    const auto name_len = static_cast<std::uint8_t>(m.name.size());
-    if (!w.WriteU8(m.id) ||
-        !w.WriteU8(static_cast<std::uint8_t>(app::telemetry::SensorRttValueType::kFloat32)) ||
-        !w.WriteU16LE(m.offset_bytes) || !w.WriteU8(name_len) || !w.WriteBytes(m.name)) {
-      return 0u;
-    }
-  }
-
-  const std::size_t total_bytes = w.Size();
-  if (total_bytes < sizeof(app::telemetry::SensorRttFrameHeader)) {
-    return 0u;
-  }
-
-  app::telemetry::SensorRttFrameHeader header{};
-  header.magic = app::telemetry::kSensorRttMagic;
-  header.version = app::telemetry::kSensorRttVersion;
-  header.kind = static_cast<std::uint8_t>(app::telemetry::SensorRttFrameKind::kSchema);
-  header.payload_size_bytes =
-      static_cast<std::uint16_t>(total_bytes - sizeof(app::telemetry::SensorRttFrameHeader));
-  header.seq = 0u;
-  header.timestamp_us = timestamp_us;
-
-  std::memcpy(out.data(), &header, sizeof(header));
-  return total_bytes;
 }
 
 }  // namespace
@@ -221,7 +96,7 @@ bool SensorRttTelemetryTask::IsAnalogAcquisitionEnabled() const noexcept {
 }
 
 bool SensorRttTelemetryTask::TrySendSchemaFrameIfDue(
-    std::uint32_t schema_interval_us, std::array<std::uint8_t, 256u>& schema_frame_bytes) noexcept {
+    std::uint32_t schema_interval_us, std::span<std::uint8_t> schema_frame_bytes) noexcept {
   if (active_sensor_id_ == 0u) {
     return true;
   }
@@ -236,8 +111,8 @@ bool SensorRttTelemetryTask::TrySendSchemaFrameIfDue(
   }
 
   const std::uint32_t schema_timestamp_us = last_data_timestamp_us_;
-  const std::size_t schema_size_bytes =
-      BuildSchemaFrame(active_sensor_id_, schema_timestamp_us, schema_frame_bytes);
+  const std::size_t schema_size_bytes = app::telemetry::BuildSensorRttSchemaFrame(
+      active_sensor_id_, schema_timestamp_us, schema_frame_bytes);
   if (schema_size_bytes == 0u) {
     return true;
   }
@@ -290,7 +165,7 @@ void SensorRttTelemetryTask::run() noexcept {
   static_assert(kMaxFramesPerWrite > 0u);
   constexpr std::uint32_t kSchemaIntervalUs = 1'000'000u;
 
-  std::array<std::uint8_t, 256u> schema_frame_bytes{};
+  std::array<std::uint8_t, app::telemetry::SensorRttSchemaFrameSizeBytes()> schema_frame_bytes{};
 
   for (;;) {
     ApplyPendingCommands();

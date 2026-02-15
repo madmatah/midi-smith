@@ -321,7 +321,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._decoder = SensorRttStreamDecoder()
         self._metric_names = []
-        self._selected_metric_name = "position_norm"
+        self._selected_metric_name = "Normalized Position"
 
         self._is_paused = False
         self._placement_state = 0  # 0: Idle, 1: Placing C1, 2: Placing C2
@@ -385,6 +385,16 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._selected_metric_name = metric_name
         self._clear_signal_history()
 
+    @staticmethod
+    def _pick_default_metric_name(metric_names):
+        if "Normalized Position" in metric_names:
+            return "Normalized Position"
+        if "position_norm" in metric_names:
+            return "position_norm"
+        if not metric_names:
+            return ""
+        return metric_names[0]
+
     def _set_available_metrics(self, metric_names):
         if metric_names == self._metric_names:
             return
@@ -408,7 +418,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         desired_metric_name = (
             self._selected_metric_name
             if self._selected_metric_name in self._metric_names
-            else self._metric_names[0]
+            else self._pick_default_metric_name(self._metric_names)
         )
         self._selected_metric_name = desired_metric_name
         self._signal_placeholder_label.setText("")

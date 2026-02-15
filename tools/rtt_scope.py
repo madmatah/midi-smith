@@ -417,15 +417,28 @@ class RttScope:
         self.canvas.events.key_press.connect(self.on_key_press)
         self.canvas.events.resize.connect(self.on_resize)
 
+    @staticmethod
+    def _default_metric_index(metric_names: List[str]) -> int:
+        if "Normalized Position" in metric_names:
+            return metric_names.index("Normalized Position")
+        if "position_norm" in metric_names:
+            return metric_names.index("position_norm")
+        return 0
+
     def configure_metrics(self, metric_names: List[str]) -> None:
         metric_names = list(metric_names)
         if metric_names == self.metric_names:
             return
 
+        previous_metric_name = None
+        if self.metric_names and self.selected_metric_index < len(self.metric_names):
+            previous_metric_name = self.metric_names[self.selected_metric_index]
+
         self.metric_names = metric_names
-        self.selected_metric_index = (
-            self.metric_names.index("position_norm") if "position_norm" in self.metric_names else 0
-        )
+        if previous_metric_name in self.metric_names:
+            self.selected_metric_index = self.metric_names.index(previous_metric_name)
+        else:
+            self.selected_metric_index = self._default_metric_index(self.metric_names)
 
         metric_count = max(1, len(self.metric_names))
         self.metric_values_buffer = np.zeros((self.buffer_size, metric_count), dtype=np.float32)

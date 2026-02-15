@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 namespace app::telemetry {
@@ -51,6 +53,78 @@ static_assert(sizeof(SensorRttDataFrame) == 40u, "Expected 40-byte sensor RTT da
 static_assert(std::is_trivially_copyable_v<SensorRttDataFrame>,
               "Sensor RTT data frame must be trivially copyable");
 
+struct SensorRttMetricDescriptor {
+  std::uint8_t metric_id = 0u;
+  SensorRttValueType value_type = SensorRttValueType::kFloat32;
+  std::uint16_t offset_bytes = 0u;
+  const char* name = "";
+};
+
+constexpr std::size_t SensorRttMetricNameLengthBytes(
+    const SensorRttMetricDescriptor& metric) noexcept {
+  std::size_t length = 0u;
+  if (metric.name == nullptr) {
+    return length;
+  }
+  while (metric.name[length] != '\0') {
+    ++length;
+  }
+  return length;
+}
+
+constexpr std::array<SensorRttMetricDescriptor, 5u> kSensorRttDataPayloadMetrics = {
+    SensorRttMetricDescriptor{
+        0u,
+        SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, adc_raw)),
+        "ADC (raw)",
+    },
+    SensorRttMetricDescriptor{
+        1u,
+        SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, adc_filtered)),
+        "ADC (filtered)",
+    },
+    SensorRttMetricDescriptor{
+        2u,
+        SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, current_ma)),
+        "Current (mA)",
+    },
+    SensorRttMetricDescriptor{
+        3u,
+        SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, position_norm)),
+        "Normalized Position",
+    },
+    SensorRttMetricDescriptor{
+        4u,
+        SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, speed_m_per_s)),
+        "Hammer Speed (m/s)",
+    },
+};
+
+constexpr std::size_t kSensorRttSchemaPrefixSizeBytes = 8u;
+constexpr std::size_t kSensorRttSchemaMetricHeaderSizeBytes = 5u;
+
+constexpr std::size_t SensorRttMetricCount() noexcept {
+  return kSensorRttDataPayloadMetrics.size();
+}
+
+constexpr std::size_t SensorRttSchemaPayloadSizeBytes() noexcept {
+  std::size_t payload_size_bytes = kSensorRttSchemaPrefixSizeBytes;
+  for (const SensorRttMetricDescriptor& metric : kSensorRttDataPayloadMetrics) {
+    payload_size_bytes += kSensorRttSchemaMetricHeaderSizeBytes;
+    payload_size_bytes += SensorRttMetricNameLengthBytes(metric);
+  }
+  return payload_size_bytes;
+}
+
+constexpr std::size_t SensorRttSchemaFrameSizeBytes() noexcept {
+  return sizeof(SensorRttFrameHeader) + SensorRttSchemaPayloadSizeBytes();
+}
+
 constexpr std::size_t SensorRttFrameHeaderSizeBytes() noexcept {
   return sizeof(SensorRttFrameHeader);
 }
@@ -62,5 +136,68 @@ constexpr std::size_t SensorRttDataPayloadSizeBytes() noexcept {
 constexpr std::size_t SensorRttDataFrameSizeBytes() noexcept {
   return sizeof(SensorRttDataFrame);
 }
+
+namespace sensor_rtt_protocol_detail {
+
+constexpr bool AreMetricIdsSequential() noexcept {
+  for (std::size_t index = 0u; index < kSensorRttDataPayloadMetrics.size(); ++index) {
+    if (kSensorRttDataPayloadMetrics[index].metric_id != index) {
+      return false;
+    }
+  }
+  return true;
+}
+
+constexpr bool AreMetricOffsetsStrictlyIncreasing() noexcept {
+  if (kSensorRttDataPayloadMetrics.empty()) {
+    return true;
+  }
+  for (std::size_t index = 1u; index < kSensorRttDataPayloadMetrics.size(); ++index) {
+    if (kSensorRttDataPayloadMetrics[index - 1u].offset_bytes >=
+        kSensorRttDataPayloadMetrics[index].offset_bytes) {
+      return false;
+    }
+  }
+  return true;
+}
+
+constexpr bool AreMetricDefinitionsValidForPayload() noexcept {
+  for (const SensorRttMetricDescriptor& metric : kSensorRttDataPayloadMetrics) {
+    if (metric.name == nullptr) {
+      return false;
+    }
+    if (SensorRttMetricNameLengthBytes(metric) == 0u) {
+      return false;
+    }
+    if (SensorRttMetricNameLengthBytes(metric) > std::numeric_limits<std::uint8_t>::max()) {
+      return false;
+    }
+    if (metric.value_type != SensorRttValueType::kFloat32) {
+      return false;
+    }
+    const std::size_t value_offset_bytes = metric.offset_bytes;
+    if ((value_offset_bytes + sizeof(float)) > sizeof(SensorRttDataPayload)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace sensor_rtt_protocol_detail
+
+static_assert(SensorRttDataPayloadSizeBytes() <= std::numeric_limits<std::uint16_t>::max(),
+              "Data payload size must fit in uint16_t");
+static_assert(SensorRttFrameHeaderSizeBytes() <= std::numeric_limits<std::uint16_t>::max(),
+              "Frame header size must fit in uint16_t");
+static_assert(SensorRttMetricCount() <= std::numeric_limits<std::uint8_t>::max(),
+              "Metric count must fit in uint8_t");
+static_assert(SensorRttSchemaPayloadSizeBytes() <= std::numeric_limits<std::uint16_t>::max(),
+              "Schema payload size must fit in uint16_t");
+static_assert(sensor_rtt_protocol_detail::AreMetricIdsSequential(),
+              "Metric IDs must stay sequential for backward compatibility");
+static_assert(sensor_rtt_protocol_detail::AreMetricOffsetsStrictlyIncreasing(),
+              "Metric offsets must stay strictly increasing");
+static_assert(sensor_rtt_protocol_detail::AreMetricDefinitionsValidForPayload(),
+              "Metric definitions must remain valid for SensorRttDataPayload");
 
 }  // namespace app::telemetry
