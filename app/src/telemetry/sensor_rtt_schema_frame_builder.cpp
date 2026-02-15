@@ -41,6 +41,24 @@ class ByteWriter final {
     return true;
   }
 
+  bool WriteU32LE(std::uint32_t value) noexcept {
+    if (Remaining() < 4u) {
+      return false;
+    }
+    ptr_[0] = static_cast<std::uint8_t>(value & 0xFFu);
+    ptr_[1] = static_cast<std::uint8_t>((value >> 8) & 0xFFu);
+    ptr_[2] = static_cast<std::uint8_t>((value >> 16) & 0xFFu);
+    ptr_[3] = static_cast<std::uint8_t>((value >> 24) & 0xFFu);
+    ptr_ += 4;
+    return true;
+  }
+
+  bool WriteF32LE(float value) noexcept {
+    std::uint32_t raw_bits = 0u;
+    std::memcpy(&raw_bits, &value, sizeof(raw_bits));
+    return WriteU32LE(raw_bits);
+  }
+
   bool WriteBytes(const char* data, std::size_t size_bytes) noexcept {
     if (data == nullptr || size_bytes > Remaining()) {
       return false;
@@ -86,7 +104,8 @@ std::size_t BuildSensorRttSchemaFrame(std::uint8_t sensor_id, std::uint32_t time
         static_cast<std::uint8_t>(SensorRttMetricNameLengthBytes(metric));
     if (!writer.WriteU8(metric.metric_id) ||
         !writer.WriteU8(static_cast<std::uint8_t>(metric.value_type)) ||
-        !writer.WriteU16LE(metric.offset_bytes) || !writer.WriteU8(metric_name_length_bytes) ||
+        !writer.WriteU16LE(metric.offset_bytes) || !writer.WriteF32LE(metric.suggested_min) ||
+        !writer.WriteF32LE(metric.suggested_max) || !writer.WriteU8(metric_name_length_bytes) ||
         !writer.WriteBytes(metric.name, metric_name_length_bytes)) {
       return 0u;
     }

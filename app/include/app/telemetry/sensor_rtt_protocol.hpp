@@ -9,7 +9,7 @@
 namespace app::telemetry {
 
 constexpr std::uint32_t kSensorRttMagic = 0x54545253u;
-constexpr std::uint8_t kSensorRttVersion = 1u;
+constexpr std::uint8_t kSensorRttVersion = 2u;
 
 enum class SensorRttFrameKind : std::uint8_t {
   kSchema = 1u,
@@ -56,6 +56,8 @@ struct SensorRttMetricDescriptor {
   std::uint8_t metric_id = 0u;
   SensorRttValueType value_type = SensorRttValueType::kFloat32;
   std::uint16_t offset_bytes = 0u;
+  float suggested_min = 0.0f;
+  float suggested_max = 0.0f;
   const char* name = "";
 };
 
@@ -76,36 +78,48 @@ constexpr std::array kSensorRttDataPayloadMetrics = {
         0u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, adc_raw)),
+        0.0f,
+        65535.0f,
         "ADC (raw)",
     },
     SensorRttMetricDescriptor{
         1u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, adc_filtered)),
+        0.0f,
+        65535.0f,
         "ADC (filtered)",
     },
     SensorRttMetricDescriptor{
         2u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, current_ma)),
+        0.0f,
+        1.0f,
         "Current (mA)",
     },
     SensorRttMetricDescriptor{
         3u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, position_norm)),
+        0.0f,
+        1.0f,
         "Normalized Position",
     },
     SensorRttMetricDescriptor{
         4u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, speed_units_per_ms)),
+        0.0f,
+        10.0f,
         "Relative speed",
     },
     SensorRttMetricDescriptor{
         5u,
         SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, hammer_speed_m_per_s)),
+        0.0f,
+        10.0f,
         "Hammer Speed (m/s)",
     },
 };
@@ -126,7 +140,7 @@ static_assert(((sizeof(SensorRttDataPayload) - 4u) / sizeof(float)) == kMetricCo
               "Sensor RTT payload float count must match metric descriptor count");
 
 constexpr std::size_t kSensorRttSchemaPrefixSizeBytes = 8u;
-constexpr std::size_t kSensorRttSchemaMetricHeaderSizeBytes = 5u;
+constexpr std::size_t kSensorRttSchemaMetricHeaderSizeBytes = 13u;
 
 constexpr std::size_t SensorRttMetricCount() noexcept {
   return kMetricCount;
@@ -203,6 +217,15 @@ constexpr bool AreMetricDefinitionsValidForPayload() noexcept {
   return true;
 }
 
+constexpr bool AreMetricSuggestedRangesValid() noexcept {
+  for (const SensorRttMetricDescriptor& metric : kSensorRttDataPayloadMetrics) {
+    if (!(metric.suggested_min <= metric.suggested_max)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace sensor_rtt_protocol_detail
 
 static_assert(SensorRttDataPayloadSizeBytes() <= std::numeric_limits<std::uint16_t>::max(),
@@ -219,5 +242,7 @@ static_assert(sensor_rtt_protocol_detail::AreMetricOffsetsStrictlyIncreasing(),
               "Metric offsets must stay strictly increasing");
 static_assert(sensor_rtt_protocol_detail::AreMetricDefinitionsValidForPayload(),
               "Metric definitions must remain valid for SensorRttDataPayload");
+static_assert(sensor_rtt_protocol_detail::AreMetricSuggestedRangesValid(),
+              "Metric suggested ranges must satisfy min <= max");
 
 }  // namespace app::telemetry

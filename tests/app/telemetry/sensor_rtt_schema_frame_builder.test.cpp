@@ -23,6 +23,13 @@ std::uint32_t ReadU32LE(const std::uint8_t* bytes) noexcept {
          (static_cast<std::uint32_t>(bytes[3]) << 24u);
 }
 
+float ReadF32LE(const std::uint8_t* bytes) noexcept {
+  const std::uint32_t raw_bits = ReadU32LE(bytes);
+  float value = 0.0f;
+  std::memcpy(&value, &raw_bits, sizeof(value));
+  return value;
+}
+
 }  // namespace
 
 TEST_CASE("BuildSensorRttSchemaFrame", "[app][telemetry]") {
@@ -60,6 +67,10 @@ TEST_CASE("BuildSensorRttSchemaFrame", "[app][telemetry]") {
       REQUIRE(bytes[cursor++] == static_cast<std::uint8_t>(metric.value_type));
       REQUIRE(ReadU16LE(&bytes[cursor]) == metric.offset_bytes);
       cursor += 2u;
+      REQUIRE(ReadF32LE(&bytes[cursor]) == metric.suggested_min);
+      cursor += 4u;
+      REQUIRE(ReadF32LE(&bytes[cursor]) == metric.suggested_max);
+      cursor += 4u;
 
       const std::size_t expected_name_length =
           app::telemetry::SensorRttMetricNameLengthBytes(metric);

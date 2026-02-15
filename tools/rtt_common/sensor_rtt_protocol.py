@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 
 MAGIC = 0x54545253
-VERSION = 1
+VERSION = 2
 
 KIND_SCHEMA = 1
 KIND_DATA = 2
@@ -33,6 +33,8 @@ class SchemaMetric:
     name: str
     value_type: int
     offset_bytes: int
+    suggested_min: float
+    suggested_max: float
 
 
 @dataclass
@@ -70,12 +72,12 @@ def decode_schema_payload(payload: bytes) -> Optional[Schema]:
     cursor = prefix_struct.size
     metrics: List[SchemaMetric] = []
 
-    metric_header_struct = struct.Struct("<BBHB")
+    metric_header_struct = struct.Struct("<BBHffB")
     for _index in range(metric_count):
         if len(payload) < cursor + metric_header_struct.size:
             return None
-        metric_id, value_type, offset_bytes, name_length = metric_header_struct.unpack_from(
-            payload, cursor
+        metric_id, value_type, offset_bytes, suggested_min, suggested_max, name_length = (
+            metric_header_struct.unpack_from(payload, cursor)
         )
         cursor += metric_header_struct.size
 
@@ -91,6 +93,8 @@ def decode_schema_payload(payload: bytes) -> Optional[Schema]:
                 name=name,
                 value_type=int(value_type),
                 offset_bytes=int(offset_bytes),
+                suggested_min=float(suggested_min),
+                suggested_max=float(suggested_max),
             )
         )
 
