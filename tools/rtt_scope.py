@@ -228,6 +228,8 @@ class RttScope:
         self.sensor_id_buffer = np.zeros(self.buffer_size, dtype=np.uint8)
 
         self.metric_names = []
+        self.metric_metadata = {}
+        self.suggested_y_range = None
         self.selected_metric_index = 0
         self.metric_values_buffer = np.zeros((self.buffer_size, 1), dtype=np.float32)
 
@@ -425,8 +427,8 @@ class RttScope:
             return metric_names.index("position_norm")
         return 0
 
-    def configure_metrics(self, metric_names: List[str]) -> None:
-        metric_names = list(metric_names)
+    def configure_metrics(self, schema) -> None:
+        metric_names = list(schema.metric_names)
         if metric_names == self.metric_names:
             return
 
@@ -435,6 +437,14 @@ class RttScope:
             previous_metric_name = self.metric_names[self.selected_metric_index]
 
         self.metric_names = metric_names
+        self.metric_metadata = {
+            m.name: {
+                "suggested_min": m.suggested_min,
+                "suggested_max": m.suggested_max,
+            }
+            for m in schema.metrics
+        }
+
         if previous_metric_name in self.metric_names:
             self.selected_metric_index = self.metric_names.index(previous_metric_name)
         else:
@@ -449,6 +459,22 @@ class RttScope:
         self.total_samples_received = 0
         self.view_offset = 0
 
+        if self.metric_names:
+            self._apply_suggested_range(self.metric_names[self.selected_metric_index])
+
+    def _apply_suggested_range(self, metric_name: str) -> None:
+        metadata = self.metric_metadata.get(metric_name)
+        if metadata:
+            s_min = metadata.get("suggested_min")
+            s_max = metadata.get("suggested_max")
+            if s_min is not None and s_max is not None and s_min != s_max:
+                self.suggested_y_range = (s_min, s_max)
+                self.view.camera.set_range(y=self.suggested_y_range, margin=0)
+                # Disable auto-scale to let the suggested range be visible
+                self.auto_scale_enabled = False
+            else:
+                self.suggested_y_range = None
+
     def _refresh_signal_buffer_y(self) -> None:
         if self.metric_values_buffer.shape[1] <= self.selected_metric_index:
             return
@@ -459,6 +485,7 @@ class RttScope:
             return
         self.selected_metric_index = (self.selected_metric_index + 1) % len(self.metric_names)
         self._refresh_signal_buffer_y()
+        self._apply_suggested_range(self.metric_names[self.selected_metric_index])
         self._update_plot()
 
     def process_incoming_values(self, new_raw_values: Tuple[int, ...]) -> None:
@@ -572,9 +599,14 @@ class RttScope:
                 cam_width = rect.width
                 # Slide the camera: keep the width but move the right edge to x_max
                 # CRITICAL: Use margin=0 to avoid infinite growth loop when reading from camera.rect
-                self.view.camera.set_range(x=(x_max - cam_width, x_max), y=(rect.bottom, rect.top), margin=0)
+                self.view.camera.set_range(x=(x_max - cam_width, x_max), y=None, margin=0)
             else:
-                y_range = self._calculate_auto_scale_y(data_slice) if self.auto_scale_enabled else None
+                y_range = None
+                if not self.auto_scale_enabled and self.suggested_y_range:
+                    y_range = self.suggested_y_range
+                elif self.auto_scale_enabled:
+                    y_range = self._calculate_auto_scale_y(data_slice)
+
                 self.view.camera.set_range(x=(x_min, x_max), y=y_range)
         else: # HISTORY
             # In history, only snap the camera if we are NOT in manual mode (e.g. just moved scrollbar)
@@ -893,7 +925,7 @@ def main():
                     if raw_data:
                         frames = decoder.feed(raw_data)
                         if decoder.latest_schema is not None:
-                            scope.configure_metrics(decoder.latest_schema.metric_names)
+                            scope.configure_metrics(decoder.latest_schema)
 
                         if scope.metric_names:
                             seqs = []
