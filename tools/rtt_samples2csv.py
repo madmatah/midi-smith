@@ -56,17 +56,19 @@ def main() -> int:
                 if frame.kind != KIND_DATA:
                     continue
 
+                if decoder.latest_schema is None:
+                    continue
+
                 values_by_name = frame.values_by_name or {}
                 if metric_names is None:
-                    if values_by_name:
-                        metric_names = list(values_by_name.keys())
-                        if not args.no_header and not header_written and metric_names:
-                            sys.stdout.write(
-                                "seq,timestamp_us,sensor_id," + ",".join(metric_names) + "\n"
-                            )
-                            sys.stdout.flush()
-                            header_written = True
-                    else:
+                    metric_names = decoder.latest_schema.metric_names
+                    if not args.no_header and not header_written and metric_names:
+                        sys.stdout.write(
+                            "seq,timestamp_us,sensor_id," + ",".join(metric_names) + "\n"
+                        )
+                        sys.stdout.flush()
+                        header_written = True
+                    if not metric_names:
                         continue
 
                 row_values = [values_by_name.get(name, "") for name in metric_names]
