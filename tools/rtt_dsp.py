@@ -353,6 +353,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._both_curves_shortcut = QtGui.QShortcut(QtGui.QKeySequence("B"), self)
         self._both_curves_shortcut.activated.connect(self._display_all_signal_curves)
 
+        self._quit_shortcut = QtGui.QShortcut(QtGui.QKeySequence("Q"), self)
+        self._quit_shortcut.activated.connect(self.close)
+
     def _clear_signal_history(self):
         self._raw_buffer[:] = 0.0
         self._filtered_buffer[:] = 0.0
