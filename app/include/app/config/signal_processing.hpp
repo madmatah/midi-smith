@@ -11,7 +11,7 @@
 #include "domain/dsp/filters/biquad.hpp"
 #include "domain/dsp/filters/constant_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
-#include "domain/dsp/logic/gate_open_predicate.hpp"
+#include "domain/dsp/logic/gate_open.hpp"
 #include "domain/dsp/logic/input_gate.hpp"
 #include "domain/dsp/logic/switch.hpp"
 #include "domain/dsp/math/sliding_linear_regression.hpp"
@@ -107,7 +107,7 @@ using SensorMemberReader = domain::sensors::SensorMemberReader<SensorMemberPtr>;
 
 using HammerPositionReader = SensorMemberReader<&SensorState::last_normalized_position>;
 using IsHammerInActiveZone =
-    domain::dsp::logic::GateOpenPredicate<HAMMER_POSITION_DAMPER, HammerPositionReader{}>;
+    domain::dsp::logic::GateOpen<HAMMER_POSITION_DAMPER, HammerPositionReader{}>;
 
 using SmartHammerSpeedEstimator =
     Switch<IsHammerInActiveZone, HammerSpeedEstimator, ConstantFilter<0.0f>>;

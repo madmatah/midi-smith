@@ -2,11 +2,11 @@
 
 namespace domain::dsp::logic {
 
-template <float kThreshold, auto ValueProvider>
-struct GateOpenPredicate {
+template <auto ValueProvider>
+struct IsTrue {
   template <typename ContextT>
   static inline bool Test(const ContextT& ctx) noexcept {
-    return static_cast<float>(ValueProvider(ctx)) < kThreshold;
+    return static_cast<bool>(ValueProvider(ctx)) == true;
   }
 };
 

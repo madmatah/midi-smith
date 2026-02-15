@@ -1,6 +1,6 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/dsp/logic/gate_open_predicate.hpp"
+#include "domain/dsp/logic/gate_open.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,9 +16,9 @@ float ReadValue(const MockContext& ctx) noexcept {
 
 }  // namespace
 
-TEST_CASE("The GateOpenPredicate struct") {
-  using domain::dsp::logic::GateOpenPredicate;
-  using Predicate = GateOpenPredicate<0.45f, ReadValue>;
+TEST_CASE("The GateOpen struct") {
+  using domain::dsp::logic::GateOpen;
+  using Predicate = GateOpen<0.45f, ReadValue>;
 
   SECTION("The Test() method") {
     SECTION("When the value is below threshold") {
