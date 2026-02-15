@@ -42,7 +42,6 @@ struct SensorRttDataPayload {
   float speed_units_per_ms = 0.0f;
   float hammer_speed_m_per_s = 0.0f;
 };
-static_assert(sizeof(SensorRttDataPayload) == 28u, "Expected 28-byte sensor RTT data payload");
 static_assert(std::is_trivially_copyable_v<SensorRttDataPayload>,
               "Sensor RTT data payload must be trivially copyable");
 
@@ -50,7 +49,6 @@ struct SensorRttDataFrame {
   SensorRttFrameHeader header{};
   SensorRttDataPayload payload{};
 };
-static_assert(sizeof(SensorRttDataFrame) == 44u, "Expected 44-byte sensor RTT data frame");
 static_assert(std::is_trivially_copyable_v<SensorRttDataFrame>,
               "Sensor RTT data frame must be trivially copyable");
 
@@ -73,7 +71,7 @@ constexpr std::size_t SensorRttMetricNameLengthBytes(
   return length;
 }
 
-constexpr std::array<SensorRttMetricDescriptor, 6u> kSensorRttDataPayloadMetrics = {
+constexpr std::array kSensorRttDataPayloadMetrics = {
     SensorRttMetricDescriptor{
         0u,
         SensorRttValueType::kFloat32,
@@ -112,11 +110,26 @@ constexpr std::array<SensorRttMetricDescriptor, 6u> kSensorRttDataPayloadMetrics
     },
 };
 
+constexpr std::size_t kMetricCount = kSensorRttDataPayloadMetrics.size();
+constexpr std::size_t kExpectedPayloadSize = (kMetricCount * sizeof(float)) + 4u;
+constexpr std::size_t kExpectedFrameSize = sizeof(SensorRttFrameHeader) + kExpectedPayloadSize;
+
+static_assert(sizeof(SensorRttDataPayload) == kExpectedPayloadSize,
+              "Sensor RTT payload size must match 4-byte prefix + one float per metric");
+static_assert(sizeof(SensorRttDataFrame) == kExpectedFrameSize,
+              "Sensor RTT frame size must match header size + expected payload size");
+static_assert(sizeof(SensorRttDataPayload) >= 4u,
+              "Sensor RTT payload must include the 4-byte prefix (sensor_id + padding)");
+static_assert((sizeof(SensorRttDataPayload) - 4u) % sizeof(float) == 0u,
+              "Sensor RTT payload content after the 4-byte prefix must be a float array");
+static_assert(((sizeof(SensorRttDataPayload) - 4u) / sizeof(float)) == kMetricCount,
+              "Sensor RTT payload float count must match metric descriptor count");
+
 constexpr std::size_t kSensorRttSchemaPrefixSizeBytes = 8u;
 constexpr std::size_t kSensorRttSchemaMetricHeaderSizeBytes = 5u;
 
 constexpr std::size_t SensorRttMetricCount() noexcept {
-  return kSensorRttDataPayloadMetrics.size();
+  return kMetricCount;
 }
 
 constexpr std::size_t SensorRttSchemaPayloadSizeBytes() noexcept {
