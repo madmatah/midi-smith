@@ -553,7 +553,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         display_layout.addRow(self._show_signal_checkbox)
 
         self._show_fft_checkbox = QtWidgets.QCheckBox("FFT Spectrum")
-        self._show_fft_checkbox.setChecked(True)
+        self._show_fft_checkbox.setChecked(False)
         self._show_fft_checkbox.toggled.connect(self._update_elements_visibility)
         display_layout.addRow(self._show_fft_checkbox)
 
@@ -621,6 +621,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._refresh_filter_ui()
         self._refresh_plot_legends()
+        self._update_elements_visibility()
 
     def _refresh_filter_ui(self):
         while self._filter_list_layout.count():
