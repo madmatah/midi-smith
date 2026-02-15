@@ -101,6 +101,34 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     const auto status = capture.GetStatus();
     REQUIRE(status.backlog_frames == 5u);
   }
+
+  SECTION("ConfigureOff clears buffered frames and stops captures") {
+    domain::sensors::SensorState s{};
+    s.id = 1;
+    s.last_raw_value = 1;
+
+    app::telemetry::SensorRttStreamCapture capture;
+    capture.SetOutputHz(kSourceHz);
+    capture.ConfigureObserve(1);
+
+    TestContext ctx{1u, s};
+    for (std::size_t i = 0; i < 8u; ++i) {
+      ctx.timestamp_ticks = static_cast<std::uint32_t>(i);
+      capture.MaybeCapture(ctx, kSourceHz);
+    }
+
+    capture.ConfigureOff();
+
+    const auto status_after_off = capture.GetStatus();
+    REQUIRE_FALSE(status_after_off.enabled);
+    REQUIRE(status_after_off.backlog_frames == 0u);
+
+    ctx.timestamp_ticks = 100u;
+    capture.MaybeCapture(ctx, kSourceHz);
+
+    const auto status_after_capture_attempt = capture.GetStatus();
+    REQUIRE(status_after_capture_attempt.backlog_frames == 0u);
+  }
 }
 
 #endif

@@ -29,6 +29,7 @@ class SensorRttTelemetryTask {
 
   void ApplyCommand(const app::telemetry::SensorRttTelemetryCommand& cmd) noexcept;
   void ApplyPendingCommands() noexcept;
+  bool ReceiveControlCommand(std::uint32_t timeout_ms) noexcept;
   bool IsAnalogAcquisitionEnabled() const noexcept;
   bool TrySendSchemaFrameIfDue(std::uint32_t schema_interval_us,
                                std::span<std::uint8_t> schema_frame_bytes) noexcept;
