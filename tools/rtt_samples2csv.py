@@ -2,13 +2,11 @@
 
 import argparse
 import socket
-import struct
 import sys
 import time
 
+from rtt_common.sensor_rtt_protocol import KIND_DATA, KIND_SCHEMA, SensorRttStreamDecoder
 
-FRAME_SIZE_BYTES = 12
-FRAME_STRUCT = struct.Struct("<IIf")
 SOCKET_READ_SIZE_BYTES = 8192
 
 
@@ -24,11 +22,9 @@ def main() -> int:
     stop_time_s = (time.time() + args.duration) if args.duration and args.duration > 0 else None
     remaining_frames = args.max_frames if args.max_frames and args.max_frames > 0 else None
 
-    if not args.no_header:
-        sys.stdout.write("seq,timestamp_us,value\n")
-        sys.stdout.flush()
-
-    receive_buffer = bytearray()
+    decoder = SensorRttStreamDecoder()
+    metric_names = None
+    header_written = False
 
     with socket.create_connection((args.host, args.port)) as sock:
         while True:
@@ -37,34 +33,45 @@ def main() -> int:
             if remaining_frames is not None and remaining_frames <= 0:
                 break
 
-            received_bytes = sock.recv(SOCKET_READ_SIZE_BYTES)
-            if not received_bytes:
+            received_data = sock.recv(SOCKET_READ_SIZE_BYTES)
+            if not received_data:
                 break
-            receive_buffer.extend(received_bytes)
 
-            received_frame_count = len(receive_buffer) // FRAME_SIZE_BYTES
-            if received_frame_count <= 0:
+            frames = decoder.feed(received_data)
+            if not frames:
                 continue
 
-            frames_to_process = received_frame_count
-            if remaining_frames is not None:
-                frames_to_process = min(frames_to_process, remaining_frames)
+            for frame in frames:
+                if frame.kind == KIND_SCHEMA and decoder.latest_schema is not None:
+                    metric_names = decoder.latest_schema.metric_names
+                    if not args.no_header and not header_written and metric_names:
+                        sys.stdout.write(
+                            "seq,timestamp_us,sensor_id," + ",".join(metric_names) + "\n"
+                        )
+                        sys.stdout.flush()
+                        header_written = True
+                    continue
 
-            bytes_to_process = frames_to_process * FRAME_SIZE_BYTES
-            view = memoryview(receive_buffer)[:bytes_to_process]
+                if frame.kind != KIND_DATA:
+                    continue
 
-            for frame_index in range(frames_to_process):
-                seq, timestamp_us, value = FRAME_STRUCT.unpack_from(
-                    view, frame_index * FRAME_SIZE_BYTES
+                if metric_names is None:
+                    continue
+
+                values_by_name = frame.values_by_name or {}
+                row_values = [values_by_name.get(name, "") for name in metric_names]
+                sys.stdout.write(
+                    f"{frame.seq},{frame.timestamp_us},{frame.sensor_id},"
+                    + ",".join(str(value) for value in row_values)
+                    + "\n"
                 )
-                sys.stdout.write(f"{seq},{timestamp_us},{value}\n")
+
+                if remaining_frames is not None:
+                    remaining_frames -= 1
+                    if remaining_frames <= 0:
+                        break
 
             sys.stdout.flush()
-            del view
-            del receive_buffer[:bytes_to_process]
-
-            if remaining_frames is not None:
-                remaining_frames -= frames_to_process
 
     return 0
 

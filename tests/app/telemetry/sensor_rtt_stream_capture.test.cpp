@@ -23,17 +23,18 @@ struct TestContext {
 TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
   constexpr std::uint32_t kSourceHz = 10'000u;
 
-  SECTION("Captures frames for the selected sensor and mode") {
+  SECTION("Captures data frames for the selected sensor") {
     domain::sensors::SensorState s{};
     s.id = 1;
     s.last_raw_value = 1234;
     s.last_current_ma = 1.5f;
     s.last_filtered_adc_value = 1200.0f;
     s.last_normalized_position = 3.5f;
+    s.last_speed_m_per_s = 0.25f;
 
     app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
-    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kAdc);
+    capture.ConfigureObserve(1);
 
     TestContext ctx{77u, s};
     capture.MaybeCapture(ctx, kSourceHz);
@@ -42,32 +43,16 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     const auto* p = capture.PeekContiguousFrames(8, frames);
     REQUIRE(p != nullptr);
     REQUIRE(frames == 1u);
-    REQUIRE(p[0].seq == 1u);
-    REQUIRE(p[0].timestamp_ticks == 77u);
-    REQUIRE(p[0].value == 1234.0f);
+    REQUIRE(p[0].header.seq == 1u);
+    REQUIRE(p[0].header.timestamp_us == 77u);
+    REQUIRE(p[0].payload.sensor_id == 1u);
+    REQUIRE(p[0].payload.adc_raw == 1234.0f);
+    REQUIRE(p[0].payload.adc_filtered == 1200.0f);
+    REQUIRE(p[0].payload.current_ma == 1.5f);
+    REQUIRE(p[0].payload.position_norm == 3.5f);
+    REQUIRE(p[0].payload.speed_m_per_s == 0.25f);
 
     capture.ConsumeFrames(1u);
-
-    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kAdcFiltered);
-    capture.MaybeCapture(ctx, kSourceHz);
-
-    p = capture.PeekContiguousFrames(8, frames);
-    REQUIRE(p != nullptr);
-    REQUIRE(frames == 1u);
-    REQUIRE(p[0].seq == 1u);
-    REQUIRE(p[0].value == 1200.0f);
-
-    capture.ConsumeFrames(1u);
-
-    s.last_speed_units_per_ms = 12.5f;
-    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kSpeed);
-    capture.MaybeCapture(ctx, kSourceHz);
-
-    p = capture.PeekContiguousFrames(8, frames);
-    REQUIRE(p != nullptr);
-    REQUIRE(frames == 1u);
-    REQUIRE(p[0].seq == 1u);
-    REQUIRE(p[0].value == 12500.0f);
   }
 
   SECTION("Drops frames on overflow and reports a drop count") {
@@ -77,7 +62,7 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
 
     app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
-    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kAdc);
+    capture.ConfigureObserve(1);
 
     TestContext ctx{1u, s};
     for (std::size_t i = 0; i < app::telemetry::SensorRttStreamCapture::kCapacityFrames + 10u;
@@ -98,7 +83,7 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
 
     app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
-    capture.ConfigureObserve(1, domain::sensors::SensorRttMode::kAdc);
+    capture.ConfigureObserve(1);
 
     TestContext ctx{1u, s};
     for (std::size_t i = 0; i < 10u; ++i) {
@@ -109,7 +94,7 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     std::size_t frames = 0;
     const auto* p = capture.PeekContiguousFrames(5, frames);
     REQUIRE(frames == 5u);
-    REQUIRE(p[0].seq == 1u);
+    REQUIRE(p[0].header.seq == 1u);
 
     capture.ConsumeFrames(5u);
 

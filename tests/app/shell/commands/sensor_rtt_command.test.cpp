@@ -39,10 +39,8 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
     off_requested = true;
     return true;
   }
-  bool RequestObserve(std::uint8_t sensor_id,
-                      domain::sensors::SensorRttMode mode) noexcept override {
+  bool RequestObserve(std::uint8_t sensor_id) noexcept override {
     last_observe_id = sensor_id;
-    last_mode = mode;
     observe_requested = true;
     return true;
   }
@@ -60,7 +58,6 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
   bool observe_requested = false;
   bool output_hz_requested = false;
   std::uint8_t last_observe_id = 0;
-  domain::sensors::SensorRttMode last_mode = domain::sensors::SensorRttMode::kPosition;
   std::uint32_t last_output_hz = 0;
 };
 
@@ -109,80 +106,27 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
       SECTION("Should display status 'on' when enabled") {
         control.status.enabled = true;
         control.status.sensor_id = 1;
-        control.status.mode = domain::sensors::SensorRttMode::kPosition;
         control.status.output_hz = 2000;
         control.status.dropped_frames = 3;
         control.status.backlog_frames = 7;
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("status")};
         cmd.Run(2, argv, stream);
-        REQUIRE(stream.GetOutput() ==
-                "on id=1 mode=position output_hz=2000 dropped=3 backlog=7\r\n");
+        REQUIRE(stream.GetOutput() == "on id=1 output_hz=2000 dropped=3 backlog=7\r\n");
       }
     }
 
     SECTION("When called with a valid sensor id") {
-      SECTION("Should request observe for that id with default mode 'position'") {
+      SECTION("Should request observe for that id") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2")};
         cmd.Run(2, argv, stream);
         REQUIRE(control.observe_requested);
         REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kPosition);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 
-      SECTION("Should request observe for that id with mode 'adc'") {
+      SECTION("With an extra argument, should show usage") {
         char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
                         const_cast<char*>("adc")};
-        cmd.Run(3, argv, stream);
-        REQUIRE(control.observe_requested);
-        REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kAdc);
-        REQUIRE(stream.GetOutput() == "ok\r\n");
-      }
-
-      SECTION("Should request observe for that id with mode 'adc_filtered'") {
-        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("adc_filtered")};
-        cmd.Run(3, argv, stream);
-        REQUIRE(control.observe_requested);
-        REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kAdcFiltered);
-        REQUIRE(stream.GetOutput() == "ok\r\n");
-      }
-
-      SECTION("Should request observe for that id with mode 'current'") {
-        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("current")};
-        cmd.Run(3, argv, stream);
-        REQUIRE(control.observe_requested);
-        REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kCurrent);
-        REQUIRE(stream.GetOutput() == "ok\r\n");
-      }
-
-      SECTION("Should request observe for that id with mode 'position'") {
-        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("position")};
-        cmd.Run(3, argv, stream);
-        REQUIRE(control.observe_requested);
-        REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kPosition);
-        REQUIRE(stream.GetOutput() == "ok\r\n");
-      }
-
-      SECTION("Should request observe for that id with mode 'speed'") {
-        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("speed")};
-        cmd.Run(3, argv, stream);
-        REQUIRE(control.observe_requested);
-        REQUIRE(control.last_observe_id == 2);
-        REQUIRE(control.last_mode == domain::sensors::SensorRttMode::kSpeed);
-        REQUIRE(stream.GetOutput() == "ok\r\n");
-      }
-
-      SECTION("With an invalid mode, should show usage") {
-        char* argv[] = {const_cast<char*>("sensor_rtt"), const_cast<char*>("2"),
-                        const_cast<char*>("invalid")};
         cmd.Run(3, argv, stream);
         REQUIRE_FALSE(control.observe_requested);
         REQUIRE(stream.GetOutput().find("usage:") != std::string::npos);

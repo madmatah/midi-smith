@@ -27,6 +27,7 @@ constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 // RTT Telemetry
 constexpr uint32_t RTT_TELEMETRY_SENSOR_CHANNEL = 1;
 constexpr uint32_t RTT_TELEMETRY_SENSOR_BUFFER_SIZE = 8192;
+constexpr uint32_t RTT_TELEMETRY_FREQUENCY_HZ = 5000;
 
 }  // namespace config
 

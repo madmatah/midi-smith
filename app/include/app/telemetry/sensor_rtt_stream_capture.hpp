@@ -5,20 +5,10 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <type_traits>
 
-#include "domain/sensors/sensor_rtt_mode.hpp"
+#include "app/telemetry/sensor_rtt_protocol.hpp"
 
 namespace app::telemetry {
-
-struct SensorRttSampleFrame {
-  std::uint32_t seq = 0;
-  std::uint32_t timestamp_ticks = 0;
-  float value = 0.0f;
-};
-static_assert(sizeof(SensorRttSampleFrame) == 12u, "Expected 12-byte telemetry frame");
-static_assert(std::is_trivially_copyable_v<SensorRttSampleFrame>,
-              "Telemetry frame must be trivially copyable");
 
 class SensorRttStreamCapture final {
  public:
@@ -29,7 +19,6 @@ class SensorRttStreamCapture final {
   struct Status {
     bool enabled = false;
     std::uint8_t sensor_id = 0;
-    domain::sensors::SensorRttMode mode = domain::sensors::SensorRttMode::kPosition;
     std::uint32_t output_hz = 0;
     std::uint32_t dropped_frames = 0;
     std::uint32_t backlog_frames = 0;
@@ -39,13 +28,12 @@ class SensorRttStreamCapture final {
     enabled_.store(false, std::memory_order_release);
   }
 
-  void ConfigureObserve(std::uint8_t sensor_id, domain::sensors::SensorRttMode mode) noexcept {
+  void ConfigureObserve(std::uint8_t sensor_id) noexcept {
     enabled_.store(false, std::memory_order_release);
 
     ClearBufferedFrames();
 
     sensor_id_.store(sensor_id, std::memory_order_release);
-    mode_.store(static_cast<std::uint8_t>(mode), std::memory_order_release);
 
     seq_counter_.store(0u, std::memory_order_release);
     dropped_frames_.store(0u, std::memory_order_release);
@@ -62,7 +50,6 @@ class SensorRttStreamCapture final {
     Status s{};
     s.enabled = enabled_.load(std::memory_order_acquire);
     s.sensor_id = sensor_id_.load(std::memory_order_acquire);
-    s.mode = static_cast<domain::sensors::SensorRttMode>(mode_.load(std::memory_order_acquire));
     s.output_hz = output_hz_.load(std::memory_order_acquire);
     s.dropped_frames = dropped_frames_.load(std::memory_order_acquire);
 
@@ -86,22 +73,26 @@ class SensorRttStreamCapture final {
       return;
     }
 
-    const domain::sensors::SensorRttMode mode =
-        static_cast<domain::sensors::SensorRttMode>(mode_.load(std::memory_order_acquire));
-
-    const float value = ComputeValue(mode, ctx);
-
-    SensorRttSampleFrame frame{};
-    frame.seq =
+    SensorRttDataFrame frame{};
+    frame.header.magic = kSensorRttMagic;
+    frame.header.version = kSensorRttVersion;
+    frame.header.kind = static_cast<std::uint8_t>(SensorRttFrameKind::kData);
+    frame.header.payload_size_bytes = static_cast<std::uint16_t>(sizeof(SensorRttDataPayload));
+    frame.header.seq =
         static_cast<std::uint32_t>(seq_counter_.fetch_add(1u, std::memory_order_relaxed) + 1u);
-    frame.timestamp_ticks = ctx.timestamp_ticks;
-    frame.value = value;
+    frame.header.timestamp_us = ctx.timestamp_ticks;
+    frame.payload.sensor_id = ctx.sensor_id;
+    frame.payload.adc_raw = static_cast<float>(ctx.sensor.last_raw_value);
+    frame.payload.adc_filtered = ctx.sensor.last_filtered_adc_value;
+    frame.payload.current_ma = ctx.sensor.last_current_ma;
+    frame.payload.position_norm = ctx.sensor.last_normalized_position;
+    frame.payload.speed_m_per_s = ctx.sensor.last_speed_m_per_s;
 
     (void) TryPush(frame);
   }
 
-  const SensorRttSampleFrame* PeekContiguousFrames(std::size_t max_frames,
-                                                   std::size_t& out_frames) const noexcept {
+  const SensorRttDataFrame* PeekContiguousFrames(std::size_t max_frames,
+                                                 std::size_t& out_frames) const noexcept {
     const std::uint32_t r = read_index_.load(std::memory_order_relaxed);
     const std::uint32_t w = write_index_.load(std::memory_order_acquire);
     const std::uint32_t available = static_cast<std::uint32_t>(w - r);
@@ -132,23 +123,6 @@ class SensorRttStreamCapture final {
     read_index_.store(w, std::memory_order_release);
   }
 
-  template <typename ContextT>
-  static float ComputeValue(domain::sensors::SensorRttMode mode, const ContextT& ctx) noexcept {
-    switch (mode) {
-      case domain::sensors::SensorRttMode::kAdc:
-        return static_cast<float>(ctx.sensor.last_raw_value);
-      case domain::sensors::SensorRttMode::kAdcFiltered:
-        return ctx.sensor.last_filtered_adc_value;
-      case domain::sensors::SensorRttMode::kCurrent:
-        return ctx.sensor.last_current_ma * 1000.0f;
-      case domain::sensors::SensorRttMode::kPosition:
-        return ctx.sensor.last_normalized_position * 1000.0f;
-      case domain::sensors::SensorRttMode::kSpeed:
-        return ctx.sensor.last_speed_units_per_ms * 1000.0f;
-    }
-    return 0.0f;
-  }
-
   bool ShouldEmitAccordingToOutputRate(std::uint32_t source_hz) noexcept {
     const std::uint32_t output_hz = output_hz_.load(std::memory_order_acquire);
     if (output_hz == 0u || source_hz == 0u || output_hz >= source_hz) {
@@ -166,7 +140,7 @@ class SensorRttStreamCapture final {
     return emit;
   }
 
-  bool TryPush(const SensorRttSampleFrame& frame) noexcept {
+  bool TryPush(const SensorRttDataFrame& frame) noexcept {
     const std::uint32_t w = write_index_.load(std::memory_order_relaxed);
     const std::uint32_t r = read_index_.load(std::memory_order_acquire);
     if (static_cast<std::uint32_t>(w - r) >= kCapacityFrames) {
@@ -179,13 +153,12 @@ class SensorRttStreamCapture final {
     return true;
   }
 
-  std::array<SensorRttSampleFrame, kCapacityFrames> buffer_{};
+  std::array<SensorRttDataFrame, kCapacityFrames> buffer_{};
   alignas(4) std::atomic<std::uint32_t> write_index_{0u};
   alignas(4) std::atomic<std::uint32_t> read_index_{0u};
 
   std::atomic<bool> enabled_{false};
   std::atomic<std::uint8_t> sensor_id_{0u};
-  std::atomic<std::uint8_t> mode_{static_cast<std::uint8_t>(domain::sensors::SensorRttMode::kAdc)};
   std::atomic<std::uint32_t> output_hz_{0u};
 
   std::atomic<std::uint32_t> seq_counter_{0u};

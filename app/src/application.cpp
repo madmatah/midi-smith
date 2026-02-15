@@ -2,6 +2,8 @@
 
 #include "app/composition/subsystems.hpp"
 #include "app/config/analog_acquisition.hpp"
+#include "app/config/config.hpp"
+#include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
 #include "bsp/board.hpp"
 #include "bsp/memory_sections.hpp"
 #include "bsp/rtt_logger.hpp"
@@ -17,7 +19,7 @@ void Application::init() noexcept {
 void Application::create_tasks() noexcept {
   static bsp::RttLogger logger;
   BSP_AXI_SRAM static app::telemetry::SensorRttStreamCapture sensor_rtt_capture;
-  sensor_rtt_capture.SetOutputHz(::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
+  sensor_rtt_capture.SetOutputHz(::app::telemetry::DefaultSensorRttTelemetryOutputHz());
 
   // Console Stream (USART1)
   alignas(32) BSP_AXI_SRAM_NOCACHE static bsp::serial::UartStream<256, 1024> console_stream(huart1);
