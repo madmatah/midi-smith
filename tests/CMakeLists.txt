@@ -32,7 +32,11 @@ add_executable(unit_tests
     domain/dsp/engine/observers.test.cpp
     domain/dsp/filters/identity_filter.test.cpp
     domain/dsp/logic/input_gate.test.cpp
-    domain/dsp/logic/gate_open_predicate.test.cpp
+    domain/dsp/logic/gate_open.test.cpp
+    domain/dsp/logic/is_true.test.cpp
+    domain/dsp/logic/is_false.test.cpp
+    domain/dsp/logic/and.test.cpp
+    domain/dsp/logic/or.test.cpp
     domain/dsp/logic/switch.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
     domain/dsp/math/sliding_linear_regression.test.cpp

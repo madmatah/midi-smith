@@ -9,14 +9,14 @@ namespace {
 
 struct TestContext {};
 
-struct AlwaysTruePredicate {
+struct AlwaysTrue {
   static bool Test(const TestContext& ctx) noexcept {
     (void) ctx;
     return true;
   }
 };
 
-struct AlwaysFalsePredicate {
+struct AlwaysFalse {
   static bool Test(const TestContext& ctx) noexcept {
     (void) ctx;
     return false;
@@ -69,20 +69,20 @@ TEST_CASE("The Switch class") {
     TestContext ctx{};
 
     SECTION("When predicate evaluates to true") {
-      Switch<AlwaysTruePredicate, TrueStage, FalseStage> stage;
+      Switch<AlwaysTrue, TrueStage, FalseStage> stage;
 
       REQUIRE_THAT(stage.Transform(10.0f, ctx), WithinAbs(11.0f, 0.001f));
     }
 
     SECTION("When predicate evaluates to false") {
-      Switch<AlwaysFalsePredicate, TrueStage, FalseStage> stage;
+      Switch<AlwaysFalse, TrueStage, FalseStage> stage;
 
       REQUIRE_THAT(stage.Transform(10.0f, ctx), WithinAbs(9.0f, 0.001f));
     }
   }
 
   SECTION("The Reset() method") {
-    Switch<AlwaysTruePredicate, TrueStage, FalseStage> stage;
+    Switch<AlwaysTrue, TrueStage, FalseStage> stage;
     TrueStage::ResetCounts();
     FalseStage::ResetCounts();
 
@@ -93,7 +93,7 @@ TEST_CASE("The Switch class") {
   }
 
   SECTION("The branch accessors") {
-    Switch<AlwaysTruePredicate, TrueStage, FalseStage> stage;
+    Switch<AlwaysTrue, TrueStage, FalseStage> stage;
 
     auto& true_stage = stage.TrueStage();
     auto& true_stage_again = stage.TrueStage();
