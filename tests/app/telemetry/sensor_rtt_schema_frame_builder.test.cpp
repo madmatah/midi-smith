@@ -69,7 +69,8 @@ TEST_CASE("BuildSensorRttSchemaFrame", "[app][telemetry]") {
     }
 
     REQUIRE(cursor == written);
-    REQUIRE(app::telemetry::SensorRttMetricCount() == 6u);
+    REQUIRE(app::telemetry::SensorRttMetricCount() ==
+            ((app::telemetry::SensorRttDataPayloadSizeBytes() - 4u) / sizeof(float)));
     REQUIRE(std::strcmp(app::telemetry::kSensorRttDataPayloadMetrics[4u].name, "Relative speed") ==
             0);
     REQUIRE(app::telemetry::kSensorRttDataPayloadMetrics[4u].offset_bytes ==
