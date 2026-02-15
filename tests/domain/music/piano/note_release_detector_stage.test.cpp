@@ -27,12 +27,12 @@ class RecordingKeyActionHandler final : public domain::music::piano::KeyActionRe
 class RecordingVelocityMapper final : public domain::music::piano::VelocityMapperRequirements {
  public:
   domain::music::Velocity Map(float speed_m_per_s) noexcept override {
-    last_speed_m_per_s = speed_m_per_s;
+    last_hammer_speed_m_per_s = speed_m_per_s;
     return (speed_m_per_s > 0.0f) ? static_cast<domain::music::Velocity>(42u)
                                   : static_cast<domain::music::Velocity>(1u);
   }
 
-  float last_speed_m_per_s = 0.0f;
+  float last_hammer_speed_m_per_s = 0.0f;
 };
 
 struct TestContext {
@@ -57,14 +57,14 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.SetVelocityMapper(&mapper);
 
         sensor.is_note_on = true;
-        sensor.last_speed_m_per_s = 0.25f;
+        sensor.last_hammer_speed_m_per_s = 0.25f;
         stage.Execute(0.49f, ctx);
 
-        sensor.last_speed_m_per_s = 0.0f;
+        sensor.last_hammer_speed_m_per_s = 0.0f;
         stage.Execute(0.51f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(mapper.last_speed_m_per_s, WithinAbs(0.25f, 0.0001f));
+        REQUIRE_THAT(mapper.last_hammer_speed_m_per_s, WithinAbs(0.25f, 0.0001f));
         REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(42u));
         REQUIRE(sensor.is_note_on == false);
       }
@@ -81,17 +81,17 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.SetVelocityMapper(&mapper);
 
         sensor.is_note_on = true;
-        sensor.last_speed_m_per_s = 0.10f;
+        sensor.last_hammer_speed_m_per_s = 0.10f;
         stage.Execute(0.40f, ctx);
 
-        sensor.last_speed_m_per_s = 0.35f;
+        sensor.last_hammer_speed_m_per_s = 0.35f;
         stage.Execute(0.45f, ctx);
 
-        sensor.last_speed_m_per_s = 0.0f;
+        sensor.last_hammer_speed_m_per_s = 0.0f;
         stage.Execute(0.51f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(mapper.last_speed_m_per_s, WithinAbs(0.35f, 0.0001f));
+        REQUIRE_THAT(mapper.last_hammer_speed_m_per_s, WithinAbs(0.35f, 0.0001f));
       }
     }
 
@@ -106,7 +106,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.SetVelocityMapper(&mapper);
 
         sensor.is_note_on = false;
-        sensor.last_speed_m_per_s = 0.25f;
+        sensor.last_hammer_speed_m_per_s = 0.25f;
         stage.Execute(0.49f, ctx);
         stage.Execute(0.51f, ctx);
 

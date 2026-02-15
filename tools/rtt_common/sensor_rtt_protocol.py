@@ -23,7 +23,7 @@ LEGACY_METRIC_NAMES = [
     "adc_filtered",
     "current_ma",
     "position_norm",
-    "speed_m_per_s",
+    "hammer_speed_m_per_s",
 ]
 
 
@@ -106,10 +106,10 @@ def _decode_legacy_payload_values(payload: bytes) -> Dict[str, float]:
     if len(payload) < DATA_PAYLOAD_SIZE_BYTES:
         return {}
 
-    _, adc_raw, adc_filtered, current_ma, position_norm, speed_m_per_s = (
+    _, adc_raw, adc_filtered, current_ma, position_norm, hammer_speed_m_per_s = (
         DATA_PAYLOAD_STRUCT.unpack_from(payload, 0)
     )
-    values = [adc_raw, adc_filtered, current_ma, position_norm, speed_m_per_s]
+    values = [adc_raw, adc_filtered, current_ma, position_norm, hammer_speed_m_per_s]
     return {name: float(value) for name, value in zip(LEGACY_METRIC_NAMES, values)}
 
 

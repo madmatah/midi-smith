@@ -41,7 +41,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         RecordingKeyActionHandler handler{};
         engine.SetKeyActionHandler(&handler);
 
-        sensor.last_speed_m_per_s = -1.0f;
+        sensor.last_hammer_speed_m_per_s = -1.0f;
 
         engine.Execute(1.0f, ctx);
         engine.Execute(0.49f, ctx);
@@ -63,13 +63,13 @@ TEST_CASE("The MidiVelocityEngine class") {
         RecordingKeyActionHandler handler{};
         engine.SetKeyActionHandler(&handler);
 
-        sensor.last_speed_m_per_s = -1.0f;
+        sensor.last_hammer_speed_m_per_s = -1.0f;
 
         engine.Execute(1.0f, ctx);
         engine.Execute(0.49f, ctx);
         engine.Execute(0.19f, ctx);
 
-        sensor.last_speed_m_per_s = +0.5f;
+        sensor.last_hammer_speed_m_per_s = +0.5f;
         engine.Execute(0.31f, ctx);
 
         REQUIRE(handler.note_on_calls == 0);
@@ -85,7 +85,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         RecordingKeyActionHandler handler{};
         engine.SetKeyActionHandler(&handler);
 
-        sensor.last_speed_m_per_s = -1.0f;
+        sensor.last_hammer_speed_m_per_s = -1.0f;
 
         engine.Execute(1.0f, ctx);
         engine.Execute(0.49f, ctx);
@@ -95,10 +95,10 @@ TEST_CASE("The MidiVelocityEngine class") {
         REQUIRE(handler.note_on_calls == 1);
         REQUIRE(sensor.is_note_on == true);
 
-        sensor.last_speed_m_per_s = +0.5f;
+        sensor.last_hammer_speed_m_per_s = +0.5f;
         engine.Execute(0.41f, ctx);
 
-        sensor.last_speed_m_per_s = -1.0f;
+        sensor.last_hammer_speed_m_per_s = -1.0f;
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
