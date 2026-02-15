@@ -26,6 +26,8 @@ class SensorRttStreamCapture final {
 
   void ConfigureOff() noexcept {
     enabled_.store(false, std::memory_order_release);
+    sensor_id_.store(0u, std::memory_order_release);
+    ClearBufferedFrames();
   }
 
   void ConfigureObserve(std::uint8_t sensor_id) noexcept {

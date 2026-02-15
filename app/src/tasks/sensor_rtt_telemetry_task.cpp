@@ -9,7 +9,7 @@
 #include "app/telemetry/sensor_rtt_protocol.hpp"
 #include "app/telemetry/sensor_rtt_schema_frame_builder.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
-#include "os/clock.hpp"
+#include "os/queue_requirements.hpp"
 #include "os/task.hpp"
 
 namespace app::Tasks {
@@ -91,6 +91,16 @@ void SensorRttTelemetryTask::ApplyPendingCommands() noexcept {
   }
 }
 
+bool SensorRttTelemetryTask::ReceiveControlCommand(std::uint32_t timeout_ms) noexcept {
+  app::telemetry::SensorRttTelemetryCommand cmd{};
+  if (!control_queue_.Receive(cmd, timeout_ms)) {
+    return false;
+  }
+  ApplyCommand(cmd);
+  ApplyPendingCommands();
+  return true;
+}
+
 bool SensorRttTelemetryTask::IsAnalogAcquisitionEnabled() const noexcept {
   return adc_state_.GetState() == app::analog::AcquisitionState::kEnabled;
 }
@@ -164,24 +174,33 @@ void SensorRttTelemetryTask::run() noexcept {
   constexpr std::size_t kMaxFramesPerWrite = 80u;
   static_assert(kMaxFramesPerWrite > 0u);
   constexpr std::uint32_t kSchemaIntervalUs = 1'000'000u;
+  constexpr std::uint32_t kEnabledIdleWaitMs = 1u;
 
   std::array<std::uint8_t, app::telemetry::SensorRttSchemaFrameSizeBytes()> schema_frame_bytes{};
 
   for (;;) {
+    if (active_sensor_id_ == 0u) {
+      (void) ReceiveControlCommand(os::kWaitForever);
+      continue;
+    }
+
     ApplyPendingCommands();
+    if (active_sensor_id_ == 0u) {
+      continue;
+    }
 
     if (!TrySendSchemaFrameIfDue(kSchemaIntervalUs, schema_frame_bytes)) {
-      os::Clock::delay_ms(1);
+      (void) ReceiveControlCommand(kEnabledIdleWaitMs);
       continue;
     }
 
     if (!IsAnalogAcquisitionEnabled()) {
-      os::Clock::delay_ms(1);
+      (void) ReceiveControlCommand(kEnabledIdleWaitMs);
       continue;
     }
 
     if (!TrySendCapturedDataFrames(kMaxFramesPerWrite)) {
-      os::Clock::delay_ms(1);
+      (void) ReceiveControlCommand(kEnabledIdleWaitMs);
     }
   }
 }
