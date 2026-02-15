@@ -321,6 +321,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._decoder = SensorRttStreamDecoder()
         self._metric_names = []
+        self._metric_metadata = {}
         self._selected_metric_name = "Normalized Position"
 
         self._is_paused = False
@@ -387,6 +388,15 @@ class RttLiveScope(QtWidgets.QMainWindow):
             return
         self._selected_metric_name = metric_name
         self._clear_signal_history()
+        self._apply_suggested_range(metric_name)
+
+    def _apply_suggested_range(self, metric_name):
+        metadata = self._metric_metadata.get(metric_name)
+        if metadata and "suggested_min" in metadata and "suggested_max" in metadata:
+            s_min = metadata["suggested_min"]
+            s_max = metadata["suggested_max"]
+            if s_min != s_max:
+                self._plot_time.setYRange(s_min, s_max, padding=0)
 
     @staticmethod
     def _pick_default_metric_name(metric_names):
@@ -398,11 +408,19 @@ class RttLiveScope(QtWidgets.QMainWindow):
             return ""
         return metric_names[0]
 
-    def _set_available_metrics(self, metric_names):
+    def _set_available_metrics(self, schema):
+        metric_names = schema.metric_names
         if metric_names == self._metric_names:
             return
 
         self._metric_names = list(metric_names)
+        self._metric_metadata = {
+            m.name: {
+                "suggested_min": m.suggested_min,
+                "suggested_max": m.suggested_max,
+            }
+            for m in schema.metrics
+        }
 
         for old_button in list(self._metric_button_group.buttons()):
             self._metric_button_group.removeButton(old_button)
@@ -436,6 +454,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._signal_radio_layout.addStretch()
         self._plot_time.setTitle(f"Time domain ({self._selected_metric_name})")
+        self._apply_suggested_range(desired_metric_name)
 
     def _toggle_placement_mode(self):
         if self._placement_state == 0:
@@ -841,7 +860,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
                     break
                 for frame in self._decoder.feed(data_chunk):
                     if frame.kind == KIND_SCHEMA and frame.schema is not None:
-                        self._set_available_metrics(frame.schema.metric_names)
+                        self._set_available_metrics(frame.schema)
                         continue
                     if frame.kind != KIND_DATA:
                         continue
