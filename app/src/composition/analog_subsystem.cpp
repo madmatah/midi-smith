@@ -146,6 +146,10 @@ void AttachSensorVelocityHandlersToProcessors(
 
     auto& tap = processors[i].Stage<app::config::kAnalogSensorProcessorMidiVelocityTapStageIndex>();
     tap.Content().SetKeyActionHandler(&handlers[i]);
+
+    auto& release_tap =
+        processors[i].Stage<app::config::kAnalogSensorProcessorNoteReleaseTapStageIndex>();
+    release_tap.Content().SetKeyActionHandler(&handlers[i]);
   }
 }
 

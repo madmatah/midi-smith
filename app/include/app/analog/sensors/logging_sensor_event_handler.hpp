@@ -26,7 +26,11 @@ class LoggingSensorEventHandler final : public domain::music::piano::KeyActionRe
   }
 
   void OnNoteOff(domain::music::Velocity release_velocity) noexcept override {
-    (void) release_velocity;
+    if (logger_ == nullptr) {
+      return;
+    }
+    logger_->infof("noteoff:%u:%u\n", static_cast<unsigned>(sensor_id_),
+                   static_cast<unsigned>(release_velocity));
   }
 
  private:
