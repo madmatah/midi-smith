@@ -38,7 +38,8 @@ struct SensorRttTelemetryControlContext {
   app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
 
-AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture) noexcept;
+AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture,
+                                        app::Logging::LoggerRequirements& logger) noexcept;
 AdcStateContext CreateAdcStateContext() noexcept;
 SensorsContext CreateSensorsContext() noexcept;
 
