@@ -5,12 +5,12 @@
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/analog/sensors/logging_sensor_event_handler.hpp"
 #include "app/composition/subsystems.hpp"
-#include "app/config/sensor_linearization_validation.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
 #include "app/tasks/analog_acquisition_task.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "bsp/adc/adc_dma.hpp"
+#include "bsp/memory_sections.hpp"
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
 #include "domain/sensors/linearization/lookup_table_generator.hpp"
@@ -70,6 +70,7 @@ using LinearizerConfiguration = domain::sensors::linearization::SensorLinearProc
     app::config::kSensorLookupTableSize>;
 
 std::array<LookupTable, app::config_sensors::kSensorCount>& LookupTablesA() noexcept {
+  // Potential optimization (-23KB DTCMRAM): move to AXI SRAM by adding BSP_AXI_SRAM prefix
   static std::array<LookupTable, app::config_sensors::kSensorCount> lookup_tables_a{};
   return lookup_tables_a;
 }

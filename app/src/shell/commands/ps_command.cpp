@@ -6,6 +6,7 @@
 #include <string_view>
 #include <system_error>
 
+#include "bsp/memory_sections.hpp"
 #include "os/runtime_stats_requirements.hpp"
 
 namespace app::shell::commands {
@@ -15,7 +16,7 @@ constexpr std::uint32_t kDefaultWindowMs = 250u;
 constexpr std::uint32_t kMinWindowMs = 50u;
 constexpr std::uint32_t kMaxWindowMs = 2000u;
 constexpr std::size_t kMaxTaskRows = 48u;
-static os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
+BSP_AXI_SRAM static os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
 
 std::string_view Arg(int argc, char** argv, int index) noexcept {
   if (argv == nullptr) {
