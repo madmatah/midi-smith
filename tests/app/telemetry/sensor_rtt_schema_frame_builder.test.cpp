@@ -69,6 +69,13 @@ TEST_CASE("BuildSensorRttSchemaFrame", "[app][telemetry]") {
     }
 
     REQUIRE(cursor == written);
+    REQUIRE(app::telemetry::SensorRttMetricCount() == 6u);
+    REQUIRE(std::strcmp(app::telemetry::kSensorRttDataPayloadMetrics[4u].name, "Relative speed") ==
+            0);
+    REQUIRE(app::telemetry::kSensorRttDataPayloadMetrics[4u].offset_bytes ==
+            offsetof(app::telemetry::SensorRttDataPayload, speed_units_per_ms));
+    REQUIRE(std::strcmp(app::telemetry::kSensorRttDataPayloadMetrics[5u].name,
+                        "Hammer Speed (m/s)") == 0);
   }
 
   SECTION("Returns zero when the output buffer is too small") {
