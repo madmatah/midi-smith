@@ -29,70 +29,84 @@ struct TestContext {
 
 }  // namespace
 
-TEST_CASE("MidiVelocityEngine") {
+TEST_CASE("The MidiVelocityEngine class") {
   using Engine = domain::music::piano::MidiVelocityEngine<0.5f, 0.2f, 0.1f, 0.3f, 0.4f>;
 
-  domain::sensors::SensorState sensor{};
-  TestContext ctx{sensor};
-  Engine engine{};
-  RecordingKeyActionHandler handler{};
-  engine.SetKeyActionHandler(&handler);
+  SECTION("The Execute() method") {
+    SECTION("When crossing letoff then strike") {
+      SECTION("Should emit NoteOn and update SensorState") {
+        domain::sensors::SensorState sensor{};
+        TestContext ctx{sensor};
+        Engine engine{};
+        RecordingKeyActionHandler handler{};
+        engine.SetKeyActionHandler(&handler);
 
-  SECTION("Strike emits NoteOn and updates SensorState") {
-    sensor.last_speed_m_per_s = -1.0f;
-    engine.Execute(1.0f, ctx);   // prime prev_position
-    engine.Execute(0.49f, ctx);  // enter tracking
-    engine.Execute(0.19f, ctx);  // cross letoff -> latch
-    engine.Execute(0.09f, ctx);  // strike
+        sensor.last_speed_m_per_s = -1.0f;
 
-    REQUIRE(handler.note_on_calls == 1);
-    REQUIRE(handler.last_velocity == static_cast<domain::music::Velocity>(58u));
-    REQUIRE(sensor.last_midi_velocity == static_cast<std::uint8_t>(58u));
-    REQUIRE(sensor.is_note_on == true);
-  }
+        engine.Execute(1.0f, ctx);
+        engine.Execute(0.49f, ctx);
+        engine.Execute(0.19f, ctx);
+        engine.Execute(0.09f, ctx);
 
-  SECTION("Abort does not emit NoteOn") {
-    engine.Reset();
-    handler.note_on_calls = 0;
-    handler.last_velocity = 0u;
+        REQUIRE(handler.note_on_calls == 1);
+        REQUIRE(handler.last_velocity == static_cast<domain::music::Velocity>(58u));
+        REQUIRE(sensor.last_midi_velocity == static_cast<std::uint8_t>(58u));
+        REQUIRE(sensor.is_note_on == true);
+      }
+    }
 
-    sensor = domain::sensors::SensorState{};
-    sensor.last_speed_m_per_s = -1.0f;
-    engine.Execute(1.0f, ctx);
-    engine.Execute(0.49f, ctx);
-    engine.Execute(0.19f, ctx);  // latch
+    SECTION("When the motion reverses above drop after latching") {
+      SECTION("Should not emit NoteOn") {
+        domain::sensors::SensorState sensor{};
+        TestContext ctx{sensor};
+        Engine engine{};
+        RecordingKeyActionHandler handler{};
+        engine.SetKeyActionHandler(&handler);
 
-    sensor.last_speed_m_per_s = +0.5f;
-    engine.Execute(0.31f, ctx);  // reverse + drop -> abort
+        sensor.last_speed_m_per_s = -1.0f;
 
-    REQUIRE(handler.note_on_calls == 0);
-    REQUIRE(sensor.is_note_on == false);
-  }
+        engine.Execute(1.0f, ctx);
+        engine.Execute(0.49f, ctx);
+        engine.Execute(0.19f, ctx);
 
-  SECTION("Re-arm in SUSTAINED allows a second strike without NoteOff") {
-    engine.Reset();
-    handler.note_on_calls = 0;
-    handler.last_velocity = 0u;
+        sensor.last_speed_m_per_s = +0.5f;
+        engine.Execute(0.31f, ctx);
 
-    sensor = domain::sensors::SensorState{};
-    sensor.last_speed_m_per_s = -1.0f;
-    engine.Execute(1.0f, ctx);
-    engine.Execute(0.49f, ctx);
-    engine.Execute(0.19f, ctx);
-    engine.Execute(0.09f, ctx);  // first strike
-    REQUIRE(handler.note_on_calls == 1);
-    REQUIRE(sensor.is_note_on == true);
+        REQUIRE(handler.note_on_calls == 0);
+        REQUIRE(sensor.is_note_on == false);
+      }
+    }
 
-    sensor.last_speed_m_per_s = +0.5f;
-    engine.Execute(0.41f, ctx);  // sustained -> tracking (rearm)
+    SECTION("When re-armed after a strike") {
+      SECTION("Should allow a second strike without a NoteOff") {
+        domain::sensors::SensorState sensor{};
+        TestContext ctx{sensor};
+        Engine engine{};
+        RecordingKeyActionHandler handler{};
+        engine.SetKeyActionHandler(&handler);
 
-    sensor.last_speed_m_per_s = -1.0f;
-    engine.Execute(0.19f, ctx);  // latch again
-    engine.Execute(0.09f, ctx);  // second strike
+        sensor.last_speed_m_per_s = -1.0f;
 
-    REQUIRE(handler.note_on_calls == 2);
-    REQUIRE(sensor.is_note_on == true);
-    REQUIRE(sensor.last_midi_velocity == static_cast<std::uint8_t>(58u));
+        engine.Execute(1.0f, ctx);
+        engine.Execute(0.49f, ctx);
+        engine.Execute(0.19f, ctx);
+        engine.Execute(0.09f, ctx);
+
+        REQUIRE(handler.note_on_calls == 1);
+        REQUIRE(sensor.is_note_on == true);
+
+        sensor.last_speed_m_per_s = +0.5f;
+        engine.Execute(0.41f, ctx);
+
+        sensor.last_speed_m_per_s = -1.0f;
+        engine.Execute(0.19f, ctx);
+        engine.Execute(0.09f, ctx);
+
+        REQUIRE(handler.note_on_calls == 2);
+        REQUIRE(sensor.is_note_on == true);
+        REQUIRE(sensor.last_midi_velocity == static_cast<std::uint8_t>(58u));
+      }
+    }
   }
 }
 

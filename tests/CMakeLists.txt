@@ -50,6 +50,7 @@ add_executable(unit_tests
     domain/sensors/sensor_state.test.cpp
     domain/music/piano/goebl_logarithmic_velocity_mapper.test.cpp
     domain/music/piano/midi_velocity_engine.test.cpp
+    domain/music/piano/note_release_detector_stage.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp

@@ -3,26 +3,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "domain/music/piano/detail/null_key_action_handler.hpp"
 #include "domain/music/piano/goebl_logarithmic_velocity_mapper.hpp"
 #include "domain/music/piano/key_action_requirements.hpp"
 #include "domain/music/piano/velocity_mapper_requirements.hpp"
 
 namespace domain::music::piano {
-
-namespace detail {
-
-class NullKeyActionHandler final : public KeyActionRequirements {
- public:
-  void OnNoteOn(domain::music::Velocity velocity) noexcept override {
-    (void) velocity;
-  }
-
-  void OnNoteOff(domain::music::Velocity release_velocity) noexcept override {
-    (void) release_velocity;
-  }
-};
-
-}  // namespace detail
 
 template <float kActiveZone, float kLetoff, float kStrike, float kDrop, float kRearm>
 class MidiVelocityEngine {

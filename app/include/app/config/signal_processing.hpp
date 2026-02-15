@@ -16,6 +16,7 @@
 #include "domain/dsp/logic/switch.hpp"
 #include "domain/dsp/math/sliding_linear_regression.hpp"
 #include "domain/music/piano/midi_velocity_engine.hpp"
+#include "domain/music/piano/note_release_detector_stage.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
 #include "domain/sensors/kinematics/velocity_kinematics_stage.hpp"
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
@@ -123,6 +124,9 @@ using MidiVelocityEngineStage =
                                              HAMMER_POSITION_STRIKE, HAMMER_POSITION_DROP,
                                              HAMMER_POSITION_REARM>;
 
+using NoteReleaseDetectorStage =
+    domain::music::piano::NoteReleaseDetectorStage<HAMMER_POSITION_DAMPER>;
+
 
 // clang-format off
 using SignalProcessingWorkflow = Workflow<
@@ -134,6 +138,7 @@ using SignalProcessingWorkflow = Workflow<
     CaptureState<&SensorState::last_normalized_position>,
     Tap<HammerSpeedStage>,
     Tap<MidiVelocityEngineStage>,
+    Tap<NoteReleaseDetectorStage>,
     app::telemetry::SensorRttStreamTap
 >;
 // clang-format on
@@ -143,7 +148,8 @@ using SignalProcessingWorkflow = Workflow<
 
 constexpr std::size_t kAnalogSensorProcessorLinearizerStageIndex = 4u;
 constexpr std::size_t kAnalogSensorProcessorMidiVelocityTapStageIndex = 7u;
-constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 8u;
+constexpr std::size_t kAnalogSensorProcessorNoteReleaseTapStageIndex = 8u;
+constexpr std::size_t kAnalogSensorProcessorRttTapStageIndex = 9u;
 using AnalogSensorProcessor = signal_processing_detail::SignalProcessingWorkflow;
 
 }  // namespace app::config
