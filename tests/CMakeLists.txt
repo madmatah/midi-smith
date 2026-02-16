@@ -26,6 +26,7 @@ add_executable(unit_tests
     domain/dsp/filters/biquad.test.cpp
     domain/dsp/filters/sg5_smoother.test.cpp
     domain/dsp/filters/ema_filter.test.cpp
+    domain/dsp/filters/simple_moving_average.test.cpp
     domain/dsp/filters/constant_filter.test.cpp
     domain/dsp/engine/workflow.test.cpp
     domain/dsp/engine/decimated.test.cpp
