@@ -12,6 +12,7 @@
 #include "domain/dsp/engine/workflow.hpp"
 #include "domain/dsp/filters/biquad.hpp"
 #include "domain/dsp/filters/constant_filter.hpp"
+#include "domain/dsp/filters/ema_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
 #include "domain/dsp/logic/gate_open.hpp"
 #include "domain/dsp/logic/input_gate.hpp"
@@ -31,8 +32,8 @@ constexpr std::int32_t ADC_RESOLUTION_BITS = 16;
 constexpr std::int32_t TIA_FEEDBACK_RESISTOR_OHMS = 1800;
 
 constexpr float HAMMER_POSITION_STRIKE = 0.005f;
-constexpr float HAMMER_POSITION_LETOFF = 0.0375f;
-constexpr float HAMMER_POSITION_DROP = 0.074f;
+constexpr float HAMMER_POSITION_LETOFF = 0.054f;
+constexpr float HAMMER_POSITION_DROP = 0.078f;
 constexpr float HAMMER_POSITION_CATCH = 0.5f;
 constexpr float HAMMER_POSITION_REARM = 0.1;
 constexpr float HAMMER_POSITION_DAMPER = 0.55f;
@@ -48,10 +49,8 @@ constexpr bool SIGNAL_FILTERING_ENABLED = true;
 constexpr float SIGNAL_NOTCH_CUTOFF_HZ = 293.9f;
 constexpr float SIGNAL_NOTCH_Q_FACTOR = 100.0f;
 
-constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ = 600;
-constexpr float SIGNAL_LOW_PASS_Q_FACTOR = 0.707f;
-
-constexpr std::int32_t SIGNAL_LOW_PASS_CUTOFF_HZ_2 = 1000;
+constexpr std::int32_t SIGNAL_EMA_FILTER_RATIO_NUMERATOR = 1;
+constexpr std::int32_t SIGNAL_EMA_FILTER_RATIO_DENOMINATOR = 2;
 
 constexpr std::size_t SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE = 5u;
 
@@ -70,16 +69,9 @@ template <float kScale>
 using LinearScaler = domain::dsp::converters::LinearScaler<kScale>;
 
 
-using LowPassFilter = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
-    ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ, SIGNAL_LOW_PASS_Q_FACTOR>>;
-
-using LowPassFilter2 = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
-    ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_LOW_PASS_CUTOFF_HZ_2, SIGNAL_LOW_PASS_Q_FACTOR>>;
-
-using NotchFilter = domain::dsp::filters::Biquad<domain::dsp::filters::NotchStrategy<
-    ANALOG_ACQUISITION_CHANNEL_RATE_HZ, SIGNAL_NOTCH_CUTOFF_HZ, SIGNAL_NOTCH_Q_FACTOR>>;
-
-using FilteringEnabledPipeline = Workflow<LowPassFilter, LowPassFilter2>;
+using FastEmaFilter = domain::dsp::filters::EmaFilterRatio<SIGNAL_EMA_FILTER_RATIO_NUMERATOR,
+                                                           SIGNAL_EMA_FILTER_RATIO_DENOMINATOR>;
+using FilteringEnabledPipeline = Workflow<FastEmaFilter>;
 
 
 using FilteringDisabledPipeline = Workflow<domain::dsp::filters::IdentityFilter>;
