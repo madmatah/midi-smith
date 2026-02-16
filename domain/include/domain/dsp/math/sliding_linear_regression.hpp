@@ -43,11 +43,10 @@ class SlidingLinearRegression {
     }
 
     RecomputeSumsFromWindow();
-    return ComputeSpeedPerMillisecond();
+    return ComputeSlopePerTick();
   }
 
  private:
-  static constexpr float kMillisecondsPerSecond = 1000.0f;
   static constexpr float kMinDenominator = 0.000001f;
 
   static constexpr std::size_t NextIndex(std::size_t index) noexcept {
@@ -107,7 +106,7 @@ class SlidingLinearRegression {
     }
   }
 
-  float ComputeSpeedPerMillisecond() const noexcept {
+  float ComputeSlopePerTick() const noexcept {
     const float sample_count = static_cast<float>(filled_);
     const float denominator =
         sample_count * sum_time_ticks_squared_ - sum_time_ticks_ * sum_time_ticks_;
@@ -117,8 +116,7 @@ class SlidingLinearRegression {
 
     const float numerator =
         sample_count * sum_time_ticks_position_ - sum_time_ticks_ * sum_position_;
-    const float speed_per_tick = numerator / denominator;
-    return speed_per_tick * kMillisecondsPerSecond;
+    return numerator / denominator;
   }
 
   std::array<float, kWindowSize> positions_{};

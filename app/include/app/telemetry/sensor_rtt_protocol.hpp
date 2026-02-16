@@ -38,8 +38,9 @@ struct SensorRttDataPayload {
   float adc_raw = 0.0f;
   float adc_filtered = 0.0f;
   float current_ma = 0.0f;
-  float position_norm = 0.0f;
-  float speed_units_per_ms = 0.0f;
+  float shank_position_norm = 0.0f;
+  float shank_position_mm = 0.0f;
+  float shank_speed_m_per_s = 0.0f;
   float hammer_speed_m_per_s = 0.0f;
 };
 static_assert(std::is_trivially_copyable_v<SensorRttDataPayload>,
@@ -101,26 +102,34 @@ constexpr std::array kSensorRttDataPayloadMetrics = {
     SensorRttMetricDescriptor{
         3u,
         SensorRttValueType::kFloat32,
-        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, position_norm)),
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, shank_position_norm)),
         0.0f,
         1.0f,
-        "Normalized Position",
+        "Shank position (normalized)",
     },
     SensorRttMetricDescriptor{
         4u,
         SensorRttValueType::kFloat32,
-        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, speed_units_per_ms)),
-        -0.06f,
-        0.03f,
-        "Relative speed",
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, shank_position_mm)),
+        0.0f,
+        12.0f,
+        "Shank position (mm)",
     },
     SensorRttMetricDescriptor{
         5u,
         SensorRttValueType::kFloat32,
+        static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, shank_speed_m_per_s)),
+        -0.35f,
+        0.15f,
+        "Shank speed (m/s)",
+    },
+    SensorRttMetricDescriptor{
+        6u,
+        SensorRttValueType::kFloat32,
         static_cast<std::uint16_t>(offsetof(SensorRttDataPayload, hammer_speed_m_per_s)),
         -2.5f,
         1.0f,
-        "Hammer Speed (m/s)",
+        "Hammer speed (m/s)",
     },
 };
 

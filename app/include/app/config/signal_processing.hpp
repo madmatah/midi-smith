@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "app/config/analog_acquisition.hpp"
 #include "app/config/sensor_linearization.hpp"
 #include "app/telemetry/sensor_rtt_stream_tap.hpp"
+#include "domain/dsp/converters/linear_scaler.hpp"
 #include "domain/dsp/converters/tia_current_converter.hpp"
 #include "domain/dsp/engine/workflow.hpp"
 #include "domain/dsp/filters/biquad.hpp"
@@ -18,7 +20,6 @@
 #include "domain/music/piano/midi_velocity_engine.hpp"
 #include "domain/music/piano/note_release_detector_stage.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
-#include "domain/sensors/kinematics/velocity_kinematics_stage.hpp"
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -65,6 +66,8 @@ template <typename PredicateT, typename TrueStageT, typename FalseStageT>
 using Switch = domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
 template <float kValue>
 using ConstantFilter = domain::dsp::filters::ConstantFilter<kValue>;
+template <float kScale>
+using LinearScaler = domain::dsp::converters::LinearScaler<kScale>;
 
 
 using LowPassFilter = domain::dsp::filters::Biquad<domain::dsp::filters::LowPassStrategy<
@@ -105,19 +108,24 @@ template <auto SensorMemberPtr>
 using SensorMemberReader = domain::sensors::SensorMemberReader<SensorMemberPtr>;
 
 
-using HammerPositionReader = SensorMemberReader<&SensorState::last_normalized_position>;
+using HammerPositionReader = SensorMemberReader<&SensorState::last_shank_position_norm>;
 using IsHammerInActiveZone =
     domain::dsp::logic::GateOpen<HAMMER_POSITION_DAMPER, HammerPositionReader{}>;
 
-using SmartHammerSpeedEstimator =
+using SmartHammerSlopeEstimator =
     Switch<IsHammerInActiveZone, HammerSpeedEstimator, ConstantFilter<0.0f>>;
 
-using VelocityKinematicsStage =
-    domain::sensors::kinematics::VelocityKinematicsStage<Delta_d_mm, L_ratio>;
+constexpr float kTicksPerMillisecond = static_cast<float>(ANALOG_TICKS_PER_SECOND) / 1000.0f;
 
-using HammerSpeedStage =
-    Workflow<SmartHammerSpeedEstimator, CaptureState<&SensorState::last_speed_units_per_ms>,
-             VelocityKinematicsStage, CaptureState<&SensorState::last_hammer_speed_m_per_s>>;
+using PhysicalPositionStage = LinearScaler<Delta_d_mm>;
+using TicksToMsNormalizer = LinearScaler<kTicksPerMillisecond>;
+using ShankToHammerKinematicsStage = LinearScaler<L_ratio>;
+
+using PhysicalVelocityPipeline =
+    Workflow<PhysicalPositionStage, CaptureState<&SensorState::last_shank_position_mm>,
+             SmartHammerSlopeEstimator, TicksToMsNormalizer,
+             CaptureState<&SensorState::last_shank_speed_m_per_s>, ShankToHammerKinematicsStage,
+             CaptureState<&SensorState::last_hammer_speed_m_per_s>>;
 
 using MidiVelocityEngineStage =
     domain::music::piano::MidiVelocityEngine<HAMMER_POSITION_DAMPER, HAMMER_POSITION_LETOFF,
@@ -135,8 +143,8 @@ using SignalProcessingWorkflow = Workflow<
     TiaCurrentConverter,
     CaptureState<&SensorState::last_current_ma>,
     AnalogSensorLinearizer,
-    CaptureState<&SensorState::last_normalized_position>,
-    Tap<HammerSpeedStage>,
+    CaptureState<&SensorState::last_shank_position_norm>,
+    Tap<PhysicalVelocityPipeline>,
     Tap<MidiVelocityEngineStage>,
     Tap<NoteReleaseDetectorStage>,
     app::telemetry::SensorRttStreamTap

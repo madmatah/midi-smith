@@ -29,8 +29,9 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     s.last_raw_value = 1234;
     s.last_current_ma = 1.5f;
     s.last_filtered_adc_value = 1200.0f;
-    s.last_normalized_position = 3.5f;
-    s.last_speed_units_per_ms = -0.42f;
+    s.last_shank_position_norm = 0.35f;
+    s.last_shank_position_mm = 2.135f;
+    s.last_shank_speed_m_per_s = -0.42f;
     s.last_hammer_speed_m_per_s = 0.25f;
 
     app::telemetry::SensorRttStreamCapture capture;
@@ -50,8 +51,9 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     REQUIRE(p[0].payload.adc_raw == 1234.0f);
     REQUIRE(p[0].payload.adc_filtered == 1200.0f);
     REQUIRE(p[0].payload.current_ma == 1.5f);
-    REQUIRE(p[0].payload.position_norm == 3.5f);
-    REQUIRE(p[0].payload.speed_units_per_ms == -0.42f);
+    REQUIRE(p[0].payload.shank_position_norm == 0.35f);
+    REQUIRE(p[0].payload.shank_position_mm == 2.135f);
+    REQUIRE(p[0].payload.shank_speed_m_per_s == -0.42f);
     REQUIRE(p[0].payload.hammer_speed_m_per_s == 0.25f);
 
     capture.ConsumeFrames(1u);
