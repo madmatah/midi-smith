@@ -9,11 +9,13 @@
 #include "app/telemetry/sensor_rtt_stream_tap.hpp"
 #include "domain/dsp/converters/linear_scaler.hpp"
 #include "domain/dsp/converters/tia_current_converter.hpp"
+#include "domain/dsp/engine/temporal_continuity_guard.hpp"
 #include "domain/dsp/engine/workflow.hpp"
 #include "domain/dsp/filters/biquad.hpp"
 #include "domain/dsp/filters/constant_filter.hpp"
 #include "domain/dsp/filters/ema_filter.hpp"
 #include "domain/dsp/filters/identity_filter.hpp"
+#include "domain/dsp/filters/simple_moving_average.hpp"
 #include "domain/dsp/logic/gate_open.hpp"
 #include "domain/dsp/logic/input_gate.hpp"
 #include "domain/dsp/logic/switch.hpp"
@@ -53,6 +55,9 @@ constexpr std::int32_t SIGNAL_EMA_FILTER_RATIO_NUMERATOR = 1;
 constexpr std::int32_t SIGNAL_EMA_FILTER_RATIO_DENOMINATOR = 2;
 
 constexpr std::size_t SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE = 5u;
+constexpr std::uint32_t SIGNAL_HAMMER_SPEED_SMA_WINDOW_SIZE = 16u;
+
+constexpr std::uint32_t SIGNAL_TEMPORAL_CONTINUITY_GAP_FACTOR = 5u;
 
 
 namespace signal_processing_detail {
@@ -61,6 +66,8 @@ template <typename... StageTs>
 using Workflow = domain::dsp::engine::Workflow<StageTs...>;
 template <typename ContentT>
 using Tap = domain::dsp::engine::Tap<ContentT>;
+template <typename StageT, std::uint32_t kGapFactor>
+using TemporalContinuityGuard = domain::dsp::engine::TemporalContinuityGuard<StageT, kGapFactor>;
 template <typename PredicateT, typename TrueStageT, typename FalseStageT>
 using Switch = domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
 template <float kValue>
@@ -88,8 +95,11 @@ using TiaCurrentConverter =
 using AnalogSensorLinearizer =
     domain::sensors::linearization::SensorLinearProcessor<kSensorLookupTableSize>;
 
-using HammerSpeedEstimator =
-    domain::dsp::math::SlidingLinearRegression<SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE>;
+using ShankSpeedEstimator =
+    Workflow<domain::dsp::math::SlidingLinearRegression<SIGNAL_HAMMER_SPEED_ESTIMATOR_WINDOW_SIZE>,
+             domain::dsp::filters::SimpleMovingAverage<SIGNAL_HAMMER_SPEED_SMA_WINDOW_SIZE>>;
+using GuardedShankSpeedEstimator =
+    TemporalContinuityGuard<ShankSpeedEstimator, SIGNAL_TEMPORAL_CONTINUITY_GAP_FACTOR>;
 
 
 using SensorState = domain::sensors::SensorState;
@@ -100,12 +110,12 @@ template <auto SensorMemberPtr>
 using SensorMemberReader = domain::sensors::SensorMemberReader<SensorMemberPtr>;
 
 
-using HammerPositionReader = SensorMemberReader<&SensorState::last_shank_position_norm>;
-using IsHammerInActiveZone =
-    domain::dsp::logic::GateOpen<HAMMER_POSITION_DAMPER, HammerPositionReader{}>;
+using ShankPositionReader = SensorMemberReader<&SensorState::last_shank_position_norm>;
+using IsShankInActiveZone =
+    domain::dsp::logic::GateOpen<HAMMER_POSITION_DAMPER, ShankPositionReader{}>;
 
-using SmartHammerSlopeEstimator =
-    Switch<IsHammerInActiveZone, HammerSpeedEstimator, ConstantFilter<0.0f>>;
+using SmartShankSlopeEstimator =
+    Switch<IsShankInActiveZone, GuardedShankSpeedEstimator, ConstantFilter<0.0f>>;
 
 constexpr float kTicksPerMillisecond = static_cast<float>(ANALOG_TICKS_PER_SECOND) / 1000.0f;
 
@@ -115,7 +125,7 @@ using ShankToHammerKinematicsStage = LinearScaler<L_ratio>;
 
 using PhysicalVelocityPipeline =
     Workflow<PhysicalPositionStage, CaptureState<&SensorState::last_shank_position_mm>,
-             SmartHammerSlopeEstimator, TicksToMsNormalizer,
+             SmartShankSlopeEstimator, TicksToMsNormalizer,
              CaptureState<&SensorState::last_shank_speed_m_per_s>, ShankToHammerKinematicsStage,
              CaptureState<&SensorState::last_hammer_speed_m_per_s>>;
 
