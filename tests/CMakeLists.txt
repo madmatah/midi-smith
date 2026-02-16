@@ -41,6 +41,8 @@ add_executable(unit_tests
     domain/dsp/logic/switch.test.cpp
     domain/dsp/converters/tia_current_converter.test.cpp
     domain/dsp/math/sliding_linear_regression.test.cpp
+    domain/dsp/math/backward_difference.test.cpp
+    domain/dsp/math/central_difference.test.cpp
     domain/shell/command_parser.test.cpp
     domain/shell/line_editor.test.cpp
     domain/shell/command_dispatcher.test.cpp
