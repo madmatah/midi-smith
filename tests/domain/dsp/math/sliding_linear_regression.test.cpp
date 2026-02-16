@@ -33,7 +33,7 @@ TEST_CASE("The SlidingLinearRegression class") {
     REQUIRE_THAT(estimator.Transform(0.0f, ctx), WithinAbs(0.0f, 0.0001f));
   }
 
-  SECTION("Computes the expected speed on a linear ramp") {
+  SECTION("Computes the expected slope on a linear ramp") {
     SlidingLinearRegression<> estimator;
     SensorState sensor{};
     sensor.id = 1u;
@@ -42,13 +42,13 @@ TEST_CASE("The SlidingLinearRegression class") {
     REQUIRE_THAT(estimator.Transform(0.0f, ctx), WithinAbs(0.0f, 0.0001f));
 
     ctx.timestamp_ticks = 2000u;
-    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(0.002f, 0.000001f));
 
     ctx.timestamp_ticks = 3000u;
-    REQUIRE_THAT(estimator.Transform(4.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(4.0f, ctx), WithinAbs(0.002f, 0.000001f));
 
     ctx.timestamp_ticks = 4000u;
-    REQUIRE_THAT(estimator.Transform(6.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(6.0f, ctx), WithinAbs(0.002f, 0.000001f));
   }
 
   SECTION("Keeps the expected estimate with a sliding window") {
@@ -61,13 +61,13 @@ TEST_CASE("The SlidingLinearRegression class") {
     ctx.timestamp_ticks = 2000u;
     (void) estimator.Transform(1.0f, ctx);
     ctx.timestamp_ticks = 3000u;
-    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(1.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(0.001f, 0.000001f));
 
     ctx.timestamp_ticks = 4000u;
-    REQUIRE_THAT(estimator.Transform(3.0f, ctx), WithinAbs(1.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(3.0f, ctx), WithinAbs(0.001f, 0.000001f));
 
     ctx.timestamp_ticks = 5000u;
-    REQUIRE_THAT(estimator.Transform(4.0f, ctx), WithinAbs(1.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(4.0f, ctx), WithinAbs(0.001f, 0.000001f));
   }
 
   SECTION("Handles 32-bit timestamp wrap-around") {
@@ -82,10 +82,10 @@ TEST_CASE("The SlidingLinearRegression class") {
     REQUIRE_THAT(estimator.Transform(0.0f, ctx), WithinAbs(0.0f, 0.0001f));
 
     ctx.timestamp_ticks = t1;
-    REQUIRE_THAT(estimator.Transform(1.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(1.0f, ctx), WithinAbs(0.002f, 0.000001f));
 
     ctx.timestamp_ticks = t2;
-    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(0.002f, 0.000001f));
   }
 
   SECTION("Does not drift at rest over long duration") {
@@ -114,7 +114,7 @@ TEST_CASE("The SlidingLinearRegression class") {
 
     (void) estimator.Transform(0.0f, ctx);
     ctx.timestamp_ticks = 2000u;
-    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(2.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(2.0f, ctx), WithinAbs(0.002f, 0.000001f));
 
     estimator.Reset();
 
@@ -122,7 +122,7 @@ TEST_CASE("The SlidingLinearRegression class") {
     REQUIRE_THAT(estimator.Transform(10.0f, ctx), WithinAbs(0.0f, 0.0001f));
 
     ctx.timestamp_ticks = 4000u;
-    REQUIRE_THAT(estimator.Transform(13.0f, ctx), WithinAbs(3.0f, 0.001f));
+    REQUIRE_THAT(estimator.Transform(13.0f, ctx), WithinAbs(0.003f, 0.000001f));
   }
 }
 

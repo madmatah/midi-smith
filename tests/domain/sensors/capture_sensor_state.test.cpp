@@ -40,7 +40,7 @@ TEST_CASE("CaptureSensorState") {
   using domain::sensors::CaptureSensorState;
   using domain::sensors::SensorState;
 
-  using CaptureLastPosition = CaptureSensorState<&SensorState::last_normalized_position>;
+  using CaptureLastPosition = CaptureSensorState<&SensorState::last_shank_position_norm>;
   static_assert(domain::dsp::concepts::SignalTransformer<CaptureLastPosition, SignalContext>);
 
   using Pipeline = Workflow<PlusTenStage, CaptureLastPosition, TimesTwoStage>;
@@ -52,7 +52,7 @@ TEST_CASE("CaptureSensorState") {
 
   Pipeline pipeline{};
   REQUIRE_THAT(pipeline.Transform(5.0f, ctx), WithinAbs(30.0f, 0.001f));
-  REQUIRE_THAT(sensor.last_normalized_position, WithinAbs(15.0f, 0.001f));
+  REQUIRE_THAT(sensor.last_shank_position_norm, WithinAbs(15.0f, 0.001f));
 }
 
 #endif

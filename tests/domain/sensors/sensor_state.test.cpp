@@ -18,7 +18,9 @@ TEST_CASE("The SensorState struct") {
         REQUIRE(state.last_raw_value == 0);
         REQUIRE(state.last_midi_velocity == 0);
         REQUIRE_THAT(state.last_processed_value, WithinAbs(0.0f, 0.001f));
-        REQUIRE_THAT(state.last_speed_units_per_ms, WithinAbs(0.0f, 0.001f));
+        REQUIRE_THAT(state.last_shank_position_norm, WithinAbs(0.0f, 0.001f));
+        REQUIRE_THAT(state.last_shank_position_mm, WithinAbs(0.0f, 0.001f));
+        REQUIRE_THAT(state.last_shank_speed_m_per_s, WithinAbs(0.0f, 0.001f));
         REQUIRE_THAT(state.last_hammer_speed_m_per_s, WithinAbs(0.0f, 0.001f));
         REQUIRE(state.last_timestamp_ticks == 0);
       }

@@ -87,8 +87,9 @@ class SensorRttStreamCapture final {
     frame.payload.adc_raw = static_cast<float>(ctx.sensor.last_raw_value);
     frame.payload.adc_filtered = ctx.sensor.last_filtered_adc_value;
     frame.payload.current_ma = ctx.sensor.last_current_ma;
-    frame.payload.position_norm = ctx.sensor.last_normalized_position;
-    frame.payload.speed_units_per_ms = ctx.sensor.last_speed_units_per_ms;
+    frame.payload.shank_position_norm = ctx.sensor.last_shank_position_norm;
+    frame.payload.shank_position_mm = ctx.sensor.last_shank_position_mm;
+    frame.payload.shank_speed_m_per_s = ctx.sensor.last_shank_speed_m_per_s;
     frame.payload.hammer_speed_m_per_s = ctx.sensor.last_hammer_speed_m_per_s;
 
     (void) TryPush(frame);
