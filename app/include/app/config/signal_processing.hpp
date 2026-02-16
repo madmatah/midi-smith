@@ -30,12 +30,12 @@ constexpr std::int32_t ADC_REFERENCE_VOLTAGE_MILLI_VOLTS = 2048;
 constexpr std::int32_t ADC_RESOLUTION_BITS = 16;
 constexpr std::int32_t TIA_FEEDBACK_RESISTOR_OHMS = 1800;
 
-constexpr float HAMMER_POSITION_DAMPER = 0.45f;
-constexpr float HAMMER_POSITION_CATCH = 0.385f;
-constexpr float HAMMER_POSITION_LETOFF = 0.0292f;
-constexpr float HAMMER_POSITION_DROP = 0.04f;
 constexpr float HAMMER_POSITION_STRIKE = 0.005f;
+constexpr float HAMMER_POSITION_LETOFF = 0.0375f;
+constexpr float HAMMER_POSITION_DROP = 0.074f;
+constexpr float HAMMER_POSITION_CATCH = 0.5f;
 constexpr float HAMMER_POSITION_REARM = 0.1;
+constexpr float HAMMER_POSITION_DAMPER = 0.55f;
 
 constexpr float R_hammer_mm = 126.0f;
 constexpr float R_sensor_mm = 17.5f;
