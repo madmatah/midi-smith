@@ -421,10 +421,8 @@ class RttScope:
 
     @staticmethod
     def _default_metric_index(metric_names: List[str]) -> int:
-        if "Normalized Position" in metric_names:
-            return metric_names.index("Normalized Position")
-        if "position_norm" in metric_names:
-            return metric_names.index("position_norm")
+        if "Shank position (mm)" in metric_names:
+            return metric_names.index("Shank position (mm)")
         return 0
 
     def configure_metrics(self, schema) -> None:

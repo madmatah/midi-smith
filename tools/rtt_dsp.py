@@ -322,7 +322,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._decoder = SensorRttStreamDecoder()
         self._metric_names = []
         self._metric_metadata = {}
-        self._selected_metric_name = "Normalized Position"
+        self._selected_metric_name = "Shank position (mm)"
 
         self._is_paused = False
         self._placement_state = 0  # 0: Idle, 1: Placing C1, 2: Placing C2
@@ -400,10 +400,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     @staticmethod
     def _pick_default_metric_name(metric_names):
-        if "Normalized Position" in metric_names:
-            return "Normalized Position"
-        if "position_norm" in metric_names:
-            return "position_norm"
+        if "Shank position (mm)" in metric_names:
+            return "Shank position (mm)"
         if not metric_names:
             return ""
         return metric_names[0]

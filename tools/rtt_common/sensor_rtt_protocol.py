@@ -14,17 +14,7 @@ VALUE_TYPE_FLOAT32 = 1
 FRAME_HEADER_STRUCT = struct.Struct("<IBBHII")
 FRAME_HEADER_SIZE_BYTES = FRAME_HEADER_STRUCT.size
 
-DATA_PAYLOAD_STRUCT = struct.Struct("<B3x5f")
-DATA_PAYLOAD_SIZE_BYTES = DATA_PAYLOAD_STRUCT.size
-
 _MAGIC_BYTES = struct.pack("<I", MAGIC)
-LEGACY_METRIC_NAMES = [
-    "adc_raw",
-    "adc_filtered",
-    "current_ma",
-    "position_norm",
-    "hammer_speed_m_per_s",
-]
 
 
 @dataclass(frozen=True)
@@ -104,17 +94,6 @@ def decode_schema_payload(payload: bytes) -> Optional[Schema]:
         data_payload_size_bytes=int(data_payload_size_bytes),
         frame_header_size_bytes=int(frame_header_size_bytes),
     )
-
-
-def _decode_legacy_payload_values(payload: bytes) -> Dict[str, float]:
-    if len(payload) < DATA_PAYLOAD_SIZE_BYTES:
-        return {}
-
-    _, adc_raw, adc_filtered, current_ma, position_norm, hammer_speed_m_per_s = (
-        DATA_PAYLOAD_STRUCT.unpack_from(payload, 0)
-    )
-    values = [adc_raw, adc_filtered, current_ma, position_norm, hammer_speed_m_per_s]
-    return {name: float(value) for name, value in zip(LEGACY_METRIC_NAMES, values)}
 
 
 def _has_usable_schema_metrics(payload: bytes, schema: Schema) -> bool:
@@ -222,13 +201,14 @@ class SensorRttStreamDecoder:
 
         sensor_id = int(payload[0])
 
-        values_by_name: Dict[str, float] = {}
         schema = self.latest_schema
-        if schema is not None and schema.metrics and _has_usable_schema_metrics(payload, schema):
-            values_by_name = _decode_values_from_schema(payload, schema)
+        if schema is None or not schema.metrics:
+            return None
 
-        if not values_by_name:
-            values_by_name = _decode_legacy_payload_values(payload)
+        if not _has_usable_schema_metrics(payload, schema):
+            return None
+
+        values_by_name = _decode_values_from_schema(payload, schema)
         if not values_by_name:
             return None
 
