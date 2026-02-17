@@ -7,6 +7,8 @@ from tools.rtt_common import ThroughputMeter
 from .constants import (
     DISPLAY_MODE_DSP,
     DISPLAY_MODE_MULTI_SIGNAL,
+    NOISE_DIVISION_EPSILON,
+    NOISE_TREND_WINDOW_MS,
     TIMER_INTERVAL_MS,
 )
 from .dialogs import FilterEditorDialog
@@ -19,6 +21,7 @@ from .filters import (
     compute_power_spectrum_db,
     estimate_latency_samples,
 )
+from .formatting import format_compact_value
 from .metrics import (
     build_metric_samples_from_frame_values,
     extract_float_metric_names_and_metadata,
@@ -99,6 +102,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._refresh_dsp_curve_data()
         self._refresh_dsp_frequency_spectrum()
         self._automatic_latency_label.setText("Auto Delay: --")
+        self._update_noise_metrics_labels()
         self._update_correlation_readout()
 
     def _clear_multi_history(self):
@@ -107,6 +111,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._multi_received_samples_total = 0
         self._refresh_multi_curves_data()
         self._update_correlation_readout()
+
+    def _has_defined_filters(self):
+        return bool(self._filter_chain)
 
     def _on_mode_combobox_changed(self):
         mode_name = self._mode_combobox.currentData()
@@ -185,8 +192,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
             self._signal_checkbox_layout.addWidget(checkbox)
             self._metric_checkbox_by_name[metric_name] = checkbox
 
-        self._signal_radio_layout.addStretch()
-        self._signal_checkbox_layout.addStretch()
+        self._signal_radio_layout.addSpacing(4)
+        self._signal_checkbox_layout.addSpacing(4)
         self._is_rebuilding_metric_widgets = False
 
     def _rebuild_multi_signal_buffers_and_curves(self):
@@ -361,11 +368,14 @@ class RttLiveScope(QtWidgets.QMainWindow):
     def _refresh_signal_status_label(self):
         if not self._metric_names:
             self._signal_status_label.setText("Waiting for schema...")
+            self._signal_status_label.setVisible(True)
             return
         if self._display_mode == DISPLAY_MODE_MULTI_SIGNAL and not self._multi_selected_metric_names:
             self._signal_status_label.setText("No signal selected in Multi-signal mode.")
+            self._signal_status_label.setVisible(True)
             return
         self._signal_status_label.setText("")
+        self._signal_status_label.setVisible(False)
 
     def _toggle_placement_mode(self):
         if self._placement_state == 0:
@@ -413,6 +423,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._build_mode_controls(control_layout)
         self._build_signal_controls(control_layout)
         self._build_filter_controls(control_layout)
+        self._build_noise_controls(control_layout)
         self._build_measurement_controls(control_layout)
         self._build_correlation_controls(control_layout)
         self._build_display_controls(control_layout)
@@ -432,10 +443,22 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QtWidgets.QHBoxLayout(central_widget)
 
+        control_scroll_area = QtWidgets.QScrollArea()
+        control_scroll_area.setWidgetResizable(True)
+        control_scroll_area.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        control_scroll_area.setVerticalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        control_scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        control_scroll_area.setFixedWidth(340)
+
         control_panel = QtWidgets.QWidget()
         control_layout = QtWidgets.QVBoxLayout(control_panel)
-        control_panel.setFixedWidth(320)
-        main_layout.addWidget(control_panel)
+        control_panel.setMinimumWidth(320)
+        control_scroll_area.setWidget(control_panel)
+        main_layout.addWidget(control_scroll_area)
         return main_layout, control_layout
 
     def _build_mode_controls(self, control_layout):
@@ -471,10 +494,59 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._signal_checkbox_layout.setContentsMargins(0, 0, 0, 0)
         signal_layout.addWidget(self._signal_checkbox_container)
 
+    def _create_collapsible_panel(
+        self,
+        control_layout,
+        title_text,
+        is_expanded=True,
+        stretch=0,
+    ):
+        panel = QtWidgets.QGroupBox()
+        panel_layout = QtWidgets.QVBoxLayout(panel)
+
+        toggle_button = QtWidgets.QPushButton()
+        toggle_button.setCheckable(True)
+        toggle_button.setStyleSheet("text-align: left; padding-left: 6px;")
+        panel_layout.addWidget(toggle_button)
+
+        content_widget = QtWidgets.QWidget()
+        panel_layout.addWidget(content_widget)
+
+        if stretch > 0:
+            control_layout.addWidget(panel, stretch)
+        else:
+            control_layout.addWidget(panel)
+
+        toggle_button.toggled.connect(
+            lambda expanded, button=toggle_button, widget=content_widget, title=title_text: (
+                self._set_collapsible_panel_state(button, widget, title, expanded)
+            )
+        )
+        toggle_button.setChecked(is_expanded)
+        self._set_collapsible_panel_state(
+            toggle_button, content_widget, title_text, is_expanded
+        )
+        return panel, content_widget, toggle_button
+
+    @staticmethod
+    def _set_collapsible_panel_state(
+        toggle_button,
+        content_widget,
+        title_text,
+        is_expanded,
+    ):
+        content_widget.setVisible(is_expanded)
+        prefix = "v" if is_expanded else ">"
+        toggle_button.setText(f"{prefix} {title_text}")
+
     def _build_filter_controls(self, control_layout):
-        self._filters_panel = QtWidgets.QGroupBox("Filters")
-        self._filter_layout = QtWidgets.QVBoxLayout(self._filters_panel)
-        control_layout.addWidget(self._filters_panel, 1)
+        self._filters_panel, filter_content_widget, _ = self._create_collapsible_panel(
+            control_layout,
+            "Filters",
+            is_expanded=False,
+        )
+        self._filter_layout = QtWidgets.QVBoxLayout(filter_content_widget)
+        self._filter_layout.setContentsMargins(0, 0, 0, 0)
 
         self._add_filter_button = QtWidgets.QPushButton("Add Filter")
         self._add_filter_button.clicked.connect(self._add_new_filter)
@@ -487,29 +559,175 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._filter_layout.addStretch()
 
     def _build_measurement_controls(self, control_layout):
-        measurement_panel = QtWidgets.QGroupBox("Measurement")
-        measurement_layout = QtWidgets.QVBoxLayout(measurement_panel)
-        control_layout.addWidget(measurement_panel)
+        _, measurement_content_widget, _ = self._create_collapsible_panel(
+            control_layout,
+            "Measurement",
+            is_expanded=False,
+        )
+        measurement_content_layout = QtWidgets.QVBoxLayout(measurement_content_widget)
+        measurement_content_layout.setContentsMargins(0, 0, 0, 0)
 
         self._automatic_latency_label = QtWidgets.QLabel("Auto Delay: --")
-        measurement_layout.addWidget(self._automatic_latency_label)
+        measurement_content_layout.addWidget(self._automatic_latency_label)
 
         self._set_cursors_button = QtWidgets.QPushButton("Set Cursors (M)")
         self._set_cursors_button.clicked.connect(self._toggle_placement_mode)
-        measurement_layout.addWidget(self._set_cursors_button)
+        measurement_content_layout.addWidget(self._set_cursors_button)
 
         self._show_cursors_button = QtWidgets.QPushButton("Show Cursors")
         self._show_cursors_button.setCheckable(True)
         self._show_cursors_button.toggled.connect(self._toggle_cursors)
-        measurement_layout.addWidget(self._show_cursors_button)
+        measurement_content_layout.addWidget(self._show_cursors_button)
 
         self._manual_latency_label = QtWidgets.QLabel("Cursor Delta: --")
-        measurement_layout.addWidget(self._manual_latency_label)
+        measurement_content_layout.addWidget(self._manual_latency_label)
+
+    def _build_noise_controls(self, control_layout):
+        self._noise_panel, noise_content_widget, _ = self._create_collapsible_panel(
+            control_layout,
+            "Noise",
+            is_expanded=False,
+        )
+        noise_content_layout = QtWidgets.QVBoxLayout(noise_content_widget)
+        noise_content_layout.setContentsMargins(0, 0, 0, 0)
+
+        self._noise_raw_label = QtWidgets.QLabel("Raw: -- RMS | -- Vpp")
+        noise_content_layout.addWidget(self._noise_raw_label)
+
+        self._noise_filtered_label = QtWidgets.QLabel("Filtered: -- RMS | -- Vpp")
+        noise_content_layout.addWidget(self._noise_filtered_label)
+
+        self._noise_reduction_label = QtWidgets.QLabel("Reduction: --.-- dB (x--)")
+        noise_content_layout.addWidget(self._noise_reduction_label)
+
+        self._reset_noise_metrics_labels()
+
+    def _reset_noise_metrics_labels(self):
+        self._noise_raw_label.setText("Raw: -- RMS | -- Vpp")
+        self._noise_filtered_label.setText("Filtered: -- RMS | -- Vpp")
+        self._noise_reduction_label.setText("Reduction: --.-- dB (x--)")
+
+    def _extract_valid_dsp_view_samples(self):
+        valid_index_range = self._get_valid_sample_index_range_in_display_window()
+        if valid_index_range is None:
+            return None, None
+
+        valid_min_index, valid_max_index = valid_index_range
+        valid_slice = slice(valid_min_index, valid_max_index + 1)
+        raw_view = self._raw_buffer[-self._display_window_samples:]
+        filtered_view = self._filtered_buffer[-self._display_window_samples:]
+        return raw_view[valid_slice], filtered_view[valid_slice]
+
+    @staticmethod
+    def _compute_moving_average(samples, window_size_samples):
+        if samples.size <= 1:
+            return np.array(samples, copy=True)
+
+        effective_window_size = int(max(1, min(window_size_samples, samples.size)))
+        if effective_window_size <= 1:
+            return np.array(samples, copy=True)
+
+        samples_float64 = samples.astype(np.float64, copy=False)
+        kernel = np.ones(effective_window_size, dtype=np.float64) / float(effective_window_size)
+
+        # Use edge padding to avoid zero-padding artifacts at boundaries.
+        left_padding = effective_window_size // 2
+        right_padding = effective_window_size - 1 - left_padding
+        padded_samples = np.pad(
+            samples_float64,
+            (left_padding, right_padding),
+            mode="edge",
+        )
+        return np.convolve(padded_samples, kernel, mode="valid")
+
+    @staticmethod
+    def _compute_rms_vpp(samples):
+        if samples is None or samples.size == 0:
+            return None, None
+        samples_float64 = samples.astype(np.float64, copy=False)
+        rms_value = float(np.sqrt(np.mean(np.square(samples_float64))))
+        vpp_value = float(np.max(samples) - np.min(samples))
+        return rms_value, vpp_value
+
+    @staticmethod
+    def _format_metric_value(value, decimals=4):
+        if value is None or not np.isfinite(value):
+            return "--"
+        return f"{value:.{decimals}f}"
+
+    def _update_noise_metrics_labels(self):
+        if self._display_mode != DISPLAY_MODE_DSP:
+            self._reset_noise_metrics_labels()
+            return
+
+        raw_samples, filtered_samples = self._extract_valid_dsp_view_samples()
+        if (
+            raw_samples is None
+            or filtered_samples is None
+            or raw_samples.size < 2
+            or filtered_samples.size < 2
+        ):
+            self._reset_noise_metrics_labels()
+            return
+
+        trend_window_samples = max(
+            1,
+            int(round((self._sample_rate_hz * NOISE_TREND_WINDOW_MS) / 1000.0)),
+        )
+        raw_trend = self._compute_moving_average(raw_samples, trend_window_samples)
+        filtered_trend = self._compute_moving_average(
+            filtered_samples, trend_window_samples
+        )
+
+        raw_noise = raw_samples - raw_trend
+        raw_noise_rms, raw_noise_vpp = self._compute_rms_vpp(raw_noise)
+
+        self._noise_raw_label.setText(
+            f"Raw: {format_compact_value(raw_noise_rms)} RMS | "
+            f"{format_compact_value(raw_noise_vpp)} Vpp"
+        )
+
+        if not self._has_defined_filters():
+            self._noise_filtered_label.setText("Filtered: -- RMS | -- Vpp")
+            self._noise_reduction_label.setText("Reduction: --.-- dB (x--)")
+            return
+
+        filtered_noise = filtered_samples - filtered_trend
+
+        filtered_noise_rms, filtered_noise_vpp = self._compute_rms_vpp(filtered_noise)
+        self._noise_filtered_label.setText(
+            f"Filtered: {format_compact_value(filtered_noise_rms)} RMS | "
+            f"{format_compact_value(filtered_noise_vpp)} Vpp"
+        )
+
+        raw_rms_for_reduction = max(
+            raw_noise_rms if raw_noise_rms is not None else 0.0,
+            NOISE_DIVISION_EPSILON,
+        )
+        filtered_rms_for_reduction = max(
+            filtered_noise_rms if filtered_noise_rms is not None else 0.0,
+            NOISE_DIVISION_EPSILON,
+        )
+        reduction_ratio = max(
+            raw_rms_for_reduction / filtered_rms_for_reduction,
+            NOISE_DIVISION_EPSILON,
+        )
+        reduction_db = float(20.0 * np.log10(reduction_ratio))
+
+        self._noise_reduction_label.setText(
+            "Reduction: "
+            f"{self._format_metric_value(reduction_db, decimals=2)} dB "
+            f"(x{self._format_metric_value(reduction_ratio, decimals=1)})"
+        )
 
     def _build_correlation_controls(self, control_layout):
-        correlation_panel = QtWidgets.QGroupBox("Correlation")
-        correlation_layout = QtWidgets.QVBoxLayout(correlation_panel)
-        control_layout.addWidget(correlation_panel)
+        _, correlation_content_widget, _ = self._create_collapsible_panel(
+            control_layout,
+            "Correlation",
+            is_expanded=False,
+        )
+        correlation_layout = QtWidgets.QVBoxLayout(correlation_content_widget)
+        correlation_layout.setContentsMargins(0, 0, 0, 0)
 
         self._show_correlation_cursor_button = QtWidgets.QPushButton("Show Correlation Cursor")
         self._show_correlation_cursor_button.setCheckable(True)
@@ -530,9 +748,13 @@ class RttLiveScope(QtWidgets.QMainWindow):
         return checkbox
 
     def _build_display_controls(self, control_layout):
-        display_panel = QtWidgets.QGroupBox("Display")
-        display_layout = QtWidgets.QFormLayout(display_panel)
-        control_layout.addWidget(display_panel)
+        _, display_content_widget, _ = self._create_collapsible_panel(
+            control_layout,
+            "Display",
+            is_expanded=False,
+        )
+        display_layout = QtWidgets.QFormLayout(display_content_widget)
+        display_layout.setContentsMargins(0, 0, 0, 0)
 
         self._show_raw_checkbox = self._create_display_visibility_checkbox(
             "Show raw signal", True
@@ -671,12 +893,14 @@ class RttLiveScope(QtWidgets.QMainWindow):
             row_layout.addWidget(remove_button)
 
             self._filter_list_layout.addWidget(row)
+        self._update_filtered_feature_visibility()
 
     def _configure_filter_enabled_state(self, stage, checked):
         stage.enabled = checked
         if self._is_paused:
             self._recalculate_filtered_history()
         self._refresh_plot_legends()
+        self._update_elements_visibility()
 
     def _add_new_filter(self):
         dialog = FilterEditorDialog(self)
@@ -703,6 +927,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
             if self._is_paused:
                 self._recalculate_filtered_history()
             self._refresh_plot_legends()
+            self._update_elements_visibility()
+            self._update_noise_metrics_labels()
 
     def _edit_existing_filter(self, stage):
         dialog = FilterEditorDialog(self, stage)
@@ -718,6 +944,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
             if self._is_paused:
                 self._recalculate_filtered_history()
             self._refresh_plot_legends()
+            self._update_elements_visibility()
+            self._update_noise_metrics_labels()
 
     def _remove_filter_stage(self, stage):
         self._filter_chain.remove(stage)
@@ -725,6 +953,16 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if self._is_paused:
             self._recalculate_filtered_history()
         self._refresh_plot_legends()
+        self._update_elements_visibility()
+        self._update_noise_metrics_labels()
+
+    def _update_filtered_feature_visibility(self):
+        has_filtered_features = (
+            self._display_mode == DISPLAY_MODE_DSP and self._has_defined_filters()
+        )
+        self._show_filtered_checkbox.setVisible(has_filtered_features)
+        self._noise_filtered_label.setVisible(has_filtered_features)
+        self._noise_reduction_label.setVisible(has_filtered_features)
 
     def _recalculate_filtered_history(self):
         for stage in self._filter_chain:
@@ -736,12 +974,15 @@ class RttLiveScope(QtWidgets.QMainWindow):
             self._refresh_dsp_curve_data()
             self._refresh_dsp_frequency_spectrum()
             self._update_auto_delay_label()
+            self._update_noise_metrics_labels()
         self._update_correlation_readout()
 
     def _update_elements_visibility(self):
         if self._display_mode == DISPLAY_MODE_DSP:
             show_raw = self._show_raw_checkbox.isChecked()
-            show_filtered = self._show_filtered_checkbox.isChecked()
+            show_filtered = (
+                self._show_filtered_checkbox.isChecked() and self._has_defined_filters()
+            )
 
             self._curve_raw.setVisible(show_raw)
             self._curve_fft_raw.setVisible(show_raw)
@@ -782,6 +1023,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if self._display_mode == DISPLAY_MODE_DSP:
             self._refresh_dsp_frequency_spectrum()
             self._update_auto_delay_label()
+            self._update_noise_metrics_labels()
         self._snap_correlation_cursor_to_valid_sample()
         self._update_correlation_readout()
 
@@ -830,6 +1072,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
     def _cycle_signal_visibility(self):
         if self._display_mode != DISPLAY_MODE_DSP:
             return
+        if not self._has_defined_filters():
+            self._show_raw_checkbox.setChecked(True)
+            return
 
         show_raw = self._show_raw_checkbox.isChecked()
         show_filtered = self._show_filtered_checkbox.isChecked()
@@ -846,6 +1091,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     def _display_all_signal_curves(self):
         if self._display_mode != DISPLAY_MODE_DSP:
+            return
+        if not self._has_defined_filters():
+            self._show_raw_checkbox.setChecked(True)
             return
         self._show_raw_checkbox.setChecked(True)
         self._show_filtered_checkbox.setChecked(True)
@@ -914,9 +1162,10 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if self._display_mode == DISPLAY_MODE_DSP:
             filtered_curve_legend_text = self._build_filtered_curve_legend_text()
             self._curve_raw.opts["name"] = "Raw"
-            self._curve_filtered.opts["name"] = filtered_curve_legend_text
             plot_legend.addItem(self._curve_raw, "Raw")
-            plot_legend.addItem(self._curve_filtered, filtered_curve_legend_text)
+            if self._has_defined_filters():
+                self._curve_filtered.opts["name"] = filtered_curve_legend_text
+                plot_legend.addItem(self._curve_filtered, filtered_curve_legend_text)
             return
 
         for metric_name in self._metric_names:
@@ -931,9 +1180,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
     def _refresh_time_plot_title(self):
         if self._display_mode == DISPLAY_MODE_DSP:
             metric_name = self._dsp_selected_metric_name if self._dsp_selected_metric_name else "No signal"
-            self._plot_time.setTitle(f"Time domain ({metric_name})")
+            self._plot_time.setTitle(metric_name)
         else:
-            self._plot_time.setTitle("Time domain (Multi-signal)")
+            self._plot_time.setTitle("Multi-signal")
 
     def _switch_display_mode(self, mode_name, should_update_selector=True):
         if mode_name not in {DISPLAY_MODE_DSP, DISPLAY_MODE_MULTI_SIGNAL}:
@@ -952,14 +1201,15 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._signal_radio_container.setVisible(is_dsp_mode)
         self._signal_checkbox_container.setVisible(not is_dsp_mode)
         self._filters_panel.setVisible(is_dsp_mode)
+        self._noise_panel.setVisible(is_dsp_mode)
         self._automatic_latency_label.setVisible(is_dsp_mode)
 
         self._show_raw_checkbox.setVisible(is_dsp_mode)
-        self._show_filtered_checkbox.setVisible(is_dsp_mode)
         self._show_signal_checkbox.setVisible(is_dsp_mode)
         self._show_fft_checkbox.setVisible(is_dsp_mode)
         self._display_spacer_above_axes.setVisible(is_dsp_mode)
         self._display_spacer_above_window.setVisible(is_dsp_mode)
+        self._update_filtered_feature_visibility()
 
         self._refresh_time_plot_title()
         if is_dsp_mode:
@@ -971,8 +1221,10 @@ class RttLiveScope(QtWidgets.QMainWindow):
                 self._has_applied_initial_dsp_suggested_range = True
             self._refresh_dsp_frequency_spectrum()
             self._update_auto_delay_label()
+            self._update_noise_metrics_labels()
         else:
             self._automatic_latency_label.setText("Auto Delay: --")
+            self._reset_noise_metrics_labels()
             if (
                 self._multi_selected_metric_names
                 and not self._has_applied_initial_multi_suggested_range
@@ -1226,6 +1478,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if self._display_mode == DISPLAY_MODE_DSP:
             self._refresh_dsp_frequency_spectrum()
             self._update_auto_delay_label()
+            self._update_noise_metrics_labels()
         self._update_elements_visibility()
 
     def _poll_and_refresh(self):
