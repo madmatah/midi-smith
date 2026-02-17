@@ -7,7 +7,12 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, QtCore, QtGui
 from scipy import signal
 
-from rtt_common.sensor_rtt_protocol import KIND_DATA, KIND_SCHEMA, SensorRttStreamDecoder
+from rtt_common.sensor_rtt_protocol import (
+    KIND_DATA,
+    KIND_SCHEMA,
+    VALUE_TYPE_FLOAT32,
+    SensorRttStreamDecoder,
+)
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 60001
@@ -22,6 +27,8 @@ TIMER_INTERVAL_MS = 33
 WELCH_NPERSEG = 1024
 LOG_SAFETY_EPSILON = 1e-12
 FILTER_INITIAL_STATE_SCALE = 58000
+DISPLAY_MODE_DSP = "dsp"
+DISPLAY_MODE_MULTI_SIGNAL = "multi_signal"
 
 
 class FilterStage:
@@ -81,9 +88,9 @@ class FilterStage:
             polyorder = 2
             if self.window_size <= polyorder:
                 self.window_size = polyorder + 1
-            
+
             relative_position = self.window_size - 1 if self.filter_type == "savitzky_causal" else None
-            
+
             coefficients = signal.savgol_coeffs(self.window_size, polyorder, pos=relative_position)
             self.numerator = coefficients
             self.denominator = [1.0]
@@ -155,11 +162,11 @@ def build_savgol_filter(window_size, is_causal, sample_rate_hz):
     polyorder = 2
     if window_size <= polyorder:
         window_size = polyorder + 1
-    
+
     relative_position = window_size - 1 if is_causal else None
     numerator = signal.savgol_coeffs(window_size, polyorder, pos=relative_position)
     denominator = [1.0]
-    
+
     initial_state = (
         signal.lfilter_zi(numerator, denominator) * FILTER_INITIAL_STATE_SCALE
     )
@@ -202,10 +209,10 @@ def estimate_latency_samples(raw_signal, filtered_signal):
     search_window_size = min(total_samples, 2048)
     raw_segment = raw_signal[-search_window_size:] - np.mean(raw_signal[-search_window_size:])
     filtered_segment = filtered_signal[-search_window_size:] - np.mean(filtered_signal[-search_window_size:])
-    
+
     correlation = signal.correlate(filtered_segment, raw_segment, mode="full")
     lags = np.arange(-len(raw_segment) + 1, len(filtered_segment))
-    
+
     max_correlation_index = np.argmax(correlation)
     return lags[max_correlation_index]
 
@@ -280,20 +287,20 @@ class FilterEditorDialog(QtWidgets.QDialog):
         self.quality_factor_spinbox.setVisible(is_quality_factor_applicable)
         self.alpha_spinbox.setVisible(is_ema_applicable)
         self.window_size_spinbox.setVisible(is_savitzky_golay_applicable)
-        
+
         form_layout = self.layout()
         if isinstance(form_layout, QtWidgets.QFormLayout):
             for i in range(form_layout.rowCount()):
                 field_item = form_layout.itemAt(i, QtWidgets.QFormLayout.ItemRole.FieldRole)
                 label_item = form_layout.itemAt(i, QtWidgets.QFormLayout.ItemRole.LabelRole)
-                
+
                 if field_item and label_item:
                     field_widget = field_item.widget()
                     label_widget = label_item.widget()
                     applicable_widgets = [
-                        self.frequency_spinbox, 
-                        self.quality_factor_spinbox, 
-                        self.alpha_spinbox, 
+                        self.frequency_spinbox,
+                        self.quality_factor_spinbox,
+                        self.alpha_spinbox,
                         self.window_size_spinbox
                     ]
                     if field_widget in applicable_widgets:
@@ -322,13 +329,26 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._decoder = SensorRttStreamDecoder()
         self._metric_names = []
         self._metric_metadata = {}
-        self._selected_metric_name = "Shank position (mm)"
+        self._dsp_selected_metric_name = "Shank position (mm)"
+        self._multi_selected_metric_names = set()
+        self._metric_checkbox_by_name = {}
+        self._multi_raw_buffers_by_metric_name = {}
+        self._multi_curves_by_metric_name = {}
+        self._last_metric_value_by_name = {}
+        self._display_mode = DISPLAY_MODE_DSP
 
         self._is_paused = False
-        self._placement_state = 0  # 0: Idle, 1: Placing C1, 2: Placing C2
+        self._placement_state = 0
         self._display_window_samples = view_size_samples
         self._raw_buffer = np.zeros(self._history_size_samples)
         self._filtered_buffer = np.zeros(self._history_size_samples)
+        self._dsp_received_samples_total = 0
+        self._multi_received_samples_total = 0
+        self._is_rebuilding_metric_widgets = False
+        self._is_snapping_correlation_cursor = False
+        self._has_initialized_multi_selection = False
+        self._has_applied_initial_dsp_suggested_range = False
+        self._has_applied_initial_multi_suggested_range = False
 
         self._set_window_title_live()
         self.resize(1200, 800)
@@ -357,69 +377,64 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._quit_shortcut = QtGui.QShortcut(QtGui.QKeySequence("Q"), self)
         self._quit_shortcut.activated.connect(self.close)
 
-    def _clear_signal_history(self):
+    def _clear_dsp_history(self):
         self._raw_buffer[:] = 0.0
         self._filtered_buffer[:] = 0.0
+        self._dsp_received_samples_total = 0
         for stage in self._filter_chain:
             stage.reset_state()
 
-        self._plot_time.setTitle(f"Time domain ({self._selected_metric_name})")
-        self._curve_raw.setData(self._raw_buffer[-self._display_window_samples:])
-        self._curve_filtered.setData(self._filtered_buffer[-self._display_window_samples:])
-
-        frequency_hz, power_raw_db = compute_power_spectrum_db(
-            self._raw_buffer, self._sample_rate_hz
-        )
-        _, power_filtered_db = compute_power_spectrum_db(
-            self._filtered_buffer, self._sample_rate_hz
-        )
-        self._curve_fft_raw.setData(frequency_hz, power_raw_db)
-        self._curve_fft_filtered.setData(frequency_hz, power_filtered_db)
-
+        self._refresh_dsp_curve_data()
+        self._refresh_dsp_frequency_spectrum()
         self._automatic_latency_label.setText("Auto Delay: --")
+        self._update_correlation_readout()
+
+    def _clear_multi_history(self):
+        for metric_name in self._multi_raw_buffers_by_metric_name:
+            self._multi_raw_buffers_by_metric_name[metric_name][:] = 0.0
+        self._multi_received_samples_total = 0
+        self._refresh_multi_curves_data()
+        self._update_correlation_readout()
+
+    def _on_mode_combobox_changed(self):
+        mode_name = self._mode_combobox.currentData()
+        if mode_name:
+            self._switch_display_mode(mode_name, should_update_selector=False)
 
     def _on_metric_radio_toggled(self, button, checked):
-        if not checked:
+        if self._is_rebuilding_metric_widgets or not checked:
             return
         metric_name = button.property("metric_name")
         if not metric_name:
             return
-        if metric_name == self._selected_metric_name:
+        if metric_name == self._dsp_selected_metric_name:
             return
-        self._selected_metric_name = metric_name
-        self._clear_signal_history()
-        self._apply_suggested_range(metric_name)
+        self._dsp_selected_metric_name = metric_name
+        self._clear_dsp_history()
+        self._refresh_time_plot_title()
+        if self._display_mode == DISPLAY_MODE_DSP:
+            self._apply_suggested_range(metric_name)
+            self._has_applied_initial_dsp_suggested_range = True
+        self._update_correlation_readout()
 
-    def _apply_suggested_range(self, metric_name):
-        metadata = self._metric_metadata.get(metric_name)
-        if metadata and "suggested_min" in metadata and "suggested_max" in metadata:
-            s_min = metadata["suggested_min"]
-            s_max = metadata["suggested_max"]
-            if s_min != s_max:
-                self._plot_time.setYRange(s_min, s_max, padding=0)
-
-    @staticmethod
-    def _pick_default_metric_name(metric_names):
-        if "Shank position (mm)" in metric_names:
-            return "Shank position (mm)"
-        if not metric_names:
-            return ""
-        return metric_names[0]
-
-    def _set_available_metrics(self, schema):
-        metric_names = schema.metric_names
-        if metric_names == self._metric_names:
+    def _on_metric_checkbox_toggled(self, metric_name, checked):
+        if self._is_rebuilding_metric_widgets:
             return
+        if checked:
+            self._multi_selected_metric_names.add(metric_name)
+        else:
+            self._multi_selected_metric_names.discard(metric_name)
+        if self._display_mode == DISPLAY_MODE_MULTI_SIGNAL:
+            self._apply_multi_suggested_range()
+            if self._multi_selected_metric_names:
+                self._has_applied_initial_multi_suggested_range = True
+        self._refresh_signal_status_label()
+        self._refresh_multi_curves_data()
+        self._refresh_plot_legends()
+        self._update_elements_visibility()
+        self._update_correlation_readout()
 
-        self._metric_names = list(metric_names)
-        self._metric_metadata = {
-            m.name: {
-                "suggested_min": m.suggested_min,
-                "suggested_max": m.suggested_max,
-            }
-            for m in schema.metrics
-        }
-
+    def _rebuild_metric_selectors(self):
         for old_button in list(self._metric_button_group.buttons()):
             self._metric_button_group.removeButton(old_button)
             old_button.deleteLater()
@@ -430,29 +445,217 @@ class RttLiveScope(QtWidgets.QMainWindow):
             if widget:
                 widget.deleteLater()
 
-        if not self._metric_names:
-            self._signal_placeholder_label.setText("Waiting for schema...")
-            return
+        while self._signal_checkbox_layout.count():
+            item = self._signal_checkbox_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
 
-        desired_metric_name = (
-            self._selected_metric_name
-            if self._selected_metric_name in self._metric_names
-            else self._pick_default_metric_name(self._metric_names)
-        )
-        self._selected_metric_name = desired_metric_name
-        self._signal_placeholder_label.setText("")
+        self._metric_checkbox_by_name = {}
+        self._is_rebuilding_metric_widgets = True
 
         for metric_name in self._metric_names:
             radio_button = QtWidgets.QRadioButton(metric_name)
             radio_button.setProperty("metric_name", metric_name)
             self._metric_button_group.addButton(radio_button)
             self._signal_radio_layout.addWidget(radio_button)
-            if metric_name == desired_metric_name:
+            if metric_name == self._dsp_selected_metric_name:
                 radio_button.setChecked(True)
 
+            checkbox = QtWidgets.QCheckBox(metric_name)
+            checkbox.setProperty("metric_name", metric_name)
+            checkbox.setChecked(metric_name in self._multi_selected_metric_names)
+            checkbox.toggled.connect(
+                lambda checked, metric_name=metric_name: self._on_metric_checkbox_toggled(
+                    metric_name, checked
+                )
+            )
+            self._signal_checkbox_layout.addWidget(checkbox)
+            self._metric_checkbox_by_name[metric_name] = checkbox
+
         self._signal_radio_layout.addStretch()
-        self._plot_time.setTitle(f"Time domain ({self._selected_metric_name})")
-        self._apply_suggested_range(desired_metric_name)
+        self._signal_checkbox_layout.addStretch()
+        self._is_rebuilding_metric_widgets = False
+
+    def _rebuild_multi_signal_buffers_and_curves(self):
+        for curve in self._multi_curves_by_metric_name.values():
+            self._plot_time.removeItem(curve)
+
+        self._multi_raw_buffers_by_metric_name = {}
+        self._multi_curves_by_metric_name = {}
+
+        hue_count = max(len(self._metric_names), 1)
+        for metric_index, metric_name in enumerate(self._metric_names):
+            curve = self._plot_time.plot(
+                pen=pg.mkPen(pg.intColor(metric_index, hues=hue_count), width=1.2)
+            )
+            curve.setVisible(False)
+            self._multi_curves_by_metric_name[metric_name] = curve
+            self._multi_raw_buffers_by_metric_name[metric_name] = np.zeros(self._history_size_samples)
+        self._refresh_plot_legends()
+
+    def _apply_suggested_range(self, metric_name):
+        metadata = self._metric_metadata.get(metric_name)
+        if metadata and "suggested_min" in metadata and "suggested_max" in metadata:
+            suggested_min = metadata["suggested_min"]
+            suggested_max = metadata["suggested_max"]
+            if suggested_min != suggested_max:
+                self._plot_time.setYRange(suggested_min, suggested_max, padding=0)
+
+    def _apply_multi_suggested_range(self):
+        selected_metric_names = [
+            metric_name
+            for metric_name in self._metric_names
+            if metric_name in self._multi_selected_metric_names
+        ]
+        if not selected_metric_names:
+            return
+
+        suggested_mins = []
+        suggested_maxs = []
+        for metric_name in selected_metric_names:
+            metadata = self._metric_metadata.get(metric_name)
+            if not metadata:
+                continue
+            suggested_min = metadata.get("suggested_min")
+            suggested_max = metadata.get("suggested_max")
+            if suggested_min is None or suggested_max is None:
+                continue
+            suggested_mins.append(float(suggested_min))
+            suggested_maxs.append(float(suggested_max))
+
+        if not suggested_mins or not suggested_maxs:
+            return
+
+        global_suggested_min = min(suggested_mins)
+        global_suggested_max = max(suggested_maxs)
+        if global_suggested_min < global_suggested_max:
+            self._plot_time.setYRange(global_suggested_min, global_suggested_max, padding=0)
+
+    @staticmethod
+    def _pick_default_metric_name(metric_names):
+        if "Shank position (mm)" in metric_names:
+            return "Shank position (mm)"
+        if not metric_names:
+            return ""
+        return metric_names[0]
+
+    def _set_available_metrics(self, schema):
+        float_metrics = [
+            metric_definition
+            for metric_definition in schema.metrics
+            if metric_definition.value_type == VALUE_TYPE_FLOAT32
+        ]
+        metric_names = [metric_definition.name for metric_definition in float_metrics]
+        metric_metadata = {
+            metric_definition.name: {
+                "suggested_min": metric_definition.suggested_min,
+                "suggested_max": metric_definition.suggested_max,
+            }
+            for metric_definition in float_metrics
+        }
+
+        previous_dsp_selected_metric_name = self._dsp_selected_metric_name
+        previous_multi_selected_metric_names = set(self._multi_selected_metric_names)
+
+        if metric_names == self._metric_names:
+            self._metric_metadata = metric_metadata
+            self._multi_selected_metric_names.intersection_update(self._metric_names)
+            if self._display_mode == DISPLAY_MODE_DSP:
+                if self._dsp_selected_metric_name not in self._metric_names:
+                    self._dsp_selected_metric_name = self._pick_default_metric_name(self._metric_names)
+                has_dsp_selection_changed = (
+                    self._dsp_selected_metric_name != previous_dsp_selected_metric_name
+                )
+                if (
+                    self._dsp_selected_metric_name
+                    and (
+                        has_dsp_selection_changed
+                        or not self._has_applied_initial_dsp_suggested_range
+                    )
+                ):
+                    self._apply_suggested_range(self._dsp_selected_metric_name)
+                    self._has_applied_initial_dsp_suggested_range = True
+            else:
+                has_multi_selection_changed = (
+                    self._multi_selected_metric_names != previous_multi_selected_metric_names
+                )
+                if (
+                    self._multi_selected_metric_names
+                    and (
+                        has_multi_selection_changed
+                        or not self._has_applied_initial_multi_suggested_range
+                    )
+                ):
+                    self._apply_multi_suggested_range()
+                    self._has_applied_initial_multi_suggested_range = True
+            self._refresh_signal_status_label()
+            self._update_elements_visibility()
+            self._update_correlation_readout()
+            return
+
+        previous_multi_selection = set(self._multi_selected_metric_names)
+
+        self._metric_names = metric_names
+        self._metric_metadata = metric_metadata
+
+        if self._dsp_selected_metric_name not in self._metric_names:
+            self._dsp_selected_metric_name = self._pick_default_metric_name(self._metric_names)
+
+        self._multi_selected_metric_names = {
+            metric_name
+            for metric_name in self._metric_names
+            if metric_name in previous_multi_selection
+        }
+        if self._multi_selected_metric_names:
+            self._has_initialized_multi_selection = True
+        elif not self._has_initialized_multi_selection and self._metric_names:
+            self._multi_selected_metric_names = {self._metric_names[0]}
+            self._has_initialized_multi_selection = True
+
+        self._rebuild_metric_selectors()
+        self._rebuild_multi_signal_buffers_and_curves()
+        self._clear_dsp_history()
+        self._clear_multi_history()
+        self._refresh_time_plot_title()
+        if self._display_mode == DISPLAY_MODE_DSP:
+            has_dsp_selection_changed = (
+                self._dsp_selected_metric_name != previous_dsp_selected_metric_name
+            )
+            if (
+                self._dsp_selected_metric_name
+                and (
+                    has_dsp_selection_changed
+                    or not self._has_applied_initial_dsp_suggested_range
+                )
+            ):
+                self._apply_suggested_range(self._dsp_selected_metric_name)
+                self._has_applied_initial_dsp_suggested_range = True
+        else:
+            has_multi_selection_changed = (
+                self._multi_selected_metric_names != previous_multi_selection
+            )
+            if (
+                self._multi_selected_metric_names
+                and (
+                    has_multi_selection_changed
+                    or not self._has_applied_initial_multi_suggested_range
+                )
+            ):
+                self._apply_multi_suggested_range()
+                self._has_applied_initial_multi_suggested_range = True
+        self._refresh_signal_status_label()
+        self._update_elements_visibility()
+        self._update_correlation_readout()
+
+    def _refresh_signal_status_label(self):
+        if not self._metric_names:
+            self._signal_status_label.setText("Waiting for schema...")
+            return
+        if self._display_mode == DISPLAY_MODE_MULTI_SIGNAL and not self._multi_selected_metric_names:
+            self._signal_status_label.setText("No signal selected in Multi-signal mode.")
+            return
+        self._signal_status_label.setText("")
 
     def _toggle_placement_mode(self):
         if self._placement_state == 0:
@@ -487,7 +690,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     def _set_window_title_live(self):
         status = "PAUSED" if self._is_paused else "LIVE"
-        self.setWindowTitle(f"RTT DSP - [Space] to pause - [{status}]")
+        mode_name = "DSP" if self._display_mode == DISPLAY_MODE_DSP else "MULTI"
+        self.setWindowTitle(f"RTT DSP [{mode_name}] - [Space] to pause - [{status}]")
 
     def _setup_plots(self):
         central_widget = QtWidgets.QWidget()
@@ -496,8 +700,18 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         control_panel = QtWidgets.QWidget()
         control_layout = QtWidgets.QVBoxLayout(control_panel)
-        control_panel.setFixedWidth(250)
+        control_panel.setFixedWidth(320)
         main_layout.addWidget(control_panel)
+
+        mode_panel = QtWidgets.QGroupBox("Mode")
+        mode_layout = QtWidgets.QVBoxLayout(mode_panel)
+        control_layout.addWidget(mode_panel)
+
+        self._mode_combobox = QtWidgets.QComboBox()
+        self._mode_combobox.addItem("DSP", DISPLAY_MODE_DSP)
+        self._mode_combobox.addItem("Multi-signal", DISPLAY_MODE_MULTI_SIGNAL)
+        self._mode_combobox.currentIndexChanged.connect(self._on_mode_combobox_changed)
+        mode_layout.addWidget(self._mode_combobox)
 
         signal_panel = QtWidgets.QGroupBox("Signal")
         signal_layout = QtWidgets.QVBoxLayout(signal_panel)
@@ -507,17 +721,22 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._metric_button_group.setExclusive(True)
         self._metric_button_group.buttonToggled.connect(self._on_metric_radio_toggled)
 
-        self._signal_placeholder_label = QtWidgets.QLabel("Waiting for schema...")
-        signal_layout.addWidget(self._signal_placeholder_label)
+        self._signal_status_label = QtWidgets.QLabel("Waiting for schema...")
+        signal_layout.addWidget(self._signal_status_label)
 
         self._signal_radio_container = QtWidgets.QWidget()
         self._signal_radio_layout = QtWidgets.QVBoxLayout(self._signal_radio_container)
         self._signal_radio_layout.setContentsMargins(0, 0, 0, 0)
         signal_layout.addWidget(self._signal_radio_container)
 
-        filters_panel = QtWidgets.QGroupBox("Filters")
-        self._filter_layout = QtWidgets.QVBoxLayout(filters_panel)
-        control_layout.addWidget(filters_panel, 1)
+        self._signal_checkbox_container = QtWidgets.QWidget()
+        self._signal_checkbox_layout = QtWidgets.QVBoxLayout(self._signal_checkbox_container)
+        self._signal_checkbox_layout.setContentsMargins(0, 0, 0, 0)
+        signal_layout.addWidget(self._signal_checkbox_container)
+
+        self._filters_panel = QtWidgets.QGroupBox("Filters")
+        self._filter_layout = QtWidgets.QVBoxLayout(self._filters_panel)
+        control_layout.addWidget(self._filters_panel, 1)
 
         self._add_filter_button = QtWidgets.QPushButton("Add Filter")
         self._add_filter_button.clicked.connect(self._add_new_filter)
@@ -533,7 +752,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         measure_panel = QtWidgets.QGroupBox("Measurement")
         measure_layout = QtWidgets.QVBoxLayout()
         measure_panel.setLayout(measure_layout)
-        self._filter_layout.addWidget(measure_panel)
+        control_layout.addWidget(measure_panel)
 
         self._automatic_latency_label = QtWidgets.QLabel("Auto Delay: --")
         measure_layout.addWidget(self._automatic_latency_label)
@@ -550,10 +769,27 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._manual_latency_label = QtWidgets.QLabel("Cursor Delta: --")
         measure_layout.addWidget(self._manual_latency_label)
 
+        correlation_panel = QtWidgets.QGroupBox("Correlation")
+        correlation_layout = QtWidgets.QVBoxLayout()
+        correlation_panel.setLayout(correlation_layout)
+        control_layout.addWidget(correlation_panel)
+
+        self._show_correlation_cursor_button = QtWidgets.QPushButton("Show Correlation Cursor")
+        self._show_correlation_cursor_button.setCheckable(True)
+        self._show_correlation_cursor_button.toggled.connect(self._toggle_correlation_cursor)
+        correlation_layout.addWidget(self._show_correlation_cursor_button)
+
+        self._correlation_x_label = QtWidgets.QLabel("X (samples): --")
+        correlation_layout.addWidget(self._correlation_x_label)
+
+        self._correlation_values_label = QtWidgets.QLabel("Correlation cursor hidden")
+        self._correlation_values_label.setWordWrap(True)
+        correlation_layout.addWidget(self._correlation_values_label)
+
         display_panel = QtWidgets.QGroupBox("Display")
         display_layout = QtWidgets.QFormLayout()
         display_panel.setLayout(display_layout)
-        self._filter_layout.addWidget(display_panel)
+        control_layout.addWidget(display_panel)
 
         self._show_raw_checkbox = QtWidgets.QCheckBox("Show raw signal")
         self._show_raw_checkbox.setChecked(True)
@@ -565,7 +801,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._show_filtered_checkbox.toggled.connect(self._update_elements_visibility)
         display_layout.addRow(self._show_filtered_checkbox)
 
-        display_layout.addRow(QtWidgets.QLabel(""))  # Spacer
+        self._display_spacer_above_axes = QtWidgets.QLabel("")
+        display_layout.addRow(self._display_spacer_above_axes)
 
         self._show_signal_checkbox = QtWidgets.QCheckBox("Signal Plot")
         self._show_signal_checkbox.setChecked(True)
@@ -577,7 +814,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._show_fft_checkbox.toggled.connect(self._update_elements_visibility)
         display_layout.addRow(self._show_fft_checkbox)
 
-        display_layout.addRow(QtWidgets.QLabel(""))  # Spacer
+        self._display_spacer_above_window = QtWidgets.QLabel("")
+        display_layout.addRow(self._display_spacer_above_window)
+
         self._window_size_label = QtWidgets.QLabel("Time Window:")
         display_layout.addRow(self._window_size_label)
 
@@ -591,12 +830,12 @@ class RttLiveScope(QtWidgets.QMainWindow):
         display_layout.addRow(self._window_duration_label)
         self._refresh_window_duration_label()
 
+        control_layout.addStretch()
+
         self._graphics_layout = pg.GraphicsLayoutWidget()
         main_layout.addWidget(self._graphics_layout)
 
-        self._plot_time = self._graphics_layout.addPlot(
-            title="Time domain (raw vs filtered)"
-        )
+        self._plot_time = self._graphics_layout.addPlot(title="Time domain")
         self._plot_time.getViewBox().setLimits(minYRange=1e-3)
         self._plot_time.addLegend()
         self._curve_raw = self._plot_time.plot(
@@ -609,6 +848,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         )
 
         self._plot_time.scene().sigMouseClicked.connect(self._handle_plot_click)
+        self._plot_time.scene().sigMouseMoved.connect(self._handle_plot_mouse_moved)
 
         self._cursor1 = pg.InfiniteLine(
             pos=self._display_window_samples // 3,
@@ -629,6 +869,18 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._plot_time.addItem(self._cursor1)
         self._plot_time.addItem(self._cursor2)
 
+        self._correlation_cursor = pg.InfiniteLine(
+            pos=self._display_window_samples // 2,
+            angle=90,
+            movable=True,
+            pen=pg.mkPen("#ff8800", width=1, style=QtCore.Qt.PenStyle.DotLine),
+        )
+        self._correlation_cursor.sigPositionChanged.connect(
+            self._handle_correlation_cursor_position_changed
+        )
+        self._correlation_cursor.hide()
+        self._plot_time.addItem(self._correlation_cursor)
+
         self._graphics_layout.nextRow()
 
         self._plot_frequency = self._graphics_layout.addPlot(title="FFT spectrum")
@@ -641,7 +893,11 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._refresh_filter_ui()
         self._refresh_plot_legends()
+        self._refresh_time_plot_title()
+        self._switch_display_mode(DISPLAY_MODE_DSP, should_update_selector=True)
         self._update_elements_visibility()
+        self._refresh_signal_status_label()
+        self._update_correlation_readout()
 
     def _refresh_filter_ui(self):
         while self._filter_list_layout.count():
@@ -657,7 +913,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
             enabled_checkbox = QtWidgets.QCheckBox()
             enabled_checkbox.setChecked(stage.enabled)
-            enabled_checkbox.toggled.connect(lambda checked, stage=stage: self._configure_filter_enabled_state(stage, checked))
+            enabled_checkbox.toggled.connect(
+                lambda checked, stage=stage: self._configure_filter_enabled_state(stage, checked)
+            )
             row_layout.addWidget(enabled_checkbox)
 
             description_label = QtWidgets.QLabel(stage.description)
@@ -696,7 +954,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
                 )
             elif filter_type == "ema":
                 new_stage = build_ema_filter(parameters["alpha"], self._sample_rate_hz)
-            else: # savitzky or savitzky_causal
+            else:
                 new_stage = build_savgol_filter(
                     parameters["window_size"], filter_type == "savitzky_causal", self._sample_rate_hz
                 )
@@ -735,14 +993,90 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
         self._filtered_buffer = apply_filter_chain(self._raw_buffer, self._filter_chain)
 
-        current_display_window_size = self._display_window_samples
-        self._curve_filtered.setData(self._filtered_buffer[-current_display_window_size:])
+        if self._display_mode == DISPLAY_MODE_DSP:
+            self._refresh_dsp_curve_data()
+            self._refresh_dsp_frequency_spectrum()
+            self._update_auto_delay_label()
+        self._update_correlation_readout()
 
-        frequency_hz, power_filtered_db = compute_power_spectrum_db(
+    def _update_elements_visibility(self):
+        if self._display_mode == DISPLAY_MODE_DSP:
+            show_raw = self._show_raw_checkbox.isChecked()
+            show_filtered = self._show_filtered_checkbox.isChecked()
+
+            self._curve_raw.setVisible(show_raw)
+            self._curve_fft_raw.setVisible(show_raw)
+            self._curve_filtered.setVisible(show_filtered)
+            self._curve_fft_filtered.setVisible(show_filtered)
+
+            for curve in self._multi_curves_by_metric_name.values():
+                curve.setVisible(False)
+
+            show_signal = self._show_signal_checkbox.isChecked()
+            show_fft = self._show_fft_checkbox.isChecked()
+            self._plot_time.setVisible(show_signal)
+            self._plot_frequency.setVisible(show_fft)
+        else:
+            self._curve_raw.setVisible(False)
+            self._curve_fft_raw.setVisible(False)
+            self._curve_filtered.setVisible(False)
+            self._curve_fft_filtered.setVisible(False)
+            for metric_name, curve in self._multi_curves_by_metric_name.items():
+                curve.setVisible(metric_name in self._multi_selected_metric_names)
+            self._plot_time.setVisible(True)
+            self._plot_frequency.setVisible(False)
+
+        cursors_visible = self._show_cursors_button.isChecked() and self._plot_time.isVisible()
+        self._cursor1.setVisible(cursors_visible)
+        self._cursor2.setVisible(cursors_visible)
+
+        correlation_visible = (
+            self._show_correlation_cursor_button.isChecked() and self._plot_time.isVisible()
+        )
+        self._correlation_cursor.setVisible(correlation_visible)
+
+    def _recalculate_display_window_from_slider(self, value):
+        self._display_window_samples = value
+        self._refresh_window_duration_label()
+        self._refresh_dsp_curve_data()
+        self._refresh_multi_curves_data()
+        if self._display_mode == DISPLAY_MODE_DSP:
+            self._refresh_dsp_frequency_spectrum()
+            self._update_auto_delay_label()
+        self._snap_correlation_cursor_to_valid_sample()
+        self._update_correlation_readout()
+
+    def _refresh_window_duration_label(self):
+        duration_ms = (self._display_window_samples / self._sample_rate_hz) * 1000
+        self._window_duration_label.setText(f"{self._display_window_samples} points ({duration_ms:.1f} ms)")
+
+    def _refresh_dsp_curve_data(self):
+        self._curve_raw.setData(self._raw_buffer[-self._display_window_samples:])
+        self._curve_filtered.setData(self._filtered_buffer[-self._display_window_samples:])
+
+    def _refresh_multi_curves_data(self):
+        for metric_name, metric_buffer in self._multi_raw_buffers_by_metric_name.items():
+            curve = self._multi_curves_by_metric_name.get(metric_name)
+            if curve is None:
+                continue
+            curve.setData(metric_buffer[-self._display_window_samples:])
+
+    def _refresh_dsp_frequency_spectrum(self):
+        frequency_hz, power_raw_db = compute_power_spectrum_db(
+            self._raw_buffer, self._sample_rate_hz
+        )
+        _, power_filtered_db = compute_power_spectrum_db(
             self._filtered_buffer, self._sample_rate_hz
         )
+        self._curve_fft_raw.setData(frequency_hz, power_raw_db)
         self._curve_fft_filtered.setData(frequency_hz, power_filtered_db)
 
+    def _update_auto_delay_label(self):
+        if self._display_mode != DISPLAY_MODE_DSP:
+            return
+        if self._dsp_received_samples_total <= 0:
+            self._automatic_latency_label.setText("Auto Delay: --")
+            return
         if self._filter_chain:
             delay_samples = estimate_latency_samples(
                 self._raw_buffer, self._filtered_buffer
@@ -754,33 +1088,10 @@ class RttLiveScope(QtWidgets.QMainWindow):
         else:
             self._automatic_latency_label.setText("Auto Delay: 0.0 ms")
 
-    def _update_elements_visibility(self):
-        show_raw = self._show_raw_checkbox.isChecked()
-        show_filtered = self._show_filtered_checkbox.isChecked()
-
-        self._curve_raw.setVisible(show_raw)
-        self._curve_fft_raw.setVisible(show_raw)
-        self._curve_filtered.setVisible(show_filtered)
-        self._curve_fft_filtered.setVisible(show_filtered)
-
-        show_signal = self._show_signal_checkbox.isChecked()
-        show_fft = self._show_fft_checkbox.isChecked()
-
-        self._plot_time.setVisible(show_signal)
-        self._plot_frequency.setVisible(show_fft)
-
-    def _recalculate_display_window_from_slider(self, value):
-        self._display_window_samples = value
-        self._refresh_window_duration_label()
-        if self._is_paused:
-            self._curve_raw.setData(self._raw_buffer[-self._display_window_samples:])
-            self._curve_filtered.setData(self._filtered_buffer[-self._display_window_samples:])
-
-    def _refresh_window_duration_label(self):
-        duration_ms = (self._display_window_samples / self._sample_rate_hz) * 1000
-        self._window_duration_label.setText(f"{self._display_window_samples} points ({duration_ms:.1f} ms)")
-
     def _cycle_signal_visibility(self):
+        if self._display_mode != DISPLAY_MODE_DSP:
+            return
+
         show_raw = self._show_raw_checkbox.isChecked()
         show_filtered = self._show_filtered_checkbox.isChecked()
 
@@ -793,9 +1104,13 @@ class RttLiveScope(QtWidgets.QMainWindow):
         else:
             self._show_raw_checkbox.setChecked(True)
             self._show_filtered_checkbox.setChecked(False)
+
     def _display_all_signal_curves(self):
+        if self._display_mode != DISPLAY_MODE_DSP:
+            return
         self._show_raw_checkbox.setChecked(True)
         self._show_filtered_checkbox.setChecked(True)
+
     def _handle_plot_click(self, event):
         if self._placement_state == 0:
             return
@@ -810,34 +1125,237 @@ class RttLiveScope(QtWidgets.QMainWindow):
                 self._cursor2.setValue(x_coordinate)
                 self._set_placement_mode(0)
             self._recalculate_manual_latency()
+
+    def _handle_plot_mouse_moved(self, scene_position):
+        if not self._show_correlation_cursor_button.isChecked():
+            return
+        if not self._plot_time.isVisible():
+            return
+        plot_view_box = self._plot_time.vb
+        if not plot_view_box.sceneBoundingRect().contains(scene_position):
+            return
+
+        view_point = plot_view_box.mapSceneToView(scene_position)
+        self._correlation_cursor.setValue(float(view_point.x()))
+
     def _toggle_cursors(self, is_visible):
-        if is_visible:
-            self._cursor1.show()
-            self._cursor2.show()
-            self._show_cursors_button.setText("Hide Cursors")
-        else:
-            self._cursor1.hide()
-            self._cursor2.hide()
-            self._show_cursors_button.setText("Show Cursors")
+        self._show_cursors_button.setText("Hide Cursors" if is_visible else "Show Cursors")
+        self._update_elements_visibility()
         self._recalculate_manual_latency()
+
     def _recalculate_manual_latency(self):
         delta_samples = abs(self._cursor2.value() - self._cursor1.value())
         delta_ms = (delta_samples / self._sample_rate_hz) * 1000
         self._manual_latency_label.setText(f"Cursor Delta: {delta_ms:.2f} ms")
+
     def _refresh_plot_legends(self):
+        self._synchronize_time_plot_legend()
+
+    def _build_filtered_curve_legend_text(self):
         enabled_filters_descriptions = [stage.description for stage in self._filter_chain if stage.enabled]
         if not enabled_filters_descriptions:
-            full_description = "Raw Signal"
-        else:
-            full_description = " + ".join(enabled_filters_descriptions)
-        self._curve_filtered.opts['name'] = f"Filtered ({full_description})"
+            return "Filtered (Raw Signal)"
+        return f"Filtered ({' + '.join(enabled_filters_descriptions)})"
+
+    def _clear_time_plot_legend(self):
         plot_legend = self._plot_time.legend
-        if plot_legend:
-            for item_index, item in enumerate(plot_legend.items):
-                current_description = self._curve_filtered.opts.get('name_old', 'Filtered')
-                if item[1].text == current_description:
-                    item[1].setText(f"Filtered ({full_description})")
-            self._curve_filtered.opts['name_old'] = f"Filtered ({full_description})"
+        if not plot_legend:
+            return
+        legend_labels = [item[1].text for item in list(plot_legend.items)]
+        for legend_label in legend_labels:
+            plot_legend.removeItem(legend_label)
+
+    def _synchronize_time_plot_legend(self):
+        plot_legend = self._plot_time.legend
+        if not plot_legend:
+            return
+
+        self._clear_time_plot_legend()
+
+        if self._display_mode == DISPLAY_MODE_DSP:
+            filtered_curve_legend_text = self._build_filtered_curve_legend_text()
+            self._curve_raw.opts["name"] = "Raw"
+            self._curve_filtered.opts["name"] = filtered_curve_legend_text
+            plot_legend.addItem(self._curve_raw, "Raw")
+            plot_legend.addItem(self._curve_filtered, filtered_curve_legend_text)
+            return
+
+        for metric_name in self._metric_names:
+            if metric_name not in self._multi_selected_metric_names:
+                continue
+            metric_curve = self._multi_curves_by_metric_name.get(metric_name)
+            if metric_curve is None:
+                continue
+            metric_curve.opts["name"] = metric_name
+            plot_legend.addItem(metric_curve, metric_name)
+
+    def _refresh_time_plot_title(self):
+        if self._display_mode == DISPLAY_MODE_DSP:
+            metric_name = self._dsp_selected_metric_name if self._dsp_selected_metric_name else "No signal"
+            self._plot_time.setTitle(f"Time domain ({metric_name})")
+        else:
+            self._plot_time.setTitle("Time domain (Multi-signal)")
+
+    def _switch_display_mode(self, mode_name, should_update_selector=True):
+        if mode_name not in {DISPLAY_MODE_DSP, DISPLAY_MODE_MULTI_SIGNAL}:
+            return
+
+        self._display_mode = mode_name
+
+        if should_update_selector:
+            selected_index = self._mode_combobox.findData(mode_name)
+            if selected_index >= 0:
+                self._mode_combobox.blockSignals(True)
+                self._mode_combobox.setCurrentIndex(selected_index)
+                self._mode_combobox.blockSignals(False)
+
+        is_dsp_mode = mode_name == DISPLAY_MODE_DSP
+        self._signal_radio_container.setVisible(is_dsp_mode)
+        self._signal_checkbox_container.setVisible(not is_dsp_mode)
+        self._filters_panel.setVisible(is_dsp_mode)
+        self._automatic_latency_label.setVisible(is_dsp_mode)
+
+        self._show_raw_checkbox.setVisible(is_dsp_mode)
+        self._show_filtered_checkbox.setVisible(is_dsp_mode)
+        self._show_signal_checkbox.setVisible(is_dsp_mode)
+        self._show_fft_checkbox.setVisible(is_dsp_mode)
+        self._display_spacer_above_axes.setVisible(is_dsp_mode)
+        self._display_spacer_above_window.setVisible(is_dsp_mode)
+
+        self._refresh_time_plot_title()
+        if is_dsp_mode:
+            if (
+                self._dsp_selected_metric_name
+                and not self._has_applied_initial_dsp_suggested_range
+            ):
+                self._apply_suggested_range(self._dsp_selected_metric_name)
+                self._has_applied_initial_dsp_suggested_range = True
+            self._refresh_dsp_frequency_spectrum()
+            self._update_auto_delay_label()
+        else:
+            self._automatic_latency_label.setText("Auto Delay: --")
+            if (
+                self._multi_selected_metric_names
+                and not self._has_applied_initial_multi_suggested_range
+            ):
+                self._apply_multi_suggested_range()
+                self._has_applied_initial_multi_suggested_range = True
+        self._set_window_title_live()
+        self._refresh_signal_status_label()
+        self._refresh_dsp_curve_data()
+        self._refresh_multi_curves_data()
+        self._refresh_plot_legends()
+        self._update_elements_visibility()
+        self._update_correlation_readout()
+
+    def _toggle_correlation_cursor(self, is_visible):
+        self._show_correlation_cursor_button.setText(
+            "Hide Correlation Cursor" if is_visible else "Show Correlation Cursor"
+        )
+        if is_visible:
+            self._snap_correlation_cursor_to_valid_sample()
+        self._update_elements_visibility()
+        self._update_correlation_readout()
+
+    def _get_active_received_samples_total(self):
+        if self._display_mode == DISPLAY_MODE_DSP:
+            return self._dsp_received_samples_total
+        return self._multi_received_samples_total
+
+    def _get_valid_sample_index_range_in_display_window(self):
+        received_samples_total = self._get_active_received_samples_total()
+        if received_samples_total <= 0:
+            return None
+
+        valid_sample_count = min(received_samples_total, self._history_size_samples)
+        valid_start_index_in_history = self._history_size_samples - valid_sample_count
+        display_start_index_in_history = self._history_size_samples - self._display_window_samples
+        valid_start_index_in_display = max(
+            0, valid_start_index_in_history - display_start_index_in_history
+        )
+        valid_end_index_in_display = self._display_window_samples - 1
+
+        if valid_start_index_in_display > valid_end_index_in_display:
+            return None
+        return int(valid_start_index_in_display), int(valid_end_index_in_display)
+
+    def _snap_correlation_cursor_to_valid_sample(self):
+        valid_index_range = self._get_valid_sample_index_range_in_display_window()
+        if valid_index_range is None:
+            return None
+
+        valid_min_index, valid_max_index = valid_index_range
+        requested_index = int(round(float(self._correlation_cursor.value())))
+        snapped_index = max(valid_min_index, min(valid_max_index, requested_index))
+
+        if not self._is_snapping_correlation_cursor:
+            current_value = float(self._correlation_cursor.value())
+            if abs(current_value - snapped_index) > 1e-9:
+                self._is_snapping_correlation_cursor = True
+                self._correlation_cursor.setValue(snapped_index)
+                self._is_snapping_correlation_cursor = False
+        return snapped_index
+
+    def _handle_correlation_cursor_position_changed(self):
+        if not self._show_correlation_cursor_button.isChecked():
+            return
+        self._snap_correlation_cursor_to_valid_sample()
+        self._update_correlation_readout()
+
+    def _update_correlation_readout(self):
+        if not self._show_correlation_cursor_button.isChecked():
+            self._correlation_x_label.setText("X (samples): --")
+            self._correlation_values_label.setText("Correlation cursor hidden")
+            return
+
+        snapped_index = self._snap_correlation_cursor_to_valid_sample()
+        if snapped_index is None:
+            self._correlation_x_label.setText("X (samples): --")
+            self._correlation_values_label.setText("No received sample in view")
+            return
+
+        self._correlation_x_label.setText(f"X (samples): {snapped_index}")
+
+        if self._display_mode == DISPLAY_MODE_DSP:
+            raw_view = self._raw_buffer[-self._display_window_samples:]
+            filtered_view = self._filtered_buffer[-self._display_window_samples:]
+            if snapped_index >= len(raw_view) or snapped_index >= len(filtered_view):
+                self._correlation_values_label.setText("No received sample in view")
+                return
+            self._correlation_values_label.setText(
+                "\n".join(
+                    [
+                        f"Signal: {self._dsp_selected_metric_name}",
+                        f"Raw: {raw_view[snapped_index]:.3f}",
+                        f"Filtered: {filtered_view[snapped_index]:.3f}",
+                    ]
+                )
+            )
+            return
+
+        selected_metric_names = [
+            metric_name
+            for metric_name in self._metric_names
+            if metric_name in self._multi_selected_metric_names
+        ]
+        if not selected_metric_names:
+            self._correlation_values_label.setText("No selected signal")
+            return
+
+        lines = []
+        for metric_name in selected_metric_names:
+            metric_buffer = self._multi_raw_buffers_by_metric_name.get(metric_name)
+            if metric_buffer is None:
+                continue
+            metric_view = metric_buffer[-self._display_window_samples:]
+            if snapped_index >= len(metric_view):
+                continue
+            lines.append(f"{metric_name}: {metric_view[snapped_index]:.3f}")
+
+        self._correlation_values_label.setText(
+            "\n".join(lines) if lines else "No received sample in view"
+        )
+
     def _connect_socket(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self._host, self._port))
@@ -850,7 +1368,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._timer.start(TIMER_INTERVAL_MS)
 
     def _receive_available_data(self):
-        decoded_values = []
+        decoded_values_by_frame = []
         try:
             while True:
                 data_chunk = self._socket.recv(RECEIVE_BUFFER_SIZE_BYTES)
@@ -863,65 +1381,115 @@ class RttLiveScope(QtWidgets.QMainWindow):
                     if frame.kind != KIND_DATA:
                         continue
                     values_by_name = frame.values_by_name or {}
-                    value = values_by_name.get(self._selected_metric_name)
-                    if value is not None:
-                        decoded_values.append(value)
+                    if values_by_name:
+                        decoded_values_by_frame.append(values_by_name)
         except BlockingIOError:
             pass
 
-        if not decoded_values:
+        if not decoded_values_by_frame:
             return None, 0
-        return np.array(decoded_values, dtype=np.float64), len(decoded_values)
+        return decoded_values_by_frame, len(decoded_values_by_frame)
 
     def _update_history_buffers(self, buffer, new_samples, count):
+        if count <= 0:
+            return buffer
+        if count >= len(buffer):
+            buffer[:] = new_samples[-len(buffer):]
+            return buffer
         buffer = np.roll(buffer, -count)
         buffer[-count:] = new_samples
         return buffer
 
-    def _poll_and_refresh(self):
-        incoming_samples, frame_count = self._receive_available_data()
+    @staticmethod
+    def _build_metric_samples_from_frame_values(metric_name, frame_values_by_name, initial_value):
+        metric_samples = np.empty(len(frame_values_by_name), dtype=np.float64)
+        current_value = float(initial_value)
+        for sample_index, values_by_name in enumerate(frame_values_by_name):
+            metric_value = values_by_name.get(metric_name)
+            if metric_value is not None:
+                current_value = float(metric_value)
+            metric_samples[sample_index] = current_value
+        return metric_samples, current_value
 
-        if incoming_samples is None:
+    def _poll_and_refresh(self):
+        frame_values_by_name, frame_count = self._receive_available_data()
+
+        if frame_values_by_name is None:
             return
 
-        filtered_samples = apply_filter_chain(
-            incoming_samples, self._filter_chain
-        )
+        initial_last_values = dict(self._last_metric_value_by_name)
+        metrics_to_process = set(self._metric_names)
+        if self._dsp_selected_metric_name:
+            metrics_to_process.add(self._dsp_selected_metric_name)
+
+        metric_samples_by_name = {}
+        metric_last_values = {}
+        for metric_name in metrics_to_process:
+            metric_samples, last_metric_value = self._build_metric_samples_from_frame_values(
+                metric_name,
+                frame_values_by_name,
+                initial_last_values.get(metric_name, 0.0),
+            )
+            metric_samples_by_name[metric_name] = metric_samples
+            metric_last_values[metric_name] = last_metric_value
+
+        for metric_name, metric_value in metric_last_values.items():
+            self._last_metric_value_by_name[metric_name] = metric_value
+
+        for values_by_name in frame_values_by_name:
+            for metric_name, metric_value in values_by_name.items():
+                self._last_metric_value_by_name[metric_name] = float(metric_value)
+
+        dsp_metric_samples = metric_samples_by_name.get(self._dsp_selected_metric_name)
+        filtered_samples = None
+        if dsp_metric_samples is not None:
+            filtered_samples = apply_filter_chain(dsp_metric_samples, self._filter_chain)
 
         if not self._is_paused:
-            self._raw_buffer = self._update_history_buffers(
-                self._raw_buffer, incoming_samples, frame_count
-            )
-            self._filtered_buffer = self._update_history_buffers(
-                self._filtered_buffer, filtered_samples, frame_count
-            )
-
-            current_display_window_size = self._display_window_samples
-            self._curve_raw.setData(self._raw_buffer[-current_display_window_size:])
-            self._curve_filtered.setData(self._filtered_buffer[-current_display_window_size:])
-
-            frequency_hz, power_raw_db = compute_power_spectrum_db(
-                self._raw_buffer, self._sample_rate_hz
-            )
-            _, power_filtered_db = compute_power_spectrum_db(
-                self._filtered_buffer, self._sample_rate_hz
-            )
-            self._curve_fft_raw.setData(frequency_hz, power_raw_db)
-            self._curve_fft_filtered.setData(frequency_hz, power_filtered_db)
-
-            if self._filter_chain:
-                delay_samples = estimate_latency_samples(
-                    self._raw_buffer, self._filtered_buffer
+            if dsp_metric_samples is not None:
+                self._raw_buffer = self._update_history_buffers(
+                    self._raw_buffer, dsp_metric_samples, frame_count
                 )
-                delay_ms = (delay_samples / self._sample_rate_hz) * 1000
-                self._automatic_latency_label.setText(
-                    f"Auto Delay: {delay_ms:.1f} ms ({delay_samples} samples)"
+                updated_filtered_samples = (
+                    filtered_samples if filtered_samples is not None else dsp_metric_samples
                 )
-            else:
-                self._automatic_latency_label.setText("Auto Delay: 0.0 ms")
+                self._filtered_buffer = self._update_history_buffers(
+                    self._filtered_buffer, updated_filtered_samples, frame_count
+                )
+                self._dsp_received_samples_total = min(
+                    self._history_size_samples,
+                    self._dsp_received_samples_total + frame_count,
+                )
+
+            if self._multi_raw_buffers_by_metric_name:
+                for metric_name, metric_buffer in self._multi_raw_buffers_by_metric_name.items():
+                    metric_samples = metric_samples_by_name.get(metric_name)
+                    if metric_samples is None:
+                        metric_samples = np.full(
+                            frame_count,
+                            self._last_metric_value_by_name.get(metric_name, 0.0),
+                            dtype=np.float64,
+                        )
+                    self._multi_raw_buffers_by_metric_name[metric_name] = self._update_history_buffers(
+                        metric_buffer, metric_samples, frame_count
+                    )
+                self._multi_received_samples_total = min(
+                    self._history_size_samples,
+                    self._multi_received_samples_total + frame_count,
+                )
+
+            self._refresh_dsp_curve_data()
+            self._refresh_multi_curves_data()
+            if self._display_mode == DISPLAY_MODE_DSP:
+                self._refresh_dsp_frequency_spectrum()
+                self._update_auto_delay_label()
+            self._update_elements_visibility()
+
+        self._update_correlation_readout()
 
     def closeEvent(self, event):
-        self._socket.close()
+        if hasattr(self, "_socket") and self._socket:
+            self._socket.close()
         event.accept()
 
 
