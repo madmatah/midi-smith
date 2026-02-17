@@ -1,321 +1,28 @@
-import argparse
-import sys
-import socket
-import struct
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtWidgets, QtCore, QtGui
-from scipy import signal
+from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
-from rtt_common.sensor_rtt_protocol import (
-    KIND_DATA,
-    KIND_SCHEMA,
-    VALUE_TYPE_FLOAT32,
-    SensorRttStreamDecoder,
+from .constants import (
+    DISPLAY_MODE_DSP,
+    DISPLAY_MODE_MULTI_SIGNAL,
+    TIMER_INTERVAL_MS,
 )
-
-DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 60001
-DEFAULT_SAMPLE_RATE_HZ = 5000
-DEFAULT_FILTER_CONFIGS = []
-
-LOWPASS_ORDER = 2
-DEFAULT_HISTORY_MS = 5000
-DEFAULT_INITIAL_VIEW_MS = 2000
-RECEIVE_BUFFER_SIZE_BYTES = 16384
-TIMER_INTERVAL_MS = 33
-WELCH_NPERSEG = 1024
-LOG_SAFETY_EPSILON = 1e-12
-FILTER_INITIAL_STATE_SCALE = 58000
-DISPLAY_MODE_DSP = "dsp"
-DISPLAY_MODE_MULTI_SIGNAL = "multi_signal"
-
-
-class FilterStage:
-    def __init__(
-        self,
-        filter_type,
-        frequency_hz,
-        quality_factor,
-        sample_rate_hz,
-        initial_state,
-        numerator,
-        denominator,
-        window_size=None,
-        alpha=None,
-    ):
-        self.filter_type = filter_type  # "notch", "lowpass", "ema", "savitzky", "savitzky_causal"
-        self.frequency = frequency_hz
-        self.quality_factor = quality_factor
-        self.sample_rate_hz = sample_rate_hz
-        self.state = initial_state
-        self.numerator = numerator
-        self.denominator = denominator
-        self.window_size = window_size
-        self.alpha = alpha
-        self.enabled = True
-
-    @property
-    def description(self):
-        if self.filter_type == "notch":
-            return f"Notch {self.frequency}Hz (Q={self.quality_factor})"
-        elif self.filter_type == "lowpass":
-            return f"LowPass {self.frequency}Hz"
-        elif self.filter_type == "ema":
-            return f"EMA (α={self.alpha:.3f})"
-        elif self.filter_type == "savitzky":
-            return f"Savitzky (W={self.window_size})"
-        elif self.filter_type == "savitzky_causal":
-            return f"Savitzky Causal (W={self.window_size})"
-        return "Unknown"
-
-    def rebuild(self, sample_rate_hz=None):
-        if sample_rate_hz:
-            self.sample_rate_hz = sample_rate_hz
-
-        if self.filter_type == "notch":
-            self.numerator, self.denominator = signal.iirnotch(
-                self.frequency, self.quality_factor, self.sample_rate_hz
-            )
-        elif self.filter_type == "lowpass":
-            self.numerator, self.denominator = signal.butter(
-                LOWPASS_ORDER, self.frequency, fs=self.sample_rate_hz, btype="low"
-            )
-        elif self.filter_type == "ema":
-            self.numerator = [self.alpha]
-            self.denominator = [1.0, -(1.0 - self.alpha)]
-        elif self.filter_type.startswith("savitzky"):
-            polyorder = 2
-            if self.window_size <= polyorder:
-                self.window_size = polyorder + 1
-
-            relative_position = self.window_size - 1 if self.filter_type == "savitzky_causal" else None
-
-            coefficients = signal.savgol_coeffs(self.window_size, polyorder, pos=relative_position)
-            self.numerator = coefficients
-            self.denominator = [1.0]
-
-        self.reset_state()
-
-    def reset_state(self):
-        self.state = (
-            signal.lfilter_zi(self.numerator, self.denominator) * FILTER_INITIAL_STATE_SCALE
-        )
-
-
-def build_notch_filter(frequency_hz, quality_factor, sample_rate_hz):
-    numerator, denominator = signal.iirnotch(
-        frequency_hz, quality_factor, sample_rate_hz
-    )
-    initial_state = (
-        signal.lfilter_zi(numerator, denominator) * FILTER_INITIAL_STATE_SCALE
-    )
-    return FilterStage(
-        "notch",
-        frequency_hz,
-        quality_factor,
-        sample_rate_hz,
-        initial_state,
-        numerator,
-        denominator,
-    )
-
-
-def build_lowpass_filter(cutoff_hz, sample_rate_hz):
-    numerator, denominator = signal.butter(
-        LOWPASS_ORDER, cutoff_hz, fs=sample_rate_hz, btype="low"
-    )
-    initial_state = (
-        signal.lfilter_zi(numerator, denominator) * FILTER_INITIAL_STATE_SCALE
-    )
-    return FilterStage(
-        "lowpass",
-        cutoff_hz,
-        None,
-        sample_rate_hz,
-        initial_state,
-        numerator,
-        denominator,
-    )
-
-
-def build_ema_filter(alpha, sample_rate_hz):
-    numerator = [alpha]
-    denominator = [1.0, -(1.0 - alpha)]
-    initial_state = (
-        signal.lfilter_zi(numerator, denominator) * FILTER_INITIAL_STATE_SCALE
-    )
-    return FilterStage(
-        "ema",
-        None,
-        None,
-        sample_rate_hz,
-        initial_state,
-        numerator,
-        denominator,
-        alpha=alpha,
-    )
-
-
-def build_savgol_filter(window_size, is_causal, sample_rate_hz):
-    filter_type = "savitzky_causal" if is_causal else "savitzky"
-    polyorder = 2
-    if window_size <= polyorder:
-        window_size = polyorder + 1
-
-    relative_position = window_size - 1 if is_causal else None
-    numerator = signal.savgol_coeffs(window_size, polyorder, pos=relative_position)
-    denominator = [1.0]
-
-    initial_state = (
-        signal.lfilter_zi(numerator, denominator) * FILTER_INITIAL_STATE_SCALE
-    )
-    return FilterStage(
-        filter_type,
-        None,
-        None,
-        sample_rate_hz,
-        initial_state,
-        numerator,
-        denominator,
-        window_size=window_size,
-    )
-
-
-def apply_filter_chain(samples, filter_chain):
-    current_samples = samples
-    for stage in filter_chain:
-        # We always compute the filter to maintain its state (avoiding transients)
-        # but only apply the result if enabled.
-        filtered, new_state = signal.lfilter(
-            stage.numerator, stage.denominator, current_samples, zi=stage.state
-        )
-        stage.state = new_state
-        if stage.enabled:
-            current_samples = filtered
-    return current_samples
-
-
-def compute_power_spectrum_db(samples, sample_rate_hz):
-    demeaned = samples - np.mean(samples)
-    frequency_hz, power_spectrum = signal.welch(
-        demeaned, sample_rate_hz, nperseg=WELCH_NPERSEG
-    )
-    return frequency_hz, 10 * np.log10(power_spectrum + LOG_SAFETY_EPSILON)
-
-
-def estimate_latency_samples(raw_signal, filtered_signal):
-    total_samples = len(raw_signal)
-    search_window_size = min(total_samples, 2048)
-    raw_segment = raw_signal[-search_window_size:] - np.mean(raw_signal[-search_window_size:])
-    filtered_segment = filtered_signal[-search_window_size:] - np.mean(filtered_signal[-search_window_size:])
-
-    correlation = signal.correlate(filtered_segment, raw_segment, mode="full")
-    lags = np.arange(-len(raw_segment) + 1, len(filtered_segment))
-
-    max_correlation_index = np.argmax(correlation)
-    return lags[max_correlation_index]
-
-
-class FilterEditorDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, filter_stage=None):
-        super().__init__(parent)
-        self.setWindowTitle("Edit Filter" if filter_stage else "Add Filter")
-        self.setModal(True)
-        self.resize(300, 200)
-
-        layout = QtWidgets.QFormLayout(self)
-
-        self.filter_type_combobox = QtWidgets.QComboBox()
-        self.filter_type_combobox.addItems(["notch", "lowpass", "ema", "savitzky", "savitzky_causal"])
-        layout.addRow("Type:", self.filter_type_combobox)
-
-        self.frequency_spinbox = QtWidgets.QDoubleSpinBox()
-        self.frequency_spinbox.setRange(1.0, 20000.0)
-        self.frequency_spinbox.setSuffix(" Hz")
-        layout.addRow("Frequency:", self.frequency_spinbox)
-
-        self.quality_factor_spinbox = QtWidgets.QDoubleSpinBox()
-        self.quality_factor_spinbox.setRange(0.1, 100.0)
-        self.quality_factor_spinbox.setDecimals(2)
-        self.quality_factor_spinbox.setValue(20.0)
-        layout.addRow("Q-Factor:", self.quality_factor_spinbox)
-
-        self.alpha_spinbox = QtWidgets.QDoubleSpinBox()
-        self.alpha_spinbox.setRange(0.001, 1.0)
-        self.alpha_spinbox.setDecimals(3)
-        self.alpha_spinbox.setValue(0.125)
-        self.alpha_spinbox.setSingleStep(0.001)
-        layout.addRow("Alpha (EMA):", self.alpha_spinbox)
-
-        self.window_size_spinbox = QtWidgets.QSpinBox()
-        self.window_size_spinbox.setRange(1, 25)
-        self.window_size_spinbox.setValue(5)
-        layout.addRow("Window Size:", self.window_size_spinbox)
-
-        self.filter_type_combobox.currentTextChanged.connect(self._configure_editor_fields_visibility_for_type)
-
-        buttons = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
-            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
-
-        if filter_stage:
-            self.filter_type_combobox.setCurrentText(filter_stage.filter_type)
-            if filter_stage.frequency:
-                self.frequency_spinbox.setValue(filter_stage.frequency)
-            if filter_stage.quality_factor:
-                self.quality_factor_spinbox.setValue(filter_stage.quality_factor)
-            if filter_stage.alpha:
-                self.alpha_spinbox.setValue(filter_stage.alpha)
-            if filter_stage.window_size:
-                self.window_size_spinbox.setValue(filter_stage.window_size)
-            self._configure_editor_fields_visibility_for_type(filter_stage.filter_type)
-        else:
-            self._configure_editor_fields_visibility_for_type("notch")
-
-    def _configure_editor_fields_visibility_for_type(self, filter_type):
-        is_frequency_applicable = filter_type in ["notch", "lowpass"]
-        is_quality_factor_applicable = filter_type == "notch"
-        is_ema_applicable = filter_type == "ema"
-        is_savitzky_golay_applicable = filter_type.startswith("savitzky")
-
-        self.frequency_spinbox.setVisible(is_frequency_applicable)
-        self.quality_factor_spinbox.setVisible(is_quality_factor_applicable)
-        self.alpha_spinbox.setVisible(is_ema_applicable)
-        self.window_size_spinbox.setVisible(is_savitzky_golay_applicable)
-
-        form_layout = self.layout()
-        if isinstance(form_layout, QtWidgets.QFormLayout):
-            for i in range(form_layout.rowCount()):
-                field_item = form_layout.itemAt(i, QtWidgets.QFormLayout.ItemRole.FieldRole)
-                label_item = form_layout.itemAt(i, QtWidgets.QFormLayout.ItemRole.LabelRole)
-
-                if field_item and label_item:
-                    field_widget = field_item.widget()
-                    label_widget = label_item.widget()
-                    applicable_widgets = [
-                        self.frequency_spinbox,
-                        self.quality_factor_spinbox,
-                        self.alpha_spinbox,
-                        self.window_size_spinbox
-                    ]
-                    if field_widget in applicable_widgets:
-                        if label_widget:
-                            label_widget.setVisible(field_widget.isVisible())
-
-    def get_filter_parameters(self):
-        return {
-            "filter_type": self.filter_type_combobox.currentText(),
-            "frequency_hz": self.frequency_spinbox.value(),
-            "quality_factor": self.quality_factor_spinbox.value(),
-            "alpha": self.alpha_spinbox.value(),
-            "window_size": self.window_size_spinbox.value(),
-        }
-
+from .dialogs import FilterEditorDialog
+from .filters import (
+    apply_filter_chain,
+    build_ema_filter,
+    build_lowpass_filter,
+    build_notch_filter,
+    build_savgol_filter,
+    compute_power_spectrum_db,
+    estimate_latency_samples,
+)
+from .metrics import (
+    build_metric_samples_from_frame_values,
+    extract_float_metric_names_and_metadata,
+    pick_default_metric_name,
+)
+from .streaming import SocketFrameReceiver, update_history_buffer
 
 class RttLiveScope(QtWidgets.QMainWindow):
     def __init__(self, host, port, sample_rate_hz, filter_chain, history_size_samples, view_size_samples):
@@ -326,7 +33,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._filter_chain = filter_chain
         self._history_size_samples = history_size_samples
 
-        self._decoder = SensorRttStreamDecoder()
+        self._frame_receiver = None
         self._metric_names = []
         self._metric_metadata = {}
         self._dsp_selected_metric_name = "Shank position (mm)"
@@ -534,119 +241,117 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     @staticmethod
     def _pick_default_metric_name(metric_names):
-        if "Shank position (mm)" in metric_names:
-            return "Shank position (mm)"
-        if not metric_names:
-            return ""
-        return metric_names[0]
+        return pick_default_metric_name(metric_names)
 
-    def _set_available_metrics(self, schema):
-        float_metrics = [
-            metric_definition
-            for metric_definition in schema.metrics
-            if metric_definition.value_type == VALUE_TYPE_FLOAT32
-        ]
-        metric_names = [metric_definition.name for metric_definition in float_metrics]
-        metric_metadata = {
-            metric_definition.name: {
-                "suggested_min": metric_definition.suggested_min,
-                "suggested_max": metric_definition.suggested_max,
-            }
-            for metric_definition in float_metrics
-        }
+    def _extract_float_metric_names_and_metadata(self, schema):
+        return extract_float_metric_names_and_metadata(schema)
 
-        previous_dsp_selected_metric_name = self._dsp_selected_metric_name
-        previous_multi_selected_metric_names = set(self._multi_selected_metric_names)
-
-        if metric_names == self._metric_names:
-            self._metric_metadata = metric_metadata
-            self._multi_selected_metric_names.intersection_update(self._metric_names)
-            if self._display_mode == DISPLAY_MODE_DSP:
-                if self._dsp_selected_metric_name not in self._metric_names:
-                    self._dsp_selected_metric_name = self._pick_default_metric_name(self._metric_names)
-                has_dsp_selection_changed = (
-                    self._dsp_selected_metric_name != previous_dsp_selected_metric_name
-                )
-                if (
-                    self._dsp_selected_metric_name
-                    and (
-                        has_dsp_selection_changed
-                        or not self._has_applied_initial_dsp_suggested_range
-                    )
-                ):
-                    self._apply_suggested_range(self._dsp_selected_metric_name)
-                    self._has_applied_initial_dsp_suggested_range = True
-            else:
-                has_multi_selection_changed = (
-                    self._multi_selected_metric_names != previous_multi_selected_metric_names
-                )
-                if (
-                    self._multi_selected_metric_names
-                    and (
-                        has_multi_selection_changed
-                        or not self._has_applied_initial_multi_suggested_range
-                    )
-                ):
-                    self._apply_multi_suggested_range()
-                    self._has_applied_initial_multi_suggested_range = True
-            self._refresh_signal_status_label()
-            self._update_elements_visibility()
-            self._update_correlation_readout()
+    def _select_default_dsp_metric_if_needed(self):
+        if self._dsp_selected_metric_name in self._metric_names:
             return
+        self._dsp_selected_metric_name = self._pick_default_metric_name(self._metric_names)
 
-        previous_multi_selection = set(self._multi_selected_metric_names)
-
-        self._metric_names = metric_names
-        self._metric_metadata = metric_metadata
-
-        if self._dsp_selected_metric_name not in self._metric_names:
-            self._dsp_selected_metric_name = self._pick_default_metric_name(self._metric_names)
-
+    def _restore_multi_signal_selection_after_schema_change(
+        self, previous_multi_selected_metric_names
+    ):
         self._multi_selected_metric_names = {
             metric_name
             for metric_name in self._metric_names
-            if metric_name in previous_multi_selection
+            if metric_name in previous_multi_selected_metric_names
         }
         if self._multi_selected_metric_names:
             self._has_initialized_multi_selection = True
-        elif not self._has_initialized_multi_selection and self._metric_names:
+            return
+        if not self._has_initialized_multi_selection and self._metric_names:
             self._multi_selected_metric_names = {self._metric_names[0]}
             self._has_initialized_multi_selection = True
 
+    def _apply_dsp_suggested_range_if_needed(self, previous_dsp_selected_metric_name):
+        self._select_default_dsp_metric_if_needed()
+        has_dsp_selection_changed = (
+            self._dsp_selected_metric_name != previous_dsp_selected_metric_name
+        )
+        should_apply_dsp_suggested_range = self._dsp_selected_metric_name and (
+            has_dsp_selection_changed
+            or not self._has_applied_initial_dsp_suggested_range
+        )
+        if not should_apply_dsp_suggested_range:
+            return
+        self._apply_suggested_range(self._dsp_selected_metric_name)
+        self._has_applied_initial_dsp_suggested_range = True
+
+    def _apply_multi_signal_suggested_range_if_needed(
+        self, previous_multi_selected_metric_names
+    ):
+        has_multi_selection_changed = (
+            self._multi_selected_metric_names != previous_multi_selected_metric_names
+        )
+        should_apply_multi_suggested_range = self._multi_selected_metric_names and (
+            has_multi_selection_changed
+            or not self._has_applied_initial_multi_suggested_range
+        )
+        if not should_apply_multi_suggested_range:
+            return
+        self._apply_multi_suggested_range()
+        self._has_applied_initial_multi_suggested_range = True
+
+    def _apply_suggested_range_for_current_mode_if_needed(
+        self,
+        previous_dsp_selected_metric_name,
+        previous_multi_selected_metric_names,
+    ):
+        if self._display_mode == DISPLAY_MODE_DSP:
+            self._apply_dsp_suggested_range_if_needed(previous_dsp_selected_metric_name)
+            return
+        self._apply_multi_signal_suggested_range_if_needed(
+            previous_multi_selected_metric_names
+        )
+
+    def _refresh_views_after_metric_change(self):
+        self._refresh_signal_status_label()
+        self._update_elements_visibility()
+        self._update_correlation_readout()
+
+    def _update_metrics_for_unchanged_schema(self, metric_metadata_by_name):
+        self._metric_metadata = metric_metadata_by_name
+        self._multi_selected_metric_names.intersection_update(self._metric_names)
+
+    def _replace_metrics_for_new_schema(self, metric_names, metric_metadata_by_name):
+        previous_multi_selected_metric_names = set(self._multi_selected_metric_names)
+        self._metric_names = metric_names
+        self._metric_metadata = metric_metadata_by_name
+        self._select_default_dsp_metric_if_needed()
+        self._restore_multi_signal_selection_after_schema_change(
+            previous_multi_selected_metric_names
+        )
         self._rebuild_metric_selectors()
         self._rebuild_multi_signal_buffers_and_curves()
         self._clear_dsp_history()
         self._clear_multi_history()
+
+    def _set_available_metrics(self, schema):
+        metric_names, metric_metadata_by_name = self._extract_float_metric_names_and_metadata(
+            schema
+        )
+        previous_dsp_selected_metric_name = self._dsp_selected_metric_name
+        previous_multi_selected_metric_names = set(self._multi_selected_metric_names)
+
+        if metric_names == self._metric_names:
+            self._update_metrics_for_unchanged_schema(metric_metadata_by_name)
+            self._apply_suggested_range_for_current_mode_if_needed(
+                previous_dsp_selected_metric_name,
+                previous_multi_selected_metric_names,
+            )
+            self._refresh_views_after_metric_change()
+            return
+
+        self._replace_metrics_for_new_schema(metric_names, metric_metadata_by_name)
         self._refresh_time_plot_title()
-        if self._display_mode == DISPLAY_MODE_DSP:
-            has_dsp_selection_changed = (
-                self._dsp_selected_metric_name != previous_dsp_selected_metric_name
-            )
-            if (
-                self._dsp_selected_metric_name
-                and (
-                    has_dsp_selection_changed
-                    or not self._has_applied_initial_dsp_suggested_range
-                )
-            ):
-                self._apply_suggested_range(self._dsp_selected_metric_name)
-                self._has_applied_initial_dsp_suggested_range = True
-        else:
-            has_multi_selection_changed = (
-                self._multi_selected_metric_names != previous_multi_selection
-            )
-            if (
-                self._multi_selected_metric_names
-                and (
-                    has_multi_selection_changed
-                    or not self._has_applied_initial_multi_suggested_range
-                )
-            ):
-                self._apply_multi_suggested_range()
-                self._has_applied_initial_multi_suggested_range = True
-        self._refresh_signal_status_label()
-        self._update_elements_visibility()
-        self._update_correlation_readout()
+        self._apply_suggested_range_for_current_mode_if_needed(
+            previous_dsp_selected_metric_name,
+            previous_multi_selected_metric_names,
+        )
+        self._refresh_views_after_metric_change()
 
     def _refresh_signal_status_label(self):
         if not self._metric_names:
@@ -694,6 +399,24 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self.setWindowTitle(f"RTT DSP [{mode_name}] - [Space] to pause - [{status}]")
 
     def _setup_plots(self):
+        main_layout, control_layout = self._build_main_window_layouts()
+        self._build_mode_controls(control_layout)
+        self._build_signal_controls(control_layout)
+        self._build_filter_controls(control_layout)
+        self._build_measurement_controls(control_layout)
+        self._build_correlation_controls(control_layout)
+        self._build_display_controls(control_layout)
+        control_layout.addStretch()
+        self._build_plot_widgets(main_layout)
+        self._refresh_filter_ui()
+        self._refresh_plot_legends()
+        self._refresh_time_plot_title()
+        self._switch_display_mode(DISPLAY_MODE_DSP, should_update_selector=True)
+        self._update_elements_visibility()
+        self._refresh_signal_status_label()
+        self._update_correlation_readout()
+
+    def _build_main_window_layouts(self):
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QtWidgets.QHBoxLayout(central_widget)
@@ -702,7 +425,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
         control_layout = QtWidgets.QVBoxLayout(control_panel)
         control_panel.setFixedWidth(320)
         main_layout.addWidget(control_panel)
+        return main_layout, control_layout
 
+    def _build_mode_controls(self, control_layout):
         mode_panel = QtWidgets.QGroupBox("Mode")
         mode_layout = QtWidgets.QVBoxLayout(mode_panel)
         control_layout.addWidget(mode_panel)
@@ -713,6 +438,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._mode_combobox.currentIndexChanged.connect(self._on_mode_combobox_changed)
         mode_layout.addWidget(self._mode_combobox)
 
+    def _build_signal_controls(self, control_layout):
         signal_panel = QtWidgets.QGroupBox("Signal")
         signal_layout = QtWidgets.QVBoxLayout(signal_panel)
         control_layout.addWidget(signal_panel)
@@ -734,6 +460,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._signal_checkbox_layout.setContentsMargins(0, 0, 0, 0)
         signal_layout.addWidget(self._signal_checkbox_container)
 
+    def _build_filter_controls(self, control_layout):
         self._filters_panel = QtWidgets.QGroupBox("Filters")
         self._filter_layout = QtWidgets.QVBoxLayout(self._filters_panel)
         control_layout.addWidget(self._filters_panel, 1)
@@ -746,32 +473,31 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._filter_list_layout = QtWidgets.QVBoxLayout(self._filter_list_widget)
         self._filter_list_layout.setContentsMargins(0, 0, 0, 0)
         self._filter_layout.addWidget(self._filter_list_widget)
-
         self._filter_layout.addStretch()
 
-        measure_panel = QtWidgets.QGroupBox("Measurement")
-        measure_layout = QtWidgets.QVBoxLayout()
-        measure_panel.setLayout(measure_layout)
-        control_layout.addWidget(measure_panel)
+    def _build_measurement_controls(self, control_layout):
+        measurement_panel = QtWidgets.QGroupBox("Measurement")
+        measurement_layout = QtWidgets.QVBoxLayout(measurement_panel)
+        control_layout.addWidget(measurement_panel)
 
         self._automatic_latency_label = QtWidgets.QLabel("Auto Delay: --")
-        measure_layout.addWidget(self._automatic_latency_label)
+        measurement_layout.addWidget(self._automatic_latency_label)
 
         self._set_cursors_button = QtWidgets.QPushButton("Set Cursors (M)")
         self._set_cursors_button.clicked.connect(self._toggle_placement_mode)
-        measure_layout.addWidget(self._set_cursors_button)
+        measurement_layout.addWidget(self._set_cursors_button)
 
         self._show_cursors_button = QtWidgets.QPushButton("Show Cursors")
         self._show_cursors_button.setCheckable(True)
         self._show_cursors_button.toggled.connect(self._toggle_cursors)
-        measure_layout.addWidget(self._show_cursors_button)
+        measurement_layout.addWidget(self._show_cursors_button)
 
         self._manual_latency_label = QtWidgets.QLabel("Cursor Delta: --")
-        measure_layout.addWidget(self._manual_latency_label)
+        measurement_layout.addWidget(self._manual_latency_label)
 
+    def _build_correlation_controls(self, control_layout):
         correlation_panel = QtWidgets.QGroupBox("Correlation")
-        correlation_layout = QtWidgets.QVBoxLayout()
-        correlation_panel.setLayout(correlation_layout)
+        correlation_layout = QtWidgets.QVBoxLayout(correlation_panel)
         control_layout.addWidget(correlation_panel)
 
         self._show_correlation_cursor_button = QtWidgets.QPushButton("Show Correlation Cursor")
@@ -786,32 +512,38 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._correlation_values_label.setWordWrap(True)
         correlation_layout.addWidget(self._correlation_values_label)
 
+    def _create_display_visibility_checkbox(self, label_text, is_checked):
+        checkbox = QtWidgets.QCheckBox(label_text)
+        checkbox.setChecked(is_checked)
+        checkbox.toggled.connect(self._update_elements_visibility)
+        return checkbox
+
+    def _build_display_controls(self, control_layout):
         display_panel = QtWidgets.QGroupBox("Display")
-        display_layout = QtWidgets.QFormLayout()
-        display_panel.setLayout(display_layout)
+        display_layout = QtWidgets.QFormLayout(display_panel)
         control_layout.addWidget(display_panel)
 
-        self._show_raw_checkbox = QtWidgets.QCheckBox("Show raw signal")
-        self._show_raw_checkbox.setChecked(True)
-        self._show_raw_checkbox.toggled.connect(self._update_elements_visibility)
+        self._show_raw_checkbox = self._create_display_visibility_checkbox(
+            "Show raw signal", True
+        )
         display_layout.addRow(self._show_raw_checkbox)
 
-        self._show_filtered_checkbox = QtWidgets.QCheckBox("Show filtered signal")
-        self._show_filtered_checkbox.setChecked(True)
-        self._show_filtered_checkbox.toggled.connect(self._update_elements_visibility)
+        self._show_filtered_checkbox = self._create_display_visibility_checkbox(
+            "Show filtered signal", True
+        )
         display_layout.addRow(self._show_filtered_checkbox)
 
         self._display_spacer_above_axes = QtWidgets.QLabel("")
         display_layout.addRow(self._display_spacer_above_axes)
 
-        self._show_signal_checkbox = QtWidgets.QCheckBox("Signal Plot")
-        self._show_signal_checkbox.setChecked(True)
-        self._show_signal_checkbox.toggled.connect(self._update_elements_visibility)
+        self._show_signal_checkbox = self._create_display_visibility_checkbox(
+            "Signal Plot", True
+        )
         display_layout.addRow(self._show_signal_checkbox)
 
-        self._show_fft_checkbox = QtWidgets.QCheckBox("FFT Spectrum")
-        self._show_fft_checkbox.setChecked(False)
-        self._show_fft_checkbox.toggled.connect(self._update_elements_visibility)
+        self._show_fft_checkbox = self._create_display_visibility_checkbox(
+            "FFT Spectrum", False
+        )
         display_layout.addRow(self._show_fft_checkbox)
 
         self._display_spacer_above_window = QtWidgets.QLabel("")
@@ -830,26 +562,30 @@ class RttLiveScope(QtWidgets.QMainWindow):
         display_layout.addRow(self._window_duration_label)
         self._refresh_window_duration_label()
 
-        control_layout.addStretch()
-
+    def _build_plot_widgets(self, main_layout):
         self._graphics_layout = pg.GraphicsLayoutWidget()
         main_layout.addWidget(self._graphics_layout)
+        self._build_time_plot_widget()
+        self._graphics_layout.nextRow()
+        self._build_frequency_plot_widget()
 
+    def _build_time_plot_widget(self):
         self._plot_time = self._graphics_layout.addPlot(title="Time domain")
         self._plot_time.getViewBox().setLimits(minYRange=1e-3)
         self._plot_time.addLegend()
         self._curve_raw = self._plot_time.plot(
             pen=pg.mkPen("g", width=1, alpha=150), name="Raw"
         )
-
         self._curve_filtered = self._plot_time.plot(
             pen=pg.mkPen("c", width=1.5),
             name="Filtered",
         )
-
         self._plot_time.scene().sigMouseClicked.connect(self._handle_plot_click)
         self._plot_time.scene().sigMouseMoved.connect(self._handle_plot_mouse_moved)
+        self._build_manual_latency_cursors()
+        self._build_correlation_cursor()
 
+    def _build_manual_latency_cursors(self):
         self._cursor1 = pg.InfiniteLine(
             pos=self._display_window_samples // 3,
             angle=90,
@@ -869,6 +605,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._plot_time.addItem(self._cursor1)
         self._plot_time.addItem(self._cursor2)
 
+    def _build_correlation_cursor(self):
         self._correlation_cursor = pg.InfiniteLine(
             pos=self._display_window_samples // 2,
             angle=90,
@@ -881,8 +618,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._correlation_cursor.hide()
         self._plot_time.addItem(self._correlation_cursor)
 
-        self._graphics_layout.nextRow()
-
+    def _build_frequency_plot_widget(self):
         self._plot_frequency = self._graphics_layout.addPlot(title="FFT spectrum")
         self._plot_frequency.getViewBox().setLimits(minYRange=1e-3)
         self._curve_fft_raw = self._plot_frequency.plot(pen=pg.mkPen("g", alpha=80))
@@ -890,14 +626,6 @@ class RttLiveScope(QtWidgets.QMainWindow):
             pen=pg.mkPen("c", width=1.5)
         )
         self._plot_frequency.setYRange(-20, 40)
-
-        self._refresh_filter_ui()
-        self._refresh_plot_legends()
-        self._refresh_time_plot_title()
-        self._switch_display_mode(DISPLAY_MODE_DSP, should_update_selector=True)
-        self._update_elements_visibility()
-        self._refresh_signal_status_label()
-        self._update_correlation_readout()
 
     def _refresh_filter_ui(self):
         while self._filter_list_layout.count():
@@ -1357,10 +1085,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
         )
 
     def _connect_socket(self):
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect((self._host, self._port))
-        self._socket.setblocking(False)
-        self._decoder = SensorRttStreamDecoder()
+        self._frame_receiver = SocketFrameReceiver(self._host, self._port)
+        self._frame_receiver.connect()
 
     def _start_timer(self):
         self._timer = QtCore.QTimer()
@@ -1368,241 +1094,140 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._timer.start(TIMER_INTERVAL_MS)
 
     def _receive_available_data(self):
-        decoded_values_by_frame = []
-        try:
-            while True:
-                data_chunk = self._socket.recv(RECEIVE_BUFFER_SIZE_BYTES)
-                if not data_chunk:
-                    break
-                for frame in self._decoder.feed(data_chunk):
-                    if frame.kind == KIND_SCHEMA and frame.schema is not None:
-                        self._set_available_metrics(frame.schema)
-                        continue
-                    if frame.kind != KIND_DATA:
-                        continue
-                    values_by_name = frame.values_by_name or {}
-                    if values_by_name:
-                        decoded_values_by_frame.append(values_by_name)
-        except BlockingIOError:
-            pass
-
+        if self._frame_receiver is None:
+            return None, 0
+        received_schemas, decoded_values_by_frame = self._frame_receiver.receive_available_data()
+        for received_schema in received_schemas:
+            self._set_available_metrics(received_schema)
         if not decoded_values_by_frame:
             return None, 0
         return decoded_values_by_frame, len(decoded_values_by_frame)
 
     def _update_history_buffers(self, buffer, new_samples, count):
-        if count <= 0:
-            return buffer
-        if count >= len(buffer):
-            buffer[:] = new_samples[-len(buffer):]
-            return buffer
-        buffer = np.roll(buffer, -count)
-        buffer[-count:] = new_samples
-        return buffer
+        return update_history_buffer(buffer, new_samples, count)
 
     @staticmethod
     def _build_metric_samples_from_frame_values(metric_name, frame_values_by_name, initial_value):
-        metric_samples = np.empty(len(frame_values_by_name), dtype=np.float64)
-        current_value = float(initial_value)
-        for sample_index, values_by_name in enumerate(frame_values_by_name):
-            metric_value = values_by_name.get(metric_name)
-            if metric_value is not None:
-                current_value = float(metric_value)
-            metric_samples[sample_index] = current_value
-        return metric_samples, current_value
+        return build_metric_samples_from_frame_values(
+            metric_name,
+            frame_values_by_name,
+            initial_value,
+        )
 
-    def _poll_and_refresh(self):
-        frame_values_by_name, frame_count = self._receive_available_data()
-
-        if frame_values_by_name is None:
-            return
-
-        initial_last_values = dict(self._last_metric_value_by_name)
-        metrics_to_process = set(self._metric_names)
+    def _collect_metric_names_to_process(self):
+        metric_names_to_process = set(self._metric_names)
         if self._dsp_selected_metric_name:
-            metrics_to_process.add(self._dsp_selected_metric_name)
+            metric_names_to_process.add(self._dsp_selected_metric_name)
+        return metric_names_to_process
 
+    def _build_metric_samples_for_received_frames(self, frame_values_by_name):
+        initial_last_metric_values = dict(self._last_metric_value_by_name)
         metric_samples_by_name = {}
-        metric_last_values = {}
-        for metric_name in metrics_to_process:
+        metric_last_value_by_name = {}
+        for metric_name in self._collect_metric_names_to_process():
             metric_samples, last_metric_value = self._build_metric_samples_from_frame_values(
                 metric_name,
                 frame_values_by_name,
-                initial_last_values.get(metric_name, 0.0),
+                initial_last_metric_values.get(metric_name, 0.0),
             )
             metric_samples_by_name[metric_name] = metric_samples
-            metric_last_values[metric_name] = last_metric_value
+            metric_last_value_by_name[metric_name] = last_metric_value
+        return metric_samples_by_name, metric_last_value_by_name
 
-        for metric_name, metric_value in metric_last_values.items():
+    def _update_last_metric_values_for_received_frames(
+        self, frame_values_by_name, metric_last_value_by_name
+    ):
+        for metric_name, metric_value in metric_last_value_by_name.items():
             self._last_metric_value_by_name[metric_name] = metric_value
 
         for values_by_name in frame_values_by_name:
             for metric_name, metric_value in values_by_name.items():
                 self._last_metric_value_by_name[metric_name] = float(metric_value)
 
+    def _build_filtered_dsp_metric_samples(self, metric_samples_by_name):
         dsp_metric_samples = metric_samples_by_name.get(self._dsp_selected_metric_name)
-        filtered_samples = None
         if dsp_metric_samples is not None:
-            filtered_samples = apply_filter_chain(dsp_metric_samples, self._filter_chain)
+            filtered_dsp_metric_samples = apply_filter_chain(
+                dsp_metric_samples, self._filter_chain
+            )
+            return dsp_metric_samples, filtered_dsp_metric_samples
+        return None, None
+
+    def _append_dsp_metric_samples_to_history(
+        self, frame_count, dsp_metric_samples, filtered_dsp_metric_samples
+    ):
+        if dsp_metric_samples is None:
+            return
+        self._raw_buffer = self._update_history_buffers(
+            self._raw_buffer, dsp_metric_samples, frame_count
+        )
+        if filtered_dsp_metric_samples is None:
+            filtered_dsp_metric_samples = dsp_metric_samples
+        self._filtered_buffer = self._update_history_buffers(
+            self._filtered_buffer, filtered_dsp_metric_samples, frame_count
+        )
+        self._dsp_received_samples_total = min(
+            self._history_size_samples,
+            self._dsp_received_samples_total + frame_count,
+        )
+
+    def _append_multi_signal_samples_to_history(self, frame_count, metric_samples_by_name):
+        if not self._multi_raw_buffers_by_metric_name:
+            return
+        for metric_name, metric_buffer in self._multi_raw_buffers_by_metric_name.items():
+            metric_samples = metric_samples_by_name.get(metric_name)
+            if metric_samples is None:
+                metric_samples = np.full(
+                    frame_count,
+                    self._last_metric_value_by_name.get(metric_name, 0.0),
+                    dtype=np.float64,
+                )
+            self._multi_raw_buffers_by_metric_name[metric_name] = self._update_history_buffers(
+                metric_buffer, metric_samples, frame_count
+            )
+        self._multi_received_samples_total = min(
+            self._history_size_samples,
+            self._multi_received_samples_total + frame_count,
+        )
+
+    def _refresh_plots_after_history_update(self):
+        self._refresh_dsp_curve_data()
+        self._refresh_multi_curves_data()
+        if self._display_mode == DISPLAY_MODE_DSP:
+            self._refresh_dsp_frequency_spectrum()
+            self._update_auto_delay_label()
+        self._update_elements_visibility()
+
+    def _poll_and_refresh(self):
+        frame_values_by_name, frame_count = self._receive_available_data()
+        if frame_values_by_name is None:
+            return
+
+        metric_samples_by_name, metric_last_value_by_name = (
+            self._build_metric_samples_for_received_frames(frame_values_by_name)
+        )
+        self._update_last_metric_values_for_received_frames(
+            frame_values_by_name, metric_last_value_by_name
+        )
+        dsp_metric_samples, filtered_dsp_metric_samples = (
+            self._build_filtered_dsp_metric_samples(metric_samples_by_name)
+        )
 
         if not self._is_paused:
-            if dsp_metric_samples is not None:
-                self._raw_buffer = self._update_history_buffers(
-                    self._raw_buffer, dsp_metric_samples, frame_count
-                )
-                updated_filtered_samples = (
-                    filtered_samples if filtered_samples is not None else dsp_metric_samples
-                )
-                self._filtered_buffer = self._update_history_buffers(
-                    self._filtered_buffer, updated_filtered_samples, frame_count
-                )
-                self._dsp_received_samples_total = min(
-                    self._history_size_samples,
-                    self._dsp_received_samples_total + frame_count,
-                )
-
-            if self._multi_raw_buffers_by_metric_name:
-                for metric_name, metric_buffer in self._multi_raw_buffers_by_metric_name.items():
-                    metric_samples = metric_samples_by_name.get(metric_name)
-                    if metric_samples is None:
-                        metric_samples = np.full(
-                            frame_count,
-                            self._last_metric_value_by_name.get(metric_name, 0.0),
-                            dtype=np.float64,
-                        )
-                    self._multi_raw_buffers_by_metric_name[metric_name] = self._update_history_buffers(
-                        metric_buffer, metric_samples, frame_count
-                    )
-                self._multi_received_samples_total = min(
-                    self._history_size_samples,
-                    self._multi_received_samples_total + frame_count,
-                )
-
-            self._refresh_dsp_curve_data()
-            self._refresh_multi_curves_data()
-            if self._display_mode == DISPLAY_MODE_DSP:
-                self._refresh_dsp_frequency_spectrum()
-                self._update_auto_delay_label()
-            self._update_elements_visibility()
+            self._append_dsp_metric_samples_to_history(
+                frame_count,
+                dsp_metric_samples,
+                filtered_dsp_metric_samples,
+            )
+            self._append_multi_signal_samples_to_history(
+                frame_count, metric_samples_by_name
+            )
+            self._refresh_plots_after_history_update()
 
         self._update_correlation_readout()
 
     def closeEvent(self, event):
-        if hasattr(self, "_socket") and self._socket:
-            self._socket.close()
+        if self._frame_receiver is not None:
+            self._frame_receiver.close()
         event.accept()
 
-
-def parse_filter_argument(filter_string):
-    tokens = filter_string.split(":")
-    filter_type_name = tokens[0].lower()
-    if filter_type_name == "lowpass":
-        if len(tokens) != 2:
-            raise argparse.ArgumentTypeError(
-                "lowpass filter needs 'lowpass:cutoff_hz'"
-            )
-        return {"filter_type": "lowpass", "cutoff_hz": float(tokens[1])}
-    elif filter_type_name == "notch":
-        if len(tokens) != 3:
-            raise argparse.ArgumentTypeError(
-                "notch filter needs 'notch:cutoff_hz:quality_factor'"
-            )
-        return {
-            "filter_type": "notch",
-            "frequency_hz": float(tokens[1]),
-            "quality_factor": float(tokens[2]),
-        }
-    elif filter_type_name == "ema":
-        if len(tokens) == 2:
-            return {"filter_type": "ema", "alpha": float(tokens[1])}
-        elif len(tokens) == 3:
-            return {"filter_type": "ema", "alpha": float(tokens[1]) / float(tokens[2])}
-        raise argparse.ArgumentTypeError("ema filter needs 'ema:alpha' or 'ema:num:den'")
-    elif filter_type_name in ["savitzky", "savitzky_causal"]:
-        if len(tokens) != 2:
-            raise argparse.ArgumentTypeError(
-                f"{filter_type_name} filter needs '{filter_type_name}:window_size'"
-            )
-        return {"filter_type": filter_type_name, "window_size": int(tokens[1])}
-    else:
-        raise argparse.ArgumentTypeError(f"Unknown filter type: {filter_type_name}")
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Real-time RTT scope with configurable DSP filters"
-    )
-    parser.add_argument(
-        "--host", default=DEFAULT_HOST, help=f"Host (default: {DEFAULT_HOST})"
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=DEFAULT_PORT,
-        help=f"Port (default: {DEFAULT_PORT})",
-    )
-    parser.add_argument(
-        "--sample-rate",
-        type=int,
-        default=DEFAULT_SAMPLE_RATE_HZ,
-        help=f"Sample rate in Hz (default: {DEFAULT_SAMPLE_RATE_HZ})",
-    )
-    parser.add_argument(
-        "--filter",
-        action="append",
-        type=parse_filter_argument,
-        help="Filter to apply. Can be 'lowpass:cutoff_hz' or 'notch:cutoff_hz:quality_factor'",
-    )
-    parser.add_argument(
-        "--history-ms",
-        type=int,
-        default=DEFAULT_HISTORY_MS,
-        help=f"History size in ms (default: {DEFAULT_HISTORY_MS})",
-    )
-    parser.add_argument(
-        "--initial-view-ms",
-        type=int,
-        default=DEFAULT_INITIAL_VIEW_MS,
-        help=f"Initial view window in ms (default: {DEFAULT_INITIAL_VIEW_MS})",
-    )
-
-    args = parser.parse_args()
-
-    filter_configs = args.filter if args.filter else DEFAULT_FILTER_CONFIGS
-    filter_chain = []
-    for config in filter_configs:
-        filter_type = config["filter_type"]
-        if filter_type == "lowpass":
-            filter_chain.append(
-                build_lowpass_filter(config["cutoff_hz"], args.sample_rate)
-            )
-        elif filter_type == "notch":
-            filter_chain.append(
-                build_notch_filter(
-                    config["frequency_hz"],
-                    config["quality_factor"],
-                    args.sample_rate,
-                )
-            )
-        elif filter_type == "ema":
-            filter_chain.append(build_ema_filter(config["alpha"], args.sample_rate))
-        elif filter_type.startswith("savitzky"):
-            filter_chain.append(
-                build_savgol_filter(
-                    config["window_size"], filter_type == "savitzky_causal", args.sample_rate
-                )
-            )
-
-    history_size_samples = int(args.history_ms * args.sample_rate / 1000)
-    initial_view_samples = int(args.initial_view_ms * args.sample_rate / 1000)
-
-    application = QtWidgets.QApplication(sys.argv)
-    window = RttLiveScope(
-        args.host, args.port, args.sample_rate, filter_chain, history_size_samples, initial_view_samples
-    )
-    window.show()
-    sys.exit(application.exec())
-
-
-if __name__ == "__main__":
-    main()
