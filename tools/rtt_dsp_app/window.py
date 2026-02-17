@@ -2,6 +2,8 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
+from tools.rtt_common import ThroughputMeter
+
 from .constants import (
     DISPLAY_MODE_DSP,
     DISPLAY_MODE_MULTI_SIGNAL,
@@ -34,6 +36,9 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._history_size_samples = history_size_samples
 
         self._frame_receiver = None
+        self._throughput_meter = ThroughputMeter()
+        self._is_network_connected = False
+        self._network_throughput_kilobytes_per_second = 0.0
         self._metric_names = []
         self._metric_metadata = {}
         self._dsp_selected_metric_name = "Shank position (mm)"
@@ -57,7 +62,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._has_applied_initial_dsp_suggested_range = False
         self._has_applied_initial_multi_suggested_range = False
 
-        self._set_window_title_live()
+        self._refresh_window_title()
         self.resize(1200, 800)
 
         self._setup_plots()
@@ -391,12 +396,17 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     def _toggle_pause(self):
         self._is_paused = not self._is_paused
-        self._set_window_title_live()
+        self._refresh_window_title()
 
-    def _set_window_title_live(self):
-        status = "PAUSED" if self._is_paused else "LIVE"
-        mode_name = "DSP" if self._display_mode == DISPLAY_MODE_DSP else "MULTI"
-        self.setWindowTitle(f"RTT DSP [{mode_name}] - [Space] to pause - [{status}]")
+    def _refresh_window_title(self):
+        pause_state_suffix = " [PAUSED]" if self._is_paused else ""
+        if self._is_network_connected:
+            network_state_text = (
+                f"Connected ({self._network_throughput_kilobytes_per_second:.2f} KB/s)"
+            )
+        else:
+            network_state_text = "Disconnected (reconnecting...)"
+        self.setWindowTitle(f"RTT DSP - {network_state_text}{pause_state_suffix}")
 
     def _setup_plots(self):
         main_layout, control_layout = self._build_main_window_layouts()
@@ -414,6 +424,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
         self._switch_display_mode(DISPLAY_MODE_DSP, should_update_selector=True)
         self._update_elements_visibility()
         self._refresh_signal_status_label()
+        self._refresh_network_status()
         self._update_correlation_readout()
 
     def _build_main_window_layouts(self):
@@ -968,7 +979,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
             ):
                 self._apply_multi_suggested_range()
                 self._has_applied_initial_multi_suggested_range = True
-        self._set_window_title_live()
+        self._refresh_window_title()
         self._refresh_signal_status_label()
         self._refresh_dsp_curve_data()
         self._refresh_multi_curves_data()
@@ -1087,6 +1098,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
     def _connect_socket(self):
         self._frame_receiver = SocketFrameReceiver(self._host, self._port)
         self._frame_receiver.connect()
+        self._refresh_network_status()
 
     def _start_timer(self):
         self._timer = QtCore.QTimer()
@@ -1102,6 +1114,24 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if not decoded_values_by_frame:
             return None, 0
         return decoded_values_by_frame, len(decoded_values_by_frame)
+
+    def _refresh_network_status(self):
+        if self._frame_receiver is None:
+            self._is_network_connected = False
+            self._network_throughput_kilobytes_per_second = 0.0
+            self._refresh_window_title()
+            return
+
+        self._is_network_connected = self._frame_receiver.is_connected
+        if self._is_network_connected:
+            total_bytes_received = self._frame_receiver.total_bytes_received
+            self._network_throughput_kilobytes_per_second = self._throughput_meter.update(
+                total_bytes_received
+            )
+        else:
+            self._throughput_meter.reset()
+            self._network_throughput_kilobytes_per_second = 0.0
+        self._refresh_window_title()
 
     def _update_history_buffers(self, buffer, new_samples, count):
         return update_history_buffer(buffer, new_samples, count)
@@ -1200,6 +1230,7 @@ class RttLiveScope(QtWidgets.QMainWindow):
 
     def _poll_and_refresh(self):
         frame_values_by_name, frame_count = self._receive_available_data()
+        self._refresh_network_status()
         if frame_values_by_name is None:
             return
 
@@ -1230,4 +1261,3 @@ class RttLiveScope(QtWidgets.QMainWindow):
         if self._frame_receiver is not None:
             self._frame_receiver.close()
         event.accept()
-

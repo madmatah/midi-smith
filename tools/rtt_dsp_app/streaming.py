@@ -1,7 +1,6 @@
-import socket
-
 import numpy as np
 
+from tools.rtt_common import ReconnectingRttClient
 from tools.rtt_common.sensor_rtt_protocol import (
     KIND_DATA,
     KIND_SCHEMA,
@@ -13,46 +12,45 @@ from .constants import RECEIVE_BUFFER_SIZE_BYTES
 
 class SocketFrameReceiver:
     def __init__(self, host, port):
-        self._host = host
-        self._port = port
-        self._socket = None
+        self._client = ReconnectingRttClient(host=host, port=port)
         self._decoder = SensorRttStreamDecoder()
+
+    @property
+    def is_connected(self):
+        return self._client.is_connected
+
+    @property
+    def total_bytes_received(self):
+        return self._client.total_bytes_received
 
     def connect(self):
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect((self._host, self._port))
-        self._socket.setblocking(False)
         self._decoder = SensorRttStreamDecoder()
+        return self._client.connect()
 
     def close(self):
-        if self._socket is None:
-            return
-        self._socket.close()
-        self._socket = None
+        self._client.close()
 
     def receive_available_data(self):
         received_schemas = []
         frame_values_by_name = []
 
-        if self._socket is None:
-            return received_schemas, frame_values_by_name
+        while True:
+            aligned_data = self._client.receive_aligned_data(
+                frame_size_bytes=1,
+                buffer_size_bytes=RECEIVE_BUFFER_SIZE_BYTES,
+            )
+            if not aligned_data:
+                break
 
-        try:
-            while True:
-                data_chunk = self._socket.recv(RECEIVE_BUFFER_SIZE_BYTES)
-                if not data_chunk:
-                    break
-                for frame in self._decoder.feed(data_chunk):
-                    if frame.kind == KIND_SCHEMA and frame.schema is not None:
-                        received_schemas.append(frame.schema)
-                        continue
-                    if frame.kind != KIND_DATA:
-                        continue
-                    values_by_name = frame.values_by_name or {}
-                    if values_by_name:
-                        frame_values_by_name.append(values_by_name)
-        except BlockingIOError:
-            pass
+            for frame in self._decoder.feed(aligned_data):
+                if frame.kind == KIND_SCHEMA and frame.schema is not None:
+                    received_schemas.append(frame.schema)
+                    continue
+                if frame.kind != KIND_DATA:
+                    continue
+                values_by_name = frame.values_by_name or {}
+                if values_by_name:
+                    frame_values_by_name.append(values_by_name)
 
         return received_schemas, frame_values_by_name
 
