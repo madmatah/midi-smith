@@ -1,211 +1,24 @@
-#!/usr/bin/env python3
-"""
-RTT Scope - Visualizes telemetry data sent over RTT Channel.
-Required dependencies: vispy, pyglfw, numpy  (and libglfw3 installed on the computer)
-
-To install dependencies on ubuntu :
-apt install python3-vispy libglfw3 python3-pyglfw python3-numpy
-"""
-
-import argparse
-import socket
-import struct
-import sys
-import time
-import glfw
 from datetime import datetime
-from typing import List, Optional, Tuple
+import time
+from typing import List, Tuple
 
+import glfw
 import numpy as np
 import vispy
 from vispy import app, scene
 from vispy.scene import visuals
 
-from rtt_common.sensor_rtt_protocol import KIND_DATA, KIND_SCHEMA, SensorRttStreamDecoder
+from .constants import (
+    BUFFER_HISTORY_FACTOR,
+    HELP_HINT_TEXT,
+    INITIALIZATION_FRAMES_COUNT,
+    STATUS_INITIALIZING_TEXT,
+    WINDOW_TITLE,
+)
+from .scrollbar import ScrollBar
 
-# Use GLFW for window management
+
 vispy.use(app='glfw')
-
-class RttClient:
-    """Manages the TCP connection to the Segger RTT Server."""
-
-    def __init__(self, host: str, port: int):
-        self._host = host
-        self._port = port
-        self._socket: Optional[socket.socket] = None
-        self.is_connected = False
-        self.total_bytes_received = 0
-        self._last_reconnect_attempt_time = 0
-        self._reconnect_interval_seconds = 2.0
-        self._buffer = bytearray()
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def connect(self) -> bool:
-        """Establishes connection to the RTT server."""
-        self._last_reconnect_attempt_time = time.time()
-        try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.connect((self._host, self._port))
-            self._socket.setblocking(False)
-            self.is_connected = True
-            print(f"Connected to RTT server at {self._host}:{self._port}")
-            return True
-        except Exception:
-            self.is_connected = False
-            return False
-
-    def receive_aligned_data(self, frame_size_bytes: int, buffer_size: int = 8192) -> Optional[bytes]:
-        """Receives raw data from the socket and returns a byte string aligned on frame boundaries."""
-        if frame_size_bytes <= 0:
-            return None
-
-        if not self.is_connected:
-            self._attempt_reconnect_if_needed()
-            return None
-
-        try:
-            data = self._socket.recv(buffer_size)
-            if not data:
-                self.close()
-                return None
-            self.total_bytes_received += len(data)
-            self._buffer.extend(data)
-
-            frame_count = len(self._buffer) // frame_size_bytes
-            if frame_count > 0:
-                aligned_byte_count = frame_count * frame_size_bytes
-                result = bytes(self._buffer[:aligned_byte_count])
-                self._buffer = self._buffer[aligned_byte_count:]
-                return result
-            return None
-        except BlockingIOError:
-            return None
-        except Exception as e:
-            print(f"Connection lost: {e}")
-            self.close()
-            return None
-
-    def receive_data(self, buffer_size: int = 8192) -> Optional[bytes]:
-        return self.receive_aligned_data(frame_size_bytes=4, buffer_size=buffer_size)
-
-    def _attempt_reconnect_if_needed(self) -> None:
-        """Attempts to reconnect if the interval has passed."""
-        if time.time() - self._last_reconnect_attempt_time > self._reconnect_interval_seconds:
-            self.connect()
-
-    def close(self) -> None:
-        """Closes the socket connection."""
-        self.is_connected = False
-        if self._socket:
-            try:
-                self._socket.close()
-            except Exception:
-                pass
-            self._socket = None
-
-class ScrollBar:
-    """A horizontal scrollbar widget for Vispy Scene."""
-    def __init__(self, parent, size_callback):
-        self.parent = parent
-        self.visible = True
-        self.get_total_size = size_callback
-
-        # Visuals: Only the thumb, use container bgcolor as track
-        self.thumb = visuals.Rectangle(
-            center=(0,0,0), width=20, height=18,
-            color=(0.6, 0.6, 0.6, 1), parent=parent
-        )
-        self.thumb.order = 100
-
-        self.width = 100
-        self.height = 20
-        self.is_dragging = False
-        self.last_mouse_x = 0
-
-    def update_layout(self, x, y, width, height):
-        self.width = width
-        self.height = height
-
-        # Calculate thumb position and size
-        total, visible_size, offset = self.get_total_size()
-        if total <= visible_size:
-            thumb_w = width
-            thumb_x = x
-        else:
-            ratio = visible_size / total
-            thumb_w = max(20, width * ratio)
-
-            # offset 0 means RIGHTMOST (Live)
-            # offset max = total - visible_size
-            max_offset = total - visible_size
-
-            scroll_range_px = width - thumb_w
-            if max_offset > 0:
-                normalized_pos = offset / max_offset
-                thumb_x = x + scroll_range_px - (normalized_pos * scroll_range_px)
-            else:
-                thumb_x = x
-
-        # Thumb Visuals
-        thumb_h = height - 4
-        if thumb_h < 1: thumb_h = 1
-
-        thumb_cx = thumb_x + thumb_w / 2.0
-        thumb_cy = y + height / 2.0
-
-        self.thumb.center = (thumb_cx, thumb_cy, 0)
-        self.thumb.width = thumb_w
-        self.thumb.height = thumb_h
-
-        # Store thumb rect for mouse detection
-        self.thumb_rect_x = (thumb_x, thumb_x + thumb_w)
-
-        # Force a refresh of the container
-        self.parent.update()
-
-    def handle_mouse_press(self, event, x_rel):
-        """Returns True if consumed."""
-        if not hasattr(self, 'thumb_rect_x'): return False
-
-        t_left, t_right = self.thumb_rect_x
-        # Check against relative X passed from parent widget
-        if t_left <= x_rel <= t_right:
-            self.is_dragging = True
-            self.last_mouse_x = event.pos[0]
-            return True
-        return False
-
-    def handle_mouse_move(self, event) -> Optional[float]:
-        """Returns new normalized offset (0.0 to 1.0) if dragging, else None."""
-        if not self.is_dragging:
-            return None
-
-        dx = event.pos[0] - self.last_mouse_x
-        self.last_mouse_x = event.pos[0]
-
-        total, visible_size, _ = self.get_total_size()
-        max_offset = total - visible_size
-
-        if max_offset <= 0:
-            return 0.0
-
-        thumb_w = self.thumb.width
-        scroll_range_px = self.width - thumb_w
-        if scroll_range_px <= 0:
-            return None
-
-        offset_delta = -(dx / scroll_range_px) * max_offset
-        return offset_delta
-
-    def handle_mouse_release(self, event):
-        self.is_dragging = False
-
 
 class RttScope:
     """Visualizes RTT data using Vispy."""
@@ -217,7 +30,7 @@ class RttScope:
         self.data_format = data_format
 
         # History Configuration
-        self.history_factor = 30
+        self.history_factor = BUFFER_HISTORY_FACTOR
         self.buffer_size = sample_count * self.history_factor
 
         # Data buffer
@@ -254,7 +67,7 @@ class RttScope:
         self._window_geometry = None
         self._is_fullscreen = False
 
-        self.remaining_initialization_frames = 3
+        self.remaining_initialization_frames = INITIALIZATION_FRAMES_COUNT
         self.manual_range_active = False
 
         self._setup_ui(y_max_initial)
@@ -273,7 +86,7 @@ class RttScope:
         self.canvas = scene.SceneCanvas(
             keys='interactive',
             show=True,
-            title="RTT Channel Monitor",
+            title=WINDOW_TITLE,
             bgcolor='black'
         )
         self.grid = self.canvas.central_widget.add_grid(spacing=0)
@@ -312,7 +125,7 @@ class RttScope:
         self.status_box.height_min = 30
 
         self.status_text = scene.Text(
-            "Initializing...",
+            STATUS_INITIALIZING_TEXT,
             color='white',
             anchor_x='left',
             parent=self.status_box,
@@ -321,7 +134,7 @@ class RttScope:
         )
 
         self.help_hint = scene.Text(
-            "Press H for help",
+            HELP_HINT_TEXT,
             color='gray',
             anchor_x='right',
             parent=self.status_box,
@@ -891,86 +704,3 @@ class RttScope:
         print("Starting visualization. Close the window to exit.")
         app.run()
 
-
-def main():
-    parser = argparse.ArgumentParser(description=" RTT Scope Visualizer")
-    parser.add_argument("--host", default="127.0.0.1", help="RTT server IP (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=60001, help="RTT server port (default: 60001)")
-    parser.add_argument("--points", type=int, default=10000, help="Number of points to display")
-    parser.add_argument("--y-max", type=float, default=16384, help="Initial Y axis maximum")
-    parser.add_argument("--no-auto-scale", action="store_true", help="Disable auto-scaling on startup")
-    parser.add_argument("--format", choices=["sensor_frame", "float32", "uint32"],
-                        default="sensor_frame", help="Data format (default: sensor_frame)")
-
-    args = parser.parse_args()
-
-    scope = RttScope(
-        sample_count=args.points,
-        y_max_initial=args.y_max,
-        auto_scale=not args.no_auto_scale,
-        data_format=args.format
-    )
-
-    with RttClient(args.host, args.port) as client:
-        decoder = SensorRttStreamDecoder()
-
-        def update_callback(_event):
-            try:
-                processed = False
-
-                if args.format == "sensor_frame":
-                    raw_data = client.receive_aligned_data(frame_size_bytes=1)
-                    if raw_data:
-                        frames = decoder.feed(raw_data)
-                        if decoder.latest_schema is not None:
-                            scope.configure_metrics(decoder.latest_schema)
-
-                        if scope.metric_names:
-                            seqs = []
-                            timestamps_us = []
-                            sensor_ids = []
-                            values_matrix = []
-
-                            for frame in frames:
-                                if frame.kind != KIND_DATA:
-                                    continue
-                                values_by_name = frame.values_by_name or {}
-                                values_matrix.append(
-                                    [values_by_name.get(name, 0.0) for name in scope.metric_names]
-                                )
-                                seqs.append(frame.seq)
-                                timestamps_us.append(frame.timestamp_us)
-                                sensor_ids.append(frame.sensor_id or 0)
-
-                            if values_matrix:
-                                scope.process_incoming_sensor_frames(
-                                    seqs, timestamps_us, sensor_ids, values_matrix
-                                )
-                                processed = True
-                else:
-                    raw_data = client.receive_aligned_data(frame_size_bytes=4)
-                    if raw_data:
-                        value_count = len(raw_data) // 4
-                        if value_count > 0:
-                            fmt_char = 'f' if args.format == 'float32' else 'I'
-                            new_values = struct.unpack('<' + fmt_char * value_count, raw_data[:value_count*4])
-                            scope.process_incoming_values(new_values)
-                            processed = True
-
-                # If we didn't process data (or even if we did, to ensure frequent UI updates)
-                if not processed or scope.view_offset > 0:
-                     scope.update_ui_status(client.is_connected, client.total_bytes_received)
-                elif processed:
-                     # Even if processed, update status bar (throughput etc)
-                     scope.update_ui_status(client.is_connected, client.total_bytes_received)
-
-            except Exception as e:
-                print(f"Error in update loop: {e}")
-                import traceback
-                traceback.print_exc()
-
-        timer = app.Timer(interval=0.01, connect=update_callback, start=True)
-        scope.run()
-
-if __name__ == '__main__':
-    main()
