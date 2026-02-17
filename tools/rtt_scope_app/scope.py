@@ -8,6 +8,8 @@ import vispy
 from vispy import app, scene
 from vispy.scene import visuals
 
+from tools.rtt_common import ThroughputMeter
+
 from .constants import (
     BUFFER_HISTORY_FACTOR,
     HELP_HINT_TEXT,
@@ -51,9 +53,11 @@ class RttScope:
         self.total_samples_received = 0
 
         # Performance and State
-        self.last_update_time = time.time()
         self.last_bytes_count = 0
         self.throughput_kbps = 0.0
+        self._throughput_meter = ThroughputMeter()
+        self._last_known_connection_state = False
+        self._last_known_total_bytes_received = 0
 
         self.hover_data = None  # (index, value)
         self.hover_seq = None
@@ -457,7 +461,11 @@ class RttScope:
 
                 self.manual_range_active = False
                 self._update_plot()
-                self.update_ui_status(True, self.last_bytes_count, force=True)
+                self.update_ui_status(
+                    self._last_known_connection_state,
+                    self._last_known_total_bytes_received,
+                    force=True,
+                )
                 return
 
         if self.view_offset > 0:
@@ -503,7 +511,11 @@ class RttScope:
                         )
                         self.hover_marker.visible = True
 
-                        self.update_ui_status(True, self.last_bytes_count, force=True)
+                        self.update_ui_status(
+                            self._last_known_connection_state,
+                            self._last_known_total_bytes_received,
+                            force=True,
+                        )
                         return
 
         self.hover_v_line.visible = False
@@ -512,7 +524,11 @@ class RttScope:
         self.hover_seq = None
         self.hover_timestamp_us = None
         if self.view_offset > 0:
-             self.update_ui_status(True, self.last_bytes_count, force=True)
+             self.update_ui_status(
+                 self._last_known_connection_state,
+                 self._last_known_total_bytes_received,
+                 force=True,
+             )
 
         # Explicit update removed to avoid fighting with main loop
         # self.canvas.update()
@@ -576,7 +592,11 @@ class RttScope:
 
         self.manual_range_active = False
         self._update_plot()
-        self.update_ui_status(True, self.last_bytes_count, force=True)
+        self.update_ui_status(
+            self._last_known_connection_state,
+            self._last_known_total_bytes_received,
+            force=True,
+        )
 
     def _enable_autoscale(self) -> None:
         self.auto_scale_enabled = True
@@ -653,15 +673,14 @@ class RttScope:
 
     def update_ui_status(self, is_connected: bool, total_bytes: int, force: bool = False) -> None:
         self._process_initialization_sequence()
-
         current_time = time.time()
-        time_delta_seconds = current_time - self.last_update_time
-
-        if time_delta_seconds >= 1.0:
-            bytes_diff = total_bytes - self.last_bytes_count
-            self.throughput_kbps = (bytes_diff / 1024.0) / time_delta_seconds
-            self.last_update_time = current_time
-            self.last_bytes_count = total_bytes
+        self._last_known_connection_state = bool(is_connected)
+        self._last_known_total_bytes_received = int(total_bytes)
+        self.last_bytes_count = int(total_bytes)
+        self.throughput_kbps = self._throughput_meter.update(
+            total_bytes_received=int(total_bytes),
+            now_seconds=current_time,
+        )
 
         # 1. Connection Status
         if is_connected:
@@ -703,4 +722,3 @@ class RttScope:
     def run(self) -> None:
         print("Starting visualization. Close the window to exit.")
         app.run()
-
