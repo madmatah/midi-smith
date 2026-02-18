@@ -24,15 +24,23 @@ class RecordingKeyActionHandler final : public domain::music::piano::KeyActionRe
   domain::music::Velocity last_release_velocity = 0u;
 };
 
-class RecordingVelocityMapper final : public domain::music::piano::VelocityMapperRequirements {
+class RecordingVelocityMapper final
+    : public domain::music::piano::velocity::VelocityMapperRequirements {
  public:
+  static void Reset() noexcept {
+    map_calls = 0;
+    last_shank_falling_speed_m_per_s = 0.0f;
+  }
+
   domain::music::Velocity Map(float speed_m_per_s) noexcept override {
-    last_hammer_speed_m_per_s = speed_m_per_s;
+    last_shank_falling_speed_m_per_s = speed_m_per_s;
+    ++map_calls;
     return (speed_m_per_s > 0.0f) ? static_cast<domain::music::Velocity>(42u)
                                   : static_cast<domain::music::Velocity>(1u);
   }
 
-  float last_hammer_speed_m_per_s = 0.0f;
+  static inline int map_calls = 0;
+  static inline float last_shank_falling_speed_m_per_s = 0.0f;
 };
 
 struct TestContext {
@@ -43,28 +51,33 @@ struct TestContext {
 
 TEST_CASE("The NoteReleaseDetectorStage class") {
   using Catch::Matchers::WithinAbs;
-  using Stage = domain::music::piano::NoteReleaseDetectorStage<0.5f>;
+  using Constant127Mapper = domain::music::piano::velocity::ConstantVelocityMapper<127u>;
+  using DefaultStage = domain::music::piano::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
+  using CustomMapperStage =
+      domain::music::piano::NoteReleaseDetectorStage<RecordingVelocityMapper, 0.5f>;
 
   SECTION("The note release detection") {
     SECTION("When note is on and position crosses the threshold upwards") {
       SECTION("Should emit NoteOff and clear is_note_on") {
         domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
-        Stage stage{};
+        CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
-        RecordingVelocityMapper mapper{};
         stage.SetKeyActionHandler(&handler);
-        stage.SetVelocityMapper(&mapper);
+        RecordingVelocityMapper::Reset();
 
         sensor.is_note_on = true;
-        sensor.last_hammer_speed_m_per_s = 0.25f;
-        stage.Execute(0.49f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        sensor.last_shank_position_smoothed_norm = 0.49f;
+        stage.Execute(0.0f, ctx);
 
-        sensor.last_hammer_speed_m_per_s = 0.0f;
-        stage.Execute(0.51f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        sensor.last_shank_position_smoothed_norm = 0.51f;
+        stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(mapper.last_hammer_speed_m_per_s, WithinAbs(0.25f, 0.0001f));
+        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                     WithinAbs(0.25f, 0.0001f));
         REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(42u));
         REQUIRE(sensor.is_note_on == false);
       }
@@ -74,24 +87,27 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
       SECTION("Should map the last latched positive speed") {
         domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
-        Stage stage{};
+        CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
-        RecordingVelocityMapper mapper{};
         stage.SetKeyActionHandler(&handler);
-        stage.SetVelocityMapper(&mapper);
+        RecordingVelocityMapper::Reset();
 
         sensor.is_note_on = true;
-        sensor.last_hammer_speed_m_per_s = 0.10f;
-        stage.Execute(0.40f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.10f;
+        sensor.last_shank_position_smoothed_norm = 0.40f;
+        stage.Execute(0.0f, ctx);
 
-        sensor.last_hammer_speed_m_per_s = 0.35f;
-        stage.Execute(0.45f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.35f;
+        sensor.last_shank_position_smoothed_norm = 0.45f;
+        stage.Execute(0.0f, ctx);
 
-        sensor.last_hammer_speed_m_per_s = 0.0f;
-        stage.Execute(0.51f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        sensor.last_shank_position_smoothed_norm = 0.51f;
+        stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(mapper.last_hammer_speed_m_per_s, WithinAbs(0.35f, 0.0001f));
+        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                     WithinAbs(0.35f, 0.0001f));
       }
     }
 
@@ -99,19 +115,69 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
       SECTION("Should not emit NoteOff") {
         domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
-        Stage stage{};
+        CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
-        RecordingVelocityMapper mapper{};
         stage.SetKeyActionHandler(&handler);
-        stage.SetVelocityMapper(&mapper);
+        RecordingVelocityMapper::Reset();
 
         sensor.is_note_on = false;
-        sensor.last_hammer_speed_m_per_s = 0.25f;
-        stage.Execute(0.49f, ctx);
-        stage.Execute(0.51f, ctx);
+        sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        sensor.last_shank_position_smoothed_norm = 0.49f;
+        stage.Execute(0.0f, ctx);
+        sensor.last_shank_position_smoothed_norm = 0.51f;
+        stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 0);
         REQUIRE(sensor.is_note_on == false);
+      }
+    }
+
+    SECTION("When no custom velocity mapper is configured") {
+      SECTION("Should emit NoteOff with default velocity 127") {
+        domain::sensors::SensorState sensor{};
+        TestContext ctx{sensor};
+        DefaultStage stage{};
+        RecordingKeyActionHandler handler{};
+        stage.SetKeyActionHandler(&handler);
+
+        sensor.is_note_on = true;
+        sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        sensor.last_shank_position_smoothed_norm = 0.49f;
+        stage.Execute(0.0f, ctx);
+
+        sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        sensor.last_shank_position_smoothed_norm = 0.51f;
+        stage.Execute(0.0f, ctx);
+
+        REQUIRE(handler.note_off_calls == 1);
+        REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(127u));
+        REQUIRE(sensor.is_note_on == false);
+      }
+    }
+
+    SECTION("When configured with a custom mapper type") {
+      SECTION("Should use the custom mapper output to emit NoteOff") {
+        domain::sensors::SensorState sensor{};
+        TestContext ctx{sensor};
+        CustomMapperStage stage{};
+        RecordingKeyActionHandler handler{};
+        stage.SetKeyActionHandler(&handler);
+        RecordingVelocityMapper::Reset();
+
+        sensor.is_note_on = true;
+        sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        sensor.last_shank_position_smoothed_norm = 0.49f;
+        stage.Execute(0.0f, ctx);
+
+        sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        sensor.last_shank_position_smoothed_norm = 0.51f;
+        stage.Execute(0.0f, ctx);
+
+        REQUIRE(handler.note_off_calls == 1);
+        REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(42u));
+        REQUIRE(RecordingVelocityMapper::map_calls == 1);
+        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                     WithinAbs(0.25f, 0.0001f));
       }
     }
   }

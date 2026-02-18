@@ -2,26 +2,28 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 #include "domain/music/piano/detail/null_key_action_handler.hpp"
-#include "domain/music/piano/goebl_logarithmic_velocity_mapper.hpp"
 #include "domain/music/piano/key_action_requirements.hpp"
-#include "domain/music/piano/velocity_mapper_requirements.hpp"
+#include "domain/music/piano/velocity/constant_velocity_mapper.hpp"
+#include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
 
 namespace domain::music::piano {
 
-template <float kActiveZone, float kLetoff, float kStrike, float kDrop, float kRearm>
+template <typename MapperT, float kActiveZone, float kLetoff, float kStrike, float kDrop,
+          float kRearm>
 class MidiVelocityEngine {
  public:
+  static_assert(std::is_base_of_v<velocity::VelocityMapperRequirements, MapperT>,
+                "MapperT must derive from VelocityMapperRequirements.");
+  static_assert(std::is_default_constructible_v<MapperT>, "MapperT must be default-constructible.");
+
   void Reset() noexcept {
     state_ = State::IDLE;
     has_prev_position_ = false;
     prev_position_ = 1.0f;
     latched_velocity_ = 0u;
-  }
-
-  void SetVelocityMapper(VelocityMapperRequirements* mapper) noexcept {
-    mapper_ = (mapper != nullptr) ? mapper : &mapper_impl_;
   }
 
   void SetKeyActionHandler(KeyActionRequirements* handler) noexcept {
@@ -55,7 +57,7 @@ class MidiVelocityEngine {
 
         if (prev_position_ > kLetoff && position <= kLetoff && speed_m_per_s < 0.0f) {
           const float latched_speed = -speed_m_per_s;
-          latched_velocity_ = mapper_->Map(latched_speed);
+          latched_velocity_ = mapper_impl_.Map(latched_speed);
           state_ = State::LATCHED;
         }
         break;
@@ -99,11 +101,14 @@ class MidiVelocityEngine {
   float prev_position_ = 1.0f;
   domain::music::Velocity latched_velocity_ = 0u;
 
-  GoeblLogarithmicVelocityMapper mapper_impl_{};
+  MapperT mapper_impl_{};
   detail::NullKeyActionHandler null_handler_{};
 
-  VelocityMapperRequirements* mapper_ = &mapper_impl_;
   KeyActionRequirements* handler_ = &null_handler_;
 };
+
+template <float kActiveZone, float kLetoff, float kStrike, float kDrop, float kRearm>
+using DefaultMidiVelocityEngine = MidiVelocityEngine<velocity::ConstantVelocityMapper<64u>,
+                                                     kActiveZone, kLetoff, kStrike, kDrop, kRearm>;
 
 }  // namespace domain::music::piano
