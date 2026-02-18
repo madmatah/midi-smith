@@ -4,9 +4,9 @@
 #include <cmath>
 #include <cstdint>
 
-#include "domain/music/piano/velocity_mapper_requirements.hpp"
+#include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
 
-namespace domain::music::piano {
+namespace domain::music::piano::velocity {
 
 class GoeblLogarithmicVelocityMapper final : public VelocityMapperRequirements {
  public:
@@ -23,4 +23,4 @@ class GoeblLogarithmicVelocityMapper final : public VelocityMapperRequirements {
   }
 };
 
-}  // namespace domain::music::piano
+}  // namespace domain::music::piano::velocity
