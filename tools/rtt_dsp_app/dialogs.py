@@ -17,6 +17,7 @@ class FilterEditorDialog(QtWidgets.QDialog):
             "ema",
             "savitzky",
             "savitzky_causal",
+            "sma",
         ])
         layout.addRow("Type:", self.filter_type_combobox)
 
@@ -73,12 +74,17 @@ class FilterEditorDialog(QtWidgets.QDialog):
         is_frequency_applicable = filter_type in ["notch", "lowpass"]
         is_quality_factor_applicable = filter_type == "notch"
         is_ema_applicable = filter_type == "ema"
-        is_savitzky_golay_applicable = filter_type.startswith("savitzky")
+        is_window_size_applicable = filter_type.startswith("savitzky") or filter_type == "sma"
+
+        if filter_type == "sma":
+            self.window_size_spinbox.setRange(1, 2000)
+        else:
+            self.window_size_spinbox.setRange(1, 25)
 
         self.frequency_spinbox.setVisible(is_frequency_applicable)
         self.quality_factor_spinbox.setVisible(is_quality_factor_applicable)
         self.alpha_spinbox.setVisible(is_ema_applicable)
-        self.window_size_spinbox.setVisible(is_savitzky_golay_applicable)
+        self.window_size_spinbox.setVisible(is_window_size_applicable)
 
         form_layout = self.layout()
         if isinstance(form_layout, QtWidgets.QFormLayout):
