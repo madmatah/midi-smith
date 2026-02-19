@@ -15,6 +15,7 @@ from .filters import (
     build_ema_filter,
     build_lowpass_filter,
     build_notch_filter,
+    build_sma_filter,
     build_savgol_filter,
 )
 from .window import RttLiveScope
@@ -51,6 +52,20 @@ def parse_filter_argument(filter_string):
                 f"{filter_type_name} filter needs '{filter_type_name}:window_size'"
             )
         return {"filter_type": filter_type_name, "window_size": int(tokens[1])}
+    elif filter_type_name == "sma":
+        if len(tokens) != 2:
+            raise argparse.ArgumentTypeError("sma filter needs 'sma:window_size'")
+        try:
+            window_size = int(tokens[1])
+        except ValueError as value_error:
+            raise argparse.ArgumentTypeError(
+                "sma filter window_size must be an integer >= 1"
+            ) from value_error
+        if window_size < 1:
+            raise argparse.ArgumentTypeError(
+                "sma filter window_size must be an integer >= 1"
+            )
+        return {"filter_type": "sma", "window_size": window_size}
     else:
         raise argparse.ArgumentTypeError(f"Unknown filter type: {filter_type_name}")
 
@@ -78,7 +93,11 @@ def build_argument_parser():
         "--filter",
         action="append",
         type=parse_filter_argument,
-        help="Filter to apply. Can be 'lowpass:cutoff_hz' or 'notch:cutoff_hz:quality_factor'",
+        help=(
+            "Filter to apply. Can be 'lowpass:cutoff_hz', "
+            "'notch:cutoff_hz:quality_factor', 'ema:alpha', "
+            "'savitzky:window_size', 'savitzky_causal:window_size', or 'sma:window_size'"
+        ),
     )
     parser.add_argument(
         "--history-ms",
@@ -125,6 +144,11 @@ def build_filter_chain_from_configs(filter_configs, sample_rate_hz):
                     filter_type == "savitzky_causal",
                     sample_rate_hz,
                 )
+            )
+            continue
+        if filter_type == "sma":
+            filter_chain.append(
+                build_sma_filter(filter_configuration["window_size"], sample_rate_hz)
             )
     return filter_chain
 

@@ -17,6 +17,7 @@ from .filters import (
     build_ema_filter,
     build_lowpass_filter,
     build_notch_filter,
+    build_sma_filter,
     build_savgol_filter,
     compute_power_spectrum_db,
     estimate_latency_samples,
@@ -917,6 +918,8 @@ class RttLiveScope(QtWidgets.QMainWindow):
                 )
             elif filter_type == "ema":
                 new_stage = build_ema_filter(parameters["alpha"], self._sample_rate_hz)
+            elif filter_type == "sma":
+                new_stage = build_sma_filter(parameters["window_size"], self._sample_rate_hz)
             else:
                 new_stage = build_savgol_filter(
                     parameters["window_size"], filter_type == "savitzky_causal", self._sample_rate_hz
