@@ -1,4 +1,4 @@
-#CNY70 linearization design
+# CNY70 linearization design
 
 ## 1. Foundations: Calibration Settings and Sensor Signature
 The system relies on the correlation of two data sources prior to any processing:
