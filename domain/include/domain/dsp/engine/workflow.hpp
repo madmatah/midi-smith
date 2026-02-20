@@ -11,6 +11,9 @@ namespace domain::dsp::engine {
 template <typename... StageTs>
 class Workflow {
  public:
+  template <typename TargetT>
+  static constexpr std::size_t StageIndexOf = detail::StageIndexFinder<TargetT, StageTs...>::kValue;
+
   void Reset() noexcept {
     detail::ResetAll(stages_, std::make_index_sequence<sizeof...(StageTs)>{});
   }
