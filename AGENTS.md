@@ -1,7 +1,3 @@
----
-alwaysApply: true
----
-# Best Practices Guide (Cursor Rules)
 
 ## 1. Project Philosophy
 
@@ -94,6 +90,7 @@ The code should be explicit enough to eliminate the need for comments.
 - If logic seems complex, extract it into a well-named function or rename the variables
 - Function names must use **action verbs** (e.g., `Start`, `Stop`, `Configure`, `Validate`)  describing the business or technical effect.
 - Exception: Use comments only to explain "Why" a specific hardware constraint exists (e.g., specific delay required by datasheet).
+- Exception: Comments are allowed in configuration files to explain the meaning or impact of specific values.
 
 **— Use Domain Vocabulary**
 
