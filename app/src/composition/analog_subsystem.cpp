@@ -4,6 +4,7 @@
 
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/analog/sensors/logging_sensor_event_handler.hpp"
+#include "app/analog/signal_processing/analog_sensor_processor.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
@@ -59,15 +60,14 @@ domain::sensors::SensorRegistry& SensorsRegistry() noexcept {
   return registry;
 }
 
-using Processor = app::config::AnalogSensorProcessor;
+using Processor = app::analog::signal_processing::AnalogSensorProcessor;
 using ProcessedSensorGroup =
     domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
 
 using LookupTable =
     domain::sensors::linearization::SensorLookupTable<app::config::kSensorLookupTableSize>;
 using SensorCalibration = domain::sensors::linearization::SensorCalibration;
-using LinearizerConfiguration = domain::sensors::linearization::SensorLinearProcessorConfiguration<
-    app::config::kSensorLookupTableSize>;
+using LinearizerConfiguration = Processor::LinearizerConfiguration;
 
 std::array<LookupTable, app::config_sensors::kSensorCount>& LookupTablesA() noexcept {
   // Potential optimization (-23KB DTCMRAM): move to AXI SRAM by adding BSP_AXI_SRAM prefix
@@ -98,10 +98,7 @@ void GenerateAnalogSensorLookupTables(
         sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
 
     configurations[i] = result.configuration;
-
-    auto& linearizer =
-        processors[i].Stage<app::config::kAnalogSensorProcessorLinearizerStageIndex>();
-    linearizer.ApplyConfiguration(&configurations[i]);
+    processors[i].SetLinearizerConfiguration(&configurations[i]);
   }
 }
 
@@ -124,8 +121,7 @@ void AttachSensorRttStreamCaptureToProcessors(
     std::array<Processor, app::config_sensors::kSensorCount>& processors,
     app::telemetry::SensorRttStreamCapture& capture) noexcept {
   for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
-    auto& tap = processors[i].Stage<app::config::kAnalogSensorProcessorRttTapStageIndex>();
-    tap.SetCapture(&capture);
+    processors[i].SetTelemetryCapture(&capture);
   }
 }
 
@@ -144,13 +140,8 @@ void AttachSensorVelocityHandlersToProcessors(
   for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
     handlers[i].SetLogger(&logger);
     handlers[i].SetSensorId(app::config_sensors::kSensorIds[i]);
-
-    auto& tap = processors[i].Stage<app::config::kAnalogSensorProcessorMidiVelocityTapStageIndex>();
-    tap.Content().SetKeyActionHandler(&handlers[i]);
-
-    auto& release_tap =
-        processors[i].Stage<app::config::kAnalogSensorProcessorNoteReleaseTapStageIndex>();
-    release_tap.Content().SetKeyActionHandler(&handlers[i]);
+    processors[i].SetNoteOnKeyActionHandler(&handlers[i]);
+    processors[i].SetNoteOffKeyActionHandler(&handlers[i]);
   }
 }
 

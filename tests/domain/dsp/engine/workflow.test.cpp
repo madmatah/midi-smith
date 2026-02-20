@@ -77,6 +77,26 @@ TEST_CASE("The Workflow class") {
       (void) const_stage1;
     }
   }
+
+  SECTION("The StageIndexOf trait") {
+    using Pipeline = Workflow<PlusTenStage, TimesTwoStage, Tap<ConsumerStage>>;
+
+    SECTION("Should resolve the index of a direct stage by type") {
+      STATIC_REQUIRE(Pipeline::StageIndexOf<PlusTenStage> == 0);
+      STATIC_REQUIRE(Pipeline::StageIndexOf<TimesTwoStage> == 1);
+    }
+
+    SECTION("Should resolve the index of a Tap-wrapped stage by its full type") {
+      STATIC_REQUIRE(Pipeline::StageIndexOf<Tap<ConsumerStage>> == 2);
+    }
+
+    SECTION("Should allow Stage() access via StageIndexOf") {
+      Pipeline pipeline;
+      auto& stage = pipeline.Stage<Pipeline::StageIndexOf<PlusTenStage>>();
+      auto& same_stage = pipeline.Stage<0>();
+      REQUIRE(&stage == &same_stage);
+    }
+  }
 }
 
 #endif

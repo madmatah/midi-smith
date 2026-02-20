@@ -1,11 +1,30 @@
 #pragma once
 
+#include <cstddef>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "domain/dsp/concepts.hpp"
 
 namespace domain::dsp::engine::detail {
+
+template <typename TargetT, typename... StageTs>
+struct StageIndexFinder {
+  static constexpr std::size_t kMatchCount = (std::is_same_v<TargetT, StageTs> + ... + 0);
+  static_assert(sizeof...(StageTs) > 0, "Cannot search an empty stage list");
+  static_assert(kMatchCount == 1, "StageIndexOf requires exactly one matching stage type");
+
+  static constexpr std::size_t Compute() {
+    constexpr bool kMatches[] = {std::is_same_v<TargetT, StageTs>...};
+    for (std::size_t i = 0; i < sizeof...(StageTs); ++i) {
+      if (kMatches[i]) return i;
+    }
+    return 0;
+  }
+
+  static constexpr std::size_t kValue = Compute();
+};
 
 template <typename StageT>
 inline void ResetIfPresent(StageT& stage) noexcept {
