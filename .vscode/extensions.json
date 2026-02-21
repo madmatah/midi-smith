@@ -1,8 +1,8 @@
 {
-    "recommendations": [
-        "llvm-vs-code-extensions.vscode-clangd",
-        "marus25.cortex-debug",
-        "ms-vscode.cmake-tools",
-        "achilleshr.runonsave"
-    ]
+  "recommendations": [
+    "llvm-vs-code-extensions.vscode-clangd",
+    "marus25.cortex-debug",
+    "ms-vscode.cmake-tools",
+    "achilleshr.runonsave"
+  ]
 }

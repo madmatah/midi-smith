@@ -1,60 +1,93 @@
 {
-    "version": 3,
-    "configurePresets": [
-        {
-            "name": "default",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-		    "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
-            "cacheVariables": {
-            }
-        },
-        {
-            "name": "Debug",
-            "inherits": "default",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "Release",
-            "inherits": "default",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "Host-Debug",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "HOST_TESTS": "ON"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "Debug",
-            "configurePreset": "Debug"
-        },
-        {
-            "name": "Release",
-            "configurePreset": "Release"
-        },
-        {
-            "name": "Host-Debug",
-            "configurePreset": "Host-Debug"
-        }
-    ],
-    "testPresets": [
-        {
-            "name": "Host-Debug",
-            "configurePreset": "Host-Debug",
-            "execution": {
-                "noTestsAction": "error"
-            }
-        }
-    ]
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "adc-Debug",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/packages/adc-board/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MIDISMITH_ACTIVE_FIRMWARE": "adc",
+        "HOST_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "adc-Release",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/packages/adc-board/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MIDISMITH_ACTIVE_FIRMWARE": "adc",
+        "HOST_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "main-Debug",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/packages/main-board/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MIDISMITH_ACTIVE_FIRMWARE": "master",
+        "HOST_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "main-Release",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/packages/main-board/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MIDISMITH_ACTIVE_FIRMWARE": "master",
+        "HOST_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "Host-Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HOST_TESTS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "adc-Debug",
+      "configurePreset": "adc-Debug"
+    },
+    {
+      "name": "adc-Release",
+      "configurePreset": "adc-Release"
+    },
+    {
+      "name": "main-Debug",
+      "configurePreset": "main-Debug"
+    },
+    {
+      "name": "main-Release",
+      "configurePreset": "main-Release"
+    },
+    {
+      "name": "Host-Debug",
+      "configurePreset": "Host-Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "Host-Debug",
+      "configurePreset": "Host-Debug",
+      "execution": {
+        "noTestsAction": "error"
+      }
+    }
+  ]
 }

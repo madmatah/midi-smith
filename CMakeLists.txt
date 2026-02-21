@@ -1,234 +1,73 @@
 cmake_minimum_required(VERSION 3.22)
 
-#
-# This file is generated only once,
-# and is not re-generated if converter is called multiple times.
-#
-# User is free to modify the file as much as necessary
-#
+project(midi-smith-monorepo LANGUAGES NONE)
 
-# Setup compiler settings
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
+option(HOST_TESTS "Build host-only tests for all firmwares" OFF)
+set(MIDISMITH_ACTIVE_FIRMWARE "adc" CACHE STRING "Firmware to build when HOST_TESTS=OFF")
+set_property(CACHE MIDISMITH_ACTIVE_FIRMWARE PROPERTY STRINGS adc master)
 
-
-# Define the build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
-endif()
-
-# Set the project name
-set(CMAKE_PROJECT_NAME adc-board)
-
-# Enable compile command to ease indexing with e.g. clangd
+# Enable compile_commands.json at monorepo level for clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-
-# Core project settings
-project(${CMAKE_PROJECT_NAME})
-message("Build type: " ${CMAKE_BUILD_TYPE})
-
-# Enable CMake support for ASM and C languages
-enable_language(C ASM CXX)
-
-# Set the C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
 
 if(HOST_TESTS)
     enable_testing()
-
-    add_library(domain STATIC)
-    target_sources(domain PRIVATE
-        domain/src/config/adc_board_config.cpp
-        domain/src/shell/command_parser.cpp
-        domain/src/shell/line_editor.cpp
-        domain/src/shell/command_dispatcher.cpp
-        domain/src/shell/shell_engine.cpp
-        domain/src/shell/commands/config_command.cpp
-        domain/src/shell/commands/version_command.cpp
-    )
-    target_include_directories(domain PUBLIC
-        domain/include
-    )
-
-    add_subdirectory(tests)
+    add_subdirectory(packages/adc-board)
+    add_subdirectory(packages/main-board)
 else()
-
-# Create an executable object type
-add_executable(${CMAKE_PROJECT_NAME})
-
-# Versioning
-include(cmake/version/versioning.cmake)
-
-# Add compile options for embedded C++
-target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>
-)
-
-# Add STM32CubeMX generated sources
-add_subdirectory(cmake/stm32cubemx)
-
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined library search paths
-)
-
-# Add sources to executable
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
-    app/src/application.cpp
-    app/src/app_entry.cpp
-    app/src/version.cpp
-    app/src/composition/analog_subsystem.cpp
-    app/src/composition/config_subsystem.cpp
-    app/src/composition/shell_subsystem.cpp
-    app/src/composition/sensor_rtt_telemetry_subsystem.cpp
-    app/src/storage/adc_board_persistent_configuration.cpp
-    app/src/tasks/shell_task.cpp
-    app/src/tasks/analog_acquisition_task.cpp
-    app/src/tasks/sensor_rtt_telemetry_task.cpp
-    app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
-    domain/src/config/adc_board_config.cpp
-    domain/src/shell/command_parser.cpp
-    domain/src/shell/line_editor.cpp
-    domain/src/shell/command_dispatcher.cpp
-    domain/src/shell/shell_engine.cpp
-    domain/src/shell/commands/version_command.cpp
-    bsp/src/board.cpp
-    bsp/src/flash/internal_storage.cpp
-    bsp/src/cortex/axi_sram_nocache_mpu.cpp
-    bsp/src/cortex/d3_sram_nocache_mpu.cpp
-    bsp/src/cortex/flash_config_nocache_mpu.cpp
-    bsp/src/adc/adc_dma.cpp
-    bsp/src/adc/adc_dma_callbacks.cpp
-    bsp/src/adc/adc_trigger_schedule.cpp
-    bsp/src/time/tim2_timestamp_counter.cpp
-    bsp/src/gpio.cpp
-    bsp/src/pins.cpp
-    bsp/src/rtt_logger.cpp
-    bsp/src/rtt_telemetry_sender.cpp
-    bsp/src/serial/uart_stream_registry.cpp
-    app/src/shell/commands/adc_command.cpp
-    domain/src/shell/commands/config_command.cpp
-    app/src/shell/commands/ps_command.cpp
-    app/src/shell/commands/sensor_rtt_command.cpp
-    app/src/shell/commands/status_command.cpp
-    Third_Party/SEGGER/RTT/RTT/SEGGER_RTT.c
-    Third_Party/SEGGER/RTT/RTT/SEGGER_RTT_printf.c
-    os/src/clock.cpp
-    os/src/task.cpp
-    os/src/queue.cpp
-    os/src/binary_semaphore.cpp
-    os/src/memory.cpp
-    os/src/runtime_stats.cpp
-    os/src/this_task.cpp
-)
-
-
-# Add include paths
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined include paths
-    app/include
-    ${CMAKE_BINARY_DIR}/generated
-    bsp/include
-    Third_Party/SEGGER/RTT/RTT
-    Third_Party/SEGGER/RTT/Config
-    os/include
-    domain/include
-)
-
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    SEGGER_RTT_SECTION=\".rtt\"
-)
-
-# Add project symbols (macros)
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined symbols
-)
-
-# Remove wrong libob.a library dependency when using cpp files
-list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
-
-# CMSIS-DSP (GCC, Cortex-M7 little-endian, single-precision FPU)
-set(CMSIS_DSP_LIB
-    "${CMAKE_SOURCE_DIR}/Drivers/CMSIS/DSP/Lib/GCC/libarm_cortexM7lfsp_math.a"
-)
-
-# Optional (performance / best practices CMSIS-DSP)
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    ARM_MATH_CM7
-)
-
-# Add linked libraries
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    stm32cubemx
-
-    # Add user defined libraries
-    "${CMSIS_DSP_LIB}"
-)
-
-add_dependencies(${CMAKE_PROJECT_NAME} version_check)
-
-set(FLASH_LAYOUT_CHECK_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/check_flash_layout.cmake")
-add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-            -DMAP_FILE=${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map
-            -P ${FLASH_LAYOUT_CHECK_SCRIPT}
-    COMMENT "Validate flash layout for persistent configuration"
-    VERBATIM
-)
-
+    if(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "adc")
+        add_subdirectory(packages/adc-board)
+    elseif(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "master")
+        add_subdirectory(packages/main-board)
+    else()
+        message(FATAL_ERROR
+            "MIDISMITH_ACTIVE_FIRMWARE must be one of: adc, master. Got: ${MIDISMITH_ACTIVE_FIRMWARE}")
+    endif()
 endif()
 
-# Add a task to format the source code
-file(GLOB_RECURSE ALL_SRC "*.cpp" "*.hpp" "*.c" "*.h")
-
-set(FILES_TO_FORMAT "")
-foreach(FILE_PATH ${ALL_SRC})
-    # Exclude autogenerated code from formatting
-    if(NOT FILE_PATH MATCHES "(Core/|Drivers/|Middlewares/|Third_Party/|USB_DEVICE/|build/|cmake/|\\.cache/)")
-        list(APPEND FILES_TO_FORMAT ${FILE_PATH})
-    endif()
-endforeach()
-
-add_custom_target(format
-    COMMAND clang-format --verbose -i ${FILES_TO_FORMAT}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Format source code"
+# Monorepo-wide lint, format and format_check targets.
+# Covers all project-owned code across both packages and common.
+# cpplint reads CPPLINT.cfg by walking up from each file — the root CPPLINT.cfg applies to all.
+# clang-format respects .clang-format-ignore for IDE/local tooling; in CI, the explicit file list
+# produced by this GLOB is the authoritative scope (same list for lint and format).
+file(GLOB_RECURSE MONOREPO_SOURCE_FILES CONFIGURE_DEPENDS
+    "packages/adc-board/app/*.*"    "packages/adc-board/bsp/*.*"
+    "packages/adc-board/os/*.*"     "packages/adc-board/domain/*.*"
+    "packages/adc-board/tests/*.*"
+    "packages/main-board/app/*.*"   "packages/main-board/bsp/*.*"
+    "packages/main-board/os/*.*"    "packages/main-board/domain/*.*"
+    "packages/main-board/tests/*.*"
+    "packages/common/include/*.*"   "packages/common/src/*.*"
 )
-
-#
-# Lint (project-owned code only)
-#
-file(GLOB_RECURSE LINT_SRC CONFIGURE_DEPENDS
-    "app/*.*"
-    "bsp/*.*"
-    "os/*.*"
-    "domain/*.*"
-    "tests/*.*"
-)
-
-set(FILES_TO_LINT "")
-foreach(FILE_PATH ${LINT_SRC})
+set(FILES_TO_CHECK "")
+foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})
     if(FILE_PATH MATCHES "\\.(cpp|hpp|h)$")
-        list(APPEND FILES_TO_LINT ${FILE_PATH})
+        list(APPEND FILES_TO_CHECK ${FILE_PATH})
     endif()
 endforeach()
 
 add_custom_target(lint
-    COMMAND cpplint --quiet ${FILES_TO_LINT}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "cpplint (project-owned code only)"
+    COMMAND cpplint --quiet ${FILES_TO_CHECK}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Lint (monorepo)"
+)
+add_custom_target(format
+    COMMAND clang-format -i ${FILES_TO_CHECK}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Format (monorepo)"
+)
+add_custom_target(format_check
+    COMMAND clang-format --dry-run --Werror ${FILES_TO_CHECK}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Format check (monorepo, dry-run)"
 )
 
-
-# Update build/current symlink after each preset change
+# Keep a stable compilation database location for clangd.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
     file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
-    message(STATUS "Updating build/current symlink to : ${CMAKE_BINARY_DIR}")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_BINARY_DIR}"
-        "${CMAKE_SOURCE_DIR}/build/current")
+    message(STATUS "Updating build/current symlink to: ${CMAKE_BINARY_DIR}")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_BINARY_DIR}"
+            "${CMAKE_SOURCE_DIR}/build/current"
+    )
 endif()

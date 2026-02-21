@@ -1,43 +1,97 @@
 {
-    "version": "0.2.0",
-    "configurations": [
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug adc-board",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32h7x.cfg",
+        "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
+      ],
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/adc-Debug/packages/adc-board/adc-board.elf",
+      "device": "STM32H743ZITx",
+      "svdFile": "${workspaceFolder}/packages/adc-board/hardware/svd/STM32H743.svd",
+      "runToEntryPoint": "main",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "polling_interval": 10,
+        "rtt_start_retry": 1000,
+        "clearSearch": true,
+        "decoders": [
+          {
+            "port": 0,
+            "type": "console",
+            "label": "RTT"
+          },
+          {
+            "port": 1,
+            "type": "graph",
+            "encoding": "unsigned",
+            "graphId": "sensor",
+            "label": "Sensor"
+          }
+        ]
+      },
+      "preLaunchTask": "ADC: configure+build Debug"
+    },
+    {
+      "name": "Debug main-board",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32h7x.cfg",
+        "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
+      ],
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/main-Debug/packages/main-board/main-board.elf",
+      "device": "STM32H7B0VBTx",
+      "svdFile": "${workspaceFolder}/packages/main-board/Hardware/svd/STM32H7B0.svd",
+      "runToEntryPoint": "main",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "polling_interval": 10,
+        "rtt_start_retry": 1000,
+        "clearSearch": true,
+        "decoders": [
+          {
+            "port": 0,
+            "type": "console",
+            "label": "RTT"
+          },
+          {
+            "port": 1,
+            "type": "graph",
+            "encoding": "unsigned",
+            "graphId": "led_state",
+            "label": "LED state"
+          }
+        ]
+      },
+      "graphConfig": [
         {
-            "name": "Debug STM32",
-            "type": "cortex-debug",
-            "request": "launch",
-            "servertype": "openocd",
-            "configFiles": [
-                "interface/stlink.cfg",
-                "target/stm32h7x.cfg",
-                "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
-            ],
-            "cwd": "${workspaceFolder}",
-            "executable": "${command:cmake.launchTargetPath}",
-            "device": "STM32H743ZITx",
-            "svdFile": "${workspaceFolder}/hardware/svd/STM32H743.svd",
-            "runToEntryPoint": "main",
-            "rttConfig": {
-                "enabled": true,
-                "address": "auto",
-                "polling_interval": 10,
-                "rtt_start_retry": 1000,
-                "clearSearch": true,
-                "decoders": [
-                    {
-                        "port": 0,
-                        "type": "console",
-                        "label": "RTT"
-                    },
-                    {
-                        "port": 1,
-                        "type": "graph",
-                        "encoding": "unsigned",
-                        "graphId": "sensor",
-                        "label": "Sensor"
-                    }
-                ]
-            },
-            "preLaunchTask": "CMake: build"
+          "label": "LED state",
+          "timespan": 5,
+          "type": "realtime",
+          "maximum": 1,
+          "minimum": 0,
+          "plots": [
+            {
+              "graphId": "led_state",
+              "label": "LED state",
+              "color": "#ff0000"
+            }
+          ]
         }
-    ]
+      ],
+      "preLaunchTask": "Main: configure+build Debug"
+    }
+  ]
 }

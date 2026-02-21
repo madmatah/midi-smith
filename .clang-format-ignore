@@ -1,52 +1,101 @@
-# Exclude directories managed by STM32CubeMX
-# This is ugly but clang-format does not support recursive patterns
+# ADC board
 
-Drivers/*
-Drivers/*/*
-Drivers/*/*/*
-Drivers/*/*/*/*
-Drivers/*/*/*/*/*
-Drivers/*/*/*/*/*/*
-Drivers/*/*/*/*/*/*/*
-Drivers/*/*/*/*/*/*/*/*
-Drivers/*/*/*/*/*/*/*/*/*
-Drivers/*/*/*/*/*/*/*/*/*/*
+packages/adc-board/Drivers/*
+packages/adc-board/Drivers/*/*
+packages/adc-board/Drivers/*/*/*
+packages/adc-board/Drivers/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*/*/*/*/*
+packages/adc-board/Drivers/*/*/*/*/*/*/*/*/*/*
 
-Core/*
-Core/*/*
-Core/*/*/*
-Core/*/*/*/*
-Core/*/*/*/*/*
-Core/*/*/*/*/*/*
+packages/adc-board/Core/*
+packages/adc-board/Core/*/*
+packages/adc-board/Core/*/*/*
+packages/adc-board/Core/*/*/*/*
+packages/adc-board/Core/*/*/*/*/*
+packages/adc-board/Core/*/*/*/*/*/*
 
-Middlewares/*
-Middlewares/*/*
-Middlewares/*/*/*
-Middlewares/*/*/*/*
-Middlewares/*/*/*/*/*
-Middlewares/*/*/*/*/*/*
-Middlewares/*/*/*/*/*/*/*
-Middlewares/*/*/*/*/*/*/*/*
-Middlewares/*/*/*/*/*/*/*/*/*
-Middlewares/*/*/*/*/*/*/*/*/*/*
+packages/adc-board/Middlewares/*
+packages/adc-board/Middlewares/*/*
+packages/adc-board/Middlewares/*/*/*
+packages/adc-board/Middlewares/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*/*/*/*/*
+packages/adc-board/Middlewares/*/*/*/*/*/*/*/*/*/*
 
-Third_Party/*
-Third_Party/*/*
-Third_Party/*/*/*
-Third_Party/*/*/*/*
-Third_Party/*/*/*/*/*
-Third_Party/*/*/*/*/*/*
-Third_Party/*/*/*/*/*/*/*
-Third_Party/*/*/*/*/*/*/*/*
-Third_Party/*/*/*/*/*/*/*/*/*
-Third_Party/*/*/*/*/*/*/*/*/*/*
+packages/adc-board/Third_Party/*
+packages/adc-board/Third_Party/*/*
+packages/adc-board/Third_Party/*/*/*
+packages/adc-board/Third_Party/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*/*/*/*/*
+packages/adc-board/Third_Party/*/*/*/*/*/*/*/*/*/*
 
 
-USB_DEVICE/*
-USB_DEVICE/*/*
-USB_DEVICE/*/*/*
-USB_DEVICE/*/*/*/*
-USB_DEVICE/*/*/*/*/*
+packages/adc-board/USB_DEVICE/*
+packages/adc-board/USB_DEVICE/*/*
+packages/adc-board/USB_DEVICE/*/*/*
+packages/adc-board/USB_DEVICE/*/*/*/*
+packages/adc-board/USB_DEVICE/*/*/*/*/*
+
+
+# Master board
+
+packages/main-board/Drivers/*
+packages/main-board/Drivers/*/*
+packages/main-board/Drivers/*/*/*
+packages/main-board/Drivers/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*/*/*/*/*
+packages/main-board/Drivers/*/*/*/*/*/*/*/*/*/*
+
+packages/main-board/Core/*
+packages/main-board/Core/*/*
+packages/main-board/Core/*/*/*
+packages/main-board/Core/*/*/*/*
+packages/main-board/Core/*/*/*/*/*
+packages/main-board/Core/*/*/*/*/*/*
+
+packages/main-board/Middlewares/*
+packages/main-board/Middlewares/*/*
+packages/main-board/Middlewares/*/*/*
+packages/main-board/Middlewares/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*/*/*/*/*
+packages/main-board/Middlewares/*/*/*/*/*/*/*/*/*/*
+
+packages/main-board/Third_Party/*
+packages/main-board/Third_Party/*/*
+packages/main-board/Third_Party/*/*/*
+packages/main-board/Third_Party/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*/*/*/*/*
+packages/main-board/Third_Party/*/*/*/*/*/*/*/*/*/*
+
+
+packages/main-board/USB_DEVICE/*
+packages/main-board/USB_DEVICE/*/*
+packages/main-board/USB_DEVICE/*/*/*
+packages/main-board/USB_DEVICE/*/*/*/*
+packages/main-board/USB_DEVICE/*/*/*/*/*
 
 # Build
 

@@ -194,7 +194,7 @@ project-root/
 │   └── Target/
 │
 ├── CMakeLists.txt
-├── master-devboard.ioc
+├── main-board.ioc
 └── README.md
 ```
 

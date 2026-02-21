@@ -28,14 +28,6 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install cpplint
 
-      - name: Cache CMake FetchContent (_deps)
-        uses: actions/cache@v4
-        with:
-          path: build/Host-Debug/_deps
-          key: ${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt', 'cmake/**/*.cmake') }}
-          restore-keys: |
-            ${{ runner.os }}-cmake-deps-host-
-
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
 
@@ -43,19 +35,7 @@ jobs:
         run: cmake --build --preset Host-Debug --target lint
 
       - name: Format check (clang-format)
-        run: |
-          files="$(
-            git ls-files \
-              'app/**/*.c' 'app/**/*.cpp' 'app/**/*.h' 'app/**/*.hpp' \
-              'bsp/**/*.c' 'bsp/**/*.cpp' 'bsp/**/*.h' 'bsp/**/*.hpp' \
-              'domain/**/*.c' 'domain/**/*.cpp' 'domain/**/*.h' 'domain/**/*.hpp' \
-              'os/**/*.c' 'os/**/*.cpp' 'os/**/*.h' 'os/**/*.hpp' \
-              'tests/**/*.c' 'tests/**/*.cpp' 'tests/**/*.h' 'tests/**/*.hpp'
-          )"
-
-          if [ -n "$files" ]; then
-            echo "$files" | xargs clang-format --dry-run --Werror
-          fi
+        run: cmake --build --preset Host-Debug --target format_check
 
   host_tests:
     name: Host tests
@@ -74,22 +54,33 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/Host-Debug/_deps
-          key: ${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt', 'cmake/**/*.cmake') }}
+          key: ${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
           restore-keys: |
             ${{ runner.os }}-cmake-deps-host-
 
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
 
-      - name: Build unit tests
-        run: cmake --build --preset Host-Debug --target unit_tests
+      - name: Build
+        run: cmake --build --preset Host-Debug
 
       - name: Run tests
-        run: ctest --test-dir build/Host-Debug --output-on-failure
+        run: ctest --preset Host-Debug --output-on-failure
 
-  firmware_release_build:
-    name: Build firmware
+  firmware_build:
+    name: Build firmware (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: adc-board
+            preset: adc-Release
+            elf: adc-board.elf
+            package_dir: packages/adc-board
+          - name: main-board
+            preset: main-Release
+            elf: main-board.elf
+            package_dir: packages/main-board
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,25 +93,36 @@ jobs:
             gcc-arm-none-eabi binutils-arm-none-eabi \
             libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
-      - name: Configure (Release)
-        run: cmake --preset Release
+      - name: Configure (${{ matrix.preset }})
+        run: cmake --preset ${{ matrix.preset }}
 
-      - name: Build (Release)
-        run: cmake --build --preset Release
+      - name: Build (${{ matrix.preset }})
+        run: cmake --build --preset ${{ matrix.preset }}
 
-      - name: Upload firmware artifacts
+      - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-release
+          name: firmware-${{ matrix.name }}-release
           if-no-files-found: error
           path: |
-            build/Release/adc-board.elf
-            build/Release/adc-board.map
+            build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.elf }}
+            build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.name }}.map
 
   firmware_size_analysis:
-    name: Firmware size analysis
+    name: Firmware size analysis (${{ matrix.name }})
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        include:
+          - name: adc-board
+            preset: adc-Release
+            elf: adc-board.elf
+            package_dir: packages/adc-board
+          - name: main-board
+            preset: main-Release
+            elf: main-board.elf
+            package_dir: packages/main-board
     steps:
       - name: Install tools + ARM GCC
         run: |
@@ -138,17 +140,16 @@ jobs:
       - name: Build PR
         working-directory: pr
         run: |
-          cmake --preset Release -DFORCE_DEBUG_SYMBOLS=ON
-          cmake --build --preset Release | tee build_output.txt
-          cp build/Release/adc-board.elf ../pr.elf
+          cmake --preset ${{ matrix.preset }} -DFORCE_DEBUG_SYMBOLS=ON
+          cmake --build --preset ${{ matrix.preset }} | tee build_output.txt
+          cp build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.elf }} ../pr.elf
 
-          echo "## 📊 Memory Usage (PR Branch)" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Memory Usage — ${{ matrix.name }} (PR Branch)" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          # Extract from 'Memory region' to the line with 'FLASH'
           sed -n '/Memory region/,/FLASH/p' build_output.txt >> $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔍 Bloaty Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Bloaty Size Analysis — ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout Base
         uses: actions/checkout@v4
@@ -159,13 +160,13 @@ jobs:
       - name: Build Base
         working-directory: base
         run: |
-          cmake --preset Release -DFORCE_DEBUG_SYMBOLS=ON
-          cmake --build --preset Release
-          cp build/Release/adc-board.elf ../base.elf
+          cmake --preset ${{ matrix.preset }} -DFORCE_DEBUG_SYMBOLS=ON
+          cmake --build --preset ${{ matrix.preset }}
+          cp build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.elf }} ../base.elf
 
       - name: Run Bloaty
         uses: carlosperate/bloaty-action@v1
         with:
           bloaty-args: pr.elf -- base.elf
           output-to-summary: true
-          summary-title: "Memory Impact Report (vs ${{ github.base_ref }})"
+          summary-title: "Memory Impact Report — ${{ matrix.name }} (vs ${{ github.base_ref }})"
