@@ -1,3 +1,5 @@
+#pragma once
+
 namespace domain::dsp::logic {
 
 template <float kThreshold, auto ControlValueProvider>
