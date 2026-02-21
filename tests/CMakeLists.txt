@@ -66,7 +66,9 @@ add_executable(unit_tests
     domain/music/piano/note_release_detector_stage.test.cpp
     domain/hash/crc32.test.cpp
     domain/config/config_validator.test.cpp
-    app/storage/persistent_configuration.test.cpp
+    domain/config/adc_board_config.test.cpp
+    app/storage/storage_manager.test.cpp
+    app/storage/adc_board_persistent_configuration.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp
@@ -74,7 +76,7 @@ add_executable(unit_tests
     app/shell/commands/sensor_rtt_command.test.cpp
     app/shell/commands/status_command.test.cpp
     app/shell/commands/ps_command.test.cpp
-    ${CMAKE_SOURCE_DIR}/app/src/storage/persistent_configuration.cpp
+    ${CMAKE_SOURCE_DIR}/app/src/storage/adc_board_persistent_configuration.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/sensor_rtt_command.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/status_command.cpp
     ${CMAKE_SOURCE_DIR}/app/src/shell/commands/ps_command.cpp

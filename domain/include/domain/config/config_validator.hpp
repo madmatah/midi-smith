@@ -1,9 +1,9 @@
-#ifndef DOMAIN_CONFIG_CONFIG_VALIDATOR_HPP
-#define DOMAIN_CONFIG_CONFIG_VALIDATOR_HPP
+#pragma once
 
+#include <cstddef>
 #include <cstdint>
 
-#include "domain/config/user_config.hpp"
+#include "domain/hash/crc32.hpp"
 
 namespace domain::config {
 
@@ -13,12 +13,43 @@ enum class ConfigStatus {
   kInvalidMagic,
   kInvalidCrc,
   kOlderVersion,
+  kNewerVersion,
 };
 
-ConfigStatus ValidateConfig(const UserConfig& config) noexcept;
-bool IsValidBoardId(std::uint8_t board_id) noexcept;
-UserConfig MigrateConfig(const UserConfig& old_config, std::uint16_t old_version) noexcept;
+template <typename TConfig>
+class ConfigValidator {
+ public:
+  static ConfigStatus Validate(const TConfig& config) noexcept {
+    constexpr std::uint32_t kErasedFlashWord = 0xFFFFFFFFu;
+    if (config.magic_number == kErasedFlashWord) {
+      return ConfigStatus::kVirginFlash;
+    }
+
+    if (config.magic_number != TConfig::kMagicNumber) {
+      return ConfigStatus::kInvalidMagic;
+    }
+
+    std::uint32_t computed_crc = hash::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
+                                                    offsetof(TConfig, crc32));
+    if (computed_crc != config.crc32) {
+      return ConfigStatus::kInvalidCrc;
+    }
+
+    if (config.version < TConfig::kVersion) {
+      return ConfigStatus::kOlderVersion;
+    }
+
+    if (config.version > TConfig::kVersion) {
+      return ConfigStatus::kNewerVersion;
+    }
+
+    return ConfigStatus::kValid;
+  }
+
+  static void StampCrc(TConfig& config) noexcept {
+    config.crc32 = hash::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
+                                      offsetof(TConfig, crc32));
+  }
+};
 
 }  // namespace domain::config
-
-#endif  // DOMAIN_CONFIG_CONFIG_VALIDATOR_HPP
