@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
+#include <string_view>
 
 #include "domain/config/config_validator.hpp"
 
@@ -136,7 +137,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       persistent_config.UpdateBoardId(6);
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == domain::config::TransactionResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
       REQUIRE(flash.program_count == 1);
 
@@ -151,7 +152,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       flash.erase_should_fail = true;
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == bsp::flash::OperationResult::kError);
+      REQUIRE(result == domain::config::TransactionResult::kFailure);
     }
 
     SECTION("When program fails") {
@@ -159,7 +160,69 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       flash.program_should_fail = true;
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == bsp::flash::OperationResult::kError);
+      REQUIRE(result == domain::config::TransactionResult::kFailure);
+    }
+  }
+
+  SECTION("The configuration provider interface") {
+    SECTION("Should expose one key") {
+      REQUIRE(persistent_config.KeyCount() == 1u);
+      REQUIRE(persistent_config.KeyAt(0) == "can_board_id");
+      REQUIRE(persistent_config.KeyAt(1).empty());
+    }
+
+    SECTION("GetValue for known key should return board id as text") {
+      persistent_config.Load();
+      char value_buffer[16]{};
+      std::size_t value_length = 0u;
+
+      auto status = persistent_config.GetValue("can_board_id", value_buffer, sizeof(value_buffer),
+                                               value_length);
+
+      REQUIRE(status == domain::config::ConfigGetStatus::kOk);
+      REQUIRE(std::string_view(value_buffer, value_length) == "1");
+    }
+
+    SECTION("GetValue for unknown key should return unknown key status") {
+      char value_buffer[16]{};
+      std::size_t value_length = 0u;
+
+      auto status =
+          persistent_config.GetValue("unknown", value_buffer, sizeof(value_buffer), value_length);
+
+      REQUIRE(status == domain::config::ConfigGetStatus::kUnknownKey);
+    }
+
+    SECTION("GetValue should report buffer-too-small when no buffer is provided") {
+      std::size_t value_length = 0u;
+
+      auto status = persistent_config.GetValue("can_board_id", nullptr, 0u, value_length);
+
+      REQUIRE(status == domain::config::ConfigGetStatus::kBufferTooSmall);
+    }
+
+    SECTION("SetValue with valid board id should update config") {
+      persistent_config.Load();
+
+      auto status = persistent_config.SetValue("can_board_id", "5");
+
+      REQUIRE(status == domain::config::ConfigSetStatus::kOk);
+      REQUIRE(persistent_config.active_config().data.can_board_id == 5);
+    }
+
+    SECTION("SetValue with invalid number should fail") {
+      auto status = persistent_config.SetValue("can_board_id", "abc");
+      REQUIRE(status == domain::config::ConfigSetStatus::kInvalidValue);
+    }
+
+    SECTION("SetValue with value outside uint8 should fail") {
+      auto status = persistent_config.SetValue("can_board_id", "999");
+      REQUIRE(status == domain::config::ConfigSetStatus::kInvalidValue);
+    }
+
+    SECTION("SetValue with unknown key should fail") {
+      auto status = persistent_config.SetValue("unknown", "5");
+      REQUIRE(status == domain::config::ConfigSetStatus::kUnknownKey);
     }
   }
 }

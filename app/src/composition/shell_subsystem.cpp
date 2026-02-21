@@ -8,13 +8,14 @@
 #include "app/shell/commands/status_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
+#include "domain/shell/commands/config_command.hpp"
 #include "os/runtime_stats.hpp"
 #include "shell/commands/version_command.hpp"
 
 namespace app::composition {
 
-void CreateShellSubsystem(ConsoleContext& console, AdcControlContext& adc_control,
-                          SensorsContext& sensors,
+void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
+                          AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept {
   static const ::shell::ShellConfig shell_config{"adc-board> "};
 
@@ -33,6 +34,9 @@ void CreateShellSubsystem(ConsoleContext& console, AdcControlContext& adc_contro
 
     static app::shell::commands::AdcCommand adc_cmd(adc_control.control);
     shell_task_ptr->RegisterCommand(adc_cmd);
+
+    static domain::shell::commands::ConfigCommand config_cmd(config.persistent_config);
+    shell_task_ptr->RegisterCommand(config_cmd);
 
     static os::RuntimeStats runtime_stats;
 
