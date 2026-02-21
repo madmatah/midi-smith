@@ -41,6 +41,8 @@ if(HOST_TESTS)
 
     add_library(domain STATIC)
     target_sources(domain PRIVATE
+        domain/src/config/user_config.cpp
+        domain/src/config/config_validator.cpp
         domain/src/shell/command_parser.cpp
         domain/src/shell/line_editor.cpp
         domain/src/shell/command_dispatcher.cpp
@@ -80,18 +82,23 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/src/app_entry.cpp
     app/src/version.cpp
     app/src/composition/analog_subsystem.cpp
+    app/src/composition/config_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
     app/src/composition/sensor_rtt_telemetry_subsystem.cpp
+    app/src/storage/persistent_configuration.cpp
     app/src/tasks/shell_task.cpp
     app/src/tasks/analog_acquisition_task.cpp
     app/src/tasks/sensor_rtt_telemetry_task.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
+    domain/src/config/user_config.cpp
+    domain/src/config/config_validator.cpp
     domain/src/shell/command_parser.cpp
     domain/src/shell/line_editor.cpp
     domain/src/shell/command_dispatcher.cpp
     domain/src/shell/shell_engine.cpp
     domain/src/shell/commands/version_command.cpp
     bsp/src/board.cpp
+    bsp/src/flash/internal_storage.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
     bsp/src/cortex/d3_sram_nocache_mpu.cpp
     bsp/src/adc/adc_dma.cpp

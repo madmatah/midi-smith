@@ -6,6 +6,7 @@
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
 #include "app/logging/logger_requirements.hpp"
+#include "app/storage/persistent_configuration.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/io/stream_requirements.hpp"
@@ -13,6 +14,10 @@
 #include "domain/sensors/sensor_registry.hpp"
 
 namespace app::composition {
+
+struct ConfigContext {
+  app::storage::PersistentConfiguration& persistent_config;
+};
 
 struct LoggingContext {
   app::Logging::LoggerRequirements& logger;
@@ -37,6 +42,8 @@ struct SensorsContext {
 struct SensorRttTelemetryControlContext {
   app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
+
+ConfigContext CreateConfigSubsystem() noexcept;
 
 AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture,
                                         app::Logging::LoggerRequirements& logger) noexcept;

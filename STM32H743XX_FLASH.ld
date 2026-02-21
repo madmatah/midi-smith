@@ -61,7 +61,8 @@ AXI_SRAM (xrw)         : ORIGIN = 0x24002000, LENGTH = 504K
 RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 2048K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1920K
+FLASH_CONFIG (r) : ORIGIN = 0x8160000, LENGTH = 128K
 }
 
 /* Highest address of the user mode stack */
@@ -276,6 +277,13 @@ SECTIONS
   } >DTCMRAM
 
 
+
+  .flash_config (NOLOAD) : ALIGN(32)
+  {
+    __flash_config_start__ = .;
+    KEEP(*(.flash_config))
+    __flash_config_end__ = .;
+  } >FLASH_CONFIG
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
