@@ -6,9 +6,9 @@
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
 #include "app/logging/logger_requirements.hpp"
-#include "app/storage/adc_board_persistent_configuration.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
+#include "domain/config/transactional_config_dictionary.hpp"
 #include "domain/io/stream_requirements.hpp"
 #include "domain/sensors/linearization/sensor_calibration.hpp"
 #include "domain/sensors/sensor_registry.hpp"
@@ -16,7 +16,7 @@
 namespace app::composition {
 
 struct ConfigContext {
-  app::storage::AdcBoardPersistentConfiguration& persistent_config;
+  domain::config::TransactionalConfigDictionary& persistent_config;
 };
 
 struct LoggingContext {
@@ -57,8 +57,8 @@ bool RegenerateAnalogSensorLookupTables(
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
     app::telemetry::SensorRttStreamCapture& capture) noexcept;
-void CreateShellSubsystem(ConsoleContext& console, AdcControlContext& adc_control,
-                          SensorsContext& sensors,
+void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
+                          AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;
 
 }  // namespace app::composition

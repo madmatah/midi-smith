@@ -26,6 +26,7 @@ void Application::create_tasks() noexcept {
   (void) console_stream.StartRxDma();
 
   app::composition::ConsoleContext console{console_stream};
+  app::composition::ConfigContext config = app::composition::CreateConfigSubsystem();
 
   app::composition::AdcControlContext adc_control =
       app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger);
@@ -34,7 +35,7 @@ void Application::create_tasks() noexcept {
 
   app::composition::SensorRttTelemetryControlContext sensor_rtt =
       app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state, sensor_rtt_capture);
-  app::composition::CreateShellSubsystem(console, adc_control, sensors, sensor_rtt);
+  app::composition::CreateShellSubsystem(console, config, adc_control, sensors, sensor_rtt);
 }
 
 }  // namespace app
