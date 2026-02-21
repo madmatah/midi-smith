@@ -41,8 +41,7 @@ if(HOST_TESTS)
 
     add_library(domain STATIC)
     target_sources(domain PRIVATE
-        domain/src/config/user_config.cpp
-        domain/src/config/config_validator.cpp
+        domain/src/config/adc_board_config.cpp
         domain/src/shell/command_parser.cpp
         domain/src/shell/line_editor.cpp
         domain/src/shell/command_dispatcher.cpp
@@ -85,13 +84,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/src/composition/config_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
     app/src/composition/sensor_rtt_telemetry_subsystem.cpp
-    app/src/storage/persistent_configuration.cpp
+    app/src/storage/adc_board_persistent_configuration.cpp
     app/src/tasks/shell_task.cpp
     app/src/tasks/analog_acquisition_task.cpp
     app/src/tasks/sensor_rtt_telemetry_task.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
-    domain/src/config/user_config.cpp
-    domain/src/config/config_validator.cpp
+    domain/src/config/adc_board_config.cpp
     domain/src/shell/command_parser.cpp
     domain/src/shell/line_editor.cpp
     domain/src/shell/command_dispatcher.cpp

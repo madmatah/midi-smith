@@ -5,24 +5,28 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
 
-#include "domain/hash/crc32.hpp"
+#include "domain/config/storable_config.hpp"
 
 namespace {
 
-domain::config::UserConfig CreateValidConfig(
-    std::uint8_t board_id = 1, std::uint16_t version = domain::config::kConfigVersion) {
-  domain::config::UserConfig config{};
+struct TestData {
+  std::uint8_t value;
+};
+
+using TestConfig = domain::config::StorableConfig<TestData, 0x54455354u, 3>;
+
+TestConfig CreateConfig(std::uint8_t value = 7, std::uint16_t version = TestConfig::kVersion) {
+  TestConfig config{};
   std::memset(&config, 0, sizeof(config));
-  config.magic_number = domain::config::kConfigMagicNumber;
+  config.magic_number = TestConfig::kMagicNumber;
   config.version = version;
-  config.data.can_board_id = board_id;
-  config.crc32 = domain::hash::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
-                                            offsetof(domain::config::UserConfig, crc32));
+  config.data.value = value;
+  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
-domain::config::UserConfig CreateVirginFlashConfig() {
-  domain::config::UserConfig config{};
+TestConfig CreateVirginFlashConfig() {
+  TestConfig config{};
   std::memset(&config, 0xFF, sizeof(config));
   return config;
 }
@@ -31,100 +35,75 @@ domain::config::UserConfig CreateVirginFlashConfig() {
 
 TEST_CASE("The ValidateConfig function") {
   using domain::config::ConfigStatus;
-  using domain::config::ValidateConfig;
 
   SECTION("When flash is virgin (all 0xFF)") {
     SECTION("Should return kVirginFlash") {
       auto config = CreateVirginFlashConfig();
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kVirginFlash);
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kVirginFlash);
     }
   }
 
   SECTION("When config is valid with current version") {
     SECTION("Should return kValid") {
-      auto config = CreateValidConfig();
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kValid);
+      auto config = CreateConfig();
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kValid);
     }
   }
 
   SECTION("When magic number is wrong") {
     SECTION("Should return kInvalidMagic") {
-      auto config = CreateValidConfig();
+      auto config = CreateConfig();
       config.magic_number = 0xDEADBEEFu;
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kInvalidMagic);
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kInvalidMagic);
     }
   }
 
   SECTION("When CRC is corrupted") {
     SECTION("Should return kInvalidCrc") {
-      auto config = CreateValidConfig();
+      auto config = CreateConfig();
       config.crc32 ^= 0x01u;
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kInvalidCrc);
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kInvalidCrc);
     }
   }
 
   SECTION("When data is corrupted but CRC is unchanged") {
     SECTION("Should return kInvalidCrc") {
-      auto config = CreateValidConfig();
-      config.data.can_board_id = 99;
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kInvalidCrc);
+      auto config = CreateConfig();
+      config.data.value = 99;
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kInvalidCrc);
     }
   }
 
   SECTION("When version is older than current") {
     SECTION("Should return kOlderVersion") {
-      auto config = CreateValidConfig(3, domain::config::kConfigVersion - 1);
-      REQUIRE(ValidateConfig(config) == ConfigStatus::kOlderVersion);
+      auto config = CreateConfig(3, TestConfig::kVersion - 1);
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kOlderVersion);
+    }
+  }
+
+  SECTION("When version is newer than current") {
+    SECTION("Should return kNewerVersion") {
+      auto config = CreateConfig(3, TestConfig::kVersion + 1);
+      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+              ConfigStatus::kNewerVersion);
     }
   }
 }
 
-TEST_CASE("The IsValidBoardId function") {
-  using domain::config::IsValidBoardId;
+TEST_CASE("The StampCrc function") {
+  auto config = CreateConfig();
+  config.crc32 = 0;
 
-  SECTION("When board ID is within range [1..8]") {
-    SECTION("Should return true") {
-      REQUIRE(IsValidBoardId(1));
-      REQUIRE(IsValidBoardId(4));
-      REQUIRE(IsValidBoardId(8));
-    }
-  }
+  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
 
-  SECTION("When board ID is 0") {
-    SECTION("Should return false") {
-      REQUIRE_FALSE(IsValidBoardId(0));
-    }
-  }
-
-  SECTION("When board ID is above maximum") {
-    SECTION("Should return false") {
-      REQUIRE_FALSE(IsValidBoardId(9));
-      REQUIRE_FALSE(IsValidBoardId(255));
-    }
-  }
-}
-
-TEST_CASE("The MigrateConfig function") {
-  using domain::config::ConfigStatus;
-  using domain::config::MigrateConfig;
-  using domain::config::ValidateConfig;
-
-  SECTION("When migrating from version 1") {
-    SECTION("Should preserve valid board ID") {
-      auto old_config = CreateValidConfig(5, 1);
-      auto migrated = MigrateConfig(old_config, 1);
-      REQUIRE(migrated.data.can_board_id == 5);
-      REQUIRE(migrated.version == domain::config::kConfigVersion);
-      REQUIRE(migrated.magic_number == domain::config::kConfigMagicNumber);
-      REQUIRE(ValidateConfig(migrated) == ConfigStatus::kValid);
-    }
-
-    SECTION("Should use default board ID when old value is invalid") {
-      auto old_config = CreateValidConfig(99, 1);
-      auto migrated = MigrateConfig(old_config, 1);
-      REQUIRE(migrated.data.can_board_id == domain::config::kDefaultBoardId);
-    }
-  }
+  REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+          domain::config::ConfigStatus::kValid);
 }
 
 #endif
