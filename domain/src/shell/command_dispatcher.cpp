@@ -1,5 +1,5 @@
-#include "shell/command_dispatcher.hpp"
+#include "domain/shell/command_dispatcher.hpp"
 
-namespace shell {
+namespace domain::shell {
 // CommandDispatcher is a template, implementation is in the header.
-}  // namespace shell
+}  // namespace domain::shell

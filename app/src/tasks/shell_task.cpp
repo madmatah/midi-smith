@@ -7,7 +7,7 @@
 namespace app::Tasks {
 
 ShellTask::ShellTask(domain::io::StreamRequirements& stream,
-                     const ::shell::ShellConfig& config) noexcept
+                     const domain::shell::ShellConfig& config) noexcept
     : _engine(stream, config) {}
 
 void ShellTask::entry(void* ctx) noexcept {

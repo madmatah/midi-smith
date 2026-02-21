@@ -2,9 +2,9 @@
 
 #include <string_view>
 
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
-namespace shell::commands {
+namespace domain::shell::commands {
 
 class VersionCommand : public CommandRequirements {
  public:
@@ -25,4 +25,4 @@ class VersionCommand : public CommandRequirements {
   std::string_view _commit_date;
 };
 
-}  // namespace shell::commands
+}  // namespace domain::shell::commands

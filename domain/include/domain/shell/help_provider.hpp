@@ -2,7 +2,7 @@
 
 #include "domain/io/stream_requirements.hpp"
 
-namespace shell {
+namespace domain::shell {
 
 class HelpProvider {
  public:
@@ -10,4 +10,4 @@ class HelpProvider {
   virtual void ShowHelp(domain::io::WritableStreamRequirements& out) const noexcept = 0;
 };
 
-}  // namespace shell
+}  // namespace domain::shell

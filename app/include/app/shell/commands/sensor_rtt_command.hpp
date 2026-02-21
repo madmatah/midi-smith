@@ -5,11 +5,11 @@
 
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
 namespace app::shell::commands {
 
-class SensorRttCommand final : public ::shell::CommandRequirements {
+class SensorRttCommand final : public domain::shell::CommandRequirements {
  public:
   SensorRttCommand(domain::sensors::SensorRegistry& registry,
                    app::telemetry::SensorRttTelemetryControlRequirements& control) noexcept

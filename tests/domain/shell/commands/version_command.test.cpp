@@ -1,4 +1,4 @@
-#include "shell/commands/version_command.hpp"
+#include "domain/shell/commands/version_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -30,7 +30,7 @@ class StreamStub : public domain::io::StreamRequirements {
 
 TEST_CASE("The VersionCommand class", "[shell][commands]") {
   StreamStub stream;
-  shell::commands::VersionCommand version_cmd("1.2.3", "Debug", "2026-01-28");
+  domain::shell::commands::VersionCommand version_cmd("1.2.3", "Debug", "2026-01-28");
 
   SECTION("The Name() method") {
     SECTION("Should return 'version'") {

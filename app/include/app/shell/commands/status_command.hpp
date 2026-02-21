@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
 namespace os {
 class RuntimeStatsRequirements;
@@ -8,7 +8,7 @@ class RuntimeStatsRequirements;
 
 namespace app::shell::commands {
 
-class StatusCommand final : public ::shell::CommandRequirements {
+class StatusCommand final : public domain::shell::CommandRequirements {
  public:
   explicit StatusCommand(os::RuntimeStatsRequirements& runtime_stats) noexcept
       : runtime_stats_(runtime_stats) {}

@@ -1,5 +1,5 @@
-#include "shell/shell_engine.hpp"
+#include "domain/shell/shell_engine.hpp"
 
-namespace shell {
+namespace domain::shell {
 // ShellEngine is a template, implementation is in the header.
-}  // namespace shell
+}  // namespace domain::shell

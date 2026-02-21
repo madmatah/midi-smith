@@ -1,9 +1,9 @@
-#include "shell/command_dispatcher.hpp"
+#include "domain/shell/command_dispatcher.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
 
-#include "shell/shell_engine.hpp"
+#include "domain/shell/shell_engine.hpp"
 
 namespace {
 
@@ -26,7 +26,7 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string _output;
 };
 
-class TestCommand : public shell::CommandRequirements {
+class TestCommand : public domain::shell::CommandRequirements {
  public:
   TestCommand(const char* name, const char* help, const char* response)
       : _name(name), _help(help), _response(response), _call_count(0) {}
@@ -56,10 +56,10 @@ class TestCommand : public shell::CommandRequirements {
 }  // namespace
 
 TEST_CASE("The CommandDispatcher class", "[shell]") {
-  shell::CommandDispatcher<4> dispatcher;
+  domain::shell::CommandDispatcher<4> dispatcher;
   StreamStub stream;
-  shell::ShellConfig config{"shell> "};
-  shell::ShellEngine<16, 4, 4> engine(stream, config);
+  domain::shell::ShellConfig config{"shell> "};
+  domain::shell::ShellEngine<16, 4, 4> engine(stream, config);
 
   SECTION("The Register() method") {
     SECTION("Should successfully register a command") {
@@ -105,7 +105,7 @@ TEST_CASE("The CommandDispatcher class", "[shell]") {
       dispatcher.Register(status_command);
       dispatcher.Register(start_command);
       dispatcher.Register(stop_command);
-      shell::CommandRequirements* matches[4];
+      domain::shell::CommandRequirements* matches[4];
 
       SECTION("Should find a unique completion when the prefix is unambiguous") {
         std::size_t count = dispatcher.FindCompletions("stat", matches, 4);

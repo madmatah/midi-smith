@@ -1,11 +1,11 @@
 #pragma once
 
 #include "domain/config/transactional_config_dictionary.hpp"
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
 namespace domain::shell::commands {
 
-class ConfigCommand final : public ::shell::CommandRequirements {
+class ConfigCommand final : public CommandRequirements {
  public:
   explicit ConfigCommand(domain::config::TransactionalConfigDictionary& provider) noexcept
       : provider_(provider) {}
