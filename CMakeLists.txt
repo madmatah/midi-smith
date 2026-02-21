@@ -46,6 +46,7 @@ if(HOST_TESTS)
         domain/src/shell/line_editor.cpp
         domain/src/shell/command_dispatcher.cpp
         domain/src/shell/shell_engine.cpp
+        domain/src/shell/commands/config_command.cpp
         domain/src/shell/commands/version_command.cpp
     )
     target_include_directories(domain PUBLIC
@@ -99,6 +100,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     bsp/src/flash/internal_storage.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
     bsp/src/cortex/d3_sram_nocache_mpu.cpp
+    bsp/src/cortex/flash_config_nocache_mpu.cpp
     bsp/src/adc/adc_dma.cpp
     bsp/src/adc/adc_dma_callbacks.cpp
     bsp/src/adc/adc_trigger_schedule.cpp
@@ -109,6 +111,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     bsp/src/rtt_telemetry_sender.cpp
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
+    domain/src/shell/commands/config_command.cpp
     app/src/shell/commands/ps_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
     app/src/shell/commands/status_command.cpp
@@ -167,6 +170,15 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} version_check)
+
+set(FLASH_LAYOUT_CHECK_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/check_flash_layout.cmake")
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+            -DMAP_FILE=${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map
+            -P ${FLASH_LAYOUT_CHECK_SCRIPT}
+    COMMENT "Validate flash layout for persistent configuration"
+    VERBATIM
+)
 
 endif()
 

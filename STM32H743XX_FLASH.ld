@@ -62,7 +62,7 @@ RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1920K
-FLASH_CONFIG (r) : ORIGIN = 0x8160000, LENGTH = 128K
+FLASH_CONFIG (r) : ORIGIN = 0x81E0000, LENGTH = 128K
 }
 
 /* Highest address of the user mode stack */
