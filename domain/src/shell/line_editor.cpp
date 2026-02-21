@@ -1,5 +1,5 @@
-#include "shell/line_editor.hpp"
+#include "domain/shell/line_editor.hpp"
 
-namespace shell {
+namespace domain::shell {
 // LineEditor is a template, implementation is in the header.
-}  // namespace shell
+}  // namespace domain::shell

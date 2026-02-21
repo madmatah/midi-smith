@@ -1,11 +1,11 @@
 #pragma once
 
 #include "app/analog/acquisition_control_requirements.hpp"
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
 namespace app::shell::commands {
 
-class AdcCommand final : public ::shell::CommandRequirements {
+class AdcCommand final : public domain::shell::CommandRequirements {
  public:
   explicit AdcCommand(app::analog::AcquisitionControlRequirements& control) noexcept
       : control_(control) {}

@@ -3,11 +3,11 @@
 #include <cstddef>
 
 #include "domain/io/stream_requirements.hpp"
-#include "shell/command_dispatcher.hpp"
-#include "shell/command_parser.hpp"
-#include "shell/line_editor.hpp"
+#include "domain/shell/command_dispatcher.hpp"
+#include "domain/shell/command_parser.hpp"
+#include "domain/shell/line_editor.hpp"
 
-namespace shell {
+namespace domain::shell {
 
 struct ShellConfig {
   const char* prompt = "shell> ";
@@ -38,7 +38,7 @@ class ShellEngine {
     if (line_ready) {
       char* line = _editor.GetLine();
       char* argv[kMaxArgs];
-      int argc = shell::CommandParser::ParseInPlace(line, kMaxArgs, argv);
+      int argc = CommandParser::ParseInPlace(line, kMaxArgs, argv);
 
       if (argc > 0) {
         _dispatcher.Dispatch(argc, argv, _stream);
@@ -123,4 +123,4 @@ class ShellEngine {
   CommandDispatcher<kMaxCommands> _dispatcher;
 };
 
-}  // namespace shell
+}  // namespace domain::shell

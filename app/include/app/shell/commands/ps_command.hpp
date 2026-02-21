@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shell/command_requirements.hpp"
+#include "domain/shell/command_requirements.hpp"
 
 namespace os {
 class RuntimeStatsRequirements;
@@ -8,7 +8,7 @@ class RuntimeStatsRequirements;
 
 namespace app::shell::commands {
 
-class PsCommand final : public ::shell::CommandRequirements {
+class PsCommand final : public domain::shell::CommandRequirements {
  public:
   explicit PsCommand(os::RuntimeStatsRequirements& runtime_stats) noexcept
       : runtime_stats_(runtime_stats) {}

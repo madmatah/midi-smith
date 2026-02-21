@@ -1,6 +1,6 @@
-#include "shell/command_parser.hpp"
+#include "domain/shell/command_parser.hpp"
 
-namespace shell {
+namespace domain::shell {
 
 int CommandParser::ParseInPlace(char* line, int max_args, char** argv_out) noexcept {
   if (line == nullptr || argv_out == nullptr || max_args <= 0) {
@@ -30,4 +30,4 @@ int CommandParser::ParseInPlace(char* line, int max_args, char** argv_out) noexc
   return argc;
 }
 
-}  // namespace shell
+}  // namespace domain::shell

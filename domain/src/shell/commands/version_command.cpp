@@ -1,6 +1,6 @@
-#include "shell/commands/version_command.hpp"
+#include "domain/shell/commands/version_command.hpp"
 
-namespace shell::commands {
+namespace domain::shell::commands {
 
 VersionCommand::VersionCommand(std::string_view full_version, std::string_view build_type,
                                std::string_view commit_date) noexcept
@@ -16,4 +16,4 @@ void VersionCommand::Run(int, char**, domain::io::WritableStreamRequirements& ou
   out.Write("\r\n");
 }
 
-}  // namespace shell::commands
+}  // namespace domain::shell::commands

@@ -4,7 +4,7 @@
 
 #include "domain/io/stream_requirements.hpp"
 
-namespace shell {
+namespace domain::shell {
 
 class CommandRequirements {
  public:
@@ -15,4 +15,4 @@ class CommandRequirements {
   virtual void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept = 0;
 };
 
-}  // namespace shell
+}  // namespace domain::shell

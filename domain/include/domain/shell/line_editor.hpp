@@ -5,7 +5,7 @@
 
 #include "domain/io/stream_requirements.hpp"
 
-namespace shell {
+namespace domain::shell {
 
 template <std::size_t kBufferSize>
 class LineEditor {
@@ -105,4 +105,4 @@ class LineEditor {
   bool _last_was_newline;
 };
 
-}  // namespace shell
+}  // namespace domain::shell

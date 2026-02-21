@@ -1,4 +1,4 @@
-#include "shell/shell_engine.hpp"
+#include "domain/shell/shell_engine.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -45,7 +45,7 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string _output;
 };
 
-class TestCommand : public shell::CommandRequirements {
+class TestCommand : public domain::shell::CommandRequirements {
  public:
   explicit TestCommand(const char* name) : _name(name) {}
 
@@ -65,8 +65,8 @@ class TestCommand : public shell::CommandRequirements {
 
 TEST_CASE("The ShellEngine class completion") {
   StreamStub stream;
-  shell::ShellConfig config{"shell> "};
-  shell::ShellEngine<32, 4, 4> engine(stream, config);
+  domain::shell::ShellConfig config{"shell> "};
+  domain::shell::ShellEngine<32, 4, 4> engine(stream, config);
 
   TestCommand status_command("status");
   TestCommand start_command("start");

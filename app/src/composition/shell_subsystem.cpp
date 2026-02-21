@@ -9,15 +9,15 @@
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "domain/shell/commands/config_command.hpp"
+#include "domain/shell/commands/version_command.hpp"
 #include "os/runtime_stats.hpp"
-#include "shell/commands/version_command.hpp"
 
 namespace app::composition {
 
 void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept {
-  static const ::shell::ShellConfig shell_config{"adc-board> "};
+  static const domain::shell::ShellConfig shell_config{"adc-board> "};
 
   alignas(
       app::Tasks::ShellTask) static std::uint8_t shell_task_storage[sizeof(app::Tasks::ShellTask)];
@@ -28,8 +28,8 @@ void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
     shell_task_ptr = new (shell_task_storage) app::Tasks::ShellTask(console.stream, shell_config);
     shell_constructed = true;
 
-    static ::shell::commands::VersionCommand version_cmd(version::kFullVersion, version::kBuildType,
-                                                         version::kCommitDate);
+    static domain::shell::commands::VersionCommand version_cmd(
+        version::kFullVersion, version::kBuildType, version::kCommitDate);
     shell_task_ptr->RegisterCommand(version_cmd);
 
     static app::shell::commands::AdcCommand adc_cmd(adc_control.control);

@@ -1,4 +1,4 @@
-#include "shell/line_editor.hpp"
+#include "domain/shell/line_editor.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -45,7 +45,7 @@ class StreamStub : public domain::io::StreamRequirements {
 }  // namespace
 
 TEST_CASE("The LineEditor class", "[shell]") {
-  shell::LineEditor<16> editor;
+  domain::shell::LineEditor<16> editor;
   StreamStub stream;
 
   SECTION("The Poll() method") {
