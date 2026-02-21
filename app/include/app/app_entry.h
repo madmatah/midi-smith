@@ -1,5 +1,4 @@
-#ifndef APP_APP_ENTRY_H
-#define APP_APP_ENTRY_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,6 +10,4 @@ void AppEntry_CreateTasks(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

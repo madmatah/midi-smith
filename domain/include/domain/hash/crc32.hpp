@@ -1,5 +1,4 @@
-#ifndef DOMAIN_HASH_CRC32_HPP
-#define DOMAIN_HASH_CRC32_HPP
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -43,5 +42,3 @@ constexpr uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) noexcep
 }
 
 }  // namespace domain::hash
-
-#endif  // DOMAIN_HASH_CRC32_HPP

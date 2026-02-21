@@ -1,5 +1,4 @@
-#ifndef BSP_FLASH_STORAGE_REQUIREMENTS_HPP
-#define BSP_FLASH_STORAGE_REQUIREMENTS_HPP
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -19,5 +18,3 @@ class StorageRequirements {
 };
 
 }  // namespace bsp::flash
-
-#endif  // BSP_FLASH_STORAGE_REQUIREMENTS_HPP
