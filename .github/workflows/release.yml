@@ -24,22 +24,34 @@ jobs:
             gcc-arm-none-eabi binutils-arm-none-eabi \
             libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
-      - name: Configure (Release)
-        run: cmake --preset Release
+      - name: Configure adc-board (Release)
+        run: cmake --preset adc-Release
 
-      - name: Build (Release)
-        run: cmake --build --preset Release
+      - name: Build adc-board (Release)
+        run: cmake --build --preset adc-Release
+
+      - name: Configure main-board (Release)
+        run: cmake --preset main-Release
+
+      - name: Build main-board (Release)
+        run: cmake --build --preset main-Release
 
       - name: Generate .bin and .hex
         run: |
-          arm-none-eabi-objcopy -O binary build/Release/adc-board.elf build/Release/adc-board.bin
-          arm-none-eabi-objcopy -O ihex build/Release/adc-board.elf build/Release/adc-board.hex
+          arm-none-eabi-objcopy -O binary  build/adc-Release/adc-board.elf  build/adc-Release/adc-board.bin
+          arm-none-eabi-objcopy -O ihex    build/adc-Release/adc-board.elf  build/adc-Release/adc-board.hex
+          arm-none-eabi-objcopy -O binary  build/main-Release/main-board.elf build/main-Release/main-board.bin
+          arm-none-eabi-objcopy -O ihex    build/main-Release/main-board.elf build/main-Release/main-board.hex
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/Release/adc-board.elf
-            build/Release/adc-board.bin
-            build/Release/adc-board.hex
-            build/Release/adc-board.map
+            build/adc-Release/adc-board.elf
+            build/adc-Release/adc-board.bin
+            build/adc-Release/adc-board.hex
+            build/adc-Release/adc-board.map
+            build/main-Release/main-board.elf
+            build/main-Release/main-board.bin
+            build/main-Release/main-board.hex
+            build/main-Release/main-board.map

@@ -1,0 +1,7 @@
+flowchart TD
+    A[ADC] --> FB[Filtrage basique?] --> TIA --> LIN(Linearizer)
+    LIN --> |1| FPP[PhysicalPosition] --> FSE[Shank speed estimator] --> HKS[Shank To Hammer Kinematics]
+    LIN --> |2| MVE(MidiVelocityEngine)
+    LIN --> |2| SLOW[Slow EMA filter]
+    SLOW --> |1| DRS[Damper Release Speed estimator]
+    SLOW --> |2| NOD(Note Release Detector)

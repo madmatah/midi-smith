@@ -1,0 +1,19 @@
+#pragma once
+
+namespace bsp {
+
+class GpioRequirements {
+ public:
+  virtual ~GpioRequirements() = default;
+
+  virtual void set() noexcept = 0;
+  virtual void reset() noexcept = 0;
+  virtual void toggle() noexcept = 0;
+  virtual bool read() const noexcept = 0;
+};
+
+}  // namespace bsp
+
+namespace midismith::common::bsp {
+using ::bsp::GpioRequirements;
+}

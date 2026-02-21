@@ -8,7 +8,7 @@ BreakBeforeBraces: Attach
 Standard: c++20
 
 SpaceAfterCStyleCast: true
-SpaceBeforeParens: ControlStatements # 'if (condition)' au lieu de 'if(condition)'
+SpaceBeforeParens: ControlStatements
 
 SortIncludes: true
 IncludeBlocks: Regroup

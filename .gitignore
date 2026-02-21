@@ -1,5 +1,6 @@
-# --- Compilation & Build ---
+# --- Monorepo build outputs ---
 build/
+**/build/
 bin/
 obj/
 *.elf
@@ -7,34 +8,50 @@ obj/
 *.hex
 *.map
 *.lst
-.cache
-__pycache__
+*.o
+*.obj
+*.a
+!packages/*/Drivers/CMSIS/DSP/Lib/**/*.a
+*.d
+*.su
+*.i
+*.ii
 
 # --- CMake ---
 CMakeUserPresets.json
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-install_manifest.txt
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/install_manifest.txt
+**/.cmake/
 
-# --- IDEs & Editors---
-.vscode/*
-!.vscode/launch.json
-!.vscode/tasks.json
-!.vscode/extensions.json
-!.vscode/settings.json
-.history/
+# --- Caches ---
+.cache/
+**/.cache/
+__pycache__/
+**/__pycache__/
+
+# --- IDEs & editors ---
+**/.history/
 *.code-workspace
 
-# --- STM32CubeMX Specific ---
+# Track only root vscode configuration
+**/.vscode/*
+!/.vscode/
+!/.vscode/extensions.json
+!/.vscode/launch.json
+!/.vscode/settings.json
+!/.vscode/tasks.json
+!/.vscode/openocd-gdb-detach-resume.cfg
+
+# --- STM32CubeMX specific ---
 *.ioc.bak
 mxproject.bak
 
-# --- OS specifics ---
+# --- Telemetry snapshots ---
+rtt_snapshot_*.txt
+
+# --- OS specific ---
 .DS_Store
 Thumbs.db
-
-
-# -- Telemetry snapshots --
-rtt_snapshot_*.txt
