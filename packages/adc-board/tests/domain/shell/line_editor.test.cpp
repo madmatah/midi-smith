@@ -6,7 +6,7 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
   void PushInput(const std::string& input) {
     for (char c : input) {
@@ -21,12 +21,12 @@ class StreamStub : public domain::io::StreamRequirements {
     _output.clear();
   }
 
-  domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
     if (_read_idx < _input.size()) {
       byte = _input[_read_idx++];
-      return domain::io::ReadResult::kOk;
+      return midismith::adc_board::domain::io::ReadResult::kOk;
     }
-    return domain::io::ReadResult::kNoData;
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {
@@ -45,7 +45,7 @@ class StreamStub : public domain::io::StreamRequirements {
 }  // namespace
 
 TEST_CASE("The LineEditor class", "[shell]") {
-  domain::shell::LineEditor<16> editor;
+  midismith::adc_board::domain::shell::LineEditor<16> editor;
   StreamStub stream;
 
   SECTION("The Poll() method") {

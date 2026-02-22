@@ -6,7 +6,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 constexpr std::uint32_t kSensorRttMagic = 0x54545253u;
 constexpr std::uint8_t kSensorRttVersion = 2u;
@@ -272,4 +272,4 @@ static_assert(sensor_rtt_protocol_detail::AreMetricDefinitionsValidForPayload(),
 static_assert(sensor_rtt_protocol_detail::AreMetricSuggestedRangesValid(),
               "Metric suggested ranges must satisfy min <= max");
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

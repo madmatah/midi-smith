@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace bsp::cortex {
+namespace midismith::adc_board::bsp::cortex {
 
 class FlashConfigNoCacheMpu {
  public:
@@ -12,4 +12,4 @@ class FlashConfigNoCacheMpu {
   static constexpr std::size_t kRegionSizeBytes = 128U * 1024U;
 };
 
-}  // namespace bsp::cortex
+}  // namespace midismith::adc_board::bsp::cortex

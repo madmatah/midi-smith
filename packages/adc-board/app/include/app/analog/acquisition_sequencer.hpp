@@ -6,12 +6,12 @@
 #include "app/analog/delay_requirements.hpp"
 #include "bsp/gpio_requirements.hpp"
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class AcquisitionSequencer final {
  public:
-  AcquisitionSequencer(bsp::GpioRequirements& tia_shutdown, DelayRequirements& delay,
-                       AdcDmaControlRequirements& adc_dma) noexcept
+  AcquisitionSequencer(midismith::common::bsp::GpioRequirements& tia_shutdown,
+                       DelayRequirements& delay, AdcDmaControlRequirements& adc_dma) noexcept
       : tia_shutdown_(tia_shutdown), delay_(delay), adc_dma_(adc_dma) {}
 
   bool Enable(std::uint32_t settle_us) noexcept {
@@ -26,9 +26,9 @@ class AcquisitionSequencer final {
   }
 
  private:
-  bsp::GpioRequirements& tia_shutdown_;
+  midismith::common::bsp::GpioRequirements& tia_shutdown_;
   DelayRequirements& delay_;
   AdcDmaControlRequirements& adc_dma_;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

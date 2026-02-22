@@ -7,7 +7,7 @@
 #include "domain/music/piano/velocity/constant_velocity_mapper.hpp"
 #include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
 
-namespace domain::music::piano {
+namespace midismith::adc_board::domain::music::piano {
 
 template <typename MapperT, float kReleaseThreshold>
 class NoteReleaseDetectorStage {
@@ -62,7 +62,7 @@ class NoteReleaseDetectorStage {
     }
 
     if (is_note_on && prev_position_ < kReleaseThreshold && position >= kReleaseThreshold) {
-      const domain::music::Velocity release_velocity =
+      const midismith::common::domain::music::Velocity release_velocity =
           mapper_impl_.Map(latched_release_speed_m_per_s_);
       handler_->OnNoteOff(release_velocity);
       ctx.sensor.is_note_on = false;
@@ -89,4 +89,4 @@ template <float kReleaseThreshold>
 using DefaultNoteReleaseDetectorStage =
     NoteReleaseDetectorStage<velocity::ConstantVelocityMapper<127u>, kReleaseThreshold>;
 
-}  // namespace domain::music::piano
+}  // namespace midismith::adc_board::domain::music::piano

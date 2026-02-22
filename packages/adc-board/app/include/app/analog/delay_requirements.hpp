@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class DelayRequirements {
  public:
@@ -11,4 +11,4 @@ class DelayRequirements {
   virtual void DelayUs(std::uint32_t delay_us) noexcept = 0;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

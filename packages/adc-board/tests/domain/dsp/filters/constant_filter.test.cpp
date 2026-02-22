@@ -13,7 +13,7 @@ struct TestContext {};
 
 TEST_CASE("The ConstantFilter class") {
   using Catch::Matchers::WithinRel;
-  using domain::dsp::filters::ConstantFilter;
+  using midismith::adc_board::domain::dsp::filters::ConstantFilter;
 
   SECTION("The Transform() method") {
     SECTION("Should always return the configured constant value") {

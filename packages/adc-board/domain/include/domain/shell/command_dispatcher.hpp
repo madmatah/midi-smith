@@ -8,7 +8,7 @@
 #include "domain/shell/commands/help_command.hpp"
 #include "domain/shell/help_provider.hpp"
 
-namespace domain::shell {
+namespace midismith::adc_board::domain::shell {
 
 template <std::size_t kMaxCommands>
 class CommandDispatcher : public HelpProvider {
@@ -33,7 +33,8 @@ class CommandDispatcher : public HelpProvider {
     return true;
   }
 
-  void Dispatch(int argc, char** argv, domain::io::WritableStreamRequirements& out) const noexcept {
+  void Dispatch(int argc, char** argv,
+                midismith::adc_board::domain::io::WritableStreamRequirements& out) const noexcept {
     if (argc <= 0) {
       return;
     }
@@ -72,7 +73,8 @@ class CommandDispatcher : public HelpProvider {
     return found;
   }
 
-  void ShowHelp(domain::io::WritableStreamRequirements& out) const noexcept override {
+  void ShowHelp(
+      midismith::adc_board::domain::io::WritableStreamRequirements& out) const noexcept override {
     out.Write("Available commands:\r\n");
     for (std::size_t i = 0; i < count_; ++i) {
       out.Write("  ");
@@ -87,7 +89,7 @@ class CommandDispatcher : public HelpProvider {
   }
 
  private:
-  void WritePadding(domain::io::WritableStreamRequirements& out,
+  void WritePadding(midismith::adc_board::domain::io::WritableStreamRequirements& out,
                     std::size_t name_length) const noexcept {
     const std::size_t kNameColumnWidth = 20;
     for (std::size_t j = name_length; j < kNameColumnWidth; ++j) {
@@ -100,4 +102,4 @@ class CommandDispatcher : public HelpProvider {
   std::size_t count_;
 };
 
-}  // namespace domain::shell
+}  // namespace midismith::adc_board::domain::shell

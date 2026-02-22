@@ -2,7 +2,7 @@
 
 #include "domain/dsp/engine/capture.hpp"
 
-namespace domain::sensors {
+namespace midismith::adc_board::domain::sensors {
 
 template <auto MemberPtr>
 struct SensorMemberWriter {
@@ -13,6 +13,7 @@ struct SensorMemberWriter {
 
 
 template <auto MemberPtr>
-using CaptureSensorState = domain::dsp::engine::Capture<SensorMemberWriter<MemberPtr>{}>;
+using CaptureSensorState =
+    midismith::adc_board::domain::dsp::engine::Capture<SensorMemberWriter<MemberPtr>{}>;
 
-}  // namespace domain::sensors
+}  // namespace midismith::adc_board::domain::sensors

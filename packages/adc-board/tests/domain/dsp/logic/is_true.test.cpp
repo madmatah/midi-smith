@@ -22,7 +22,7 @@ int ReadInt(const MockContext& ctx) noexcept {
 }  // namespace
 
 TEST_CASE("The IsTrue struct") {
-  using domain::dsp::logic::IsTrue;
+  using midismith::adc_board::domain::dsp::logic::IsTrue;
 
   SECTION("The Test() method") {
     SECTION("When the value provider returns a bool") {

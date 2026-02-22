@@ -6,7 +6,7 @@
 
 #include "app/telemetry/sensor_rtt_protocol.hpp"
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 namespace {
 
 class ByteWriter final {
@@ -129,4 +129,4 @@ std::size_t BuildSensorRttSchemaFrame(std::uint8_t sensor_id, std::uint32_t time
   return total_size_bytes;
 }
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

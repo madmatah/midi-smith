@@ -7,8 +7,8 @@
 
 TEST_CASE("The CNY70 master signature table") {
   using Catch::Matchers::WithinAbs;
-  using domain::sensors::linearization::Cny70DatasheetSensorResponseCurve;
-  using domain::sensors::linearization::kCny70DatasheetResponseCurve;
+  using midismith::adc_board::domain::sensors::linearization::Cny70DatasheetSensorResponseCurve;
+  using midismith::adc_board::domain::sensors::linearization::kCny70DatasheetResponseCurve;
 
   const auto table = Cny70DatasheetSensorResponseCurve();
 

@@ -9,7 +9,7 @@
 namespace {
 
 class TransactionalConfigDictionaryStub final
-    : public domain::config::TransactionalConfigDictionary {
+    : public midismith::adc_board::domain::config::TransactionalConfigDictionary {
  public:
   std::size_t KeyCount() const noexcept override {
     return 1u;
@@ -22,37 +22,37 @@ class TransactionalConfigDictionaryStub final
     return {};
   }
 
-  domain::config::ConfigGetStatus GetValue(std::string_view key, char* value_buffer,
-                                           std::size_t value_buffer_size,
-                                           std::size_t& value_length) const noexcept override {
+  midismith::adc_board::domain::config::ConfigGetStatus GetValue(
+      std::string_view key, char* value_buffer, std::size_t value_buffer_size,
+      std::size_t& value_length) const noexcept override {
     if (key != "can_board_id") {
-      return domain::config::ConfigGetStatus::kUnknownKey;
+      return midismith::adc_board::domain::config::ConfigGetStatus::kUnknownKey;
     }
     if (value_buffer == nullptr || value_buffer_size < 1u) {
-      return domain::config::ConfigGetStatus::kBufferTooSmall;
+      return midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall;
     }
 
     value_buffer[0] = '1';
     value_length = 1u;
-    return domain::config::ConfigGetStatus::kOk;
+    return midismith::adc_board::domain::config::ConfigGetStatus::kOk;
   }
 
-  domain::config::ConfigSetStatus SetValue(std::string_view key,
-                                           std::string_view value) noexcept override {
+  midismith::adc_board::domain::config::ConfigSetStatus SetValue(
+      std::string_view key, std::string_view value) noexcept override {
     if (key != "can_board_id") {
-      return domain::config::ConfigSetStatus::kUnknownKey;
+      return midismith::adc_board::domain::config::ConfigSetStatus::kUnknownKey;
     }
     if (value.empty()) {
-      return domain::config::ConfigSetStatus::kInvalidValue;
+      return midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
     }
 
     last_value_ = value;
-    return domain::config::ConfigSetStatus::kOk;
+    return midismith::adc_board::domain::config::ConfigSetStatus::kOk;
   }
 
-  domain::config::TransactionResult Commit() noexcept override {
+  midismith::adc_board::domain::config::TransactionResult Commit() noexcept override {
     commit_called_ = true;
-    return domain::config::TransactionResult::kSuccess;
+    return midismith::adc_board::domain::config::TransactionResult::kSuccess;
   }
 
   std::string_view last_value() const noexcept {
@@ -82,7 +82,7 @@ TEST_CASE("The TransactionalConfigDictionary class") {
         auto status = dictionary.GetValue("can_board_id", value_buffer.data(), value_buffer.size(),
                                           value_length);
 
-        REQUIRE(status == domain::config::ConfigGetStatus::kOk);
+        REQUIRE(status == midismith::adc_board::domain::config::ConfigGetStatus::kOk);
         REQUIRE(value_length == 1u);
         REQUIRE(std::strncmp(value_buffer.data(), "1", 1) == 0);
       }
@@ -94,7 +94,7 @@ TEST_CASE("The TransactionalConfigDictionary class") {
       SECTION("Should return kOk and store the value") {
         auto status = dictionary.SetValue("can_board_id", "8");
 
-        REQUIRE(status == domain::config::ConfigSetStatus::kOk);
+        REQUIRE(status == midismith::adc_board::domain::config::ConfigSetStatus::kOk);
         REQUIRE(dictionary.last_value() == "8");
       }
     }
@@ -105,7 +105,7 @@ TEST_CASE("The TransactionalConfigDictionary class") {
       SECTION("Should return kSuccess") {
         auto result = dictionary.Commit();
 
-        REQUIRE(result == domain::config::TransactionResult::kSuccess);
+        REQUIRE(result == midismith::adc_board::domain::config::TransactionResult::kSuccess);
         REQUIRE(dictionary.commit_called());
       }
     }

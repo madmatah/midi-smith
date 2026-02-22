@@ -8,7 +8,7 @@ extern "C" {
 extern std::uint32_t __flash_config_start__;
 }
 
-namespace bsp::flash {
+namespace midismith::adc_board::bsp::flash {
 
 namespace {
 constexpr std::uintptr_t kConfigBaseAddress = 0x081E0000u;
@@ -121,4 +121,4 @@ OperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
   return result;
 }
 
-}  // namespace bsp::flash
+}  // namespace midismith::adc_board::bsp::flash

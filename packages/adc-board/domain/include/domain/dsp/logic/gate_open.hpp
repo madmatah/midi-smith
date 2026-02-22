@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::logic {
+namespace midismith::adc_board::domain::dsp::logic {
 
 template <float kThreshold, auto ValueProvider>
 struct GateOpen {
@@ -10,4 +10,4 @@ struct GateOpen {
   }
 };
 
-}  // namespace domain::dsp::logic
+}  // namespace midismith::adc_board::domain::dsp::logic

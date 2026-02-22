@@ -2,7 +2,7 @@
 
 #include "app/analog/signal_processing/analog_sensor_processor_workflow.hpp"
 
-namespace app::analog::signal_processing {
+namespace midismith::adc_board::app::analog::signal_processing {
 
 class AnalogSensorProcessor {
  public:
@@ -22,7 +22,8 @@ class AnalogSensorProcessor {
     WorkflowControlSurface::SetLinearizerConfiguration(workflow_, configuration);
   }
 
-  void SetTelemetryCapture(app::telemetry::SensorRttStreamCapture* capture) noexcept {
+  void SetTelemetryCapture(
+      midismith::adc_board::app::telemetry::SensorRttStreamCapture* capture) noexcept {
     WorkflowControlSurface::SetTelemetryCapture(workflow_, capture);
   }
 
@@ -41,4 +42,4 @@ class AnalogSensorProcessor {
   Workflow workflow_{};
 };
 
-}  // namespace app::analog::signal_processing
+}  // namespace midismith::adc_board::app::analog::signal_processing

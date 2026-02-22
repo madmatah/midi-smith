@@ -12,48 +12,51 @@
 #include "domain/shell/commands/version_command.hpp"
 #include "os/runtime_stats.hpp"
 
-namespace app::composition {
+namespace midismith::adc_board::app::composition {
 
 void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept {
-  static const domain::shell::ShellConfig shell_config{"adc-board> "};
+  static const midismith::adc_board::domain::shell::ShellConfig shell_config{"adc-board> "};
 
-  alignas(
-      app::Tasks::ShellTask) static std::uint8_t shell_task_storage[sizeof(app::Tasks::ShellTask)];
+  alignas(midismith::adc_board::app::tasks::ShellTask) static std::uint8_t
+      shell_task_storage[sizeof(midismith::adc_board::app::tasks::ShellTask)];
   static bool shell_constructed = false;
 
-  app::Tasks::ShellTask* shell_task_ptr = nullptr;
+  midismith::adc_board::app::tasks::ShellTask* shell_task_ptr = nullptr;
   if (!shell_constructed) {
-    shell_task_ptr = new (shell_task_storage) app::Tasks::ShellTask(console.stream, shell_config);
+    shell_task_ptr = new (shell_task_storage)
+        midismith::adc_board::app::tasks::ShellTask(console.stream, shell_config);
     shell_constructed = true;
 
-    static domain::shell::commands::VersionCommand version_cmd(
+    static midismith::adc_board::domain::shell::commands::VersionCommand version_cmd(
         version::kFullVersion, version::kBuildType, version::kCommitDate);
     shell_task_ptr->RegisterCommand(version_cmd);
 
-    static app::shell::commands::AdcCommand adc_cmd(adc_control.control);
+    static midismith::adc_board::app::shell::commands::AdcCommand adc_cmd(adc_control.control);
     shell_task_ptr->RegisterCommand(adc_cmd);
 
-    static domain::shell::commands::ConfigCommand config_cmd(config.persistent_config);
+    static midismith::adc_board::domain::shell::commands::ConfigCommand config_cmd(
+        config.persistent_config);
     shell_task_ptr->RegisterCommand(config_cmd);
 
-    static os::RuntimeStats runtime_stats;
+    static midismith::adc_board::os::RuntimeStats runtime_stats;
 
-    static app::shell::commands::StatusCommand status_cmd(runtime_stats);
+    static midismith::adc_board::app::shell::commands::StatusCommand status_cmd(runtime_stats);
     shell_task_ptr->RegisterCommand(status_cmd);
 
-    static app::shell::commands::PsCommand ps_cmd(runtime_stats);
+    static midismith::adc_board::app::shell::commands::PsCommand ps_cmd(runtime_stats);
     shell_task_ptr->RegisterCommand(ps_cmd);
 
-    static app::shell::commands::SensorRttCommand sensor_rtt_cmd(sensors.registry,
-                                                                 sensor_rtt.control);
+    static midismith::adc_board::app::shell::commands::SensorRttCommand sensor_rtt_cmd(
+        sensors.registry, sensor_rtt.control);
     shell_task_ptr->RegisterCommand(sensor_rtt_cmd);
   } else {
-    shell_task_ptr = reinterpret_cast<app::Tasks::ShellTask*>(shell_task_storage);
+    shell_task_ptr =
+        reinterpret_cast<midismith::adc_board::app::tasks::ShellTask*>(shell_task_storage);
   }
 
   (void) shell_task_ptr->start();
 }
 
-}  // namespace app::composition
+}  // namespace midismith::adc_board::app::composition

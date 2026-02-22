@@ -3,11 +3,12 @@
 #include "domain/config/transactional_config_dictionary.hpp"
 #include "domain/shell/command_requirements.hpp"
 
-namespace domain::shell::commands {
+namespace midismith::adc_board::domain::shell::commands {
 
 class ConfigCommand final : public CommandRequirements {
  public:
-  explicit ConfigCommand(domain::config::TransactionalConfigDictionary& provider) noexcept
+  explicit ConfigCommand(
+      midismith::adc_board::domain::config::TransactionalConfigDictionary& provider) noexcept
       : provider_(provider) {}
 
   std::string_view Name() const noexcept override {
@@ -18,10 +19,11 @@ class ConfigCommand final : public CommandRequirements {
     return "Manage persistent configuration (getall/get/set/save)";
   }
 
-  void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
 
  private:
-  domain::config::TransactionalConfigDictionary& provider_;
+  midismith::adc_board::domain::config::TransactionalConfigDictionary& provider_;
 };
 
-}  // namespace domain::shell::commands
+}  // namespace midismith::adc_board::domain::shell::commands

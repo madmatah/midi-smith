@@ -4,7 +4,7 @@
 
 #include "domain/sensors/linearization/sensor_response_curve.hpp"
 
-namespace domain::sensors::linearization {
+namespace midismith::adc_board::domain::sensors::linearization {
 
 inline constexpr std::array<SensorResponsePoint, 21> kCny70DatasheetResponseCurve = {{
     {0.0f, 1.000f}, {0.5f, 0.950f}, {1.0f, 0.850f},  {1.5f, 0.700f}, {2.0f, 0.550f}, {2.5f, 0.450f},
@@ -18,4 +18,4 @@ inline SensorResponseCurve Cny70DatasheetSensorResponseCurve() noexcept {
                              kCny70DatasheetResponseCurve.size());
 }
 
-}  // namespace domain::sensors::linearization
+}  // namespace midismith::adc_board::domain::sensors::linearization

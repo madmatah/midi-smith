@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 template <std::int32_t kAlphaNumerator, std::int32_t kAlphaDenominator>
 class EmaFilterRatio {
@@ -52,4 +52,4 @@ class EmaFilterRatio {
   float value_ = 0.0f;
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

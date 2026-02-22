@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::logic {
+namespace midismith::adc_board::domain::dsp::logic {
 
 template <auto ValueProvider>
 struct IsTrue {
@@ -10,4 +10,4 @@ struct IsTrue {
   }
 };
 
-}  // namespace domain::dsp::logic
+}  // namespace midismith::adc_board::domain::dsp::logic

@@ -7,7 +7,7 @@
 #include "domain/dsp/concepts.hpp"
 #include "domain/dsp/engine/detail.hpp"
 
-namespace domain::dsp::engine {
+namespace midismith::adc_board::domain::dsp::engine {
 
 template <typename ContentT>
 class Tap {
@@ -25,7 +25,8 @@ class Tap {
 
   template <typename ContextT>
   float Transform(float input, const ContextT& ctx) noexcept {
-    if constexpr (domain::dsp::concepts::SignalTransformer<ContentT, ContextT>) {
+    if constexpr (midismith::adc_board::domain::dsp::concepts::SignalTransformer<ContentT,
+                                                                                 ContextT>) {
       (void) content_.Transform(input, ctx);
     } else if constexpr (requires(ContentT t, float v, ContextT& c) {
                            { t.Execute(v, c) } -> std::same_as<void>;
@@ -37,7 +38,7 @@ class Tap {
       (void) std::invoke(content_, mutable_ctx, input);
     } else {
       static_assert(
-          domain::dsp::concepts::SignalTransformer<ContentT, ContextT>,
+          midismith::adc_board::domain::dsp::concepts::SignalTransformer<ContentT, ContextT>,
           "Tap content must satisfy SignalTransformer, or provide Execute(ContextT&,float), "
           "or be invocable as (ContextT&, float)");
     }
@@ -53,4 +54,4 @@ class Tap {
   ContentT content_{};
 };
 
-}  // namespace domain::dsp::engine
+}  // namespace midismith::adc_board::domain::dsp::engine

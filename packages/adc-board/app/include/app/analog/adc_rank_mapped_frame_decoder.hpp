@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class AdcRankMappedFrameDecoder {
  public:
@@ -23,4 +23,4 @@ class AdcRankMappedFrameDecoder {
   }
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

@@ -4,7 +4,7 @@
 
 #include "domain/config/config_validator.hpp"
 
-namespace domain::config {
+namespace midismith::adc_board::domain::config {
 
 bool IsValidBoardId(std::uint8_t board_id) noexcept {
   return board_id >= kMinBoardId && board_id <= kMaxBoardId;
@@ -36,4 +36,4 @@ AdcBoardConfig MigrateAdcBoardConfig(const AdcBoardConfig& old_config,
   return migrated;
 }
 
-}  // namespace domain::config
+}  // namespace midismith::adc_board::domain::config

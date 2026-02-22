@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace domain::sensors {
+namespace midismith::adc_board::domain::sensors {
 
 struct SensorState {
   float last_current_ma = 0.0f;
@@ -21,4 +21,4 @@ struct SensorState {
   bool is_note_on = false;
 };
 
-}  // namespace domain::sensors
+}  // namespace midismith::adc_board::domain::sensors

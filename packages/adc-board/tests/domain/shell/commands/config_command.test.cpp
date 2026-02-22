@@ -10,10 +10,10 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
-  domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return domain::io::ReadResult::kNoData;
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {
@@ -32,7 +32,8 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string output_;
 };
 
-class ConfigurationProviderMock final : public domain::config::TransactionalConfigDictionary {
+class ConfigurationProviderMock final
+    : public midismith::adc_board::domain::config::TransactionalConfigDictionary {
  public:
   std::size_t KeyCount() const noexcept override {
     return 2u;
@@ -48,46 +49,48 @@ class ConfigurationProviderMock final : public domain::config::TransactionalConf
     return {};
   }
 
-  domain::config::ConfigGetStatus GetValue(std::string_view key, char* value_buffer,
-                                           std::size_t value_buffer_size,
-                                           std::size_t& value_length) const noexcept override {
+  midismith::adc_board::domain::config::ConfigGetStatus GetValue(
+      std::string_view key, char* value_buffer, std::size_t value_buffer_size,
+      std::size_t& value_length) const noexcept override {
     if (key == "can_board_id") {
       return CopyValue(can_board_id_value, value_buffer, value_buffer_size, value_length);
     }
     if (key == "description") {
       return CopyValue(description_value, value_buffer, value_buffer_size, value_length);
     }
-    return domain::config::ConfigGetStatus::kUnknownKey;
+    return midismith::adc_board::domain::config::ConfigGetStatus::kUnknownKey;
   }
 
-  domain::config::ConfigSetStatus SetValue(std::string_view key,
-                                           std::string_view value) noexcept override {
+  midismith::adc_board::domain::config::ConfigSetStatus SetValue(
+      std::string_view key, std::string_view value) noexcept override {
     last_set_key = key;
     last_set_value = value;
     return set_status;
   }
 
-  domain::config::TransactionResult Commit() noexcept override {
+  midismith::adc_board::domain::config::TransactionResult Commit() noexcept override {
     ++commit_calls;
     return commit_result;
   }
 
-  static domain::config::ConfigGetStatus CopyValue(std::string_view value, char* value_buffer,
-                                                   std::size_t value_buffer_size,
-                                                   std::size_t& value_length) noexcept {
+  static midismith::adc_board::domain::config::ConfigGetStatus CopyValue(
+      std::string_view value, char* value_buffer, std::size_t value_buffer_size,
+      std::size_t& value_length) noexcept {
     if (value_buffer == nullptr || value_buffer_size < value.size()) {
-      return domain::config::ConfigGetStatus::kBufferTooSmall;
+      return midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall;
     }
 
     std::memcpy(value_buffer, value.data(), value.size());
     value_length = value.size();
-    return domain::config::ConfigGetStatus::kOk;
+    return midismith::adc_board::domain::config::ConfigGetStatus::kOk;
   }
 
   std::string_view can_board_id_value = "7";
   std::string_view description_value = "short";
-  domain::config::ConfigSetStatus set_status = domain::config::ConfigSetStatus::kOk;
-  domain::config::TransactionResult commit_result = domain::config::TransactionResult::kSuccess;
+  midismith::adc_board::domain::config::ConfigSetStatus set_status =
+      midismith::adc_board::domain::config::ConfigSetStatus::kOk;
+  midismith::adc_board::domain::config::TransactionResult commit_result =
+      midismith::adc_board::domain::config::TransactionResult::kSuccess;
   std::string_view last_set_key{};
   std::string_view last_set_value{};
   int commit_calls = 0;
@@ -97,7 +100,7 @@ class ConfigurationProviderMock final : public domain::config::TransactionalConf
 
 TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
   ConfigurationProviderMock provider;
-  domain::shell::commands::ConfigCommand command(provider);
+  midismith::adc_board::domain::shell::commands::ConfigCommand command(provider);
   StreamStub stream;
 
   SECTION("The Name method should return config") {
@@ -150,7 +153,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
     }
 
     SECTION("When called with set and unknown key, should print an error") {
-      provider.set_status = domain::config::ConfigSetStatus::kUnknownKey;
+      provider.set_status = midismith::adc_board::domain::config::ConfigSetStatus::kUnknownKey;
       char* argv[] = {const_cast<char*>("config"), const_cast<char*>("set"),
                       const_cast<char*>("unknown"), const_cast<char*>("5")};
       command.Run(4, argv, stream);
@@ -158,7 +161,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
     }
 
     SECTION("When called with set and invalid value, should print an error") {
-      provider.set_status = domain::config::ConfigSetStatus::kInvalidValue;
+      provider.set_status = midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
       char* argv[] = {const_cast<char*>("config"), const_cast<char*>("set"),
                       const_cast<char*>("can_board_id"), const_cast<char*>("bad")};
       command.Run(4, argv, stream);
@@ -173,7 +176,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
     }
 
     SECTION("When called with save and commit fails, should print error") {
-      provider.commit_result = domain::config::TransactionResult::kFailure;
+      provider.commit_result = midismith::adc_board::domain::config::TransactionResult::kFailure;
       char* argv[] = {const_cast<char*>("config"), const_cast<char*>("save")};
       command.Run(2, argv, stream);
       REQUIRE(stream.GetOutput() == "error: save failed\r\n");

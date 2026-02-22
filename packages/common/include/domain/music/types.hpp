@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace domain::music {
+namespace midismith::common::domain::music {
 
 /**
  * @brief Unique identifier for a note in the chromatic scale.
@@ -16,10 +16,4 @@ inline constexpr NoteNumber kNoteC4 = 60;
 using Velocity = uint8_t;
 
 
-}  // namespace domain::music
-
-namespace midismith::common::domain::music {
-using ::domain::music::kNoteC4;
-using ::domain::music::NoteNumber;
-using ::domain::music::Velocity;
 }  // namespace midismith::common::domain::music

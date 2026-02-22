@@ -14,7 +14,7 @@ TEST_CASE("The EmaFilterRatio class") {
   SECTION("The Transform() method") {
     SECTION("When alpha is 1") {
       SECTION("Should return the input sample") {
-        domain::dsp::filters::EmaFilterRatio<1, 1> filter;
+        midismith::adc_board::domain::dsp::filters::EmaFilterRatio<1, 1> filter;
         TestContext ctx{};
         using Catch::Matchers::WithinRel;
 
@@ -27,7 +27,7 @@ TEST_CASE("The EmaFilterRatio class") {
 
     SECTION("When alpha is 0") {
       SECTION("Should keep the first value") {
-        domain::dsp::filters::EmaFilterRatio<0, 1> filter;
+        midismith::adc_board::domain::dsp::filters::EmaFilterRatio<0, 1> filter;
         TestContext ctx{};
         using Catch::Matchers::WithinRel;
 
@@ -39,7 +39,7 @@ TEST_CASE("The EmaFilterRatio class") {
 
     SECTION("When alpha is between 0 and 1") {
       SECTION("Should converge monotonically to a step without overshoot") {
-        domain::dsp::filters::EmaFilterRatio<1, 4> filter;
+        midismith::adc_board::domain::dsp::filters::EmaFilterRatio<1, 4> filter;
         TestContext ctx{};
 
         using Catch::Matchers::WithinAbs;
@@ -61,7 +61,7 @@ TEST_CASE("The EmaFilterRatio class") {
   SECTION("The Reset() method") {
     SECTION("When called after receiving samples") {
       SECTION("Should restore the raw fallback behavior") {
-        domain::dsp::filters::EmaFilterRatio<1, 2> filter;
+        midismith::adc_board::domain::dsp::filters::EmaFilterRatio<1, 2> filter;
         TestContext ctx{};
 
         REQUIRE_THAT(filter.Transform(1111.0f, ctx), Catch::Matchers::WithinRel(1111.0f));

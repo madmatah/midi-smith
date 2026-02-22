@@ -3,11 +3,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <fakeit.hpp>
 
-using domain::midi::MidiControllerRequirements;
-using domain::music::piano::MidiPiano;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
+using midismith::main_board::domain::midi::MidiControllerRequirements;
+using midismith::main_board::domain::music::piano::MidiPiano;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 

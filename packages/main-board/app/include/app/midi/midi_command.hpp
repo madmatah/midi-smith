@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::midi {
+namespace midismith::main_board::app::midi {
 
 /**
  * @brief Represents a standard 3-byte MIDI message.
@@ -12,4 +12,4 @@ struct MidiCommand {
   uint8_t length;
 };
 
-}  // namespace app::midi
+}  // namespace midismith::main_board::app::midi

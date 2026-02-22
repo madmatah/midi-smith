@@ -7,12 +7,13 @@
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/shell/command_requirements.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 
-class SensorRttCommand final : public domain::shell::CommandRequirements {
+class SensorRttCommand final : public midismith::adc_board::domain::shell::CommandRequirements {
  public:
-  SensorRttCommand(domain::sensors::SensorRegistry& registry,
-                   app::telemetry::SensorRttTelemetryControlRequirements& control) noexcept
+  SensorRttCommand(
+      midismith::adc_board::domain::sensors::SensorRegistry& registry,
+      midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements& control) noexcept
       : registry_(registry), control_(control) {}
 
   std::string_view Name() const noexcept override {
@@ -22,11 +23,12 @@ class SensorRttCommand final : public domain::shell::CommandRequirements {
     return "Stream one sensor metrics over RTT";
   }
 
-  void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
 
  private:
-  domain::sensors::SensorRegistry& registry_;
-  app::telemetry::SensorRttTelemetryControlRequirements& control_;
+  midismith::adc_board::domain::sensors::SensorRegistry& registry_;
+  midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements& control_;
 };
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

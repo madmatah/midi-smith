@@ -6,7 +6,7 @@
 #include "app/config/analog_acquisition.hpp"
 #include "app/config/sensor_linearization.hpp"
 
-namespace app::config {
+namespace midismith::adc_board::app::config {
 
 // ── Hardware: ADC + TIA ──────────────────────────────────────────────
 
@@ -53,4 +53,4 @@ constexpr std::uint32_t SIGNAL_TEMPORAL_CONTINUITY_GAP_FACTOR = 5u;
 
 constexpr float kTicksPerMillisecond = static_cast<float>(ANALOG_TICKS_PER_SECOND) / 1000.0f;
 
-}  // namespace app::config
+}  // namespace midismith::adc_board::app::config

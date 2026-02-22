@@ -4,13 +4,13 @@
 #include "bsp/cortex/d3_sram_nocache_mpu.hpp"
 #include "bsp/cortex/flash_config_nocache_mpu.hpp"
 
-namespace bsp {
+namespace midismith::adc_board::bsp {
 
 void Board::init() noexcept {
-  bsp::cortex::AxiSramNoCacheMpu::ConfigureRegion();
-  bsp::cortex::D3SramNoCacheMpu::ConfigureRegion();
-  bsp::cortex::FlashConfigNoCacheMpu::ConfigureRegion();
+  midismith::adc_board::bsp::cortex::AxiSramNoCacheMpu::ConfigureRegion();
+  midismith::adc_board::bsp::cortex::D3SramNoCacheMpu::ConfigureRegion();
+  midismith::adc_board::bsp::cortex::FlashConfigNoCacheMpu::ConfigureRegion();
 }
 
 
-}  // namespace bsp
+}  // namespace midismith::adc_board::bsp

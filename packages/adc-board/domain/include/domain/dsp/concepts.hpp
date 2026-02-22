@@ -2,7 +2,7 @@
 
 #include <concepts>
 
-namespace domain::dsp::concepts {
+namespace midismith::adc_board::domain::dsp::concepts {
 
 template <typename T>
 concept Resettable = requires(T t) {
@@ -20,4 +20,4 @@ concept DecimatableSignalTransformer = requires(T t, float input, const ContextT
   { t.Compute(input, ctx) } -> std::same_as<float>;
 };
 
-}  // namespace domain::dsp::concepts
+}  // namespace midismith::adc_board::domain::dsp::concepts

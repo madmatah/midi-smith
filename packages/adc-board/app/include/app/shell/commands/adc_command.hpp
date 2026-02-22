@@ -3,11 +3,12 @@
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "domain/shell/command_requirements.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 
-class AdcCommand final : public domain::shell::CommandRequirements {
+class AdcCommand final : public midismith::adc_board::domain::shell::CommandRequirements {
  public:
-  explicit AdcCommand(app::analog::AcquisitionControlRequirements& control) noexcept
+  explicit AdcCommand(
+      midismith::adc_board::app::analog::AcquisitionControlRequirements& control) noexcept
       : control_(control) {}
 
   std::string_view Name() const noexcept override {
@@ -16,10 +17,11 @@ class AdcCommand final : public domain::shell::CommandRequirements {
   std::string_view Help() const noexcept override {
     return "Control ADC acquisition (on/off/status)";
   }
-  void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
 
  private:
-  app::analog::AcquisitionControlRequirements& control_;
+  midismith::adc_board::app::analog::AcquisitionControlRequirements& control_;
 };
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

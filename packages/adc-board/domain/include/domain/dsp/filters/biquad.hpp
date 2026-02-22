@@ -12,7 +12,7 @@
 #define DOMAIN_DSP_FILTERS_BIQUAD_USE_CMSIS_DSP 0
 #endif
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 struct BiquadCoefficients {
   float b0 = 1.0f;
@@ -204,4 +204,4 @@ class NotchStrategy {
   }
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

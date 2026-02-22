@@ -8,13 +8,14 @@
 #include "domain/dsp/concepts.hpp"
 #include "domain/sensors/sensor_state.hpp"
 
-namespace domain::sensors {
+namespace midismith::adc_board::domain::sensors {
 
 template <typename ProcessorT, typename ContextT>
 class ProcessedSensorGroup {
  public:
-  static_assert(domain::dsp::concepts::SignalTransformer<ProcessorT, ContextT>,
-                "ProcessorT must satisfy SignalTransformer for ContextT");
+  static_assert(
+      midismith::adc_board::domain::dsp::concepts::SignalTransformer<ProcessorT, ContextT>,
+      "ProcessorT must satisfy SignalTransformer for ContextT");
   static_assert(std::is_constructible_v<ContextT, std::uint32_t, SensorState&>,
                 "ContextT must be constructible from (timestamp_ticks, sensor_state)");
 
@@ -54,4 +55,4 @@ class ProcessedSensorGroup {
   std::size_t sensor_count_ = 0;
 };
 
-}  // namespace domain::sensors
+}  // namespace midismith::adc_board::domain::sensors

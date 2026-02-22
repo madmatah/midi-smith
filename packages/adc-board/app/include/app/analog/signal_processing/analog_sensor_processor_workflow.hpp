@@ -30,41 +30,47 @@
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
 
-namespace app::analog::signal_processing::workflow {
+namespace midismith::adc_board::app::analog::signal_processing::workflow {
 
 // -- Template shorthand aliases ---------------------------------------------------
 
 template <typename... StageTs>
-using StageWorkflow = domain::dsp::engine::Workflow<StageTs...>;
+using StageWorkflow = midismith::adc_board::domain::dsp::engine::Workflow<StageTs...>;
 template <typename ContentT>
-using Tap = domain::dsp::engine::Tap<ContentT>;
+using Tap = midismith::adc_board::domain::dsp::engine::Tap<ContentT>;
 template <typename StageT, std::uint32_t kGapFactor>
-using TemporalContinuityGuard = domain::dsp::engine::TemporalContinuityGuard<StageT, kGapFactor>;
+using TemporalContinuityGuard =
+    midismith::adc_board::domain::dsp::engine::TemporalContinuityGuard<StageT, kGapFactor>;
 template <typename PredicateT, typename TrueStageT, typename FalseStageT>
-using Switch = domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
+using Switch =
+    midismith::adc_board::domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
 template <float kValue>
-using ConstantFilter = domain::dsp::filters::ConstantFilter<kValue>;
+using ConstantFilter = midismith::adc_board::domain::dsp::filters::ConstantFilter<kValue>;
 template <float kScale>
-using LinearScaler = domain::dsp::converters::LinearScaler<kScale>;
+using LinearScaler = midismith::adc_board::domain::dsp::converters::LinearScaler<kScale>;
 template <std::uint32_t kWindowSize>
-using SimpleMovingAverage = domain::dsp::filters::SimpleMovingAverage<kWindowSize>;
+using SimpleMovingAverage =
+    midismith::adc_board::domain::dsp::filters::SimpleMovingAverage<kWindowSize>;
 template <std::uint32_t kWindowSize>
-using SlidingLinearRegression = domain::dsp::math::SlidingLinearRegression<kWindowSize>;
-using CentralDifference = domain::dsp::math::CentralDifference;
+using SlidingLinearRegression =
+    midismith::adc_board::domain::dsp::math::SlidingLinearRegression<kWindowSize>;
+using CentralDifference = midismith::adc_board::domain::dsp::math::CentralDifference;
 template <auto SensorMemberPtr>
-using CaptureState = domain::sensors::CaptureSensorState<SensorMemberPtr>;
+using CaptureState = midismith::adc_board::domain::sensors::CaptureSensorState<SensorMemberPtr>;
 template <auto SensorMemberPtr>
-using SensorMemberReader = domain::sensors::SensorMemberReader<SensorMemberPtr>;
-using SensorState = domain::sensors::SensorState;
+using SensorMemberReader =
+    midismith::adc_board::domain::sensors::SensorMemberReader<SensorMemberPtr>;
+using SensorState = midismith::adc_board::domain::sensors::SensorState;
 template <typename... PredicateTs>
-using And = domain::dsp::logic::And<PredicateTs...>;
+using And = midismith::adc_board::domain::dsp::logic::And<PredicateTs...>;
 template <auto ValueProvider>
-using IsTrue = domain::dsp::logic::IsTrue<ValueProvider>;
+using IsTrue = midismith::adc_board::domain::dsp::logic::IsTrue<ValueProvider>;
 using GoeblLogarithmicVelocityMapper =
-    domain::music::piano::velocity::GoeblLogarithmicVelocityMapper;
+    midismith::adc_board::domain::music::piano::velocity::GoeblLogarithmicVelocityMapper;
 template <float kMaximumSpeedMPerS, float kShapeFactor>
 using LogarithmicVelocityMapper =
-    domain::music::piano::velocity::LogarithmicVelocityMapper<kMaximumSpeedMPerS, kShapeFactor>;
+    midismith::adc_board::domain::music::piano::velocity::LogarithmicVelocityMapper<
+        kMaximumSpeedMPerS, kShapeFactor>;
 
 // =============================================================================
 // Preprocessing Trunk
@@ -73,17 +79,17 @@ using LogarithmicVelocityMapper =
 
 using FilteringEnabledPipeline =
     StageWorkflow<SimpleMovingAverage<config::ADC_OUTPUT_SMA_WINDOW_SIZE>>;
-using FilteringDisabledPipeline = StageWorkflow<domain::dsp::filters::IdentityFilter>;
+using FilteringDisabledPipeline =
+    StageWorkflow<midismith::adc_board::domain::dsp::filters::IdentityFilter>;
 using FilteringStage = std::conditional_t<config::SIGNAL_FILTERING_ENABLED,
                                           FilteringEnabledPipeline, FilteringDisabledPipeline>;
 
-using TiaCurrentConverter =
-    domain::dsp::converters::TiaCurrentConverter<config::ADC_REFERENCE_VOLTAGE_MILLI_VOLTS,
-                                                 config::ADC_RESOLUTION_BITS,
-                                                 config::TIA_FEEDBACK_RESISTOR_OHMS>;
+using TiaCurrentConverter = midismith::adc_board::domain::dsp::converters::TiaCurrentConverter<
+    config::ADC_REFERENCE_VOLTAGE_MILLI_VOLTS, config::ADC_RESOLUTION_BITS,
+    config::TIA_FEEDBACK_RESISTOR_OHMS>;
 
-using LinearizerStage =
-    domain::sensors::linearization::SensorLinearProcessor<config::kSensorLookupTableSize>;
+using LinearizerStage = midismith::adc_board::domain::sensors::linearization::SensorLinearProcessor<
+    config::kSensorLookupTableSize>;
 
 // =============================================================================
 // TAP 1 - Physical Velocity Pipeline
@@ -98,7 +104,8 @@ using GuardedShankSpeedEstimator = TemporalContinuityGuard<
     config::SIGNAL_TEMPORAL_CONTINUITY_GAP_FACTOR>;
 
 using IsShankInActiveZone =
-    domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER, ShankPositionReader{}>;
+    midismith::adc_board::domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER,
+                                                       ShankPositionReader{}>;
 
 using SmartShankSlopeEstimator =
     Switch<IsShankInActiveZone, GuardedShankSpeedEstimator, ConstantFilter<0.0f>>;
@@ -122,7 +129,7 @@ using PhysicalVelocityPipelineTap = Tap<PhysicalVelocityPipeline>;
 // =============================================================================
 
 using NoteOnVelocityMapper = GoeblLogarithmicVelocityMapper;
-using NoteOnStage = domain::music::piano::MidiVelocityEngine<
+using NoteOnStage = midismith::adc_board::domain::music::piano::MidiVelocityEngine<
     NoteOnVelocityMapper, config::HAMMER_POSITION_DAMPER, config::HAMMER_POSITION_LETOFF,
     config::HAMMER_POSITION_STRIKE, config::HAMMER_POSITION_DROP, config::HAMMER_POSITION_REARM>;
 
@@ -140,7 +147,8 @@ using NoteOnReader = SensorMemberReader<&SensorState::is_note_on>;
 
 using IsNoteOn = IsTrue<NoteOnReader{}>;
 using IsSmoothedShankPositionInActiveZone =
-    domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER, ShankPositionSmoothedReader{}>;
+    midismith::adc_board::domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER,
+                                                       ShankPositionSmoothedReader{}>;
 using IsDamperFalling = And<IsSmoothedShankPositionInActiveZone, IsNoteOn>;
 
 using GuardedFallingShankSpeedEstimator = TemporalContinuityGuard<
@@ -169,8 +177,8 @@ using DamperReleasePhysicalStageStage = Tap<DamperReleasePhysicalStage>;
 
 using NoteOffVelocityMapper = LogarithmicVelocityMapper<config::NOTE_OFF_VELOCITY_MAX_M_PER_S,
                                                         config::NOTE_OFF_VELOCITY_SHAPE_FACTOR>;
-using NoteOffStage = domain::music::piano::NoteReleaseDetectorStage<NoteOffVelocityMapper,
-                                                                    config::HAMMER_POSITION_DAMPER>;
+using NoteOffStage = midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<
+    NoteOffVelocityMapper, config::HAMMER_POSITION_DAMPER>;
 using NoteOffTapStage = Tap<NoteOffStage>;
 
 
@@ -179,7 +187,7 @@ using NoteOffTapStage = Tap<NoteOffStage>;
 //   Sensor State -> Telemetry
 // =============================================================================
 
-using TelemetryTapStage = app::telemetry::SensorRttStreamTap;
+using TelemetryTapStage = midismith::adc_board::app::telemetry::SensorRttStreamTap;
 
 // =============================================================================
 // Final Assembly
@@ -205,7 +213,7 @@ using Workflow = StageWorkflow<
 
 using ProcessorWorkflow = Workflow;
 using LinearizerConfiguration = typename LinearizerStage::Configuration;
-using KeyActionHandler = domain::music::piano::KeyActionRequirements;
+using KeyActionHandler = midismith::adc_board::domain::music::piano::KeyActionRequirements;
 
 struct StageAccess {
   static constexpr std::size_t kLinearizerStageIndex =
@@ -240,8 +248,9 @@ struct ControlSurface {
     StageAccess::Linearizer(workflow).ApplyConfiguration(configuration);
   }
 
-  static void SetTelemetryCapture(ProcessorWorkflow& workflow,
-                                  app::telemetry::SensorRttStreamCapture* capture) noexcept {
+  static void SetTelemetryCapture(
+      ProcessorWorkflow& workflow,
+      midismith::adc_board::app::telemetry::SensorRttStreamCapture* capture) noexcept {
     StageAccess::TelemetryTap(workflow).SetCapture(capture);
   }
 
@@ -256,4 +265,4 @@ struct ControlSurface {
   }
 };
 
-}  // namespace app::analog::signal_processing::workflow
+}  // namespace midismith::adc_board::app::analog::signal_processing::workflow

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 static constexpr std::uint8_t kCommandWriteEnable = 0x06;
 static constexpr std::uint8_t kCommandReadStatusRegister1 = 0x05;
@@ -266,4 +266,4 @@ bool Stm32Octospi::EnableWriteOperations() noexcept {
   return true;
 }
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

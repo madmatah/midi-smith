@@ -1,6 +1,6 @@
 #pragma once
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class AdcDmaControlRequirements {
  public:
@@ -10,4 +10,4 @@ class AdcDmaControlRequirements {
   virtual void Stop() noexcept = 0;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

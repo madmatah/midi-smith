@@ -3,9 +3,9 @@
 #include "app/storage/flash_storage_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
-class Stm32Octospi : public app::storage::FlashStorageRequirements {
+class Stm32Octospi : public midismith::main_board::app::storage::FlashStorageRequirements {
  public:
   explicit Stm32Octospi(OSPI_HandleTypeDef& hospi_handle) noexcept;
 
@@ -34,4 +34,4 @@ class Stm32Octospi : public app::storage::FlashStorageRequirements {
   bool EnableWriteOperations() noexcept;
 };
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 static constexpr std::uint8_t kCommandWriteEnable = 0x06;
 static constexpr std::uint8_t kCommandReadStatusRegister1 = 0x05;
@@ -139,4 +139,4 @@ bool Stm32SpiFlash::Receive(std::uint8_t* data, std::size_t size_bytes) noexcept
   return HAL_SPI_Receive(&_configuration.hspi_handle, data, size_bytes, HAL_MAX_DELAY) == HAL_OK;
 }
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

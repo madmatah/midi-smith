@@ -14,23 +14,32 @@
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "os/queue.hpp"
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 class AcquisitionSequencer;
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog
 
-namespace app::Tasks {
+namespace midismith::adc_board::app::tasks {
 
 class AnalogAcquisitionTask {
  public:
-  using Processor = app::analog::signal_processing::AnalogSensorProcessor;
-  using ProcessedSensorGroup =
-      domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
+  using Processor = midismith::adc_board::app::analog::signal_processing::AnalogSensorProcessor;
+  using ProcessedSensorGroup = midismith::adc_board::domain::sensors::ProcessedSensorGroup<
+      Processor, midismith::adc_board::app::analog::SignalContext>;
+  using AdcFrameDescriptor = midismith::adc_board::bsp::adc::AdcFrameDescriptor;
+  using AcquisitionCommand = midismith::adc_board::app::analog::AcquisitionCommand;
+  using AcquisitionSequencer = midismith::adc_board::app::analog::AcquisitionSequencer;
+  using AdcDma = midismith::adc_board::bsp::adc::AdcDma;
+  using AdcRankMappedFrameDecoder = midismith::adc_board::app::analog::AdcRankMappedFrameDecoder;
+  using AnalogAcquisitionState = midismith::adc_board::app::analog::AcquisitionState;
+  using GpioRequirements = midismith::common::bsp::GpioRequirements;
+  using TimestampCounterRequirements =
+      midismith::adc_board::app::time::TimestampCounterRequirements;
 
-  AnalogAcquisitionTask(os::Queue<bsp::adc::AdcFrameDescriptor, 8>& queue,
-                        os::Queue<app::analog::AcquisitionCommand, 4>& control_queue,
-                        bsp::GpioRequirements& tia_shutdown, bsp::adc::AdcDma& adc_dma,
-                        app::time::TimestampCounterRequirements& timestamp_counter,
-                        volatile app::analog::AcquisitionState& state,
+  AnalogAcquisitionTask(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue,
+                        midismith::common::os::Queue<AcquisitionCommand, 4>& control_queue,
+                        GpioRequirements& tia_shutdown, AdcDma& adc_dma,
+                        TimestampCounterRequirements& timestamp_counter,
+                        volatile AnalogAcquisitionState& state,
                         ProcessedSensorGroup& analog_group) noexcept;
 
   bool start() noexcept;
@@ -41,23 +50,23 @@ class AnalogAcquisitionTask {
   void ResetDecodingState() noexcept;
   void DrainFrameQueue() noexcept;
   void EnterDisabledState() noexcept;
-  void HandleDisabledState(app::analog::AcquisitionSequencer& sequencer) noexcept;
+  void HandleDisabledState(AcquisitionSequencer& sequencer) noexcept;
   void HandleEnabledState() noexcept;
   bool TryHandleDisableRequestWhileEnabled() noexcept;
-  void ProcessFrame(const bsp::adc::AdcFrameDescriptor& desc) noexcept;
-  void ProcessAdc1Frame(const bsp::adc::AdcFrameDescriptor& desc) noexcept;
-  void ProcessAdc2Frame(const bsp::adc::AdcFrameDescriptor& desc) noexcept;
-  void ProcessAdc3Frame(const bsp::adc::AdcFrameDescriptor& desc) noexcept;
+  void ProcessFrame(const AdcFrameDescriptor& desc) noexcept;
+  void ProcessAdc1Frame(const AdcFrameDescriptor& desc) noexcept;
+  void ProcessAdc2Frame(const AdcFrameDescriptor& desc) noexcept;
+  void ProcessAdc3Frame(const AdcFrameDescriptor& desc) noexcept;
 
-  os::Queue<bsp::adc::AdcFrameDescriptor, 8>& queue_;
-  os::Queue<app::analog::AcquisitionCommand, 4>& control_queue_;
-  bsp::GpioRequirements& tia_shutdown_;
-  bsp::adc::AdcDma& adc_dma_;
-  app::time::TimestampCounterRequirements& timestamp_counter_;
-  volatile app::analog::AcquisitionState& state_;
+  midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue_;
+  midismith::common::os::Queue<AcquisitionCommand, 4>& control_queue_;
+  GpioRequirements& tia_shutdown_;
+  AdcDma& adc_dma_;
+  TimestampCounterRequirements& timestamp_counter_;
+  volatile AnalogAcquisitionState& state_;
   ProcessedSensorGroup& analog_group_;
 
-  app::analog::AdcRankMappedFrameDecoder decoder_{};
+  AdcRankMappedFrameDecoder decoder_{};
 
   std::uint32_t last_adc1_sequence_id_ = 0;
   std::uint32_t last_adc2_sequence_id_ = 0;
@@ -71,4 +80,4 @@ class AnalogAcquisitionTask {
   std::uint32_t prev_adc3_timestamp_ = 0;
 };
 
-}  // namespace app::Tasks
+}  // namespace midismith::adc_board::app::tasks

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace os {
+namespace midismith::common::os {
 
 /**
  * @brief Constants for queue operation timeouts.
@@ -35,11 +35,4 @@ class QueueRequirements {
   virtual bool Receive(T& item, uint32_t timeout_ms) noexcept = 0;
 };
 
-}  // namespace os
-
-namespace midismith::common::os {
-using ::os::kNoWait;
-using ::os::kWaitForever;
-template <typename T>
-using QueueRequirements = ::os::QueueRequirements<T>;
 }  // namespace midismith::common::os

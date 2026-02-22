@@ -82,7 +82,7 @@ class BackwardLikeStage {
 
 TEST_CASE("The TemporalContinuityGuard class") {
   using Catch::Matchers::WithinAbs;
-  using domain::dsp::engine::TemporalContinuityGuard;
+  using midismith::adc_board::domain::dsp::engine::TemporalContinuityGuard;
 
   SECTION("The Transform() method") {
     SECTION("On the first call") {
@@ -172,9 +172,9 @@ TEST_CASE("The TemporalContinuityGuard class") {
     SECTION("When the stage is paused by predicate and resumes later") {
       SECTION("Should avoid a resume spike by resetting on the first delayed sample") {
         using GuardedEstimator = TemporalContinuityGuard<BackwardLikeStage, 5u>;
-        using SmartEstimator =
-            domain::dsp::logic::Switch<IsActive, GuardedEstimator,
-                                       domain::dsp::filters::ConstantFilter<0.0f>>;
+        using SmartEstimator = midismith::adc_board::domain::dsp::logic::Switch<
+            IsActive, GuardedEstimator,
+            midismith::adc_board::domain::dsp::filters::ConstantFilter<0.0f>>;
         SmartEstimator stage;
         TestContext ctx{.timestamp_ticks = 1000u, .is_active = true};
 

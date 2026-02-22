@@ -5,9 +5,9 @@
 #include "cmsis_os2.h"
 #include "os/queue_requirements.hpp"
 
-namespace os {
+namespace midismith::common::os {
 
-template <typename T, uint32_t Capacity>
+template <typename T, std::uint32_t Capacity>
 class Queue : public QueueRequirements<T> {
  public:
   Queue() noexcept {
@@ -29,7 +29,7 @@ class Queue : public QueueRequirements<T> {
   Queue(const Queue&) = delete;
   Queue& operator=(const Queue&) = delete;
 
-  bool Send(const T& item, uint32_t timeout_ms) noexcept override {
+  bool Send(const T& item, std::uint32_t timeout_ms) noexcept override {
     if (id_ == nullptr) {
       return false;
     }
@@ -43,7 +43,7 @@ class Queue : public QueueRequirements<T> {
     return osMessageQueuePut(id_, &item, 0, 0) == osOK;
   }
 
-  bool Receive(T& item, uint32_t timeout_ms) noexcept override {
+  bool Receive(T& item, std::uint32_t timeout_ms) noexcept override {
     if (id_ == nullptr) {
       return false;
     }
@@ -53,10 +53,10 @@ class Queue : public QueueRequirements<T> {
  private:
   osMessageQueueId_t id_{nullptr};
 
-  static constexpr uint32_t kControlBlockSize = 128;
+  static constexpr std::uint32_t kControlBlockSize = 128;
   // Raw buffer used to avoid exposing FreeRTOS headers in the public interface.
-  alignas(4) uint8_t control_block_memory_[kControlBlockSize];
-  alignas(4) uint8_t queue_memory_[Capacity * sizeof(T)];
+  alignas(4) std::uint8_t control_block_memory_[kControlBlockSize];
+  alignas(4) std::uint8_t queue_memory_[Capacity * sizeof(T)];
 };
 
-}  // namespace os
+}  // namespace midismith::common::os

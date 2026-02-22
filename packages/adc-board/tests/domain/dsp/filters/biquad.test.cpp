@@ -14,8 +14,8 @@ namespace {
 struct TestContext {};
 
 struct SignInversionStrategy {
-  domain::dsp::filters::BiquadCoefficients Coefficients() const noexcept {
-    domain::dsp::filters::BiquadCoefficients c{};
+  midismith::adc_board::domain::dsp::filters::BiquadCoefficients Coefficients() const noexcept {
+    midismith::adc_board::domain::dsp::filters::BiquadCoefficients c{};
     c.b0 = 1.0f;
     c.b1 = 0.0f;
     c.b2 = 0.0f;
@@ -25,9 +25,11 @@ struct SignInversionStrategy {
   }
 };
 
-using FilterWithSignInversion = domain::dsp::filters::Biquad<SignInversionStrategy>;
-static_assert(domain::dsp::concepts::SignalTransformer<FilterWithSignInversion, TestContext>);
-static_assert(domain::dsp::concepts::Resettable<FilterWithSignInversion>);
+using FilterWithSignInversion =
+    midismith::adc_board::domain::dsp::filters::Biquad<SignInversionStrategy>;
+static_assert(midismith::adc_board::domain::dsp::concepts::SignalTransformer<
+              FilterWithSignInversion, TestContext>);
+static_assert(midismith::adc_board::domain::dsp::concepts::Resettable<FilterWithSignInversion>);
 
 }  // namespace
 
@@ -71,8 +73,9 @@ TEST_CASE("The Biquad class") {
   SECTION("The LowPassStrategy helper") {
     SECTION("When used with a constant signal") {
       SECTION("Should remain finite and converge near DC gain 1") {
-        using LowPass = domain::dsp::filters::LowPassStrategy<48000u, 1000u, 0.707f>;
-        domain::dsp::filters::Biquad<LowPass> filter;
+        using LowPass =
+            midismith::adc_board::domain::dsp::filters::LowPassStrategy<48000u, 1000u, 0.707f>;
+        midismith::adc_board::domain::dsp::filters::Biquad<LowPass> filter;
         TestContext ctx{};
 
         float y = 0.0f;
@@ -94,9 +97,9 @@ TEST_CASE("The Biquad class") {
         constexpr std::uint32_t kSamplesPerPeriod = kSampleRateHz / kCutoffHz;
         static_assert(kSamplesPerPeriod > 0u);
 
-        using Notch =
-            domain::dsp::filters::NotchStrategy<kSampleRateHz, static_cast<float>(kCutoffHz), 5.0f>;
-        domain::dsp::filters::Biquad<Notch> filter;
+        using Notch = midismith::adc_board::domain::dsp::filters::NotchStrategy<
+            kSampleRateHz, static_cast<float>(kCutoffHz), 5.0f>;
+        midismith::adc_board::domain::dsp::filters::Biquad<Notch> filter;
         TestContext ctx{};
 
         constexpr std::uint32_t kWarmupPeriods = 20u;

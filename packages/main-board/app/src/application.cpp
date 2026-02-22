@@ -16,55 +16,64 @@
 #include "os/queue.hpp"
 #include "os/task.hpp"
 
-namespace app {
+namespace midismith::main_board::app {
 
 // Helper to run the MidiTask loop from a static function
 static void midi_task_entry(void* ctx) noexcept {
-  auto* task = reinterpret_cast<app::midi::MidiTask*>(ctx);
+  auto* task = reinterpret_cast<midismith::main_board::app::midi::MidiTask*>(ctx);
   task->Run();
 }
 
 void Application::init() noexcept {
-  bsp::Board::init();
+  midismith::main_board::bsp::Board::init();
 }
 
 void Application::create_tasks() noexcept {
-  static bsp::RttLogger logger;
+  static midismith::common::bsp::RttLogger logger;
 
   // 1. MIDI System
-  static os::Queue<app::midi::MidiCommand, app::config::MIDI_QUEUE_CAPACITY> midi_queue;
-  static bsp::UsbMidi usb_midi;
-  static app::midi::AsyncTaskMidiController midi_controller(midi_queue);
-  static app::midi::MidiTask midi_task(midi_queue, usb_midi, logger,
-                                       app::config::MIDI_RETRY_TIMEOUT_MS);
+  static midismith::common::os::Queue<midismith::main_board::app::midi::MidiCommand,
+                                      midismith::main_board::app::config::MIDI_QUEUE_CAPACITY>
+      midi_queue;
+  static midismith::main_board::bsp::UsbMidi usb_midi;
+  static midismith::main_board::app::midi::AsyncTaskMidiController midi_controller(midi_queue);
+  static midismith::main_board::app::midi::MidiTask midi_task(
+      midi_queue, usb_midi, logger, midismith::main_board::app::config::MIDI_RETRY_TIMEOUT_MS);
 
-  static domain::music::piano::MidiPiano::Config piano_config = {
+  static midismith::main_board::domain::music::piano::MidiPiano::Config piano_config = {
       .channel = 0, .sustain_cc = 64, .soft_cc = 67, .sostenuto_cc = 66};
-  static domain::music::piano::MidiPiano piano(midi_controller, piano_config);
+  static midismith::main_board::domain::music::piano::MidiPiano piano(midi_controller,
+                                                                      piano_config);
 
   // Start MIDI Task
-  (void) os::Task::create("MidiTask", midi_task_entry, &midi_task,
-                          app::config::MIDI_TASK_STACK_BYTES, app::config::MIDI_TASK_PRIORITY);
+  (void) midismith::common::os::Task::create(
+      "MidiTask", midi_task_entry, &midi_task,
+      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
+      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
 
   // 2. LED Task
-  alignas(app::Tasks::LedTask) static std::uint8_t led_task_storage[sizeof(app::Tasks::LedTask)];
+  alignas(midismith::main_board::app::tasks::LedTask) static std::uint8_t
+      led_task_storage[sizeof(midismith::main_board::app::tasks::LedTask)];
   static bool led_constructed = false;
 
-  auto& led = bsp::Board::user_led();
+  auto& led = midismith::main_board::bsp::Board::user_led();
 
-  alignas(4) static std::uint8_t led_telemetry_buffer[app::config::RTT_TELEMETRY_LED_BUFFER_SIZE];
-  static bsp::RttTelemetrySender telemetry(app::config::RTT_TELEMETRY_LED_CHANNEL, "LedTelemetry",
-                                           led_telemetry_buffer, sizeof(led_telemetry_buffer));
+  alignas(4) static std::uint8_t
+      led_telemetry_buffer[midismith::main_board::app::config::RTT_TELEMETRY_LED_BUFFER_SIZE];
+  static midismith::main_board::bsp::RttTelemetrySender telemetry(
+      midismith::main_board::app::config::RTT_TELEMETRY_LED_CHANNEL, "LedTelemetry",
+      led_telemetry_buffer, sizeof(led_telemetry_buffer));
 
-  app::Tasks::LedTask* led_task_ptr = nullptr;
+  midismith::main_board::app::tasks::LedTask* led_task_ptr = nullptr;
   if (!led_constructed) {
-    led_task_ptr = new (led_task_storage) app::Tasks::LedTask(led, telemetry, piano);
+    led_task_ptr =
+        new (led_task_storage) midismith::main_board::app::tasks::LedTask(led, telemetry, piano);
     led_constructed = true;
   } else {
-    led_task_ptr = reinterpret_cast<app::Tasks::LedTask*>(led_task_storage);
+    led_task_ptr = reinterpret_cast<midismith::main_board::app::tasks::LedTask*>(led_task_storage);
   }
 
   (void) led_task_ptr->start();
 }
 
-}  // namespace app
+}  // namespace midismith::main_board::app

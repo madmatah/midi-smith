@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 template <float kValue>
 class ConstantFilter {
@@ -15,4 +15,4 @@ class ConstantFilter {
   inline void Reset() noexcept {}
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

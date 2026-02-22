@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace domain::midi {
+namespace midismith::main_board::domain::midi {
 
 class MidiControllerRequirements {
  public:
@@ -11,4 +11,4 @@ class MidiControllerRequirements {
   virtual void SendRawMessage(const uint8_t* data, uint8_t length) noexcept = 0;
 };
 
-}  // namespace domain::midi
+}  // namespace midismith::main_board::domain::midi

@@ -2,12 +2,10 @@
 
 #include <cstdint>
 
-namespace app {
-
 /**
  * @brief Centralized configuration for the application.
  */
-namespace config {
+namespace midismith::main_board::app::config {
 
 // Task priorities
 constexpr uint32_t LED_TASK_PRIORITY = 2;
@@ -28,6 +26,4 @@ constexpr uint32_t MIDI_RETRY_TIMEOUT_MS = 5;
 constexpr uint32_t RTT_TELEMETRY_LED_CHANNEL = 1;
 constexpr uint32_t RTT_TELEMETRY_LED_BUFFER_SIZE = 256;
 
-}  // namespace config
-
-}  // namespace app
+}  // namespace midismith::main_board::app::config

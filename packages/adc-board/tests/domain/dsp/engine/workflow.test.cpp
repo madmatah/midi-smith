@@ -10,13 +10,13 @@
 
 TEST_CASE("The Workflow class") {
   using Catch::Matchers::WithinAbs;
-  using domain::dsp::engine::Tap;
-  using domain::dsp::engine::Workflow;
-  using domain::dsp::engine::test::ConsumerStage;
-  using domain::dsp::engine::test::CounterStage;
-  using domain::dsp::engine::test::PlusTenStage;
-  using domain::dsp::engine::test::TestContext;
-  using domain::dsp::engine::test::TimesTwoStage;
+  using midismith::adc_board::domain::dsp::engine::Tap;
+  using midismith::adc_board::domain::dsp::engine::Workflow;
+  using midismith::adc_board::domain::dsp::engine::test::ConsumerStage;
+  using midismith::adc_board::domain::dsp::engine::test::CounterStage;
+  using midismith::adc_board::domain::dsp::engine::test::PlusTenStage;
+  using midismith::adc_board::domain::dsp::engine::test::TestContext;
+  using midismith::adc_board::domain::dsp::engine::test::TimesTwoStage;
 
   SECTION("The Transform() method") {
     SECTION("When processed with a single stage") {

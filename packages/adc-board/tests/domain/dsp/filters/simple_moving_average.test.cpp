@@ -11,8 +11,9 @@ namespace {
 
 struct TestContext {};
 
-using MovingAverage4 = domain::dsp::filters::SimpleMovingAverage<4u>;
-static_assert(domain::dsp::concepts::SignalTransformer<MovingAverage4, TestContext>);
+using MovingAverage4 = midismith::adc_board::domain::dsp::filters::SimpleMovingAverage<4u>;
+static_assert(
+    midismith::adc_board::domain::dsp::concepts::SignalTransformer<MovingAverage4, TestContext>);
 
 }  // namespace
 
@@ -22,7 +23,7 @@ TEST_CASE("The SimpleMovingAverage class") {
   SECTION("The Transform() method") {
     SECTION("When configured with a window size of 1") {
       SECTION("Should return the last input sample") {
-        domain::dsp::filters::SimpleMovingAverage<1u> filter;
+        midismith::adc_board::domain::dsp::filters::SimpleMovingAverage<1u> filter;
         TestContext context{};
 
         REQUIRE_THAT(filter.Transform(10.0f, context), WithinAbs(10.0f, 0.0001f));
@@ -45,7 +46,7 @@ TEST_CASE("The SimpleMovingAverage class") {
 
     SECTION("When configured with a window size of 3") {
       SECTION("Should keep only the latest samples after warmup") {
-        domain::dsp::filters::SimpleMovingAverage<3u> filter;
+        midismith::adc_board::domain::dsp::filters::SimpleMovingAverage<3u> filter;
         TestContext context{};
 
         REQUIRE_THAT(filter.Transform(3.0f, context), WithinAbs(3.0f, 0.0001f));

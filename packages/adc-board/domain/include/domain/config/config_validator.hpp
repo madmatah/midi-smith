@@ -5,7 +5,7 @@
 
 #include "domain/hash/crc32.hpp"
 
-namespace domain::config {
+namespace midismith::adc_board::domain::config {
 
 enum class ConfigStatus {
   kValid,
@@ -52,4 +52,4 @@ class ConfigValidator {
   }
 };
 
-}  // namespace domain::config
+}  // namespace midismith::adc_board::domain::config

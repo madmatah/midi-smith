@@ -4,15 +4,16 @@
 namespace {
 
 constexpr std::size_t kMaxUartStreams = 4;
-static bsp::serial::UartStreamBase* g_streams[kMaxUartStreams] = {nullptr};
+static midismith::adc_board::bsp::serial::UartStreamBase* g_streams[kMaxUartStreams] = {nullptr};
 
-static bsp::serial::UartStreamBase* FindStream(UART_HandleTypeDef* huart) noexcept {
+static midismith::adc_board::bsp::serial::UartStreamBase* FindStream(
+    UART_HandleTypeDef* huart) noexcept {
   if (huart == nullptr) {
     return nullptr;
   }
 
   for (std::size_t i = 0; i < kMaxUartStreams; ++i) {
-    bsp::serial::UartStreamBase* s = g_streams[i];
+    midismith::adc_board::bsp::serial::UartStreamBase* s = g_streams[i];
     if (s != nullptr && s->handle() == huart) {
       return s;
     }
@@ -21,7 +22,7 @@ static bsp::serial::UartStreamBase* FindStream(UART_HandleTypeDef* huart) noexce
   return nullptr;
 }
 
-static void EnsureRegistered(bsp::serial::UartStreamBase* stream) noexcept {
+static void EnsureRegistered(midismith::adc_board::bsp::serial::UartStreamBase* stream) noexcept {
   if (stream == nullptr) {
     return;
   }
@@ -43,20 +44,20 @@ static void EnsureRegistered(bsp::serial::UartStreamBase* stream) noexcept {
 }  // namespace
 
 extern "C" void BspUartStream_HandleUartIrq(UART_HandleTypeDef* huart) {
-  bsp::serial::UartStreamBase* s = FindStream(huart);
+  midismith::adc_board::bsp::serial::UartStreamBase* s = FindStream(huart);
   if (s != nullptr) {
     s->HandleUartIrq();
   }
 }
 
 extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
-  bsp::serial::UartStreamBase* s = FindStream(huart);
+  midismith::adc_board::bsp::serial::UartStreamBase* s = FindStream(huart);
   if (s != nullptr) {
     s->HandleTxCompleteIrq();
   }
 }
 
-namespace bsp::serial {
+namespace midismith::adc_board::bsp::serial {
 
 void RegisterUartStream(UartStreamBase& stream) noexcept {
   __disable_irq();
@@ -64,4 +65,4 @@ void RegisterUartStream(UartStreamBase& stream) noexcept {
   __enable_irq();
 }
 
-}  // namespace bsp::serial
+}  // namespace midismith::adc_board::bsp::serial

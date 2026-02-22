@@ -3,7 +3,7 @@
 #include "domain/shell/command_requirements.hpp"
 #include "domain/shell/help_provider.hpp"
 
-namespace domain::shell::commands {
+namespace midismith::adc_board::domain::shell::commands {
 
 class HelpCommand : public CommandRequirements {
  public:
@@ -17,7 +17,8 @@ class HelpCommand : public CommandRequirements {
     return "Show this help message";
   }
 
-  void Run(int, char**, domain::io::WritableStreamRequirements& out) noexcept override {
+  void Run(int, char**,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override {
     provider_.ShowHelp(out);
   }
 
@@ -25,4 +26,4 @@ class HelpCommand : public CommandRequirements {
   const HelpProvider& provider_;
 };
 
-}  // namespace domain::shell::commands
+}  // namespace midismith::adc_board::domain::shell::commands

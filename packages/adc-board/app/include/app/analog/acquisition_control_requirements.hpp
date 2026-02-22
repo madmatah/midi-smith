@@ -2,7 +2,7 @@
 
 #include "app/analog/acquisition_state_requirements.hpp"
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class AcquisitionControlRequirements : public AcquisitionStateRequirements {
  public:
@@ -12,4 +12,4 @@ class AcquisitionControlRequirements : public AcquisitionStateRequirements {
   virtual bool RequestDisable() noexcept = 0;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

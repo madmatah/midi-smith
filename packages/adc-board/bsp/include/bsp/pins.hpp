@@ -2,8 +2,8 @@
 
 #include "bsp/gpio_requirements.hpp"
 
-namespace bsp::pins {
+namespace midismith::adc_board::bsp::pins {
 
-bsp::GpioRequirements& TiaShutdown() noexcept;
+midismith::common::bsp::GpioRequirements& TiaShutdown() noexcept;
 
-}  // namespace bsp::pins
+}  // namespace midismith::adc_board::bsp::pins

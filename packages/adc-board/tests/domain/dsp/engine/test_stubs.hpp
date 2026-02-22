@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace domain::dsp::engine::test {
+namespace midismith::adc_board::domain::dsp::engine::test {
 
 struct TestContext {
   std::uint32_t consume_count = 0;
@@ -79,4 +79,4 @@ class ConsumerStage {
   }
 };
 
-}  // namespace domain::dsp::engine::test
+}  // namespace midismith::adc_board::domain::dsp::engine::test

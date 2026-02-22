@@ -14,7 +14,7 @@ enum class Call : std::uint8_t {
   kAdcStop = 4,
 };
 
-class FakeGpio final : public bsp::GpioRequirements {
+class FakeGpio final : public midismith::common::bsp::GpioRequirements {
  public:
   explicit FakeGpio(std::vector<Call>& calls) noexcept : calls_(calls) {}
 
@@ -33,7 +33,7 @@ class FakeGpio final : public bsp::GpioRequirements {
   std::vector<Call>& calls_;
 };
 
-class FakeDelay final : public app::analog::DelayRequirements {
+class FakeDelay final : public midismith::adc_board::app::analog::DelayRequirements {
  public:
   explicit FakeDelay(std::vector<Call>& calls) noexcept : calls_(calls) {}
 
@@ -51,7 +51,7 @@ class FakeDelay final : public app::analog::DelayRequirements {
   std::uint32_t delay_us_ = 0;
 };
 
-class FakeAdcDma final : public app::analog::AdcDmaControlRequirements {
+class FakeAdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequirements {
  public:
   FakeAdcDma(std::vector<Call>& calls, bool start_result) noexcept
       : calls_(calls), start_result_(start_result) {}
@@ -79,7 +79,7 @@ TEST_CASE("The AcquisitionSequencer class") {
         FakeGpio gpio(calls);
         FakeDelay delay(calls);
         FakeAdcDma adc(calls, true);
-        app::analog::AcquisitionSequencer sequencer(gpio, delay, adc);
+        midismith::adc_board::app::analog::AcquisitionSequencer sequencer(gpio, delay, adc);
 
         const bool ok = sequencer.Enable(70);
 
@@ -97,7 +97,7 @@ TEST_CASE("The AcquisitionSequencer class") {
         FakeGpio gpio(calls);
         FakeDelay delay(calls);
         FakeAdcDma adc(calls, true);
-        app::analog::AcquisitionSequencer sequencer(gpio, delay, adc);
+        midismith::adc_board::app::analog::AcquisitionSequencer sequencer(gpio, delay, adc);
 
         sequencer.Disable();
 

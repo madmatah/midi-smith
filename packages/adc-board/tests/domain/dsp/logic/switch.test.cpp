@@ -63,7 +63,7 @@ class FalseStage {
 
 TEST_CASE("The Switch class") {
   using Catch::Matchers::WithinAbs;
-  using domain::dsp::logic::Switch;
+  using midismith::adc_board::domain::dsp::logic::Switch;
 
   SECTION("The Transform() method") {
     TestContext ctx{};

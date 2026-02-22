@@ -7,7 +7,7 @@
 #include "domain/shell/command_parser.hpp"
 #include "domain/shell/line_editor.hpp"
 
-namespace domain::shell {
+namespace midismith::adc_board::domain::shell {
 
 struct ShellConfig {
   const char* prompt = "shell> ";
@@ -16,7 +16,8 @@ struct ShellConfig {
 template <std::size_t kLineBufferSize, std::size_t kMaxCommands, std::size_t kMaxArgs>
 class ShellEngine {
  public:
-  ShellEngine(domain::io::StreamRequirements& stream, const ShellConfig& config) noexcept
+  ShellEngine(midismith::adc_board::domain::io::StreamRequirements& stream,
+              const ShellConfig& config) noexcept
       : _stream(stream), _config(config) {}
 
   void Init() noexcept {
@@ -56,14 +57,15 @@ class ShellEngine {
 
  private:
   static void OnCompletion(char* buffer, std::size_t& cursor, std::size_t max_size,
-                           domain::io::WritableStreamRequirements& writer,
+                           midismith::adc_board::domain::io::WritableStreamRequirements& writer,
                            void* user_data) noexcept {
     auto* self = static_cast<ShellEngine*>(user_data);
     self->HandleCompletion(buffer, cursor, max_size, writer);
   }
 
-  void HandleCompletion(char* buffer, std::size_t& cursor, std::size_t max_size,
-                        domain::io::WritableStreamRequirements& writer) noexcept {
+  void HandleCompletion(
+      char* buffer, std::size_t& cursor, std::size_t max_size,
+      midismith::adc_board::domain::io::WritableStreamRequirements& writer) noexcept {
     if (IsCompletingArgument(buffer, cursor)) {
       return;
     }
@@ -117,10 +119,10 @@ class ShellEngine {
     _stream.Write(_config.prompt);
   }
 
-  domain::io::StreamRequirements& _stream;
+  midismith::adc_board::domain::io::StreamRequirements& _stream;
   ShellConfig _config;
   LineEditor<kLineBufferSize> _editor;
   CommandDispatcher<kMaxCommands> _dispatcher;
 };
 
-}  // namespace domain::shell
+}  // namespace midismith::adc_board::domain::shell

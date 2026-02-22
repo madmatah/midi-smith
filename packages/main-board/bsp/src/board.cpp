@@ -4,9 +4,10 @@
 #include "octospi.h"
 #include "spi.h"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
-Gpio Board::_user_led{reinterpret_cast<std::uintptr_t>(USER_LED_GPIO_Port), USER_LED_Pin};
+midismith::common::bsp::Gpio Board::_user_led{reinterpret_cast<std::uintptr_t>(USER_LED_GPIO_Port),
+                                              USER_LED_Pin};
 Spi Board::_spi2{reinterpret_cast<void*>(&hspi2)};
 UsbMidi Board::_usb_midi{};
 Stm32Octospi Board::_octospi_flash{hospi1};
@@ -20,7 +21,7 @@ void Board::init() noexcept {
   _octospi_flash.EnableDirectAccess();
 }
 
-GpioRequirements& Board::user_led() noexcept {
+midismith::common::bsp::GpioRequirements& Board::user_led() noexcept {
   return _user_led;
 }
 
@@ -40,4 +41,4 @@ Stm32SpiFlash& Board::spi_flash() noexcept {
   return _spi_flash;
 }
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

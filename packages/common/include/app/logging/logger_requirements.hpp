@@ -2,7 +2,7 @@
 
 #include <cstdarg>
 
-namespace app::Logging {
+namespace midismith::common::app::logging {
 
 enum class Level : unsigned {
   Debug = 0,
@@ -32,4 +32,4 @@ class LoggerRequirements {
   }
 };
 
-}  // namespace app::Logging
+}  // namespace midismith::common::app::logging

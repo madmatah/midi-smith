@@ -39,7 +39,7 @@ struct Pred3 {
 }  // namespace
 
 TEST_CASE("The Or struct") {
-  using domain::dsp::logic::Or;
+  using midismith::adc_board::domain::dsp::logic::Or;
 
   SECTION("The Test() method") {
     SECTION("With two predicates") {

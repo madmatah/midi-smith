@@ -9,7 +9,7 @@
 #include "domain/sensors/linearization/sensor_lookup_table.hpp"
 #include "domain/sensors/linearization/sensor_response_curve.hpp"
 
-namespace domain::sensors::linearization {
+namespace midismith::adc_board::domain::sensors::linearization {
 
 enum class LookupTableGenerationStatus : std::uint8_t {
   kOk = 0,
@@ -118,4 +118,4 @@ class LookupTableGenerator {
   }
 };
 
-}  // namespace domain::sensors::linearization
+}  // namespace midismith::adc_board::domain::sensors::linearization

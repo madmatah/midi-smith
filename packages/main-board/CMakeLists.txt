@@ -109,12 +109,12 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     domain/src/music/piano/midi_piano.cpp
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
-    os/src/clock.cpp
-    os/src/task.cpp
-    os/src/queue.cpp
-    os/src/binary_semaphore.cpp
-    os/src/memory.cpp
-    os/src/this_task.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/clock.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/task.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/queue.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/binary_semaphore.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/memory.cpp
+    ${MAIN_COMMON_SRC_DIRS}/os/this_task.cpp
 )
 
 # Add include paths

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::config {
+namespace midismith::adc_board::app::config {
 
 // Analog acquisition
 //
@@ -65,4 +65,4 @@ constexpr std::uint32_t ANALOG_ADC12_TICKS_PER_SEQUENCE_ESTIMATE =
 constexpr std::uint32_t ANALOG_ADC3_TICKS_PER_SEQUENCE_ESTIMATE =
     ANALOG_TICKS_PER_SEQUENCE_ESTIMATE;
 
-}  // namespace app::config
+}  // namespace midismith::adc_board::app::config

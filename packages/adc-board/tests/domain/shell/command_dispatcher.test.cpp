@@ -7,10 +7,10 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
-  domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return domain::io::ReadResult::kNoData;
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
   void Write(char c) noexcept override {
     _output += c;
@@ -26,7 +26,7 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string _output;
 };
 
-class TestCommand : public domain::shell::CommandRequirements {
+class TestCommand : public midismith::adc_board::domain::shell::CommandRequirements {
  public:
   TestCommand(const char* name, const char* help, const char* response)
       : _name(name), _help(help), _response(response), _call_count(0) {}
@@ -37,7 +37,8 @@ class TestCommand : public domain::shell::CommandRequirements {
   std::string_view Help() const noexcept override {
     return _help;
   }
-  void Run(int, char**, domain::io::WritableStreamRequirements& out) noexcept override {
+  void Run(int, char**,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override {
     _call_count++;
     out.Write(_response);
   }
@@ -56,10 +57,10 @@ class TestCommand : public domain::shell::CommandRequirements {
 }  // namespace
 
 TEST_CASE("The CommandDispatcher class", "[shell]") {
-  domain::shell::CommandDispatcher<4> dispatcher;
+  midismith::adc_board::domain::shell::CommandDispatcher<4> dispatcher;
   StreamStub stream;
-  domain::shell::ShellConfig config{"shell> "};
-  domain::shell::ShellEngine<16, 4, 4> engine(stream, config);
+  midismith::adc_board::domain::shell::ShellConfig config{"shell> "};
+  midismith::adc_board::domain::shell::ShellEngine<16, 4, 4> engine(stream, config);
 
   SECTION("The Register() method") {
     SECTION("Should successfully register a command") {
@@ -105,7 +106,7 @@ TEST_CASE("The CommandDispatcher class", "[shell]") {
       dispatcher.Register(status_command);
       dispatcher.Register(start_command);
       dispatcher.Register(stop_command);
-      domain::shell::CommandRequirements* matches[4];
+      midismith::adc_board::domain::shell::CommandRequirements* matches[4];
 
       SECTION("Should find a unique completion when the prefix is unambiguous") {
         std::size_t count = dispatcher.FindCompletions("stat", matches, 4);

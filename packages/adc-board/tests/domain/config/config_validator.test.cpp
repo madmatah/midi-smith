@@ -13,7 +13,7 @@ struct TestData {
   std::uint8_t value;
 };
 
-using TestConfig = domain::config::StorableConfig<TestData, 0x54455354u, 3>;
+using TestConfig = midismith::adc_board::domain::config::StorableConfig<TestData, 0x54455354u, 3>;
 
 TestConfig CreateConfig(std::uint8_t value = 7, std::uint16_t version = TestConfig::kVersion) {
   TestConfig config{};
@@ -21,7 +21,7 @@ TestConfig CreateConfig(std::uint8_t value = 7, std::uint16_t version = TestConf
   config.magic_number = TestConfig::kMagicNumber;
   config.version = version;
   config.data.value = value;
-  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
@@ -34,12 +34,12 @@ TestConfig CreateVirginFlashConfig() {
 }  // namespace
 
 TEST_CASE("The ValidateConfig function") {
-  using domain::config::ConfigStatus;
+  using midismith::adc_board::domain::config::ConfigStatus;
 
   SECTION("When flash is virgin (all 0xFF)") {
     SECTION("Should return kVirginFlash") {
       auto config = CreateVirginFlashConfig();
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kVirginFlash);
     }
   }
@@ -47,7 +47,7 @@ TEST_CASE("The ValidateConfig function") {
   SECTION("When config is valid with current version") {
     SECTION("Should return kValid") {
       auto config = CreateConfig();
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kValid);
     }
   }
@@ -56,7 +56,7 @@ TEST_CASE("The ValidateConfig function") {
     SECTION("Should return kInvalidMagic") {
       auto config = CreateConfig();
       config.magic_number = 0xDEADBEEFu;
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kInvalidMagic);
     }
   }
@@ -65,7 +65,7 @@ TEST_CASE("The ValidateConfig function") {
     SECTION("Should return kInvalidCrc") {
       auto config = CreateConfig();
       config.crc32 ^= 0x01u;
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kInvalidCrc);
     }
   }
@@ -74,7 +74,7 @@ TEST_CASE("The ValidateConfig function") {
     SECTION("Should return kInvalidCrc") {
       auto config = CreateConfig();
       config.data.value = 99;
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kInvalidCrc);
     }
   }
@@ -82,7 +82,7 @@ TEST_CASE("The ValidateConfig function") {
   SECTION("When version is older than current") {
     SECTION("Should return kOlderVersion") {
       auto config = CreateConfig(3, TestConfig::kVersion - 1);
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kOlderVersion);
     }
   }
@@ -90,7 +90,7 @@ TEST_CASE("The ValidateConfig function") {
   SECTION("When version is newer than current") {
     SECTION("Should return kNewerVersion") {
       auto config = CreateConfig(3, TestConfig::kVersion + 1);
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
               ConfigStatus::kNewerVersion);
     }
   }
@@ -100,10 +100,10 @@ TEST_CASE("The StampCrc function") {
   auto config = CreateConfig();
   config.crc32 = 0;
 
-  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
 
-  REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(config) ==
-          domain::config::ConfigStatus::kValid);
+  REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(config) ==
+          midismith::adc_board::domain::config::ConfigStatus::kValid);
 }
 
 #endif

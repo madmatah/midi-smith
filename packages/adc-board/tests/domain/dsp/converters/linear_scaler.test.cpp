@@ -16,7 +16,7 @@ struct TestContext {
 TEST_CASE("The LinearScaler class", "[domain][dsp][converters]") {
   using Catch::Matchers::WithinAbs;
 
-  domain::dsp::converters::LinearScaler<2.5f> scaler;
+  midismith::adc_board::domain::dsp::converters::LinearScaler<2.5f> scaler;
   TestContext ctx{};
 
   REQUIRE_THAT(scaler.Transform(0.0f, ctx), WithinAbs(0.0f, 0.0001f));

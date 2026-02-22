@@ -3,7 +3,7 @@
 #include "bsp/board.hpp"
 #include "spi.h"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 static SPI_HandleTypeDef* h(void* handle) {
   return reinterpret_cast<SPI_HandleTypeDef*>(handle);
@@ -34,10 +34,9 @@ void Spi::notify_done_from_isr() noexcept {
   }
 }
 
-}  // namespace bsp
-
+}  // namespace midismith::main_board::bsp
 extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi) {
   if (hspi == &hspi2) {
-    bsp::Board::spi2().notify_done_from_isr();
+    midismith::main_board::bsp::Board::spi2().notify_done_from_isr();
   }
 }

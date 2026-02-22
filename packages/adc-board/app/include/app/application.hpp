@@ -1,6 +1,6 @@
 #pragma once
 
-namespace app {
+namespace midismith::adc_board::app {
 
 class Application {
  public:
@@ -8,4 +8,4 @@ class Application {
   static void create_tasks() noexcept;
 };
 
-}  // namespace app
+}  // namespace midismith::adc_board::app

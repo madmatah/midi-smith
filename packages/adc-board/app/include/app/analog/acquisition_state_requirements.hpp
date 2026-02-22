@@ -2,7 +2,7 @@
 
 #include "app/analog/acquisition_state.hpp"
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class AcquisitionStateRequirements {
  public:
@@ -11,4 +11,4 @@ class AcquisitionStateRequirements {
   virtual AcquisitionState GetState() const noexcept = 0;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

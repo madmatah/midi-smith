@@ -2,7 +2,7 @@
 
 #include "stm32h7xx_hal.h"
 
-namespace bsp::cortex {
+namespace midismith::adc_board::bsp::cortex {
 
 void AxiSramNoCacheMpu::ConfigureRegion() noexcept {
   HAL_MPU_Disable();
@@ -24,4 +24,4 @@ void AxiSramNoCacheMpu::ConfigureRegion() noexcept {
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-}  // namespace bsp::cortex
+}  // namespace midismith::adc_board::bsp::cortex

@@ -1,5 +1,5 @@
 #include "domain/shell/shell_engine.hpp"
 
-namespace domain::shell {
+namespace midismith::adc_board::domain::shell {
 // ShellEngine is a template, implementation is in the header.
-}  // namespace domain::shell
+}  // namespace midismith::adc_board::domain::shell

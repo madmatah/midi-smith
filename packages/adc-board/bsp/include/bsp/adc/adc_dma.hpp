@@ -6,7 +6,7 @@
 #include "app/analog/adc_dma_control_requirements.hpp"
 #include "os/queue.hpp"
 
-namespace bsp::adc {
+namespace midismith::adc_board::bsp::adc {
 
 enum class AdcGroup : std::uint8_t {
   kAdc1 = 0,
@@ -24,7 +24,7 @@ struct AdcFrameDescriptor {
   std::uint8_t element_size_bytes;
 };
 
-class AdcDma final : public app::analog::AdcDmaControlRequirements {
+class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequirements {
  public:
   static constexpr std::size_t kAdc1RanksPerSequence = 7;
   static constexpr std::size_t kAdc2RanksPerSequence = 7;
@@ -42,7 +42,7 @@ class AdcDma final : public app::analog::AdcDmaControlRequirements {
   static constexpr std::size_t kMaxAdc2HalfwordsPerBuffer = 2 * kMaxAdc2HalfwordsPerHalfBuffer;
   static constexpr std::size_t kMaxAdc3HalfwordsPerBuffer = 2 * kMaxAdc3HalfwordsPerHalfBuffer;
 
-  explicit AdcDma(os::Queue<AdcFrameDescriptor, 8>& queue) noexcept;
+  explicit AdcDma(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept;
 
   bool Start() noexcept override;
   void Stop() noexcept override;
@@ -55,7 +55,7 @@ class AdcDma final : public app::analog::AdcDmaControlRequirements {
   std::uint16_t adc2_halfwords_per_half_buffer_ = 0;
   std::uint16_t adc3_halfwords_per_half_buffer_ = 0;
 
-  os::Queue<AdcFrameDescriptor, 8>& queue_;
+  midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue_;
   std::uint32_t adc1_sequence_id_ = 0;
   std::uint32_t adc2_sequence_id_ = 0;
   std::uint32_t adc3_sequence_id_ = 0;
@@ -65,4 +65,4 @@ class AdcDma final : public app::analog::AdcDmaControlRequirements {
 void RegisterAdcDma(AdcDma& adc_dma) noexcept;
 AdcDma* GetAdcDma() noexcept;
 
-}  // namespace bsp::adc
+}  // namespace midismith::adc_board::bsp::adc

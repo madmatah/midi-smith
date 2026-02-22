@@ -5,19 +5,19 @@
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("GoeblLogarithmicVelocityMapper") {
-  domain::music::piano::velocity::GoeblLogarithmicVelocityMapper mapper{};
+  midismith::adc_board::domain::music::piano::velocity::GoeblLogarithmicVelocityMapper mapper{};
 
   SECTION("Clamps non-positive speed to 1") {
-    REQUIRE(mapper.Map(0.0f) == static_cast<domain::music::Velocity>(1u));
-    REQUIRE(mapper.Map(-1.0f) == static_cast<domain::music::Velocity>(1u));
+    REQUIRE(mapper.Map(0.0f) == static_cast<midismith::common::domain::music::Velocity>(1u));
+    REQUIRE(mapper.Map(-1.0f) == static_cast<midismith::common::domain::music::Velocity>(1u));
   }
 
   SECTION("Maps 1.0 m/s to ~58") {
-    REQUIRE(mapper.Map(1.0f) == static_cast<domain::music::Velocity>(58u));
+    REQUIRE(mapper.Map(1.0f) == static_cast<midismith::common::domain::music::Velocity>(58u));
   }
 
   SECTION("Clamps high speed to 127") {
-    REQUIRE(mapper.Map(10.0f) == static_cast<domain::music::Velocity>(127u));
+    REQUIRE(mapper.Map(10.0f) == static_cast<midismith::common::domain::music::Velocity>(127u));
   }
 }
 

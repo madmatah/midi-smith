@@ -2,26 +2,25 @@
 
 #include "stm32h7xx_hal.h"
 
-namespace bsp {
+namespace midismith::common::bsp {
 
-static GPIO_TypeDef* port_from_addr(std::uintptr_t addr) {
-  return reinterpret_cast<GPIO_TypeDef*>(addr);
+static GPIO_TypeDef* PortFromAddress(std::uintptr_t address) {
+  return reinterpret_cast<GPIO_TypeDef*>(address);
 }
 
 void Gpio::set() noexcept {
-  HAL_GPIO_WritePin(port_from_addr(_port), _pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(PortFromAddress(port_), pin_, GPIO_PIN_SET);
 }
 
 void Gpio::reset() noexcept {
-  HAL_GPIO_WritePin(port_from_addr(_port), _pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(PortFromAddress(port_), pin_, GPIO_PIN_RESET);
 }
 
 void Gpio::toggle() noexcept {
-  HAL_GPIO_TogglePin(port_from_addr(_port), _pin);
+  HAL_GPIO_TogglePin(PortFromAddress(port_), pin_);
 }
 
 bool Gpio::read() const noexcept {
-  return HAL_GPIO_ReadPin(port_from_addr(_port), _pin) == GPIO_PIN_SET;
+  return HAL_GPIO_ReadPin(PortFromAddress(port_), pin_) == GPIO_PIN_SET;
 }
-
-}  // namespace bsp
+}  // namespace midismith::common::bsp

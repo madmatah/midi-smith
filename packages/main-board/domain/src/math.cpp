@@ -1,9 +1,9 @@
 #include "domain/math.hpp"
 
-namespace domain {
+namespace midismith::main_board::domain {
 
 int add(int a, int b) noexcept {
   return a + b;
 }
 
-}  // namespace domain
+}  // namespace midismith::main_board::domain

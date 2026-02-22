@@ -7,10 +7,10 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
-  domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return domain::io::ReadResult::kNoData;
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
   void Write(char c) noexcept override {
     _output += c;
@@ -30,7 +30,8 @@ class StreamStub : public domain::io::StreamRequirements {
 
 TEST_CASE("The VersionCommand class", "[shell][commands]") {
   StreamStub stream;
-  domain::shell::commands::VersionCommand version_cmd("1.2.3", "Debug", "2026-01-28");
+  midismith::adc_board::domain::shell::commands::VersionCommand version_cmd("1.2.3", "Debug",
+                                                                            "2026-01-28");
 
   SECTION("The Name() method") {
     SECTION("Should return 'version'") {

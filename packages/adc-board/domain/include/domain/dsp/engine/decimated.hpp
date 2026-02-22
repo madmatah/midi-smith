@@ -5,7 +5,7 @@
 #include "domain/dsp/concepts.hpp"
 #include "domain/dsp/engine/detail.hpp"
 
-namespace domain::dsp::engine {
+namespace midismith::adc_board::domain::dsp::engine {
 
 template <typename T, std::uint8_t kFactor>
 class Decimated {
@@ -28,10 +28,12 @@ class Decimated {
 
   template <typename ContextT>
   float Transform(float input, const ContextT& ctx) noexcept
-    requires(domain::dsp::concepts::DecimatableSignalTransformer<T, ContextT> ||
-             domain::dsp::concepts::SignalTransformer<T, ContextT>)
+    requires(
+        midismith::adc_board::domain::dsp::concepts::DecimatableSignalTransformer<T, ContextT> ||
+        midismith::adc_board::domain::dsp::concepts::SignalTransformer<T, ContextT>)
   {
-    if constexpr (domain::dsp::concepts::DecimatableSignalTransformer<T, ContextT>) {
+    if constexpr (midismith::adc_board::domain::dsp::concepts::DecimatableSignalTransformer<
+                      T, ContextT>) {
       stage_.Push(input, ctx);
       if (phase_ == 0u) {
         last_value_ = stage_.Compute(input, ctx);
@@ -69,4 +71,4 @@ class Decimated {
   std::uint8_t phase_ = 0u;
 };
 
-}  // namespace domain::dsp::engine
+}  // namespace midismith::adc_board::domain::dsp::engine

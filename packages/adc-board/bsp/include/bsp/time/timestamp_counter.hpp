@@ -4,9 +4,10 @@
 
 #include "app/time/timestamp_counter_requirements.hpp"
 
-namespace bsp::time {
+namespace midismith::adc_board::bsp::time {
 
-class TimestampCounter final : public app::time::TimestampCounterRequirements {
+class TimestampCounter final
+    : public midismith::adc_board::app::time::TimestampCounterRequirements {
  public:
   using StartFn = void (*)() noexcept;
   using NowFn = std::uint32_t (*)() noexcept;
@@ -32,4 +33,4 @@ class TimestampCounter final : public app::time::TimestampCounterRequirements {
   NowFn now_fn_ = nullptr;
 };
 
-}  // namespace bsp::time
+}  // namespace midismith::adc_board::bsp::time

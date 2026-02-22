@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::converters {
+namespace midismith::adc_board::domain::dsp::converters {
 
 template <float kScale>
 class LinearScaler {
@@ -14,4 +14,4 @@ class LinearScaler {
   }
 };
 
-}  // namespace domain::dsp::converters
+}  // namespace midismith::adc_board::domain::dsp::converters

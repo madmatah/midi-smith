@@ -5,7 +5,7 @@
 #include "domain/midi/midi_transport_requirements.hpp"
 #include "os/queue_requirements.hpp"
 
-namespace app::midi {
+namespace midismith::main_board::app::midi {
 
 /**
  * @brief FreeRTOS task responsible for processing and sending MIDI messages.
@@ -22,9 +22,10 @@ class MidiTask {
    * @param logger For error reporting.
    * @param retry_timeout_ms Max time to retry sending if transport is busy.
    */
-  MidiTask(os::QueueRequirements<MidiCommand>& queue,
-           domain::midi::MidiTransportRequirements& transport,
-           app::Logging::LoggerRequirements& logger, uint32_t retry_timeout_ms = 100) noexcept
+  MidiTask(midismith::common::os::QueueRequirements<MidiCommand>& queue,
+           midismith::main_board::domain::midi::MidiTransportRequirements& transport,
+           midismith::common::app::logging::LoggerRequirements& logger,
+           uint32_t retry_timeout_ms = 100) noexcept
       : _queue(queue),
         _transport(transport),
         _logger(logger),
@@ -39,10 +40,10 @@ class MidiTask {
   void ProcessCommand(const MidiCommand& command) noexcept;
   void TransmitWithRetry(const MidiCommand& command) noexcept;
 
-  os::QueueRequirements<MidiCommand>& _queue;
-  domain::midi::MidiTransportRequirements& _transport;
-  app::Logging::LoggerRequirements& _logger;
+  midismith::common::os::QueueRequirements<MidiCommand>& _queue;
+  midismith::main_board::domain::midi::MidiTransportRequirements& _transport;
+  midismith::common::app::logging::LoggerRequirements& _logger;
   uint32_t _retry_timeout_ms;
 };
 
-}  // namespace app::midi
+}  // namespace midismith::main_board::app::midi

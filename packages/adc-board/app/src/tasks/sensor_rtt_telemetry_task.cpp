@@ -12,12 +12,13 @@
 #include "os/queue_requirements.hpp"
 #include "os/task.hpp"
 
-namespace app::Tasks {
+namespace midismith::adc_board::app::tasks {
 namespace {
 
 constexpr std::uint32_t ClampOutputHz(std::uint32_t hz) noexcept {
   constexpr std::uint32_t kMinHz = 1u;
-  const std::uint32_t kMaxHz = ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
+  const std::uint32_t kMaxHz =
+      ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
   if (hz < kMinHz) {
     return kMinHz;
   }
@@ -30,10 +31,12 @@ constexpr std::uint32_t ClampOutputHz(std::uint32_t hz) noexcept {
 }  // namespace
 
 SensorRttTelemetryTask::SensorRttTelemetryTask(
-    os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue,
-    domain::sensors::SensorRegistry& registry, app::analog::AcquisitionStateRequirements& adc_state,
-    app::telemetry::TelemetrySenderRequirements& telemetry_sender,
-    app::telemetry::SensorRttStreamCapture& capture) noexcept
+    midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand,
+                                 4>& control_queue,
+    midismith::adc_board::domain::sensors::SensorRegistry& registry,
+    midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
+    midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept
     : control_queue_(control_queue),
       registry_(registry),
       adc_state_(adc_state),
@@ -48,8 +51,8 @@ void SensorRttTelemetryTask::entry(void* ctx) noexcept {
 }
 
 void SensorRttTelemetryTask::ApplyCommand(
-    const app::telemetry::SensorRttTelemetryCommand& cmd) noexcept {
-  if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kOff) {
+    const midismith::adc_board::app::telemetry::SensorRttTelemetryCommand& cmd) noexcept {
+  if (cmd.kind == midismith::adc_board::app::telemetry::SensorRttTelemetryCommandKind::kOff) {
     capture_.ConfigureOff();
     schema_sent_ = false;
     last_schema_timestamp_us_ = 0u;
@@ -58,8 +61,9 @@ void SensorRttTelemetryTask::ApplyCommand(
     return;
   }
 
-  if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kObserve) {
-    const domain::sensors::SensorState* sensor = registry_.FindById(cmd.sensor_id);
+  if (cmd.kind == midismith::adc_board::app::telemetry::SensorRttTelemetryCommandKind::kObserve) {
+    const midismith::adc_board::domain::sensors::SensorState* sensor =
+        registry_.FindById(cmd.sensor_id);
     if (sensor == nullptr) {
       capture_.ConfigureOff();
       schema_sent_ = false;
@@ -77,7 +81,8 @@ void SensorRttTelemetryTask::ApplyCommand(
     return;
   }
 
-  if (cmd.kind == app::telemetry::SensorRttTelemetryCommandKind::kSetOutputHz) {
+  if (cmd.kind ==
+      midismith::adc_board::app::telemetry::SensorRttTelemetryCommandKind::kSetOutputHz) {
     const std::uint32_t hz = ClampOutputHz(cmd.output_hz);
     capture_.SetOutputHz(hz);
     return;
@@ -85,14 +90,14 @@ void SensorRttTelemetryTask::ApplyCommand(
 }
 
 void SensorRttTelemetryTask::ApplyPendingCommands() noexcept {
-  app::telemetry::SensorRttTelemetryCommand cmd{};
-  while (control_queue_.Receive(cmd, os::kNoWait)) {
+  midismith::adc_board::app::telemetry::SensorRttTelemetryCommand cmd{};
+  while (control_queue_.Receive(cmd, midismith::common::os::kNoWait)) {
     ApplyCommand(cmd);
   }
 }
 
 bool SensorRttTelemetryTask::ReceiveControlCommand(std::uint32_t timeout_ms) noexcept {
-  app::telemetry::SensorRttTelemetryCommand cmd{};
+  midismith::adc_board::app::telemetry::SensorRttTelemetryCommand cmd{};
   if (!control_queue_.Receive(cmd, timeout_ms)) {
     return false;
   }
@@ -102,7 +107,7 @@ bool SensorRttTelemetryTask::ReceiveControlCommand(std::uint32_t timeout_ms) noe
 }
 
 bool SensorRttTelemetryTask::IsAnalogAcquisitionEnabled() const noexcept {
-  return adc_state_.GetState() == app::analog::AcquisitionState::kEnabled;
+  return adc_state_.GetState() == midismith::adc_board::app::analog::AcquisitionState::kEnabled;
 }
 
 bool SensorRttTelemetryTask::TrySendSchemaFrameIfDue(
@@ -121,8 +126,9 @@ bool SensorRttTelemetryTask::TrySendSchemaFrameIfDue(
   }
 
   const std::uint32_t schema_timestamp_us = last_data_timestamp_us_;
-  const std::size_t schema_size_bytes = app::telemetry::BuildSensorRttSchemaFrame(
-      active_sensor_id_, schema_timestamp_us, schema_frame_bytes);
+  const std::size_t schema_size_bytes =
+      midismith::adc_board::app::telemetry::BuildSensorRttSchemaFrame(
+          active_sensor_id_, schema_timestamp_us, schema_frame_bytes);
   if (schema_size_bytes == 0u) {
     return true;
   }
@@ -140,7 +146,8 @@ bool SensorRttTelemetryTask::TrySendSchemaFrameIfDue(
 }
 
 bool SensorRttTelemetryTask::TrySendCapturedDataFrames(std::size_t max_frames_per_write) noexcept {
-  const auto* frame_ptr = static_cast<const app::telemetry::SensorRttDataFrame*>(nullptr);
+  const auto* frame_ptr =
+      static_cast<const midismith::adc_board::app::telemetry::SensorRttDataFrame*>(nullptr);
   std::size_t available_frames = 0u;
 
   frame_ptr = capture_.PeekContiguousFrames(max_frames_per_write, available_frames);
@@ -148,7 +155,8 @@ bool SensorRttTelemetryTask::TrySendCapturedDataFrames(std::size_t max_frames_pe
     return false;
   }
 
-  const std::size_t bytes_to_write = available_frames * sizeof(app::telemetry::SensorRttDataFrame);
+  const std::size_t bytes_to_write =
+      available_frames * sizeof(midismith::adc_board::app::telemetry::SensorRttDataFrame);
   const auto bytes = std::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(frame_ptr),
                                                    bytes_to_write);
 
@@ -157,7 +165,8 @@ bool SensorRttTelemetryTask::TrySendCapturedDataFrames(std::size_t max_frames_pe
     return false;
   }
 
-  const std::size_t frames_written = written / sizeof(app::telemetry::SensorRttDataFrame);
+  const std::size_t frames_written =
+      written / sizeof(midismith::adc_board::app::telemetry::SensorRttDataFrame);
   if (frames_written == 0u) {
     return false;
   }
@@ -169,18 +178,19 @@ bool SensorRttTelemetryTask::TrySendCapturedDataFrames(std::size_t max_frames_pe
 
 void SensorRttTelemetryTask::run() noexcept {
   capture_.ConfigureOff();
-  capture_.SetOutputHz(::app::telemetry::DefaultSensorRttTelemetryOutputHz());
+  capture_.SetOutputHz(::midismith::adc_board::app::telemetry::DefaultSensorRttTelemetryOutputHz());
 
   constexpr std::size_t kMaxFramesPerWrite = 80u;
   static_assert(kMaxFramesPerWrite > 0u);
   constexpr std::uint32_t kSchemaIntervalUs = 1'000'000u;
   constexpr std::uint32_t kEnabledIdleWaitMs = 1u;
 
-  std::array<std::uint8_t, app::telemetry::SensorRttSchemaFrameSizeBytes()> schema_frame_bytes{};
+  std::array<std::uint8_t, midismith::adc_board::app::telemetry::SensorRttSchemaFrameSizeBytes()>
+      schema_frame_bytes{};
 
   for (;;) {
     if (active_sensor_id_ == 0u) {
-      (void) ReceiveControlCommand(os::kWaitForever);
+      (void) ReceiveControlCommand(midismith::common::os::kWaitForever);
       continue;
     }
 
@@ -206,9 +216,10 @@ void SensorRttTelemetryTask::run() noexcept {
 }
 
 bool SensorRttTelemetryTask::start() noexcept {
-  return os::Task::create("SensorRtt", SensorRttTelemetryTask::entry, this,
-                          app::config::SENSOR_RTT_TELEMETRY_TASK_STACK_BYTES,
-                          app::config::SENSOR_RTT_TELEMETRY_TASK_PRIORITY);
+  return midismith::common::os::Task::create(
+      "SensorRtt", SensorRttTelemetryTask::entry, this,
+      midismith::adc_board::app::config::SENSOR_RTT_TELEMETRY_TASK_STACK_BYTES,
+      midismith::adc_board::app::config::SENSOR_RTT_TELEMETRY_TASK_PRIORITY);
 }
 
-}  // namespace app::Tasks
+}  // namespace midismith::adc_board::app::tasks

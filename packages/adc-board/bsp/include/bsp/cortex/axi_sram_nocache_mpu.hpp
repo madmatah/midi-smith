@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace bsp::cortex {
+namespace midismith::adc_board::bsp::cortex {
 
 class AxiSramNoCacheMpu {
  public:
@@ -11,4 +11,4 @@ class AxiSramNoCacheMpu {
   static constexpr std::size_t kRegionSizeBytes = 8U * 1024U;
 };
 
-}  // namespace bsp::cortex
+}  // namespace midismith::adc_board::bsp::cortex

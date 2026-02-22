@@ -4,11 +4,11 @@
 
 #include "bsp/gpio_requirements.hpp"
 
-namespace bsp {
+namespace midismith::common::bsp {
 
 class Gpio : public GpioRequirements {
  public:
-  explicit Gpio(std::uintptr_t port, std::uint16_t pin) noexcept : _port(port), _pin(pin) {}
+  explicit Gpio(std::uintptr_t port, std::uint16_t pin) noexcept : port_(port), pin_(pin) {}
 
   void set() noexcept override;
   void reset() noexcept override;
@@ -16,8 +16,8 @@ class Gpio : public GpioRequirements {
   bool read() const noexcept override;
 
  private:
-  std::uintptr_t _port;
-  std::uint16_t _pin;
+  std::uintptr_t port_;
+  std::uint16_t pin_;
 };
 
-}  // namespace bsp
+}  // namespace midismith::common::bsp

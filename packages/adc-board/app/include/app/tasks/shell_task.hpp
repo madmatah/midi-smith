@@ -3,18 +3,18 @@
 #include "domain/io/stream_requirements.hpp"
 #include "domain/shell/shell_engine.hpp"
 
-namespace app::Tasks {
+namespace midismith::adc_board::app::tasks {
 
 class ShellTask {
  public:
-  explicit ShellTask(domain::io::StreamRequirements& stream,
-                     const domain::shell::ShellConfig& config) noexcept;
+  explicit ShellTask(midismith::adc_board::domain::io::StreamRequirements& stream,
+                     const midismith::adc_board::domain::shell::ShellConfig& config) noexcept;
 
   static void entry(void* ctx) noexcept;
   void run() noexcept;
   bool start() noexcept;
 
-  bool RegisterCommand(domain::shell::CommandRequirements& command) noexcept {
+  bool RegisterCommand(midismith::adc_board::domain::shell::CommandRequirements& command) noexcept {
     return _engine.RegisterCommand(command);
   }
 
@@ -23,7 +23,7 @@ class ShellTask {
   static constexpr std::size_t kMaxCommands = 16;
   static constexpr std::size_t kMaxArgs = 8;
 
-  domain::shell::ShellEngine<kLineBufferSize, kMaxCommands, kMaxArgs> _engine;
+  midismith::adc_board::domain::shell::ShellEngine<kLineBufferSize, kMaxCommands, kMaxArgs> _engine;
 };
 
-}  // namespace app::Tasks
+}  // namespace midismith::adc_board::app::tasks

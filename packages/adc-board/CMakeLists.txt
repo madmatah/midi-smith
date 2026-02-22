@@ -127,13 +127,13 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/shell/commands/status_command.cpp
     ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
     ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
-    os/src/clock.cpp
-    os/src/task.cpp
-    os/src/queue.cpp
-    os/src/binary_semaphore.cpp
-    os/src/memory.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/clock.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/task.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/queue.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/binary_semaphore.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/memory.cpp
     os/src/runtime_stats.cpp
-    os/src/this_task.cpp
+    ${ADC_COMMON_SRC_DIRS}/os/this_task.cpp
 )
 
 

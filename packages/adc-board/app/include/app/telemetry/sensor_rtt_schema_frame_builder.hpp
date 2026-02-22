@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <span>
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 std::size_t BuildSensorRttSchemaFrame(std::uint8_t sensor_id, std::uint32_t timestamp_us,
                                       std::span<std::uint8_t> out) noexcept;
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

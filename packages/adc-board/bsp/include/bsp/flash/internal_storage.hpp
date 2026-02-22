@@ -5,7 +5,7 @@
 
 #include "bsp/flash/storage_requirements.hpp"
 
-namespace bsp::flash {
+namespace midismith::adc_board::bsp::flash {
 
 class InternalStorage : public StorageRequirements {
  public:
@@ -18,4 +18,4 @@ class InternalStorage : public StorageRequirements {
                                     std::size_t length_bytes) noexcept override;
 };
 
-}  // namespace bsp::flash
+}  // namespace midismith::adc_board::bsp::flash

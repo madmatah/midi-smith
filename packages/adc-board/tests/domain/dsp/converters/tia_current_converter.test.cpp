@@ -14,7 +14,8 @@ constexpr std::int32_t kTestAdcBits = 16;
 constexpr std::int32_t kTestRfOhms = 1800;
 
 using TestConverter =
-    domain::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts, kTestAdcBits, kTestRfOhms>;
+    midismith::adc_board::domain::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts,
+                                                                       kTestAdcBits, kTestRfOhms>;
 
 constexpr float kAdcMaxCounts = 65535.0f;
 constexpr float kExpectedSaturationCurrentMa =
@@ -116,7 +117,8 @@ TEST_CASE("The TiaCurrentConverter class") {
     SECTION("When using 12-bit ADC resolution") {
       SECTION("Should compute correct max value and same saturation current formula") {
         using Converter12 =
-            domain::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts, 12, kTestRfOhms>;
+            midismith::adc_board::domain::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts,
+                                                                               12, kTestRfOhms>;
         Converter12 converter_12;
         TestContext ctx{};
         float const adc_max_12 = static_cast<float>((1ULL << 12) - 1);
@@ -134,7 +136,8 @@ TEST_CASE("The TiaCurrentConverter class") {
 
     SECTION("When using different Vref and Rf") {
       SECTION("Should scale output according to Vref_mV / Rf_Ohms") {
-        using ConverterAlt = domain::dsp::converters::TiaCurrentConverter<1024, 16, 1000>;
+        using ConverterAlt =
+            midismith::adc_board::domain::dsp::converters::TiaCurrentConverter<1024, 16, 1000>;
         ConverterAlt converter_alt;
         TestContext ctx{};
         float const adc_max = static_cast<float>((1ULL << 16) - 1);

@@ -19,7 +19,7 @@ float GetControlValue(const MockContext& ctx) {
 
 TEST_CASE("The InputGate class") {
   using Catch::Matchers::WithinAbs;
-  using domain::dsp::logic::InputGate;
+  using midismith::adc_board::domain::dsp::logic::InputGate;
 
   SECTION("The Transform() method") {
     SECTION("When control value is below threshold") {

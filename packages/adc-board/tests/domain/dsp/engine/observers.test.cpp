@@ -90,19 +90,22 @@ class ResetTrackingStage {
   static inline std::uint32_t reset_count = 0;
 };
 
-using domain::dsp::engine::Capture;
-using domain::dsp::engine::Decimated;
-using domain::dsp::engine::Tap;
-using domain::dsp::engine::Workflow;
+using midismith::adc_board::domain::dsp::engine::Capture;
+using midismith::adc_board::domain::dsp::engine::Decimated;
+using midismith::adc_board::domain::dsp::engine::Tap;
+using midismith::adc_board::domain::dsp::engine::Workflow;
 
 using PureWorkflow = Workflow<PlusTenStage, TimesTwoStage>;
-static_assert(domain::dsp::concepts::SignalTransformer<PureWorkflow, ObserverContext>);
+static_assert(
+    midismith::adc_board::domain::dsp::concepts::SignalTransformer<PureWorkflow, ObserverContext>);
 
 using CaptureWorkflow = Workflow<PlusTenStage, Capture<&ObserverContext::captured>, TimesTwoStage>;
-static_assert(domain::dsp::concepts::SignalTransformer<CaptureWorkflow, ObserverContext>);
+static_assert(midismith::adc_board::domain::dsp::concepts::SignalTransformer<CaptureWorkflow,
+                                                                             ObserverContext>);
 
 using TapWorkflow = Workflow<PlusTenStage, Tap<Workflow<TimesTwoStage>>, TimesTwoStage>;
-static_assert(domain::dsp::concepts::SignalTransformer<TapWorkflow, ObserverContext>);
+static_assert(
+    midismith::adc_board::domain::dsp::concepts::SignalTransformer<TapWorkflow, ObserverContext>);
 
 }  // namespace
 

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 using SpiDoneCallback = void (*)(void *ctx) noexcept;
 
@@ -22,4 +22,4 @@ class Spi {
   void *_done_ctx{nullptr};
 };
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

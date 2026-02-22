@@ -20,7 +20,7 @@ struct MockContext {
 
 TEST_CASE("The SensorMemberReader class") {
   using Catch::Matchers::WithinAbs;
-  using domain::sensors::SensorMemberReader;
+  using midismith::adc_board::domain::sensors::SensorMemberReader;
 
   SECTION("The operator()") {
     SECTION("When reading value_a") {

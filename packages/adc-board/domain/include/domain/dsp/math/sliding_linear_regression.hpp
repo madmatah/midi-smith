@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace domain::dsp::math {
+namespace midismith::adc_board::domain::dsp::math {
 
 template <std::size_t kWindowSize = 5u>
 class SlidingLinearRegression {
@@ -134,4 +134,4 @@ class SlidingLinearRegression {
   std::uint64_t latest_unwrapped_timestamp_ticks_ = 0u;
 };
 
-}  // namespace domain::dsp::math
+}  // namespace midismith::adc_board::domain::dsp::math
