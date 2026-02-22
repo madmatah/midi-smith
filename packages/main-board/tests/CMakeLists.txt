@@ -23,7 +23,6 @@ target_include_directories(master_fakeit INTERFACE
 )
 
 add_executable(main_unit_tests
-    test_sanity.cpp
     domain/music/piano/midi_piano.test.cpp
     app/midi/async_task_midi_controller.test.cpp
 )
