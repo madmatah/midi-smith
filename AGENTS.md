@@ -34,16 +34,19 @@ Two patterns exist depending on the package type:
 | **3 — Layer** | `app`, `domain`, `bsp`, `os` | Architectural role of the code | `midismith::adc_board::domain::` |
 | **4 — Sub-domain** | `shell`, `config`, `storage`, … | Functional domain | `midismith::adc_board::app::shell::` |
 
-**Library packages** (`libs/`): `midismith::<scope>::<layer>::<sub-domain>`.
+**Library packages** (`libs/`): deux cas selon la nature de la lib.
 
-Multi-layer libraries (e.g. `common`) retain the layer level. Future single-domain libraries (e.g. `dsp`, `midi`) omit it: `midismith::<scope>::<sub-domain>`.
+**Domain libs** (cas standard — `dsp`, `midi`, `piano`…) : `midismith::<scope>::<sub-domain>` — pas de niveau layer (la lib entière est domaine).
 
 | Level | Value | Purpose | Example |
 |-------|-------|---------|---------|
 | **1 — Root** | `midismith` | Product root, always present | `midismith::` |
-| **2 — Scope** | `common` (+ future libs) | Shared library | `midismith::common::` |
-| **3 — Layer** | `app`, `domain`, `bsp`, `os` | Present only when the library has multiple layers | `midismith::common::os::` |
-| **4 — Sub-domain** | `shell`, `config`, `storage`, … | Functional domain | `midismith::common::domain::storage::` |
+| **2 — Scope** | lib name | Identifies the library | `midismith::dsp::` |
+| **3 — Sub-domain** | functional area (optional) | `filters`, `math`, `engine`… | `midismith::dsp::filters::` |
+
+**Infrastructure libs** (`os`, `bsp`) : `midismith::<scope>::` — scope = nom de la lib, pas de sub-domain supplémentaire attendu.
+
+> **Note** : `common` est un package transitoire multi-couches (os + bsp + domain mélangés). Il conserve temporairement le pattern `midismith::common::<layer>::`. Il sera décomposé en libs sémantiques au fur et à mesure.
 
 Namespaces mirror the directory structure. Scope names use underscores (`adc-board` → `adc_board`).
 
@@ -51,6 +54,9 @@ Namespaces mirror the directory structure. Scope names use underscores (`adc-boa
 |-----------|-----------|
 | `libs/common/include/domain/storage/` | `midismith::common::domain::storage` |
 | `libs/common/include/os/` | `midismith::common::os` |
+| `libs/dsp/include/dsp/filters/` | `midismith::dsp::filters` |
+| `libs/midi/include/midi/` | `midismith::midi` |
+| `libs/os/include/os/` | `midismith::os` |
 | `firmwares/adc-board/app/include/app/shell/` | `midismith::adc_board::app::shell` |
 | `firmwares/adc-board/domain/include/domain/` | `midismith::adc_board::domain` |
 | `firmwares/main-board/bsp/include/bsp/can/` | `midismith::main_board::bsp::can` |
@@ -97,7 +103,10 @@ monorepo-root/
 │   └── main-board/               # Firmware — STM32H7B0
 │
 ├── libs/                         # Shared library packages (host-portable, domain code)
-│   └── common/                   # Shared library (OS abstractions, BSP interfaces, domain types)
+│   ├── common/                   # Transitional catch-all — will be decomposed into focused libs
+│   ├── os/                       # (future) FreeRTOS abstraction — infra, not standalone
+│   ├── bsp/                      # (future) Hardware abstraction — infra, not standalone
+│   └── <domain-lib>/             # (future) e.g. dsp, midi, piano — pure domain, standalone
 │
 ├── tools/                        # Debug and development host tools
 ├── third_party/                  # Vendored external code (unmodified)
@@ -114,7 +123,9 @@ monorepo-root/
 
 **— Firmware packages live in `firmwares/`**: cross-compiled for STM32 targets; managed by CubeMX; depend on HAL and FreeRTOS. See §F.0 for structure.
 
-**— Shared library packages live in `libs/`**: host-portable; no CubeMX dependency; cannot be built standalone (they are consumed by firmware packages). See §L.0 for structure.
+**— Domain library packages live in `libs/`**: pure C++, no CubeMX dependency, buildable and testable standalone on a host machine. Each lib has a single well-defined domain concern. See §L.0 for structure.
+
+**— Infrastructure library packages** (`libs/os`, `libs/bsp`): depend on CubeMX-generated headers (FreeRTOS, HAL); cannot be built standalone; always consumed by a firmware package that provides the generated headers.
 
 **— No first-party source at the repository root**: the root contains only orchestration (`CMakeLists.txt`), shared tooling, and `third_party/`.
 
@@ -210,7 +221,8 @@ CMake is the source of truth for the build; no critical setting depends on the I
 **Two-level structure**:
 - Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`) covering all project-owned code. No application logic.
 - `firmwares/<firmware>/CMakeLists.txt`: self-contained, knows nothing about the monorepo root.
-- `libs/common/CMakeLists.txt`: defines a linkable CMake library target.
+- `libs/<domain-lib>/CMakeLists.txt`: standalone CMake target with `project()` and a `Host-Debug` preset for independent build and test.
+- `libs/<infra-lib>/CMakeLists.txt`: no `project()`, no standalone preset — consumed via `add_subdirectory()` from a firmware; the firmware provides CubeMX-generated include paths.
 
 **Presets** (`CMakePresets.json` at root):
 - `adc-Debug`, `adc-Release` — cross-compile adc-board
@@ -433,24 +445,46 @@ All paths relative to `firmwares/<firmware>/`:
 
 ## L.0 Package Structure
 
+**Domain lib** (cas standard — `dsp`, `midi`, `piano`…) :
+
 ```
-<library-package>/
+<lib-name>/
 │
-├── include/                      # Single public include root (consumable by other packages)
-│   ├── domain/                   # Shared domain types and logic
-│   ├── bsp/                      # Shared BSP interfaces (*Requirements)
-│   └── os/                       # Shared OS abstractions
+├── include/<lib-name>/           # Public headers — namespace midismith::<lib-name>::
+│   └── <sub-domain>/             # Optional sub-domain grouping (e.g. filters/, math/)
 ├── src/                          # Implementation files (.cpp)
-└── tests/                        # Host-only unit tests
+├── tests/                        # Host-only unit tests
+└── CMakeLists.txt                # Standalone target with project() and Host-Debug preset
 ```
+
+**Infrastructure lib** (`os`, `bsp`) :
+
+```
+<lib-name>/
+│
+├── include/<lib-name>/           # Public headers — namespace midismith::<lib-name>::
+├── src/                          # Implementation files (.cpp)
+└── CMakeLists.txt                # No project(), no standalone preset.
+                                  # Consumed via add_subdirectory() from a firmware.
+                                  # No tests/ — FreeRTOS/HAL not available outside firmware context.
+```
+
+> **Note sur `common`** : sa structure actuelle (`include/domain/`, `include/os/`, `include/bsp/`) est héritée de son rôle de catch-all transitoire. Elle ne suit pas le modèle cible ci-dessus.
 
 ---
 
 ## L.1 Package Contract
 
-- **Single `include/` root**: all headers consumable by other packages live under `include/`. No per-layer nesting.
-- **No HAL/FreeRTOS/BSP dependency**: no headers from `Core/`, `Drivers/`, `Middlewares/`, or firmware-specific BSP. May use `*Requirements` interfaces from `libs/common/`.
-- **Host-portable**: must compile with the system C++ compiler; no embedded toolchain or architecture assumptions.
+**Domain libs** :
+- **`include/<lib-name>/` root**: all public headers under `include/<lib-name>/`. Consumed via `#include "<lib-name>/..."`.
+- **No HAL/FreeRTOS/BSP dependency**: no headers from `Core/`, `Drivers/`, `Middlewares/`, or any infra lib implementation. May use `*Requirements` interfaces.
+- **Standalone buildable**: compiles and runs tests with a host C++ compiler; no cross-compilation required.
+- **Single domain concern**: one clearly scoped responsibility per lib. No mixing of unrelated domains in the same package.
+
+**Infrastructure libs** (`libs/os`, `libs/bsp`) :
+- Same `include/<lib-name>/` root convention.
+- **Depend on CubeMX-generated headers**: FreeRTOS or STM32 HAL headers must be provided by the consuming firmware's include paths.
+- **Not standalone**: cannot be configured or built independently; must be consumed by a firmware `CMakeLists.txt`.
 
 ---
 
