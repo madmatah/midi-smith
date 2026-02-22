@@ -12,9 +12,9 @@
         "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
       ],
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/adc-Debug/packages/adc-board/adc-board.elf",
+      "executable": "${workspaceFolder}/build/adc-Debug/firmwares/adc-board/adc-board.elf",
       "device": "STM32H743ZITx",
-      "svdFile": "${workspaceFolder}/packages/adc-board/hardware/svd/STM32H743.svd",
+      "svdFile": "${workspaceFolder}/firmwares/adc-board/hardware/svd/STM32H743.svd",
       "runToEntryPoint": "main",
       "rttConfig": {
         "enabled": true,
@@ -50,9 +50,9 @@
         "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
       ],
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/main-Debug/packages/main-board/main-board.elf",
+      "executable": "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf",
       "device": "STM32H7B0VBTx",
-      "svdFile": "${workspaceFolder}/packages/main-board/Hardware/svd/STM32H7B0.svd",
+      "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H7B0.svd",
       "runToEntryPoint": "main",
       "rttConfig": {
         "enabled": true,

@@ -1,9 +1,9 @@
 # STM32CubeMX generated files — all firmware packages
-packages/*/Core/**          linguist-vendored
-packages/*/Drivers/**       linguist-vendored
-packages/*/Middlewares/**   linguist-vendored
-packages/*/Third_Party/**   linguist-vendored
-packages/*/USB_DEVICE/**    linguist-vendored
-packages/*/*.ioc            linguist-vendored
-packages/*/*_FLASH.ld       linguist-vendored
-packages/*/startup_*.s      linguist-vendored
+firmwares/*/Core/**          linguist-vendored
+firmwares/*/Drivers/**       linguist-vendored
+firmwares/*/Middlewares/**   linguist-vendored
+firmwares/*/Third_Party/**   linguist-vendored
+firmwares/*/USB_DEVICE/**    linguist-vendored
+firmwares/*/*.ioc            linguist-vendored
+firmwares/*/*_FLASH.ld       linguist-vendored
+firmwares/*/startup_*.s      linguist-vendored

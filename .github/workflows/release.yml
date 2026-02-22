@@ -38,20 +38,20 @@ jobs:
 
       - name: Generate .bin and .hex
         run: |
-          arm-none-eabi-objcopy -O binary  build/adc-Release/adc-board.elf  build/adc-Release/adc-board.bin
-          arm-none-eabi-objcopy -O ihex    build/adc-Release/adc-board.elf  build/adc-Release/adc-board.hex
-          arm-none-eabi-objcopy -O binary  build/main-Release/main-board.elf build/main-Release/main-board.bin
-          arm-none-eabi-objcopy -O ihex    build/main-Release/main-board.elf build/main-Release/main-board.hex
+          arm-none-eabi-objcopy -O binary  build/adc-Release/firmwares/adc-board/adc-board.elf  build/adc-Release/firmwares/adc-board/adc-board.bin
+          arm-none-eabi-objcopy -O ihex    build/adc-Release/firmwares/adc-board/adc-board.elf  build/adc-Release/firmwares/adc-board/adc-board.hex
+          arm-none-eabi-objcopy -O binary  build/main-Release/firmwares/main-board/main-board.elf build/main-Release/firmwares/main-board/main-board.bin
+          arm-none-eabi-objcopy -O ihex    build/main-Release/firmwares/main-board/main-board.elf build/main-Release/firmwares/main-board/main-board.hex
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/adc-Release/adc-board.elf
-            build/adc-Release/adc-board.bin
-            build/adc-Release/adc-board.hex
-            build/adc-Release/adc-board.map
-            build/main-Release/main-board.elf
-            build/main-Release/main-board.bin
-            build/main-Release/main-board.hex
-            build/main-Release/main-board.map
+            build/adc-Release/firmwares/adc-board/adc-board.elf
+            build/adc-Release/firmwares/adc-board/adc-board.bin
+            build/adc-Release/firmwares/adc-board/adc-board.hex
+            build/adc-Release/firmwares/adc-board/adc-board.map
+            build/main-Release/firmwares/main-board/main-board.elf
+            build/main-Release/firmwares/main-board/main-board.bin
+            build/main-Release/firmwares/main-board/main-board.hex
+            build/main-Release/firmwares/main-board/main-board.map

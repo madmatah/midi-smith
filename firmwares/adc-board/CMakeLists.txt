@@ -31,8 +31,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-set(ADC_COMMON_INCLUDE_DIRS "${ADC_PROJECT_ROOT}/../common/include")
-set(ADC_COMMON_SRC_DIRS "${ADC_PROJECT_ROOT}/../common/src")
+set(ADC_COMMON_INCLUDE_DIRS "${ADC_PROJECT_ROOT}/../../libs/common/include")
+set(ADC_COMMON_SRC_DIRS "${ADC_PROJECT_ROOT}/../../libs/common/src")
 
 set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
 
