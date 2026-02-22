@@ -79,11 +79,11 @@ jobs:
           - name: adc-board
             preset: adc-Release
             elf: adc-board.elf
-            package_dir: packages/adc-board
+            package_dir: firmwares/adc-board
           - name: main-board
             preset: main-Release
             elf: main-board.elf
-            package_dir: packages/main-board
+            package_dir: firmwares/main-board
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,11 +121,11 @@ jobs:
           - name: adc-board
             preset: adc-Release
             elf: adc-board.elf
-            package_dir: packages/adc-board
+            package_dir: firmwares/adc-board
           - name: main-board
             preset: main-Release
             elf: main-board.elf
-            package_dir: packages/main-board
+            package_dir: firmwares/main-board
     steps:
       - name: Install tools + ARM GCC
         run: |

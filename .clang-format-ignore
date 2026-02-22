@@ -1,101 +1,101 @@
 # ADC board
 
-packages/adc-board/Drivers/*
-packages/adc-board/Drivers/*/*
-packages/adc-board/Drivers/*/*/*
-packages/adc-board/Drivers/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*/*/*/*/*
-packages/adc-board/Drivers/*/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Drivers/*
+firmwares/adc-board/Drivers/*/*
+firmwares/adc-board/Drivers/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Drivers/*/*/*/*/*/*/*/*/*/*
 
-packages/adc-board/Core/*
-packages/adc-board/Core/*/*
-packages/adc-board/Core/*/*/*
-packages/adc-board/Core/*/*/*/*
-packages/adc-board/Core/*/*/*/*/*
-packages/adc-board/Core/*/*/*/*/*/*
+firmwares/adc-board/Core/*
+firmwares/adc-board/Core/*/*
+firmwares/adc-board/Core/*/*/*
+firmwares/adc-board/Core/*/*/*/*
+firmwares/adc-board/Core/*/*/*/*/*
+firmwares/adc-board/Core/*/*/*/*/*/*
 
-packages/adc-board/Middlewares/*
-packages/adc-board/Middlewares/*/*
-packages/adc-board/Middlewares/*/*/*
-packages/adc-board/Middlewares/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*/*/*/*/*
-packages/adc-board/Middlewares/*/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Middlewares/*
+firmwares/adc-board/Middlewares/*/*
+firmwares/adc-board/Middlewares/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Middlewares/*/*/*/*/*/*/*/*/*/*
 
-packages/adc-board/Third_Party/*
-packages/adc-board/Third_Party/*/*
-packages/adc-board/Third_Party/*/*/*
-packages/adc-board/Third_Party/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*/*/*/*/*
-packages/adc-board/Third_Party/*/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Third_Party/*
+firmwares/adc-board/Third_Party/*/*
+firmwares/adc-board/Third_Party/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*/*/*/*/*
+firmwares/adc-board/Third_Party/*/*/*/*/*/*/*/*/*/*
 
 
-packages/adc-board/USB_DEVICE/*
-packages/adc-board/USB_DEVICE/*/*
-packages/adc-board/USB_DEVICE/*/*/*
-packages/adc-board/USB_DEVICE/*/*/*/*
-packages/adc-board/USB_DEVICE/*/*/*/*/*
+firmwares/adc-board/USB_DEVICE/*
+firmwares/adc-board/USB_DEVICE/*/*
+firmwares/adc-board/USB_DEVICE/*/*/*
+firmwares/adc-board/USB_DEVICE/*/*/*/*
+firmwares/adc-board/USB_DEVICE/*/*/*/*/*
 
 
 # Master board
 
-packages/main-board/Drivers/*
-packages/main-board/Drivers/*/*
-packages/main-board/Drivers/*/*/*
-packages/main-board/Drivers/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*/*/*/*/*
-packages/main-board/Drivers/*/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Drivers/*
+firmwares/main-board/Drivers/*/*
+firmwares/main-board/Drivers/*/*/*
+firmwares/main-board/Drivers/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Drivers/*/*/*/*/*/*/*/*/*/*
 
-packages/main-board/Core/*
-packages/main-board/Core/*/*
-packages/main-board/Core/*/*/*
-packages/main-board/Core/*/*/*/*
-packages/main-board/Core/*/*/*/*/*
-packages/main-board/Core/*/*/*/*/*/*
+firmwares/main-board/Core/*
+firmwares/main-board/Core/*/*
+firmwares/main-board/Core/*/*/*
+firmwares/main-board/Core/*/*/*/*
+firmwares/main-board/Core/*/*/*/*/*
+firmwares/main-board/Core/*/*/*/*/*/*
 
-packages/main-board/Middlewares/*
-packages/main-board/Middlewares/*/*
-packages/main-board/Middlewares/*/*/*
-packages/main-board/Middlewares/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*/*/*/*/*
-packages/main-board/Middlewares/*/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Middlewares/*
+firmwares/main-board/Middlewares/*/*
+firmwares/main-board/Middlewares/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Middlewares/*/*/*/*/*/*/*/*/*/*
 
-packages/main-board/Third_Party/*
-packages/main-board/Third_Party/*/*
-packages/main-board/Third_Party/*/*/*
-packages/main-board/Third_Party/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*/*/*/*/*
-packages/main-board/Third_Party/*/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Third_Party/*
+firmwares/main-board/Third_Party/*/*
+firmwares/main-board/Third_Party/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*/*/*/*/*
+firmwares/main-board/Third_Party/*/*/*/*/*/*/*/*/*/*
 
 
-packages/main-board/USB_DEVICE/*
-packages/main-board/USB_DEVICE/*/*
-packages/main-board/USB_DEVICE/*/*/*
-packages/main-board/USB_DEVICE/*/*/*/*
-packages/main-board/USB_DEVICE/*/*/*/*/*
+firmwares/main-board/USB_DEVICE/*
+firmwares/main-board/USB_DEVICE/*/*
+firmwares/main-board/USB_DEVICE/*/*/*
+firmwares/main-board/USB_DEVICE/*/*/*/*
+firmwares/main-board/USB_DEVICE/*/*/*/*/*
 
 # Build
 

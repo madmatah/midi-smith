@@ -11,13 +11,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 if(HOST_TESTS)
     enable_testing()
-    add_subdirectory(packages/adc-board)
-    add_subdirectory(packages/main-board)
+    add_subdirectory(firmwares/adc-board)
+    add_subdirectory(firmwares/main-board)
 else()
     if(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "adc")
-        add_subdirectory(packages/adc-board)
+        add_subdirectory(firmwares/adc-board)
     elseif(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "master")
-        add_subdirectory(packages/main-board)
+        add_subdirectory(firmwares/main-board)
     else()
         message(FATAL_ERROR
             "MIDISMITH_ACTIVE_FIRMWARE must be one of: adc, master. Got: ${MIDISMITH_ACTIVE_FIRMWARE}")
@@ -30,13 +30,13 @@ endif()
 # clang-format respects .clang-format-ignore for IDE/local tooling; in CI, the explicit file list
 # produced by this GLOB is the authoritative scope (same list for lint and format).
 file(GLOB_RECURSE MONOREPO_SOURCE_FILES CONFIGURE_DEPENDS
-    "packages/adc-board/app/*.*"    "packages/adc-board/bsp/*.*"
-    "packages/adc-board/os/*.*"     "packages/adc-board/domain/*.*"
-    "packages/adc-board/tests/*.*"
-    "packages/main-board/app/*.*"   "packages/main-board/bsp/*.*"
-    "packages/main-board/os/*.*"    "packages/main-board/domain/*.*"
-    "packages/main-board/tests/*.*"
-    "packages/common/include/*.*"   "packages/common/src/*.*"
+    "firmwares/adc-board/app/*.*"    "firmwares/adc-board/bsp/*.*"
+    "firmwares/adc-board/os/*.*"     "firmwares/adc-board/domain/*.*"
+    "firmwares/adc-board/tests/*.*"
+    "firmwares/main-board/app/*.*"   "firmwares/main-board/bsp/*.*"
+    "firmwares/main-board/os/*.*"    "firmwares/main-board/domain/*.*"
+    "firmwares/main-board/tests/*.*"
+    "libs/common/include/*.*"        "libs/common/src/*.*"
 )
 set(FILES_TO_CHECK "")
 foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})

@@ -2,7 +2,7 @@
 ## Coding Style
 
 - **Reference**: Google C++ Style Guide, with project-level constraints documented below.
-- **Scope**: All `packages/` code. Excludes `{Core,Drivers,Middlewares,USB_DEVICE}/` and `third_party/`.
+- **Scope**: All `firmwares/` and `libs/` code. Excludes `{Core,Drivers,Middlewares,USB_DEVICE}/` and `third_party/`.
 - **Language standard**: C++20.
 - **Formatting**: clang-format, Google-based, `ColumnLimit: 100`. Excludes generated/vendor code via `.clang-format-ignore`.
 
@@ -23,25 +23,37 @@
 
 ### Namespace Hierarchy
 
-Pattern: `midismith::<scope>::<layer>::<sub-domain>` (sub-domain may be omitted).
+Two patterns exist depending on the package type:
+
+**Firmware packages** (`firmwares/`): `midismith::<scope>::<layer>::<sub-domain>` (sub-domain may be omitted).
 
 | Level | Value | Purpose | Example |
 |-------|-------|---------|---------|
 | **1 — Root** | `midismith` | Product root, always present | `midismith::` |
-| **2 — Scope** | `common` | Code shared across firmware packages | `midismith::common::` |
-| | `adc_board` / `main_board` | Code specific to one firmware | `midismith::adc_board::` |
+| **2 — Scope** | `adc_board` / `main_board` | Code specific to one firmware | `midismith::adc_board::` |
 | **3 — Layer** | `app`, `domain`, `bsp`, `os` | Architectural role of the code | `midismith::adc_board::domain::` |
 | **4 — Sub-domain** | `shell`, `config`, `storage`, … | Functional domain | `midismith::adc_board::app::shell::` |
+
+**Library packages** (`libs/`): `midismith::<scope>::<layer>::<sub-domain>`.
+
+Multi-layer libraries (e.g. `common`) retain the layer level. Future single-domain libraries (e.g. `dsp`, `midi`) omit it: `midismith::<scope>::<sub-domain>`.
+
+| Level | Value | Purpose | Example |
+|-------|-------|---------|---------|
+| **1 — Root** | `midismith` | Product root, always present | `midismith::` |
+| **2 — Scope** | `common` (+ future libs) | Shared library | `midismith::common::` |
+| **3 — Layer** | `app`, `domain`, `bsp`, `os` | Present only when the library has multiple layers | `midismith::common::os::` |
+| **4 — Sub-domain** | `shell`, `config`, `storage`, … | Functional domain | `midismith::common::domain::storage::` |
 
 Namespaces mirror the directory structure. Scope names use underscores (`adc-board` → `adc_board`).
 
 | Directory | Namespace |
 |-----------|-----------|
-| `packages/common/include/domain/storage/` | `midismith::common::domain::storage` |
-| `packages/common/include/os/` | `midismith::common::os` |
-| `packages/adc-board/app/include/app/shell/` | `midismith::adc_board::app::shell` |
-| `packages/adc-board/domain/include/domain/` | `midismith::adc_board::domain` |
-| `packages/main-board/bsp/include/bsp/can/` | `midismith::main_board::bsp::can` |
+| `libs/common/include/domain/storage/` | `midismith::common::domain::storage` |
+| `libs/common/include/os/` | `midismith::common::os` |
+| `firmwares/adc-board/app/include/app/shell/` | `midismith::adc_board::app::shell` |
+| `firmwares/adc-board/domain/include/domain/` | `midismith::adc_board::domain` |
+| `firmwares/main-board/bsp/include/bsp/can/` | `midismith::main_board::bsp::can` |
 
 - `midismith::` is never omitted, even in internal files.
 - `using namespace midismith;` in header files is forbidden.
@@ -80,10 +92,12 @@ Namespaces mirror the directory structure. Scope names use underscores (`adc-boa
 ```
 monorepo-root/
 │
-├── packages/                     # All first-party packages (firmwares and libraries)
+├── firmwares/                    # Firmware packages (STM32, cross-compiled, CubeMX-managed)
 │   ├── adc-board/                # Firmware — STM32H743
-│   ├── main-board/               # Firmware — STM32H7B0
-│   └── common/                   # Shared library
+│   └── main-board/               # Firmware — STM32H7B0
+│
+├── libs/                         # Shared library packages (host-portable, domain code)
+│   └── common/                   # Shared library (OS abstractions, BSP interfaces, domain types)
 │
 ├── tools/                        # Debug and development host tools
 ├── third_party/                  # Vendored external code (unmodified)
@@ -98,9 +112,11 @@ monorepo-root/
 
 ### 1.2 Organization Rules
 
-**— Each package is independent and self-describing**: all packages in `packages/` have equal status. The nature is determined by internal structure, not parent directory. See §F.0 and §L.0 for details.
+**— Firmware packages live in `firmwares/`**: cross-compiled for STM32 targets; managed by CubeMX; depend on HAL and FreeRTOS. See §F.0 for structure.
 
-**— All first-party code lives in `packages/`**: no source at the repository root. The root contains only orchestration (`CMakeLists.txt`), shared tooling, and `third_party/`.
+**— Shared library packages live in `libs/`**: host-portable; no CubeMX dependency; cannot be built standalone (they are consumed by firmware packages). See §L.0 for structure.
+
+**— No first-party source at the repository root**: the root contains only orchestration (`CMakeLists.txt`), shared tooling, and `third_party/`.
 
 **— Vendored external code lives in `third_party/`**: never modified, not subject to project style rules. Updates by replacing the vendored subtree.
 
@@ -193,8 +209,8 @@ CMake is the source of truth for the build; no critical setting depends on the I
 
 **Two-level structure**:
 - Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`) covering all project-owned code. No application logic.
-- `packages/<firmware>/CMakeLists.txt`: self-contained, knows nothing about the monorepo root.
-- `packages/common/CMakeLists.txt`: defines a linkable CMake library target.
+- `firmwares/<firmware>/CMakeLists.txt`: self-contained, knows nothing about the monorepo root.
+- `libs/common/CMakeLists.txt`: defines a linkable CMake library target.
 
 **Presets** (`CMakePresets.json` at root):
 - `adc-Debug`, `adc-Release` — cross-compile adc-board
@@ -227,13 +243,13 @@ CMake is the source of truth for the build; no critical setting depends on the I
 
 ### 7.1 Test Organization
 
-Each package owns its tests at `packages/<name>/tests/`. Tests are built as host executables and never linked into firmware.
+Each package owns its tests at `firmwares/<name>/tests/` or `libs/<name>/tests/`. Tests are built as host executables and never linked into firmware.
 
 ---
 
 # Firmware Packages
 
-*Rules applying exclusively to `packages/adc-board` and `packages/main-board`.*
+*Rules applying exclusively to `firmwares/adc-board` and `firmwares/main-board`.*
 
 ---
 
@@ -306,9 +322,9 @@ Each package owns its tests at `packages/<name>/tests/`. Tests are built as host
 ## F.4 Composition Root & Subsystems
 
 All object instantiation and wiring happens in the Composition Root, scoped to:
-- `packages/<firmware>/app/src/application.cpp`
-- `packages/<firmware>/app/src/composition/*.cpp`
-- `packages/<firmware>/app/include/app/composition/*.hpp`
+- `firmwares/<firmware>/app/src/application.cpp`
+- `firmwares/<firmware>/app/src/composition/*.cpp`
+- `firmwares/<firmware>/app/include/app/composition/*.hpp`
 
 Only Composition Root files may include concrete BSP classes.
 
@@ -337,7 +353,7 @@ void Application::boot() {
 
 ## F.5 Configuration Management
 
-All paths relative to `packages/<firmware>/`:
+All paths relative to `firmwares/<firmware>/`:
 - `app/include/app/config/config.hpp`: global config (defaults, task stack/priorities, system-wide constants).
 - `app/include/app/config/*.hpp`: subsystem-specific config (data-only, human-edited).
 - `app/include/app/config/*_validation.hpp`: compile-time validation companion headers.
@@ -411,7 +427,7 @@ All paths relative to `packages/<firmware>/`:
 
 # Library Packages
 
-*Rules applying to `packages/common` and future library packages.*
+*Rules applying to `libs/common` and future library packages in `libs/`.*
 
 ---
 
@@ -433,7 +449,7 @@ All paths relative to `packages/<firmware>/`:
 ## L.1 Package Contract
 
 - **Single `include/` root**: all headers consumable by other packages live under `include/`. No per-layer nesting.
-- **No HAL/FreeRTOS/BSP dependency**: no headers from `Core/`, `Drivers/`, `Middlewares/`, or firmware-specific BSP. May use `*Requirements` interfaces from `packages/common/`.
+- **No HAL/FreeRTOS/BSP dependency**: no headers from `Core/`, `Drivers/`, `Middlewares/`, or firmware-specific BSP. May use `*Requirements` interfaces from `libs/common/`.
 - **Host-portable**: must compile with the system C++ compiler; no embedded toolchain or architecture assumptions.
 
 ---

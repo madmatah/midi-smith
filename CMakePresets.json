@@ -13,7 +13,7 @@
     {
       "name": "adc-Debug",
       "inherits": "base",
-      "toolchainFile": "${sourceDir}/packages/adc-board/cmake/gcc-arm-none-eabi.cmake",
+      "toolchainFile": "${sourceDir}/firmwares/adc-board/cmake/gcc-arm-none-eabi.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "MIDISMITH_ACTIVE_FIRMWARE": "adc",
@@ -23,7 +23,7 @@
     {
       "name": "adc-Release",
       "inherits": "base",
-      "toolchainFile": "${sourceDir}/packages/adc-board/cmake/gcc-arm-none-eabi.cmake",
+      "toolchainFile": "${sourceDir}/firmwares/adc-board/cmake/gcc-arm-none-eabi.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "MIDISMITH_ACTIVE_FIRMWARE": "adc",
@@ -33,7 +33,7 @@
     {
       "name": "main-Debug",
       "inherits": "base",
-      "toolchainFile": "${sourceDir}/packages/main-board/cmake/gcc-arm-none-eabi.cmake",
+      "toolchainFile": "${sourceDir}/firmwares/main-board/cmake/gcc-arm-none-eabi.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "MIDISMITH_ACTIVE_FIRMWARE": "master",
@@ -43,7 +43,7 @@
     {
       "name": "main-Release",
       "inherits": "base",
-      "toolchainFile": "${sourceDir}/packages/main-board/cmake/gcc-arm-none-eabi.cmake",
+      "toolchainFile": "${sourceDir}/firmwares/main-board/cmake/gcc-arm-none-eabi.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "MIDISMITH_ACTIVE_FIRMWARE": "master",
