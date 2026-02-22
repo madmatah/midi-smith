@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  CACHE_KEY_PREFIX: v2
+
 jobs:
   lint_and_format_check:
     name: Lint + format-check
@@ -54,9 +57,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/Host-Debug/_deps
-          key: ${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
           restore-keys: |
-            ${{ runner.os }}-cmake-deps-host-
+            ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-
 
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
