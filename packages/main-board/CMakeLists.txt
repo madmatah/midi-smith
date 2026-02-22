@@ -41,7 +41,6 @@ if(HOST_TESTS)
 
     add_library(main_domain STATIC)
     target_sources(main_domain PRIVATE
-        domain/src/math.cpp
         domain/src/music/piano/midi_piano.cpp
     )
     target_include_directories(main_domain PUBLIC
