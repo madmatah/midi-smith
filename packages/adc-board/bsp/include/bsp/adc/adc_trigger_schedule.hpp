@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace bsp::adc {
+namespace midismith::adc_board::bsp::adc {
 
 struct AdcTriggerScheduleConfig {
   std::uint32_t channel_rate_hz = 1000;
@@ -19,4 +19,4 @@ class AdcTriggerSchedule final {
   bool running_ = false;
 };
 
-}  // namespace bsp::adc
+}  // namespace midismith::adc_board::bsp::adc

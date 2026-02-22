@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace domain::hash {
+namespace midismith::adc_board::domain::hash {
 
 namespace detail {
 
@@ -41,4 +41,4 @@ constexpr uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) noexcep
   return crc ^ 0xFFFFFFFFu;
 }
 
-}  // namespace domain::hash
+}  // namespace midismith::adc_board::domain::hash

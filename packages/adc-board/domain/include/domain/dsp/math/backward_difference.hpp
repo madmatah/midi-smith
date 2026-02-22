@@ -3,7 +3,7 @@
 #include <concepts>
 #include <cstdint>
 
-namespace domain::dsp::math {
+namespace midismith::adc_board::domain::dsp::math {
 
 class BackwardDifference {
  public:
@@ -64,4 +64,4 @@ class BackwardDifference {
   bool has_last_sample_ = false;
 };
 
-}  // namespace domain::dsp::math
+}  // namespace midismith::adc_board::domain::dsp::math

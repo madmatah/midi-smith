@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 struct SensorRttTelemetryStatus {
   bool enabled{false};
@@ -22,4 +22,4 @@ class SensorRttTelemetryControlRequirements {
   virtual SensorRttTelemetryStatus GetStatus() const noexcept = 0;
 };
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

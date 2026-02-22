@@ -7,7 +7,7 @@
 
 #include "app/config/analog_acquisition.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 namespace {
 
 std::string_view Arg(int argc, char** argv, int index) noexcept {
@@ -23,11 +23,12 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: adc on|off|status\r\n");
 }
 
-void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
+void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+                 std::uint32_t value) noexcept {
   char buf[16]{};
   auto r = std::to_chars(buf, buf + sizeof(buf), value);
   if (r.ec != std::errc()) {
@@ -38,7 +39,8 @@ void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t valu
 
 }  // namespace
 
-void AdcCommand::Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept {
+void AdcCommand::Run(int argc, char** argv,
+                     midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   const std::string_view op = Arg(argc, argv, 1);
   if (op.empty()) {
     WriteUsage(out);
@@ -65,19 +67,20 @@ void AdcCommand::Run(int argc, char** argv, domain::io::WritableStreamRequiremen
 
   if (op == "status") {
     const auto state = control_.GetState();
-    if (state == app::analog::AcquisitionState::kEnabled) {
+    if (state == midismith::adc_board::app::analog::AcquisitionState::kEnabled) {
       out.Write("enabled");
     } else {
       out.Write("disabled");
     }
     out.Write(" channel_rate_hz=");
-    WriteUint32(out, ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
+    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
     out.Write(" seq_half=");
-    WriteUint32(out, ::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER);
+    WriteUint32(out,
+                ::midismith::adc_board::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER);
     out.Write(" adc_kernel_limit_hz=");
-    WriteUint32(out, ::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
+    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
     out.Write(" ticks_per_seq_est=");
-    WriteUint32(out, ::app::config::ANALOG_TICKS_PER_SEQUENCE_ESTIMATE);
+    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_TICKS_PER_SEQUENCE_ESTIMATE);
     out.Write("\r\n");
     return;
   }
@@ -85,4 +88,4 @@ void AdcCommand::Run(int argc, char** argv, domain::io::WritableStreamRequiremen
   WriteUsage(out);
 }
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

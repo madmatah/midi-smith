@@ -13,16 +13,18 @@
 
 namespace {
 
-using app::analog::SignalContext;
-using domain::dsp::math::SlidingLinearRegression;
-using domain::sensors::SensorState;
+using midismith::adc_board::app::analog::SignalContext;
+using midismith::adc_board::domain::dsp::math::SlidingLinearRegression;
+using midismith::adc_board::domain::sensors::SensorState;
 
 }  // namespace
 
 TEST_CASE("The SlidingLinearRegression class") {
   using Catch::Matchers::WithinAbs;
 
-  static_assert(domain::dsp::concepts::SignalTransformer<SlidingLinearRegression<>, SignalContext>);
+  static_assert(
+      midismith::adc_board::domain::dsp::concepts::SignalTransformer<SlidingLinearRegression<>,
+                                                                     SignalContext>);
 
   SECTION("Returns zero until there are enough samples") {
     SlidingLinearRegression<> estimator;

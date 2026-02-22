@@ -9,34 +9,38 @@
 #include "bsp/rtt_telemetry_sender.hpp"
 #include "os/queue.hpp"
 
-namespace app::composition {
+namespace midismith::adc_board::app::composition {
 
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
-    app::telemetry::SensorRttStreamCapture& capture) noexcept {
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept {
   alignas(4) BSP_AXI_SRAM static std::uint8_t
-      telemetry_buffer[app::config::RTT_TELEMETRY_SENSOR_BUFFER_SIZE];
-  static bsp::RttTelemetrySender telemetry(app::config::RTT_TELEMETRY_SENSOR_CHANNEL,
-                                           "SensorTelemetry", telemetry_buffer,
-                                           static_cast<unsigned>(sizeof(telemetry_buffer)));
+      telemetry_buffer[midismith::adc_board::app::config::RTT_TELEMETRY_SENSOR_BUFFER_SIZE];
+  static midismith::adc_board::bsp::RttTelemetrySender telemetry(
+      midismith::adc_board::app::config::RTT_TELEMETRY_SENSOR_CHANNEL, "SensorTelemetry",
+      telemetry_buffer, static_cast<unsigned>(sizeof(telemetry_buffer)));
 
-  static os::Queue<app::telemetry::SensorRttTelemetryCommand, 4> control_queue;
-  static app::telemetry::QueueSensorRttTelemetryControl control(control_queue, capture);
+  static midismith::common::os::Queue<
+      midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>
+      control_queue;
+  static midismith::adc_board::app::telemetry::QueueSensorRttTelemetryControl control(control_queue,
+                                                                                      capture);
 
-  alignas(app::Tasks::SensorRttTelemetryTask) static std::uint8_t
-      task_storage[sizeof(app::Tasks::SensorRttTelemetryTask)];
+  alignas(midismith::adc_board::app::tasks::SensorRttTelemetryTask) static std::uint8_t
+      task_storage[sizeof(midismith::adc_board::app::tasks::SensorRttTelemetryTask)];
   static bool task_constructed = false;
-  app::Tasks::SensorRttTelemetryTask* task_ptr = nullptr;
+  midismith::adc_board::app::tasks::SensorRttTelemetryTask* task_ptr = nullptr;
   if (!task_constructed) {
-    task_ptr = new (task_storage) app::Tasks::SensorRttTelemetryTask(
+    task_ptr = new (task_storage) midismith::adc_board::app::tasks::SensorRttTelemetryTask(
         control_queue, sensors.registry, adc_state.state, telemetry, capture);
     task_constructed = true;
   } else {
-    task_ptr = reinterpret_cast<app::Tasks::SensorRttTelemetryTask*>(task_storage);
+    task_ptr =
+        reinterpret_cast<midismith::adc_board::app::tasks::SensorRttTelemetryTask*>(task_storage);
   }
 
   (void) task_ptr->start();
   return SensorRttTelemetryControlContext{control};
 }
 
-}  // namespace app::composition
+}  // namespace midismith::adc_board::app::composition

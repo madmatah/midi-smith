@@ -4,7 +4,7 @@
 
 #include "domain/shell/command_requirements.hpp"
 
-namespace domain::shell::commands {
+namespace midismith::adc_board::domain::shell::commands {
 
 class VersionCommand : public CommandRequirements {
  public:
@@ -17,7 +17,8 @@ class VersionCommand : public CommandRequirements {
   std::string_view Help() const noexcept override {
     return "Show firmware version information";
   }
-  void Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv,
+           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
 
  private:
   std::string_view _full_version;
@@ -25,4 +26,4 @@ class VersionCommand : public CommandRequirements {
   std::string_view _commit_date;
 };
 
-}  // namespace domain::shell::commands
+}  // namespace midismith::adc_board::domain::shell::commands

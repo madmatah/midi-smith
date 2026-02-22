@@ -2,7 +2,7 @@
 
 #include "cmsis_os2.h"
 
-namespace os {
+namespace midismith::common::os {
 
 static osSemaphoreId_t s(void* sem) {
   return reinterpret_cast<osSemaphoreId_t>(sem);
@@ -33,4 +33,4 @@ bool BinarySemaphore::release() noexcept {
   return osSemaphoreRelease(s(_sem)) == osOK;
 }
 
-}  // namespace os
+}  // namespace midismith::common::os

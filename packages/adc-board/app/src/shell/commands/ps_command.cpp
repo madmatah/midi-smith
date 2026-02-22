@@ -9,14 +9,14 @@
 #include "bsp/memory_sections.hpp"
 #include "os/runtime_stats_requirements.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 namespace {
 
 constexpr std::uint32_t kDefaultWindowMs = 250u;
 constexpr std::uint32_t kMinWindowMs = 50u;
 constexpr std::uint32_t kMaxWindowMs = 2000u;
 constexpr std::size_t kMaxTaskRows = 48u;
-BSP_AXI_SRAM static os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
+BSP_AXI_SRAM static midismith::adc_board::os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
 
 std::string_view Arg(int argc, char** argv, int index) noexcept {
   if (argv == nullptr) {
@@ -31,7 +31,7 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: ps [window_ms]\r\n");
 }
 
@@ -50,7 +50,8 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   return true;
 }
 
-void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
+void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+                 std::uint32_t value) noexcept {
   char buf[16]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -59,7 +60,7 @@ void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t valu
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
-void WritePermilleAsPercent(domain::io::WritableStreamRequirements& out,
+void WritePermilleAsPercent(midismith::adc_board::domain::io::WritableStreamRequirements& out,
                             std::uint32_t permille) noexcept {
   WriteUint32(out, permille / 10u);
   out.Write('.');
@@ -68,7 +69,8 @@ void WritePermilleAsPercent(domain::io::WritableStreamRequirements& out,
 
 }  // namespace
 
-void PsCommand::Run(int argc, char** argv, domain::io::WritableStreamRequirements& out) noexcept {
+void PsCommand::Run(int argc, char** argv,
+                    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   if (argc > 2) {
     WriteUsage(out);
     return;
@@ -118,4 +120,4 @@ void PsCommand::Run(int argc, char** argv, domain::io::WritableStreamRequirement
   }
 }
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

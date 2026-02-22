@@ -6,7 +6,7 @@
 #include "domain/io/stream_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
-namespace bsp::serial {
+namespace midismith::adc_board::bsp::serial {
 
 class UartStreamBase {
  public:
@@ -31,11 +31,12 @@ using UartIdleCallback = void (*)(void* ctx) noexcept;
  * @note Usage Example:
  * @code
  * alignas(32) BSP_AXI_SRAM_NOCACHE
- * static bsp::serial::UartStream<256, 1024> console_stream(huart1);
+ * static midismith::adc_board::bsp::serial::UartStream<256, 1024> console_stream(huart1);
  * @endcode
  */
 template <std::size_t kRxBufferSize, std::size_t kTxFifoSize>
-class UartStream final : public domain::io::StreamRequirements, public UartStreamBase {
+class UartStream final : public midismith::adc_board::domain::io::StreamRequirements,
+                         public UartStreamBase {
  public:
   explicit UartStream(UART_HandleTypeDef& huart) noexcept : huart_(huart) {
     RegisterUartStream(*this);
@@ -58,9 +59,9 @@ class UartStream final : public domain::io::StreamRequirements, public UartStrea
     return true;
   }
 
-  domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
     if (huart_.hdmarx == nullptr) {
-      return domain::io::ReadResult::kError;
+      return midismith::adc_board::domain::io::ReadResult::kError;
     }
 
     const std::uint16_t remaining =
@@ -69,7 +70,7 @@ class UartStream final : public domain::io::StreamRequirements, public UartStrea
         static_cast<std::size_t>((kRxBufferSize - remaining) % kRxBufferSize);
 
     if (read_idx_ == write_idx) {
-      return domain::io::ReadResult::kNoData;
+      return midismith::adc_board::domain::io::ReadResult::kNoData;
     }
 
     byte = rx_buffer_[read_idx_];
@@ -78,7 +79,7 @@ class UartStream final : public domain::io::StreamRequirements, public UartStrea
       read_idx_ = 0;
     }
 
-    return domain::io::ReadResult::kOk;
+    return midismith::adc_board::domain::io::ReadResult::kOk;
   }
 
   void Write(char c) noexcept override {
@@ -198,4 +199,4 @@ class UartStream final : public domain::io::StreamRequirements, public UartStrea
   void* idle_callback_ctx_ = nullptr;
 };
 
-}  // namespace bsp::serial
+}  // namespace midismith::adc_board::bsp::serial

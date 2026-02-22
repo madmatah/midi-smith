@@ -5,7 +5,7 @@
 #include "bsp/gpio.hpp"
 #include "main.h"
 
-namespace bsp::pins {
+namespace midismith::adc_board::bsp::pins {
 namespace {
 
 std::uintptr_t PortAddress(GPIO_TypeDef* port) noexcept {
@@ -14,9 +14,9 @@ std::uintptr_t PortAddress(GPIO_TypeDef* port) noexcept {
 
 }  // namespace
 
-bsp::GpioRequirements& TiaShutdown() noexcept {
-  static bsp::Gpio pin(PortAddress(TIA_SHDN_GPIO_Port), TIA_SHDN_Pin);
+midismith::common::bsp::GpioRequirements& TiaShutdown() noexcept {
+  static midismith::common::bsp::Gpio pin(PortAddress(TIA_SHDN_GPIO_Port), TIA_SHDN_Pin);
   return pin;
 }
 
-}  // namespace bsp::pins
+}  // namespace midismith::adc_board::bsp::pins

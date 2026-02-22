@@ -5,11 +5,12 @@
 #include "app/logging/logger_requirements.hpp"
 #include "domain/music/piano/key_action_requirements.hpp"
 
-namespace app::analog::sensors {
+namespace midismith::adc_board::app::analog::sensors {
 
-class LoggingSensorEventHandler final : public domain::music::piano::KeyActionRequirements {
+class LoggingSensorEventHandler final
+    : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
  public:
-  void SetLogger(app::Logging::LoggerRequirements* logger) noexcept {
+  void SetLogger(midismith::common::app::logging::LoggerRequirements* logger) noexcept {
     logger_ = logger;
   }
 
@@ -17,7 +18,7 @@ class LoggingSensorEventHandler final : public domain::music::piano::KeyActionRe
     sensor_id_ = sensor_id;
   }
 
-  void OnNoteOn(domain::music::Velocity velocity) noexcept override {
+  void OnNoteOn(midismith::common::domain::music::Velocity velocity) noexcept override {
     if (logger_ == nullptr) {
       return;
     }
@@ -25,7 +26,7 @@ class LoggingSensorEventHandler final : public domain::music::piano::KeyActionRe
                    static_cast<unsigned>(velocity));
   }
 
-  void OnNoteOff(domain::music::Velocity release_velocity) noexcept override {
+  void OnNoteOff(midismith::common::domain::music::Velocity release_velocity) noexcept override {
     if (logger_ == nullptr) {
       return;
     }
@@ -34,8 +35,8 @@ class LoggingSensorEventHandler final : public domain::music::piano::KeyActionRe
   }
 
  private:
-  app::Logging::LoggerRequirements* logger_ = nullptr;
+  midismith::common::app::logging::LoggerRequirements* logger_ = nullptr;
   std::uint8_t sensor_id_ = 0u;
 };
 
-}  // namespace app::analog::sensors
+}  // namespace midismith::adc_board::app::analog::sensors

@@ -2,7 +2,7 @@
 
 #include "SEGGER_RTT.h"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 RttTelemetrySender::RttTelemetrySender(unsigned channel, const char* name, void* buffer,
                                        unsigned size) noexcept
@@ -15,4 +15,4 @@ void RttTelemetrySender::Send(std::uint32_t value) noexcept {
   (void) SEGGER_RTT_Write(_channel, &value, sizeof(value));
 }
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

@@ -3,9 +3,9 @@
 #include "app/storage/flash_storage_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
-class Stm32SpiFlash : public app::storage::FlashStorageRequirements {
+class Stm32SpiFlash : public midismith::main_board::app::storage::FlashStorageRequirements {
  public:
   struct Configuration {
     SPI_HandleTypeDef& hspi_handle;
@@ -41,4 +41,4 @@ class Stm32SpiFlash : public app::storage::FlashStorageRequirements {
   bool Receive(std::uint8_t* data, std::size_t size_bytes) noexcept;
 };
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

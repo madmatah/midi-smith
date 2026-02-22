@@ -39,7 +39,7 @@ struct Pred3 {
 }  // namespace
 
 TEST_CASE("The And struct") {
-  using domain::dsp::logic::And;
+  using midismith::adc_board::domain::dsp::logic::And;
 
   SECTION("The Test() method") {
     SECTION("With two predicates") {

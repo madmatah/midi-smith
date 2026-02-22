@@ -7,7 +7,7 @@
 #include <cstring>
 
 TEST_CASE("The ComputeCrc32 function") {
-  using domain::hash::ComputeCrc32;
+  using midismith::adc_board::domain::hash::ComputeCrc32;
 
   SECTION("The standard check value") {
     SECTION("Should return 0xCBF43926 for the string '123456789'") {

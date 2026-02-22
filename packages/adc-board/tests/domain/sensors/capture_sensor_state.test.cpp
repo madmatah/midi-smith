@@ -35,16 +35,18 @@ class TimesTwoStage {
 TEST_CASE("CaptureSensorState") {
   using Catch::Matchers::WithinAbs;
 
-  using app::analog::SignalContext;
-  using domain::dsp::engine::Workflow;
-  using domain::sensors::CaptureSensorState;
-  using domain::sensors::SensorState;
+  using midismith::adc_board::app::analog::SignalContext;
+  using midismith::adc_board::domain::dsp::engine::Workflow;
+  using midismith::adc_board::domain::sensors::CaptureSensorState;
+  using midismith::adc_board::domain::sensors::SensorState;
 
   using CaptureLastPosition = CaptureSensorState<&SensorState::last_shank_position_norm>;
-  static_assert(domain::dsp::concepts::SignalTransformer<CaptureLastPosition, SignalContext>);
+  static_assert(midismith::adc_board::domain::dsp::concepts::SignalTransformer<CaptureLastPosition,
+                                                                               SignalContext>);
 
   using Pipeline = Workflow<PlusTenStage, CaptureLastPosition, TimesTwoStage>;
-  static_assert(domain::dsp::concepts::SignalTransformer<Pipeline, SignalContext>);
+  static_assert(
+      midismith::adc_board::domain::dsp::concepts::SignalTransformer<Pipeline, SignalContext>);
 
   SensorState sensor{};
   sensor.id = 1u;

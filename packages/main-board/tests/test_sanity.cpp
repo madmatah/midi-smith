@@ -13,7 +13,7 @@ struct ValueRequirements {
 }  // namespace
 
 TEST_CASE("domain add") {
-  REQUIRE(domain::add(2, 3) == 5);
+  REQUIRE(midismith::main_board::domain::add(2, 3) == 5);
 }
 
 TEST_CASE("fakeit mock") {

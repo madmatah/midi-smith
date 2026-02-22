@@ -14,7 +14,7 @@ TEST_CASE("The IdentityFilter class") {
   SECTION("The Transform() method") {
     SECTION("When called with any input value") {
       SECTION("Should return the input value unchanged") {
-        domain::dsp::filters::IdentityFilter filter;
+        midismith::adc_board::domain::dsp::filters::IdentityFilter filter;
         TestContext ctx{};
 
         REQUIRE_THAT(filter.Transform(0.0f, ctx), WithinRel(0.0f));

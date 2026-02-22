@@ -1,11 +1,11 @@
 #pragma once
 
 
-namespace bsp {
+namespace midismith::adc_board::bsp {
 
 class Board {
  public:
   static void init() noexcept;
 };
 
-}  // namespace bsp
+}  // namespace midismith::adc_board::bsp

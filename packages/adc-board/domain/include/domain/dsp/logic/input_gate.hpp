@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::logic {
+namespace midismith::adc_board::domain::dsp::logic {
 
 template <float kThreshold, auto ControlValueProvider>
 class InputGate {
@@ -15,4 +15,4 @@ class InputGate {
   void Reset() noexcept {}
 };
 
-}  // namespace domain::dsp::logic
+}  // namespace midismith::adc_board::domain::dsp::logic

@@ -5,7 +5,7 @@
 
 #include "domain/io/stream_requirements.hpp"
 
-namespace domain::shell {
+namespace midismith::adc_board::domain::shell {
 
 template <std::size_t kBufferSize>
 class LineEditor {
@@ -15,18 +15,18 @@ class LineEditor {
     _buffer[0] = '\0';
   }
 
-  using CompletionCallback = void (*)(char* buffer, std::size_t& cursor, std::size_t max_size,
-                                      domain::io::WritableStreamRequirements& writer,
-                                      void* user_data);
+  using CompletionCallback = void (*)(
+      char* buffer, std::size_t& cursor, std::size_t max_size,
+      midismith::adc_board::domain::io::WritableStreamRequirements& writer, void* user_data);
 
-  bool Poll(domain::io::ReadableStreamRequirements& reader,
-            domain::io::WritableStreamRequirements& writer, bool& line_ready,
+  bool Poll(midismith::adc_board::domain::io::ReadableStreamRequirements& reader,
+            midismith::adc_board::domain::io::WritableStreamRequirements& writer, bool& line_ready,
             CompletionCallback on_completion = nullptr, void* user_data = nullptr) noexcept {
     std::uint8_t byte;
     bool did_rx = false;
     line_ready = false;
 
-    while (reader.Read(byte) == domain::io::ReadResult::kOk) {
+    while (reader.Read(byte) == midismith::adc_board::domain::io::ReadResult::kOk) {
       did_rx = true;
       if (ProcessByte(byte, writer, on_completion, user_data)) {
         line_ready = true;
@@ -47,7 +47,8 @@ class LineEditor {
   }
 
  private:
-  bool ProcessByte(std::uint8_t byte, domain::io::WritableStreamRequirements& stream,
+  bool ProcessByte(std::uint8_t byte,
+                   midismith::adc_board::domain::io::WritableStreamRequirements& stream,
                    CompletionCallback on_completion, void* user_data) noexcept {
     if (byte == '\r' || byte == '\n') {
       const bool is_crlf_pair = _last_was_newline && (byte != _last_newline);
@@ -105,4 +106,4 @@ class LineEditor {
   bool _last_was_newline;
 };
 
-}  // namespace domain::shell
+}  // namespace midismith::adc_board::domain::shell

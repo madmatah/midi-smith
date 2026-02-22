@@ -6,7 +6,7 @@
 
 #include "domain/sensors/sensor_state.hpp"
 
-namespace domain::sensors {
+namespace midismith::adc_board::domain::sensors {
 
 class SensorRegistry {
  public:
@@ -32,4 +32,4 @@ class SensorRegistry {
   std::size_t sensor_count_ = 0;
 };
 
-}  // namespace domain::sensors
+}  // namespace midismith::adc_board::domain::sensors

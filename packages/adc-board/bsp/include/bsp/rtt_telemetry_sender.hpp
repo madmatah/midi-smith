@@ -6,9 +6,10 @@
 
 #include "app/telemetry/telemetry_sender_requirements.hpp"
 
-namespace bsp {
+namespace midismith::adc_board::bsp {
 
-class RttTelemetrySender final : public app::telemetry::TelemetrySenderRequirements {
+class RttTelemetrySender final
+    : public midismith::adc_board::app::telemetry::TelemetrySenderRequirements {
  public:
   RttTelemetrySender(unsigned channel, const char* name, void* buffer, unsigned size) noexcept;
 
@@ -18,4 +19,4 @@ class RttTelemetrySender final : public app::telemetry::TelemetrySenderRequireme
   unsigned _channel;
 };
 
-}  // namespace bsp
+}  // namespace midismith::adc_board::bsp

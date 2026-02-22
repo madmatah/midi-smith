@@ -6,13 +6,14 @@
 
 #include "domain/dsp/concepts.hpp"
 
-namespace domain::dsp::engine {
+namespace midismith::adc_board::domain::dsp::engine {
 
 template <typename StageT, std::uint32_t kGapFactor>
 class TemporalContinuityGuard {
   static_assert(kGapFactor > 0u, "kGapFactor must be > 0");
   static_assert(std::default_initializable<StageT>, "StageT must be default-initializable");
-  static_assert(domain::dsp::concepts::Resettable<StageT>, "StageT must satisfy Resettable");
+  static_assert(midismith::adc_board::domain::dsp::concepts::Resettable<StageT>,
+                "StageT must satisfy Resettable");
 
  public:
   StageT& Stage() noexcept {
@@ -32,7 +33,7 @@ class TemporalContinuityGuard {
 
   template <typename ContextT>
   float Transform(float input, const ContextT& ctx) noexcept
-    requires(domain::dsp::concepts::SignalTransformer<StageT, ContextT>)
+    requires(midismith::adc_board::domain::dsp::concepts::SignalTransformer<StageT, ContextT>)
   {
     static_assert(
         requires(const ContextT& context) {
@@ -73,4 +74,4 @@ class TemporalContinuityGuard {
   std::uint32_t calibrated_delta_ticks_ = 0u;
 };
 
-}  // namespace domain::dsp::engine
+}  // namespace midismith::adc_board::domain::dsp::engine

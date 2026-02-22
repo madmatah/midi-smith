@@ -10,12 +10,13 @@
 namespace {
 
 struct TestContext {
-  TestContext(std::uint32_t timestamp_ticks_value, domain::sensors::SensorState& state) noexcept
+  TestContext(std::uint32_t timestamp_ticks_value,
+              midismith::adc_board::domain::sensors::SensorState& state) noexcept
       : timestamp_ticks(timestamp_ticks_value), sensor_id(state.id), sensor(state) {}
 
   std::uint32_t timestamp_ticks = 0;
   std::uint8_t sensor_id = 0;
-  domain::sensors::SensorState& sensor;
+  midismith::adc_board::domain::sensors::SensorState& sensor;
 };
 
 }  // namespace
@@ -24,7 +25,7 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
   constexpr std::uint32_t kSourceHz = 10'000u;
 
   SECTION("Captures data frames for the selected sensor") {
-    domain::sensors::SensorState s{};
+    midismith::adc_board::domain::sensors::SensorState s{};
     s.id = 1;
     s.last_raw_value = 1234;
     s.last_current_ma = 1.5f;
@@ -34,7 +35,7 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
     s.last_shank_speed_m_per_s = -0.42f;
     s.last_hammer_speed_m_per_s = 0.25f;
 
-    app::telemetry::SensorRttStreamCapture capture;
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
     capture.ConfigureObserve(1);
 
@@ -60,32 +61,34 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
   }
 
   SECTION("Drops frames on overflow and reports a drop count") {
-    domain::sensors::SensorState s{};
+    midismith::adc_board::domain::sensors::SensorState s{};
     s.id = 1;
     s.last_raw_value = 1;
 
-    app::telemetry::SensorRttStreamCapture capture;
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
     capture.ConfigureObserve(1);
 
     TestContext ctx{1u, s};
-    for (std::size_t i = 0; i < app::telemetry::SensorRttStreamCapture::kCapacityFrames + 10u;
+    for (std::size_t i = 0;
+         i < midismith::adc_board::app::telemetry::SensorRttStreamCapture::kCapacityFrames + 10u;
          ++i) {
       ctx.timestamp_ticks = static_cast<std::uint32_t>(i);
       capture.MaybeCapture(ctx, kSourceHz);
     }
 
     const auto status = capture.GetStatus();
-    REQUIRE(status.backlog_frames == app::telemetry::SensorRttStreamCapture::kCapacityFrames);
+    REQUIRE(status.backlog_frames ==
+            midismith::adc_board::app::telemetry::SensorRttStreamCapture::kCapacityFrames);
     REQUIRE(status.dropped_frames == 10u);
   }
 
   SECTION("Consume() advances the read pointer") {
-    domain::sensors::SensorState s{};
+    midismith::adc_board::domain::sensors::SensorState s{};
     s.id = 1;
     s.last_raw_value = 1;
 
-    app::telemetry::SensorRttStreamCapture capture;
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
     capture.ConfigureObserve(1);
 
@@ -107,11 +110,11 @@ TEST_CASE("SensorRttStreamCapture", "[app][telemetry]") {
   }
 
   SECTION("ConfigureOff clears buffered frames and stops captures") {
-    domain::sensors::SensorState s{};
+    midismith::adc_board::domain::sensors::SensorState s{};
     s.id = 1;
     s.last_raw_value = 1;
 
-    app::telemetry::SensorRttStreamCapture capture;
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture capture;
     capture.SetOutputHz(kSourceHz);
     capture.ConfigureObserve(1);
 

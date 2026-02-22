@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 enum class SensorRttTelemetryCommandKind : std::uint8_t {
   kOff = 0,
@@ -16,4 +16,4 @@ struct SensorRttTelemetryCommand {
   std::uint32_t output_hz{0};
 };
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

@@ -7,7 +7,7 @@
 
 #include "domain/dsp/concepts.hpp"
 
-namespace domain::dsp::engine::detail {
+namespace midismith::adc_board::domain::dsp::engine::detail {
 
 template <typename TargetT, typename... StageTs>
 struct StageIndexFinder {
@@ -28,7 +28,7 @@ struct StageIndexFinder {
 
 template <typename StageT>
 inline void ResetIfPresent(StageT& stage) noexcept {
-  if constexpr (domain::dsp::concepts::Resettable<StageT>) {
+  if constexpr (midismith::adc_board::domain::dsp::concepts::Resettable<StageT>) {
     stage.Reset();
   }
 }
@@ -40,7 +40,7 @@ inline void ResetAll(TupleT& stages, std::index_sequence<kIs...>) noexcept {
 
 template <typename StageT, typename ContextT>
 inline float InvokeStage(StageT& stage, float input, const ContextT& ctx) noexcept
-  requires(domain::dsp::concepts::SignalTransformer<StageT, ContextT>)
+  requires(midismith::adc_board::domain::dsp::concepts::SignalTransformer<StageT, ContextT>)
 {
   return stage.Transform(input, ctx);
 }
@@ -53,4 +53,4 @@ inline float InvokeAll(TupleT& stages, float input, const ContextT& ctx,
   return x;
 }
 
-}  // namespace domain::dsp::engine::detail
+}  // namespace midismith::adc_board::domain::dsp::engine::detail

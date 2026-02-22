@@ -8,7 +8,7 @@
 
 #include "app/telemetry/sensor_rtt_protocol.hpp"
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 class SensorRttStreamCapture final {
  public:
@@ -173,4 +173,4 @@ class SensorRttStreamCapture final {
   std::atomic<std::uint32_t> decimation_phase_{0u};
 };
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

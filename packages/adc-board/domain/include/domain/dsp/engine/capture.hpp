@@ -5,7 +5,7 @@
 
 #include "domain/dsp/engine/tap.hpp"
 
-namespace domain::dsp::engine::detail {
+namespace midismith::adc_board::domain::dsp::engine::detail {
 
 template <auto MemberPtrOrFn>
 struct CaptureWriter {
@@ -19,11 +19,11 @@ struct CaptureWriter {
   }
 };
 
-}  // namespace domain::dsp::engine::detail
+}  // namespace midismith::adc_board::domain::dsp::engine::detail
 
-namespace domain::dsp::engine {
+namespace midismith::adc_board::domain::dsp::engine {
 
 template <auto MemberPtrOrFn>
 using Capture = Tap<detail::CaptureWriter<MemberPtrOrFn>>;
 
-}  // namespace domain::dsp::engine
+}  // namespace midismith::adc_board::domain::dsp::engine

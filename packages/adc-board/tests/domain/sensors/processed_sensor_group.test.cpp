@@ -11,12 +11,13 @@
 namespace {
 
 struct TestContext {
-  TestContext(std::uint32_t timestamp_ticks_value, domain::sensors::SensorState& state) noexcept
+  TestContext(std::uint32_t timestamp_ticks_value,
+              midismith::adc_board::domain::sensors::SensorState& state) noexcept
       : timestamp_ticks(timestamp_ticks_value), sensor_id(state.id), sensor(state) {}
 
   std::uint32_t timestamp_ticks = 0;
   std::uint8_t sensor_id = 0;
-  domain::sensors::SensorState& sensor;
+  midismith::adc_board::domain::sensors::SensorState& sensor;
 };
 
 class PlusOneFilter {
@@ -50,12 +51,13 @@ TEST_CASE("The ProcessedSensorGroup class") {
   SECTION("The UpdateAt() method") {
     SECTION("When called with a valid index") {
       SECTION("Should store both raw and processed values") {
-        domain::sensors::SensorState sensors[] = {domain::sensors::SensorState{1},
-                                                  domain::sensors::SensorState{2}};
+        midismith::adc_board::domain::sensors::SensorState sensors[] = {
+            midismith::adc_board::domain::sensors::SensorState{1},
+            midismith::adc_board::domain::sensors::SensorState{2}};
         PlusOneFilter filters[] = {PlusOneFilter{}, PlusOneFilter{}};
 
-        domain::sensors::ProcessedSensorGroup<PlusOneFilter, TestContext> group(sensors, filters,
-                                                                                2);
+        midismith::adc_board::domain::sensors::ProcessedSensorGroup<PlusOneFilter, TestContext>
+            group(sensors, filters, 2);
 
         group.UpdateAt(1, 1234, 99);
 
@@ -65,11 +67,11 @@ TEST_CASE("The ProcessedSensorGroup class") {
       }
 
       SECTION("Should update raw and timestamp before calling Transform()") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         sensor.id = 1;
         RawObserverFilter filter{};
-        domain::sensors::ProcessedSensorGroup<RawObserverFilter, TestContext> group(&sensor,
-                                                                                    &filter, 1);
+        midismith::adc_board::domain::sensors::ProcessedSensorGroup<RawObserverFilter, TestContext>
+            group(&sensor, &filter, 1);
 
         group.UpdateAt(0, 4321, 123);
 

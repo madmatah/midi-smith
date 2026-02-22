@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 // Savitzky-Golay smoothing filter (with 5-point window)
 class Sg5Smoother {
@@ -74,4 +74,4 @@ class Sg5Smoother {
   std::size_t filled_ = 0;
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

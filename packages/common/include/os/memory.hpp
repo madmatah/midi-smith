@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace os {
+namespace midismith::common::os {
 
 class Memory {
  public:
@@ -10,8 +10,4 @@ class Memory {
   static std::uint32_t min_ever_free_heap_bytes() noexcept;
 };
 
-}  // namespace os
-
-namespace midismith::common::os {
-using ::os::Memory;
-}
+}  // namespace midismith::common::os

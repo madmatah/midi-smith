@@ -4,7 +4,7 @@
 #include "domain/midi/midi_controller_requirements.hpp"
 #include "os/queue_requirements.hpp"
 
-namespace app::midi {
+namespace midismith::main_board::app::midi {
 
 /**
  * @brief Asynchronous MIDI controller that forwards messages to a queue.
@@ -12,9 +12,11 @@ namespace app::midi {
  * This implementation is non-blocking (timeout = 0) to ensure the caller
  * (e.g., UI or Logic task) is never delayed by MIDI transport.
  */
-class AsyncTaskMidiController : public domain::midi::MidiControllerRequirements {
+class AsyncTaskMidiController
+    : public midismith::main_board::domain::midi::MidiControllerRequirements {
  public:
-  explicit AsyncTaskMidiController(os::QueueRequirements<MidiCommand>& queue) : _queue(queue) {}
+  explicit AsyncTaskMidiController(midismith::common::os::QueueRequirements<MidiCommand>& queue)
+      : _queue(queue) {}
 
   /**
    * @brief Formats and posts a MIDI message to the task queue.
@@ -22,7 +24,7 @@ class AsyncTaskMidiController : public domain::midi::MidiControllerRequirements 
   void SendRawMessage(const uint8_t* data, uint8_t length) noexcept override;
 
  private:
-  os::QueueRequirements<MidiCommand>& _queue;
+  midismith::common::os::QueueRequirements<MidiCommand>& _queue;
 };
 
-}  // namespace app::midi
+}  // namespace midismith::main_board::app::midi

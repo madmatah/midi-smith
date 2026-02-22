@@ -7,7 +7,7 @@
 
 #include "os/runtime_stats_requirements.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 namespace {
 
 constexpr std::uint32_t kDefaultWindowMs = 250u;
@@ -26,7 +26,7 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: status [window_ms]\r\n");
 }
 
@@ -45,7 +45,8 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   return true;
 }
 
-void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
+void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+                 std::uint32_t value) noexcept {
   char buf[16]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -54,7 +55,8 @@ void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t valu
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
-void WriteUint64(domain::io::WritableStreamRequirements& out, std::uint64_t value) noexcept {
+void WriteUint64(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+                 std::uint64_t value) noexcept {
   char buf[32]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -63,7 +65,7 @@ void WriteUint64(domain::io::WritableStreamRequirements& out, std::uint64_t valu
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
-void WritePermilleAsPercent(domain::io::WritableStreamRequirements& out,
+void WritePermilleAsPercent(midismith::adc_board::domain::io::WritableStreamRequirements& out,
                             std::uint32_t permille) noexcept {
   WriteUint32(out, permille / 10u);
   out.Write('.');
@@ -72,8 +74,9 @@ void WritePermilleAsPercent(domain::io::WritableStreamRequirements& out,
 
 }  // namespace
 
-void StatusCommand::Run(int argc, char** argv,
-                        domain::io::WritableStreamRequirements& out) noexcept {
+void StatusCommand::Run(
+    int argc, char** argv,
+    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   if (argc > 2) {
     WriteUsage(out);
     return;
@@ -92,7 +95,7 @@ void StatusCommand::Run(int argc, char** argv,
     }
   }
 
-  os::RuntimeStatusSnapshot status_snapshot{};
+  midismith::adc_board::os::RuntimeStatusSnapshot status_snapshot{};
   if (!runtime_stats_.CaptureStatusSnapshot(window_ms, status_snapshot)) {
     out.Write("error: runtime counter unavailable\r\n");
     return;
@@ -116,4 +119,4 @@ void StatusCommand::Run(int argc, char** argv,
   out.Write("\r\n");
 }
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

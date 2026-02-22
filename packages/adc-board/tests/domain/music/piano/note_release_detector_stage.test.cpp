@@ -9,34 +9,35 @@
 
 namespace {
 
-class RecordingKeyActionHandler final : public domain::music::piano::KeyActionRequirements {
+class RecordingKeyActionHandler final
+    : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
  public:
-  void OnNoteOn(domain::music::Velocity velocity) noexcept override {
+  void OnNoteOn(midismith::common::domain::music::Velocity velocity) noexcept override {
     (void) velocity;
   }
 
-  void OnNoteOff(domain::music::Velocity release_velocity) noexcept override {
+  void OnNoteOff(midismith::common::domain::music::Velocity release_velocity) noexcept override {
     ++note_off_calls;
     last_release_velocity = release_velocity;
   }
 
   int note_off_calls = 0;
-  domain::music::Velocity last_release_velocity = 0u;
+  midismith::common::domain::music::Velocity last_release_velocity = 0u;
 };
 
 class RecordingVelocityMapper final
-    : public domain::music::piano::velocity::VelocityMapperRequirements {
+    : public midismith::adc_board::domain::music::piano::velocity::VelocityMapperRequirements {
  public:
   static void Reset() noexcept {
     map_calls = 0;
     last_shank_falling_speed_m_per_s = 0.0f;
   }
 
-  domain::music::Velocity Map(float speed_m_per_s) noexcept override {
+  midismith::common::domain::music::Velocity Map(float speed_m_per_s) noexcept override {
     last_shank_falling_speed_m_per_s = speed_m_per_s;
     ++map_calls;
-    return (speed_m_per_s > 0.0f) ? static_cast<domain::music::Velocity>(42u)
-                                  : static_cast<domain::music::Velocity>(1u);
+    return (speed_m_per_s > 0.0f) ? static_cast<midismith::common::domain::music::Velocity>(42u)
+                                  : static_cast<midismith::common::domain::music::Velocity>(1u);
   }
 
   static inline int map_calls = 0;
@@ -44,22 +45,25 @@ class RecordingVelocityMapper final
 };
 
 struct TestContext {
-  domain::sensors::SensorState& sensor;
+  midismith::adc_board::domain::sensors::SensorState& sensor;
 };
 
 }  // namespace
 
 TEST_CASE("The NoteReleaseDetectorStage class") {
   using Catch::Matchers::WithinAbs;
-  using Constant127Mapper = domain::music::piano::velocity::ConstantVelocityMapper<127u>;
-  using DefaultStage = domain::music::piano::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
+  using Constant127Mapper =
+      midismith::adc_board::domain::music::piano::velocity::ConstantVelocityMapper<127u>;
+  using DefaultStage =
+      midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
   using CustomMapperStage =
-      domain::music::piano::NoteReleaseDetectorStage<RecordingVelocityMapper, 0.5f>;
+      midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<RecordingVelocityMapper,
+                                                                           0.5f>;
 
   SECTION("The note release detection") {
     SECTION("When note is on and position crosses the threshold upwards") {
       SECTION("Should emit NoteOff and clear is_note_on") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
@@ -78,14 +82,15 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         REQUIRE(handler.note_off_calls == 1);
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.25f, 0.0001f));
-        REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(42u));
+        REQUIRE(handler.last_release_velocity ==
+                static_cast<midismith::common::domain::music::Velocity>(42u));
         REQUIRE(sensor.is_note_on == false);
       }
     }
 
     SECTION("When speed becomes gated at the threshold") {
       SECTION("Should map the last latched positive speed") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
@@ -113,7 +118,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
 
     SECTION("When note is off") {
       SECTION("Should not emit NoteOff") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
@@ -134,7 +139,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
 
     SECTION("When no custom velocity mapper is configured") {
       SECTION("Should emit NoteOff with default velocity 127") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
         DefaultStage stage{};
         RecordingKeyActionHandler handler{};
@@ -150,14 +155,15 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(127u));
+        REQUIRE(handler.last_release_velocity ==
+                static_cast<midismith::common::domain::music::Velocity>(127u));
         REQUIRE(sensor.is_note_on == false);
       }
     }
 
     SECTION("When configured with a custom mapper type") {
       SECTION("Should use the custom mapper output to emit NoteOff") {
-        domain::sensors::SensorState sensor{};
+        midismith::adc_board::domain::sensors::SensorState sensor{};
         TestContext ctx{sensor};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
@@ -174,7 +180,8 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity == static_cast<domain::music::Velocity>(42u));
+        REQUIRE(handler.last_release_velocity ==
+                static_cast<midismith::common::domain::music::Velocity>(42u));
         REQUIRE(RecordingVelocityMapper::map_calls == 1);
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.25f, 0.0001f));

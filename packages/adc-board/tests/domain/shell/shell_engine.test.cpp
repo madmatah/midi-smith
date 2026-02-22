@@ -6,7 +6,7 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
   void PushInput(const std::string& input) {
     for (char c : input) {
@@ -21,12 +21,12 @@ class StreamStub : public domain::io::StreamRequirements {
     _output.clear();
   }
 
-  domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
     if (_read_idx < _input.size()) {
       byte = _input[_read_idx++];
-      return domain::io::ReadResult::kOk;
+      return midismith::adc_board::domain::io::ReadResult::kOk;
     }
-    return domain::io::ReadResult::kNoData;
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {
@@ -45,7 +45,7 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string _output;
 };
 
-class TestCommand : public domain::shell::CommandRequirements {
+class TestCommand : public midismith::adc_board::domain::shell::CommandRequirements {
  public:
   explicit TestCommand(const char* name) : _name(name) {}
 
@@ -55,7 +55,8 @@ class TestCommand : public domain::shell::CommandRequirements {
   std::string_view Help() const noexcept override {
     return "help";
   }
-  void Run(int, char**, domain::io::WritableStreamRequirements&) noexcept override {}
+  void Run(int, char**,
+           midismith::adc_board::domain::io::WritableStreamRequirements&) noexcept override {}
 
  private:
   const char* _name;
@@ -65,8 +66,8 @@ class TestCommand : public domain::shell::CommandRequirements {
 
 TEST_CASE("The ShellEngine class completion") {
   StreamStub stream;
-  domain::shell::ShellConfig config{"shell> "};
-  domain::shell::ShellEngine<32, 4, 4> engine(stream, config);
+  midismith::adc_board::domain::shell::ShellConfig config{"shell> "};
+  midismith::adc_board::domain::shell::ShellEngine<32, 4, 4> engine(stream, config);
 
   TestCommand status_command("status");
   TestCommand start_command("start");

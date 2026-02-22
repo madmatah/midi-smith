@@ -13,52 +13,54 @@
 #include "domain/sensors/linearization/sensor_calibration.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 
-namespace app::composition {
+namespace midismith::adc_board::app::composition {
 
 struct ConfigContext {
-  domain::config::TransactionalConfigDictionary& persistent_config;
+  midismith::adc_board::domain::config::TransactionalConfigDictionary& persistent_config;
 };
 
 struct LoggingContext {
-  app::Logging::LoggerRequirements& logger;
+  midismith::common::app::logging::LoggerRequirements& logger;
 };
 
 struct ConsoleContext {
-  domain::io::StreamRequirements& stream;
+  midismith::adc_board::domain::io::StreamRequirements& stream;
 };
 
 struct AdcControlContext {
-  app::analog::AcquisitionControlRequirements& control;
+  midismith::adc_board::app::analog::AcquisitionControlRequirements& control;
 };
 
 struct AdcStateContext {
-  app::analog::AcquisitionStateRequirements& state;
+  midismith::adc_board::app::analog::AcquisitionStateRequirements& state;
 };
 
 struct SensorsContext {
-  domain::sensors::SensorRegistry& registry;
+  midismith::adc_board::domain::sensors::SensorRegistry& registry;
 };
 
 struct SensorRttTelemetryControlContext {
-  app::telemetry::SensorRttTelemetryControlRequirements& control;
+  midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
 
 ConfigContext CreateConfigSubsystem() noexcept;
 
-AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture,
-                                        app::Logging::LoggerRequirements& logger) noexcept;
+AdcControlContext CreateAnalogSubsystem(
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
+    midismith::common::app::logging::LoggerRequirements& logger) noexcept;
 AdcStateContext CreateAdcStateContext() noexcept;
 SensorsContext CreateSensorsContext() noexcept;
 
 bool RegenerateAnalogSensorLookupTables(
-    const std::array<domain::sensors::linearization::SensorCalibration,
-                     app::config_sensors::kSensorCount>& calibration_by_index) noexcept;
+    const std::array<midismith::adc_board::domain::sensors::linearization::SensorCalibration,
+                     midismith::adc_board::app::config::sensors::kSensorCount>&
+        calibration_by_index) noexcept;
 
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
-    app::telemetry::SensorRttStreamCapture& capture) noexcept;
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;
 
-}  // namespace app::composition
+}  // namespace midismith::adc_board::app::composition

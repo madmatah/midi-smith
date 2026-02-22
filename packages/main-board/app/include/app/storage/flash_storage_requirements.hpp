@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace app::storage {
+namespace midismith::main_board::app::storage {
 
 class FlashStorageRequirements {
  public:
@@ -19,4 +19,4 @@ class FlashStorageRequirements {
   virtual std::size_t chip_size_bytes() const noexcept = 0;
 };
 
-}  // namespace app::storage
+}  // namespace midismith::main_board::app::storage

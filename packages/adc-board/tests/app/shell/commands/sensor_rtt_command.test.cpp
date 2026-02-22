@@ -11,10 +11,10 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
-  domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return domain::io::ReadResult::kNoData;
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
   void Write(char c) noexcept override {
     output_ += c;
@@ -33,7 +33,8 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string output_;
 };
 
-class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements {
+class ControlMock
+    : public midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements {
  public:
   bool RequestOff() noexcept override {
     off_requested = true;
@@ -49,11 +50,12 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
     output_hz_requested = true;
     return true;
   }
-  app::telemetry::SensorRttTelemetryStatus GetStatus() const noexcept override {
+  midismith::adc_board::app::telemetry::SensorRttTelemetryStatus GetStatus()
+      const noexcept override {
     return status;
   }
 
-  app::telemetry::SensorRttTelemetryStatus status{};
+  midismith::adc_board::app::telemetry::SensorRttTelemetryStatus status{};
   bool off_requested = false;
   bool observe_requested = false;
   bool output_hz_requested = false;
@@ -64,11 +66,12 @@ class ControlMock : public app::telemetry::SensorRttTelemetryControlRequirements
 }  // namespace
 
 TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
-  domain::sensors::SensorState sensors[] = {domain::sensors::SensorState{.id = 1},
-                                            domain::sensors::SensorState{.id = 2}};
-  domain::sensors::SensorRegistry registry(sensors, 2);
+  midismith::adc_board::domain::sensors::SensorState sensors[] = {
+      midismith::adc_board::domain::sensors::SensorState{.id = 1},
+      midismith::adc_board::domain::sensors::SensorState{.id = 2}};
+  midismith::adc_board::domain::sensors::SensorRegistry registry(sensors, 2);
   ControlMock control;
-  app::shell::commands::SensorRttCommand cmd(registry, control);
+  midismith::adc_board::app::shell::commands::SensorRttCommand cmd(registry, control);
   StreamStub stream;
 
   SECTION("The Name() method") {
@@ -164,7 +167,8 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
                         const_cast<char*>("max")};
         cmd.Run(3, argv, stream);
         REQUIRE(control.output_hz_requested);
-        REQUIRE(control.last_output_hz == ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
+        REQUIRE(control.last_output_hz ==
+                ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
         REQUIRE(stream.GetOutput() == "ok\r\n");
       }
 

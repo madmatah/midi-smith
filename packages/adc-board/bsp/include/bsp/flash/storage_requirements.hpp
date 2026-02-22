@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace bsp::flash {
+namespace midismith::adc_board::bsp::flash {
 
 enum class OperationResult { kSuccess, kError };
 
@@ -17,4 +17,4 @@ class StorageRequirements {
                                             std::size_t length_bytes) noexcept = 0;
 };
 
-}  // namespace bsp::flash
+}  // namespace midismith::adc_board::bsp::flash

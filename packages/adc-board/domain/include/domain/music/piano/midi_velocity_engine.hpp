@@ -9,7 +9,7 @@
 #include "domain/music/piano/velocity/constant_velocity_mapper.hpp"
 #include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
 
-namespace domain::music::piano {
+namespace midismith::adc_board::domain::music::piano {
 
 template <typename MapperT, float kActiveZone, float kLetoff, float kStrike, float kDrop,
           float kRearm>
@@ -99,7 +99,7 @@ class MidiVelocityEngine {
   State state_ = State::IDLE;
   bool has_prev_position_ = false;
   float prev_position_ = 1.0f;
-  domain::music::Velocity latched_velocity_ = 0u;
+  midismith::common::domain::music::Velocity latched_velocity_ = 0u;
 
   MapperT mapper_impl_{};
   detail::NullKeyActionHandler null_handler_{};
@@ -111,4 +111,4 @@ template <float kActiveZone, float kLetoff, float kStrike, float kDrop, float kR
 using DefaultMidiVelocityEngine = MidiVelocityEngine<velocity::ConstantVelocityMapper<64u>,
                                                      kActiveZone, kLetoff, kStrike, kDrop, kRearm>;
 
-}  // namespace domain::music::piano
+}  // namespace midismith::adc_board::domain::music::piano

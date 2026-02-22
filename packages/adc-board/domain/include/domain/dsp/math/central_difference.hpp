@@ -3,7 +3,7 @@
 #include <concepts>
 #include <cstdint>
 
-namespace domain::dsp::math {
+namespace midismith::adc_board::domain::dsp::math {
 
 class CentralDifference {
  public:
@@ -93,4 +93,4 @@ class CentralDifference {
   std::uint8_t sample_count_ = 0u;
 };
 
-}  // namespace domain::dsp::math
+}  // namespace midismith::adc_board::domain::dsp::math

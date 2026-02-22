@@ -4,7 +4,7 @@
 
 #include "domain/config/storable_config.hpp"
 
-namespace domain::config {
+namespace midismith::adc_board::domain::config {
 
 inline constexpr std::uint8_t kMinBoardId = 1;
 inline constexpr std::uint8_t kMaxBoardId = 8;
@@ -25,4 +25,4 @@ AdcBoardConfig CreateDefaultAdcBoardConfig() noexcept;
 AdcBoardConfig MigrateAdcBoardConfig(const AdcBoardConfig& old_config,
                                      std::uint16_t old_version) noexcept;
 
-}  // namespace domain::config
+}  // namespace midismith::adc_board::domain::config

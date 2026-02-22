@@ -7,23 +7,23 @@
 #include "bsp/stm32_spi_flash.hpp"
 #include "bsp/usb_midi.hpp"
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 class Board {
  public:
   static void init() noexcept;
-  static GpioRequirements& user_led() noexcept;
+  static midismith::common::bsp::GpioRequirements& user_led() noexcept;
   static Spi& spi2() noexcept;
   static UsbMidi& usb_midi() noexcept;
   static Stm32Octospi& octospi_flash() noexcept;
   static Stm32SpiFlash& spi_flash() noexcept;
 
  private:
-  static Gpio _user_led;
+  static midismith::common::bsp::Gpio _user_led;
   static Spi _spi2;
   static UsbMidi _usb_midi;
   static Stm32Octospi _octospi_flash;
   static Stm32SpiFlash _spi_flash;
 };
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

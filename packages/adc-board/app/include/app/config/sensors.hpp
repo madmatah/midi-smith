@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace app::config_sensors {
+namespace midismith::adc_board::app::config::sensors {
 
 constexpr std::uint8_t kSensorIds[] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                                        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
@@ -48,4 +48,4 @@ constexpr std::uint8_t kAnalogRankSensorIds[kSensorCount] = {
     kAdc3SensorIdByRank[6], kAdc3SensorIdByRank[7],
 };
 
-}  // namespace app::config_sensors
+}  // namespace midismith::adc_board::app::config::sensors

@@ -20,82 +20,100 @@
 #include "domain/sensors/sensor_state.hpp"
 #include "os/queue.hpp"
 
-namespace app::composition {
+namespace midismith::adc_board::app::composition {
 namespace {
 
 [[maybe_unused]] constexpr bool kConfigSensorsValidationIsUsed =
-    app::config_sensors::validation::AreUnique(app::config_sensors::kSensorIds);
+    midismith::adc_board::app::config::sensors::validation::AreUnique(
+        midismith::adc_board::app::config::sensors::kSensorIds);
 
-os::Queue<app::analog::AcquisitionCommand, 4>& AdcControlQueue() noexcept {
-  static os::Queue<app::analog::AcquisitionCommand, 4> queue;
+midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>&
+AdcControlQueue() noexcept {
+  static midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>
+      queue;
   return queue;
 }
 
-volatile app::analog::AcquisitionState& AdcState() noexcept {
-  static volatile app::analog::AcquisitionState state = app::analog::AcquisitionState::kDisabled;
+volatile midismith::adc_board::app::analog::AcquisitionState& AdcState() noexcept {
+  static volatile midismith::adc_board::app::analog::AcquisitionState state =
+      midismith::adc_board::app::analog::AcquisitionState::kDisabled;
   return state;
 }
 
-app::analog::QueueAcquisitionControl& AdcControl() noexcept {
-  static app::analog::QueueAcquisitionControl control(AdcControlQueue(), AdcState());
+midismith::adc_board::app::analog::QueueAcquisitionControl& AdcControl() noexcept {
+  static midismith::adc_board::app::analog::QueueAcquisitionControl control(AdcControlQueue(),
+                                                                            AdcState());
   return control;
 }
 
-std::array<domain::sensors::SensorState, app::config_sensors::kSensorCount>&
+std::array<midismith::adc_board::domain::sensors::SensorState,
+           midismith::adc_board::app::config::sensors::kSensorCount>&
 SensorsArray() noexcept {
-  static std::array<domain::sensors::SensorState, app::config_sensors::kSensorCount> sensors{};
+  static std::array<midismith::adc_board::domain::sensors::SensorState,
+                    midismith::adc_board::app::config::sensors::kSensorCount>
+      sensors{};
   static bool sensors_initialized = false;
   if (!sensors_initialized) {
-    for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
-      sensors[i].id = app::config_sensors::kSensorIds[i];
+    for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
+      sensors[i].id = midismith::adc_board::app::config::sensors::kSensorIds[i];
     }
     sensors_initialized = true;
   }
   return sensors;
 }
 
-domain::sensors::SensorRegistry& SensorsRegistry() noexcept {
-  static domain::sensors::SensorRegistry registry(SensorsArray().data(),
-                                                  app::config_sensors::kSensorCount);
+midismith::adc_board::domain::sensors::SensorRegistry& SensorsRegistry() noexcept {
+  static midismith::adc_board::domain::sensors::SensorRegistry registry(
+      SensorsArray().data(), midismith::adc_board::app::config::sensors::kSensorCount);
   return registry;
 }
 
-using Processor = app::analog::signal_processing::AnalogSensorProcessor;
-using ProcessedSensorGroup =
-    domain::sensors::ProcessedSensorGroup<Processor, app::analog::SignalContext>;
+using Processor = midismith::adc_board::app::analog::signal_processing::AnalogSensorProcessor;
+using ProcessedSensorGroup = midismith::adc_board::domain::sensors::ProcessedSensorGroup<
+    Processor, midismith::adc_board::app::analog::SignalContext>;
 
-using LookupTable =
-    domain::sensors::linearization::SensorLookupTable<app::config::kSensorLookupTableSize>;
-using SensorCalibration = domain::sensors::linearization::SensorCalibration;
+using LookupTable = midismith::adc_board::domain::sensors::linearization::SensorLookupTable<
+    midismith::adc_board::app::config::kSensorLookupTableSize>;
+using SensorCalibration = midismith::adc_board::domain::sensors::linearization::SensorCalibration;
 using LinearizerConfiguration = Processor::LinearizerConfiguration;
 
-std::array<LookupTable, app::config_sensors::kSensorCount>& LookupTablesA() noexcept {
+std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
+LookupTablesA() noexcept {
   // Potential optimization (-23KB DTCMRAM): move to AXI SRAM by adding BSP_AXI_SRAM prefix
-  static std::array<LookupTable, app::config_sensors::kSensorCount> lookup_tables_a{};
+  static std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>
+      lookup_tables_a{};
   return lookup_tables_a;
 }
 
-std::array<LinearizerConfiguration, app::config_sensors::kSensorCount>&
+std::array<LinearizerConfiguration, midismith::adc_board::app::config::sensors::kSensorCount>&
 LinearizerConfigurationsA() noexcept {
-  static std::array<LinearizerConfiguration, app::config_sensors::kSensorCount> configurations_a{};
+  static std::array<LinearizerConfiguration,
+                    midismith::adc_board::app::config::sensors::kSensorCount>
+      configurations_a{};
   return configurations_a;
 }
 
-std::array<Processor, app::config_sensors::kSensorCount>& ProcessorsArray() noexcept {
-  static std::array<Processor, app::config_sensors::kSensorCount> processors{};
+std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>&
+ProcessorsArray() noexcept {
+  static std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>
+      processors{};
   return processors;
 }
 
 void GenerateAnalogSensorLookupTables(
-    std::array<Processor, app::config_sensors::kSensorCount>& processors,
-    std::array<LookupTable, app::config_sensors::kSensorCount>& lookup_tables,
-    std::array<LinearizerConfiguration, app::config_sensors::kSensorCount>& configurations,
-    const std::array<SensorCalibration, app::config_sensors::kSensorCount>&
+    std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
+    std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
+        lookup_tables,
+    std::array<LinearizerConfiguration, midismith::adc_board::app::config::sensors::kSensorCount>&
+        configurations,
+    const std::array<SensorCalibration, midismith::adc_board::app::config::sensors::kSensorCount>&
         calibration_by_index) noexcept {
-  const auto sensorResponseCurve = app::config::kSensorResponseCurveProvider();
-  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
-    const auto result = domain::sensors::linearization::LookupTableGenerator::Generate(
-        sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
+  const auto sensorResponseCurve =
+      midismith::adc_board::app::config::kSensorResponseCurveProvider();
+  for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
+    const auto result =
+        midismith::adc_board::domain::sensors::linearization::LookupTableGenerator::Generate(
+            sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
 
     configurations[i] = result.configuration;
     processors[i].SetLinearizerConfiguration(&configurations[i]);
@@ -112,55 +130,60 @@ void ConfigureAnalogSensorProcessorsOnce() noexcept {
   auto& lookup_tables_a = LookupTablesA();
   auto& configurations_a = LinearizerConfigurationsA();
   GenerateAnalogSensorLookupTables(processors, lookup_tables_a, configurations_a,
-                                   app::config::kSensorCalibrationByIndex);
+                                   midismith::adc_board::app::config::kSensorCalibrationByIndex);
 
   configured = true;
 }
 
 void AttachSensorRttStreamCaptureToProcessors(
-    std::array<Processor, app::config_sensors::kSensorCount>& processors,
-    app::telemetry::SensorRttStreamCapture& capture) noexcept {
-  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
+    std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept {
+  for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
     processors[i].SetTelemetryCapture(&capture);
   }
 }
 
-std::array<app::analog::sensors::LoggingSensorEventHandler, app::config_sensors::kSensorCount>&
+std::array<midismith::adc_board::app::analog::sensors::LoggingSensorEventHandler,
+           midismith::adc_board::app::config::sensors::kSensorCount>&
 VelocityHandlers() noexcept {
-  static std::array<app::analog::sensors::LoggingSensorEventHandler,
-                    app::config_sensors::kSensorCount>
+  static std::array<midismith::adc_board::app::analog::sensors::LoggingSensorEventHandler,
+                    midismith::adc_board::app::config::sensors::kSensorCount>
       handlers{};
   return handlers;
 }
 
 void AttachSensorVelocityHandlersToProcessors(
-    std::array<Processor, app::config_sensors::kSensorCount>& processors,
-    app::Logging::LoggerRequirements& logger) noexcept {
+    std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
+    midismith::common::app::logging::LoggerRequirements& logger) noexcept {
   auto& handlers = VelocityHandlers();
-  for (std::size_t i = 0; i < app::config_sensors::kSensorCount; ++i) {
+  for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
     handlers[i].SetLogger(&logger);
-    handlers[i].SetSensorId(app::config_sensors::kSensorIds[i]);
+    handlers[i].SetSensorId(midismith::adc_board::app::config::sensors::kSensorIds[i]);
     processors[i].SetNoteOnKeyActionHandler(&handlers[i]);
     processors[i].SetNoteOffKeyActionHandler(&handlers[i]);
   }
 }
 
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
-  static os::Queue<bsp::adc::AdcFrameDescriptor, 8> adc_frame_queue;
-  static bsp::adc::AdcDma adc_dma(adc_frame_queue);
-  static bsp::time::TimestampCounter timestamp_counter = bsp::time::CreateTim2TimestampCounter();
+  static midismith::common::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
+      adc_frame_queue;
+  static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue);
+  static midismith::adc_board::bsp::time::TimestampCounter timestamp_counter =
+      midismith::adc_board::bsp::time::CreateTim2TimestampCounter();
 
-  alignas(app::Tasks::AnalogAcquisitionTask) static std::uint8_t
-      analog_task_storage[sizeof(app::Tasks::AnalogAcquisitionTask)];
+  alignas(midismith::adc_board::app::tasks::AnalogAcquisitionTask) static std::uint8_t
+      analog_task_storage[sizeof(midismith::adc_board::app::tasks::AnalogAcquisitionTask)];
   static bool analog_constructed = false;
-  app::Tasks::AnalogAcquisitionTask* analog_task_ptr = nullptr;
+  midismith::adc_board::app::tasks::AnalogAcquisitionTask* analog_task_ptr = nullptr;
   if (!analog_constructed) {
-    analog_task_ptr = new (analog_task_storage) app::Tasks::AnalogAcquisitionTask(
-        adc_frame_queue, AdcControlQueue(), bsp::pins::TiaShutdown(), adc_dma, timestamp_counter,
-        AdcState(), analog_group);
+    analog_task_ptr =
+        new (analog_task_storage) midismith::adc_board::app::tasks::AnalogAcquisitionTask(
+            adc_frame_queue, AdcControlQueue(), midismith::adc_board::bsp::pins::TiaShutdown(),
+            adc_dma, timestamp_counter, AdcState(), analog_group);
     analog_constructed = true;
   } else {
-    analog_task_ptr = reinterpret_cast<app::Tasks::AnalogAcquisitionTask*>(analog_task_storage);
+    analog_task_ptr = reinterpret_cast<midismith::adc_board::app::tasks::AnalogAcquisitionTask*>(
+        analog_task_storage);
   }
 
   (void) analog_task_ptr->start();
@@ -169,7 +192,7 @@ void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
 }  // namespace
 
 AdcStateContext CreateAdcStateContext() noexcept {
-  app::analog::AcquisitionStateRequirements& state = AdcControl();
+  midismith::adc_board::app::analog::AcquisitionStateRequirements& state = AdcControl();
   return AdcStateContext{state};
 }
 
@@ -178,9 +201,10 @@ SensorsContext CreateSensorsContext() noexcept {
 }
 
 bool RegenerateAnalogSensorLookupTables(
-    const std::array<domain::sensors::linearization::SensorCalibration,
-                     app::config_sensors::kSensorCount>& calibration_by_index) noexcept {
-  if (AdcState() != app::analog::AcquisitionState::kDisabled) {
+    const std::array<midismith::adc_board::domain::sensors::linearization::SensorCalibration,
+                     midismith::adc_board::app::config::sensors::kSensorCount>&
+        calibration_by_index) noexcept {
+  if (AdcState() != midismith::adc_board::app::analog::AcquisitionState::kDisabled) {
     return false;
   }
 
@@ -191,15 +215,21 @@ bool RegenerateAnalogSensorLookupTables(
   return true;
 }
 
-AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& capture,
-                                        app::Logging::LoggerRequirements& logger) noexcept {
-  static_assert(app::config_sensors::kSensorCount > 0u, "Sensor count must be > 0");
-  static_assert(app::config_sensors::kSensorCount == 22u, "Expected 22 sensors");
-  static_assert(app::config_sensors::kAdc1RankCount == bsp::adc::AdcDma::kAdc1RanksPerSequence,
+AdcControlContext CreateAnalogSubsystem(
+    midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
+    midismith::common::app::logging::LoggerRequirements& logger) noexcept {
+  static_assert(midismith::adc_board::app::config::sensors::kSensorCount > 0u,
+                "Sensor count must be > 0");
+  static_assert(midismith::adc_board::app::config::sensors::kSensorCount == 22u,
+                "Expected 22 sensors");
+  static_assert(midismith::adc_board::app::config::sensors::kAdc1RankCount ==
+                    midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence,
                 "ADC1 rank count must match AdcDma ranks");
-  static_assert(app::config_sensors::kAdc2RankCount == bsp::adc::AdcDma::kAdc2RanksPerSequence,
+  static_assert(midismith::adc_board::app::config::sensors::kAdc2RankCount ==
+                    midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence,
                 "ADC2 rank count must match AdcDma ranks");
-  static_assert(app::config_sensors::kAdc3RankCount == bsp::adc::AdcDma::kAdc3RanksPerSequence,
+  static_assert(midismith::adc_board::app::config::sensors::kAdc3RankCount ==
+                    midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence,
                 "ADC3 rank count must match AdcDma ranks");
 
   ConfigureAnalogSensorProcessorsOnce();
@@ -208,11 +238,11 @@ AdcControlContext CreateAnalogSubsystem(app::telemetry::SensorRttStreamCapture& 
   AttachSensorVelocityHandlersToProcessors(processors, logger);
 
   auto& sensors = SensorsArray();
-  static ProcessedSensorGroup analog_group(sensors.data(), processors.data(),
-                                           app::config_sensors::kSensorCount);
+  static ProcessedSensorGroup analog_group(
+      sensors.data(), processors.data(), midismith::adc_board::app::config::sensors::kSensorCount);
 
   StartAnalogAcquisitionTask(analog_group);
   return AdcControlContext{AdcControl()};
 }
 
-}  // namespace app::composition
+}  // namespace midismith::adc_board::app::composition

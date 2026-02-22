@@ -11,7 +11,7 @@ TEST_CASE("The SensorState struct") {
   SECTION("The default initialization") {
     SECTION("When value-initialized") {
       SECTION("Should zero initialize all fields") {
-        domain::sensors::SensorState state{};
+        midismith::adc_board::domain::sensors::SensorState state{};
 
         REQUIRE(state.id == 0);
         REQUIRE(state.is_note_on == false);

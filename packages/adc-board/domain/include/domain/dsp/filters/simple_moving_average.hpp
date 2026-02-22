@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 template <std::size_t kWindowSize>
 class SimpleMovingAverage {
@@ -63,4 +63,4 @@ class SimpleMovingAverage {
   float sum_ = 0.0f;
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

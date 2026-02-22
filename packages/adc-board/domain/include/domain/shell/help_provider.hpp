@@ -2,12 +2,13 @@
 
 #include "domain/io/stream_requirements.hpp"
 
-namespace domain::shell {
+namespace midismith::adc_board::domain::shell {
 
 class HelpProvider {
  public:
   virtual ~HelpProvider() = default;
-  virtual void ShowHelp(domain::io::WritableStreamRequirements& out) const noexcept = 0;
+  virtual void ShowHelp(
+      midismith::adc_board::domain::io::WritableStreamRequirements& out) const noexcept = 0;
 };
 
-}  // namespace domain::shell
+}  // namespace midismith::adc_board::domain::shell

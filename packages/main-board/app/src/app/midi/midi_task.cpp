@@ -2,12 +2,12 @@
 
 #include "os/clock.hpp"
 
-namespace app::midi {
+namespace midismith::main_board::app::midi {
 
 [[noreturn]] void MidiTask::Run() noexcept {
   while (true) {
     MidiCommand command{};
-    if (_queue.Receive(command, os::kWaitForever)) {
+    if (_queue.Receive(command, midismith::common::os::kWaitForever)) {
       ProcessCommand(command);
     }
   }
@@ -26,27 +26,27 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
   while (elapsed_ms <= _retry_timeout_ms) {
     const auto status = _transport.TrySendRawMessage(command.data, command.length);
 
-    if (status == domain::midi::TransportStatus::kSuccess) {
+    if (status == midismith::main_board::domain::midi::TransportStatus::kSuccess) {
       return;
     }
 
-    if (status == domain::midi::TransportStatus::kBusy) {
-      os::Clock::delay_ms(kRetryIntervalMs);
+    if (status == midismith::main_board::domain::midi::TransportStatus::kBusy) {
+      midismith::common::os::Clock::delay_ms(kRetryIntervalMs);
       elapsed_ms += kRetryIntervalMs;
       continue;
     }
 
-    if (status == domain::midi::TransportStatus::kError) {
-      _logger.logf(app::Logging::Level::Error, "MidiTask: Transport error");
+    if (status == midismith::main_board::domain::midi::TransportStatus::kError) {
+      _logger.logf(midismith::common::app::logging::Level::Error, "MidiTask: Transport error");
       return;
     }
 
-    if (status == domain::midi::TransportStatus::kNotAvailable) {
+    if (status == midismith::main_board::domain::midi::TransportStatus::kNotAvailable) {
       return;
     }
   }
 
-  _logger.logf(app::Logging::Level::Warn, "MidiTask: Drop message (timeout)");
+  _logger.logf(midismith::common::app::logging::Level::Warn, "MidiTask: Drop message (timeout)");
 }
 
-}  // namespace app::midi
+}  // namespace midismith::main_board::app::midi

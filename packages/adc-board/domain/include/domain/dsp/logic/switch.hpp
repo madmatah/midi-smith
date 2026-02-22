@@ -4,7 +4,7 @@
 
 #include "domain/dsp/concepts.hpp"
 
-namespace domain::dsp::logic {
+namespace midismith::adc_board::domain::dsp::logic {
 
 template <typename PredicateT, typename TrueStageT, typename FalseStageT>
 class Switch {
@@ -22,10 +22,10 @@ class Switch {
   }
 
   inline void Reset() noexcept {
-    if constexpr (domain::dsp::concepts::Resettable<TrueStageT>) {
+    if constexpr (midismith::adc_board::domain::dsp::concepts::Resettable<TrueStageT>) {
       true_stage_.Reset();
     }
-    if constexpr (domain::dsp::concepts::Resettable<FalseStageT>) {
+    if constexpr (midismith::adc_board::domain::dsp::concepts::Resettable<FalseStageT>) {
       false_stage_.Reset();
     }
   }
@@ -51,4 +51,4 @@ class Switch {
   FalseStageT false_stage_{};
 };
 
-}  // namespace domain::dsp::logic
+}  // namespace midismith::adc_board::domain::dsp::logic

@@ -15,7 +15,7 @@ struct MockContext {
 }  // namespace
 
 TEST_CASE("The CentralDifference class") {
-  domain::dsp::math::CentralDifference differentiator;
+  midismith::adc_board::domain::dsp::math::CentralDifference differentiator;
   MockContext ctx;
 
   SECTION("The Transform() method") {

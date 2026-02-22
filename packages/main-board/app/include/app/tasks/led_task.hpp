@@ -1,23 +1,24 @@
 #pragma once
 
-namespace bsp {
+namespace midismith::common::bsp {
 class GpioRequirements;
 }
 
-namespace app::telemetry {
+namespace midismith::main_board::app::telemetry {
 class TelemetrySenderRequirements;
 }
 
-namespace domain::music::piano {
+namespace midismith::main_board::domain::music::piano {
 class PianoRequirements;
 }
 
-namespace app::Tasks {
+namespace midismith::main_board::app::tasks {
 
 class LedTask {
  public:
-  LedTask(bsp::GpioRequirements& led, app::telemetry::TelemetrySenderRequirements& telemetry,
-          domain::music::piano::PianoRequirements& piano) noexcept;
+  LedTask(midismith::common::bsp::GpioRequirements& led,
+          midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
+          midismith::main_board::domain::music::piano::PianoRequirements& piano) noexcept;
 
   bool start() noexcept;
 
@@ -25,9 +26,9 @@ class LedTask {
   static void entry(void* ctx) noexcept;
   void run() noexcept;
 
-  bsp::GpioRequirements& _led;
-  app::telemetry::TelemetrySenderRequirements& _telemetry;
-  domain::music::piano::PianoRequirements& _piano;
+  midismith::common::bsp::GpioRequirements& _led;
+  midismith::main_board::app::telemetry::TelemetrySenderRequirements& _telemetry;
+  midismith::main_board::domain::music::piano::PianoRequirements& _piano;
 };
 
-}  // namespace app::Tasks
+}  // namespace midismith::main_board::app::tasks

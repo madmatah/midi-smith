@@ -4,7 +4,7 @@
 
 #include "domain/sensors/linearization/sensor_lookup_table.hpp"
 
-namespace domain::sensors::linearization {
+namespace midismith::adc_board::domain::sensors::linearization {
 
 template <std::size_t kLookupTableSize>
 struct SensorLinearProcessorConfiguration {
@@ -13,4 +13,4 @@ struct SensorLinearProcessorConfiguration {
   float input_to_lut_index_bias = 0.0f;
 };
 
-}  // namespace domain::sensors::linearization
+}  // namespace midismith::adc_board::domain::sensors::linearization

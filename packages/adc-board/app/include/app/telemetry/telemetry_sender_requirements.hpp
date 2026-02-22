@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace app::telemetry {
+namespace midismith::adc_board::app::telemetry {
 
 class TelemetrySenderRequirements {
  public:
@@ -19,4 +19,4 @@ class TelemetrySenderRequirements {
   }
 };
 
-}  // namespace app::telemetry
+}  // namespace midismith::adc_board::app::telemetry

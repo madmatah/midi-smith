@@ -5,7 +5,7 @@
 #include "domain/midi/midi_controller_requirements.hpp"
 #include "domain/midi/transport_status.hpp"
 
-namespace domain::midi {
+namespace midismith::main_board::domain::midi {
 
 /**
  * @brief Extends MidiControllerRequirements with transport-level feedback.
@@ -26,4 +26,4 @@ class MidiTransportRequirements : public MidiControllerRequirements {
   virtual TransportStatus TrySendRawMessage(const uint8_t* data, uint8_t length) noexcept = 0;
 };
 
-}  // namespace domain::midi
+}  // namespace midismith::main_board::domain::midi

@@ -17,7 +17,7 @@ float ReadValue(const MockContext& ctx) noexcept {
 }  // namespace
 
 TEST_CASE("The GateOpen struct") {
-  using domain::dsp::logic::GateOpen;
+  using midismith::adc_board::domain::dsp::logic::GateOpen;
   using Predicate = GateOpen<0.45f, ReadValue>;
 
   SECTION("The Test() method") {

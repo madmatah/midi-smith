@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace domain::config {
+namespace midismith::adc_board::domain::config {
 
 enum class ConfigGetStatus {
   kOk,
@@ -36,4 +36,4 @@ class TransactionalConfigDictionary {
   virtual TransactionResult Commit() noexcept = 0;
 };
 
-}  // namespace domain::config
+}  // namespace midismith::adc_board::domain::config

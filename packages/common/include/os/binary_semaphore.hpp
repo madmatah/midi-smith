@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace os {
+namespace midismith::common::os {
 
 class BinarySemaphore {
  public:
@@ -19,8 +19,4 @@ class BinarySemaphore {
   void* _sem;
 };
 
-}  // namespace os
-
-namespace midismith::common::os {
-using ::os::BinarySemaphore;
-}
+}  // namespace midismith::common::os

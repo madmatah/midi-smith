@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::filters {
+namespace midismith::adc_board::domain::dsp::filters {
 
 class IdentityFilter {
  public:
@@ -12,4 +12,4 @@ class IdentityFilter {
   void Reset() noexcept {}
 };
 
-}  // namespace domain::dsp::filters
+}  // namespace midismith::adc_board::domain::dsp::filters

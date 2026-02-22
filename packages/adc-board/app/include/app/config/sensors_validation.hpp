@@ -5,7 +5,7 @@
 
 #include "app/config/sensors.hpp"
 
-namespace app::config_sensors::validation {
+namespace midismith::adc_board::app::config::sensors::validation {
 
 template <std::size_t N>
 constexpr bool HasZeroId(const std::uint8_t (&ids)[N]) noexcept {
@@ -61,20 +61,27 @@ constexpr bool IsContiguousFrom1(const std::uint8_t (&ids)[N]) noexcept {
   return true;
 }
 
-}  // namespace app::config_sensors::validation
+}  // namespace midismith::adc_board::app::config::sensors::validation
 
-static_assert(!app::config_sensors::validation::HasZeroId(app::config_sensors::kSensorIds),
+static_assert(!midismith::adc_board::app::config::sensors::validation::HasZeroId(
+                  midismith::adc_board::app::config::sensors::kSensorIds),
               "Sensor IDs must be non-zero");
-static_assert(app::config_sensors::kSensorCount > 0u, "At least one sensor must be configured");
-static_assert(app::config_sensors::validation::AreUnique(app::config_sensors::kSensorIds),
+static_assert(midismith::adc_board::app::config::sensors::kSensorCount > 0u,
+              "At least one sensor must be configured");
+static_assert(midismith::adc_board::app::config::sensors::validation::AreUnique(
+                  midismith::adc_board::app::config::sensors::kSensorIds),
               "Sensor IDs must be unique");
-static_assert(app::config_sensors::validation::IsContiguousFrom1(app::config_sensors::kSensorIds),
+static_assert(midismith::adc_board::app::config::sensors::validation::IsContiguousFrom1(
+                  midismith::adc_board::app::config::sensors::kSensorIds),
               "Sensor IDs must be contiguous from 1");
-static_assert(app::config_sensors::validation::AreUnique(app::config_sensors::kAnalogRankSensorIds),
+static_assert(midismith::adc_board::app::config::sensors::validation::AreUnique(
+                  midismith::adc_board::app::config::sensors::kAnalogRankSensorIds),
               "Analog rank mapping must not contain duplicates");
-static_assert(app::config_sensors::validation::AllInSet(app::config_sensors::kAnalogRankSensorIds,
-                                                        app::config_sensors::kSensorIds),
+static_assert(midismith::adc_board::app::config::sensors::validation::AllInSet(
+                  midismith::adc_board::app::config::sensors::kAnalogRankSensorIds,
+                  midismith::adc_board::app::config::sensors::kSensorIds),
               "Analog rank mapping must reference valid IDs");
-static_assert(app::config_sensors::validation::AllInSet(app::config_sensors::kSensorIds,
-                                                        app::config_sensors::kAnalogRankSensorIds),
+static_assert(midismith::adc_board::app::config::sensors::validation::AllInSet(
+                  midismith::adc_board::app::config::sensors::kSensorIds,
+                  midismith::adc_board::app::config::sensors::kAnalogRankSensorIds),
               "Analog rank mapping must cover all sensor IDs");

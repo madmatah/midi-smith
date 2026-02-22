@@ -7,7 +7,7 @@
 
 #include "domain/sensors/linearization/sensor_linear_processor_configuration.hpp"
 
-namespace domain::sensors::linearization {
+namespace midismith::adc_board::domain::sensors::linearization {
 
 template <std::size_t kLookupTableSize>
 class SensorLinearProcessor {
@@ -55,4 +55,4 @@ class SensorLinearProcessor {
   std::atomic<const Configuration*> configuration_{nullptr};
 };
 
-}  // namespace domain::sensors::linearization
+}  // namespace midismith::adc_board::domain::sensors::linearization

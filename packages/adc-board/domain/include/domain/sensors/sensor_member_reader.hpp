@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::sensors {
+namespace midismith::adc_board::domain::sensors {
 
 template <auto MemberPtr>
 struct SensorMemberReader {
@@ -9,4 +9,4 @@ struct SensorMemberReader {
   }
 };
 
-}  // namespace domain::sensors
+}  // namespace midismith::adc_board::domain::sensors

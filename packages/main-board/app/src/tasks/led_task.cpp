@@ -8,10 +8,11 @@
 #include "os/clock.hpp"
 #include "os/task.hpp"
 
-namespace app::Tasks {
+namespace midismith::main_board::app::tasks {
 
-LedTask::LedTask(bsp::GpioRequirements& led, app::telemetry::TelemetrySenderRequirements& telemetry,
-                 domain::music::piano::PianoRequirements& piano) noexcept
+LedTask::LedTask(midismith::common::bsp::GpioRequirements& led,
+                 midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
+                 midismith::main_board::domain::music::piano::PianoRequirements& piano) noexcept
     : _led(led), _telemetry(telemetry), _piano(piano) {}
 
 void LedTask::entry(void* ctx) noexcept {
@@ -27,19 +28,20 @@ void LedTask::run() noexcept {
     const bool state = _led.read();
 
     if (state) {
-      _piano.PressKey(domain::music::kNoteC4, 60);
+      _piano.PressKey(midismith::common::domain::music::kNoteC4, 60);
     } else {
-      _piano.ReleaseKey(domain::music::kNoteC4);
+      _piano.ReleaseKey(midismith::common::domain::music::kNoteC4);
     }
 
     _telemetry.Send(state ? 1u : 0u);
-    os::Clock::delay_ms(app::config::LED_BLINK_PERIOD_MS);
+    midismith::common::os::Clock::delay_ms(midismith::main_board::app::config::LED_BLINK_PERIOD_MS);
   }
 }
 
 bool LedTask::start() noexcept {
-  return os::Task::create("LedTask", LedTask::entry, this, app::config::LED_TASK_STACK_BYTES,
-                          app::config::LED_TASK_PRIORITY);
+  return midismith::common::os::Task::create(
+      "LedTask", LedTask::entry, this, midismith::main_board::app::config::LED_TASK_STACK_BYTES,
+      midismith::main_board::app::config::LED_TASK_PRIORITY);
 }
 
-}  // namespace app::Tasks
+}  // namespace midismith::main_board::app::tasks

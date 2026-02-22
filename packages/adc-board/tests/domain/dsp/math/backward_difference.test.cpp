@@ -15,7 +15,7 @@ struct MockContext {
 }  // namespace
 
 TEST_CASE("The BackwardDifference class") {
-  domain::dsp::math::BackwardDifference differentiator;
+  midismith::adc_board::domain::dsp::math::BackwardDifference differentiator;
   MockContext ctx;
 
   SECTION("The Transform() method") {

@@ -5,29 +5,34 @@
 #include "bsp/flash/storage_requirements.hpp"
 #include "domain/config/config_validator.hpp"
 
-namespace app::storage {
+namespace midismith::adc_board::app::storage {
+
+using ConfigStatus = midismith::adc_board::domain::config::ConfigStatus;
+template <typename TConfig>
+using ConfigValidator = midismith::adc_board::domain::config::ConfigValidator<TConfig>;
+using OperationResult = midismith::adc_board::bsp::flash::OperationResult;
+using StorageRequirements = midismith::adc_board::bsp::flash::StorageRequirements;
 
 template <typename TConfig>
 class StorageManager {
  public:
-  StorageManager(bsp::flash::StorageRequirements& flash_storage,
-                 const TConfig& default_config) noexcept
+  StorageManager(StorageRequirements& flash_storage, const TConfig& default_config) noexcept
       : flash_storage_(flash_storage), default_config_(default_config) {}
 
-  domain::config::ConfigStatus Load(TConfig& out_ram_config) noexcept {
+  ConfigStatus Load(TConfig& out_ram_config) noexcept {
     const auto* flash_config = static_cast<const TConfig*>(flash_storage_.BaseAddress());
     std::memcpy(&out_ram_config, flash_config, sizeof(TConfig));
 
-    auto status = domain::config::ConfigValidator<TConfig>::Validate(out_ram_config);
+    auto status = ConfigValidator<TConfig>::Validate(out_ram_config);
     switch (status) {
-      case domain::config::ConfigStatus::kValid:
-      case domain::config::ConfigStatus::kOlderVersion:
+      case ConfigStatus::kValid:
+      case ConfigStatus::kOlderVersion:
         break;
 
-      case domain::config::ConfigStatus::kVirginFlash:
-      case domain::config::ConfigStatus::kInvalidMagic:
-      case domain::config::ConfigStatus::kInvalidCrc:
-      case domain::config::ConfigStatus::kNewerVersion:
+      case ConfigStatus::kVirginFlash:
+      case ConfigStatus::kInvalidMagic:
+      case ConfigStatus::kInvalidCrc:
+      case ConfigStatus::kNewerVersion:
         out_ram_config = default_config_;
         break;
     }
@@ -35,17 +40,17 @@ class StorageManager {
     return status;
   }
 
-  bsp::flash::OperationResult Save(const TConfig& ram_config) noexcept {
+  OperationResult Save(const TConfig& ram_config) noexcept {
     TConfig config_to_save = ram_config;
-    domain::config::ConfigValidator<TConfig>::StampCrc(config_to_save);
+    ConfigValidator<TConfig>::StampCrc(config_to_save);
 
     const auto* flash_data = static_cast<const TConfig*>(flash_storage_.BaseAddress());
     if (std::memcmp(&config_to_save, flash_data, sizeof(config_to_save)) == 0) {
-      return bsp::flash::OperationResult::kSuccess;
+      return OperationResult::kSuccess;
     }
 
     auto erase_result = flash_storage_.EraseSector();
-    if (erase_result != bsp::flash::OperationResult::kSuccess) {
+    if (erase_result != OperationResult::kSuccess) {
       return erase_result;
     }
 
@@ -54,8 +59,8 @@ class StorageManager {
   }
 
  private:
-  bsp::flash::StorageRequirements& flash_storage_;
+  StorageRequirements& flash_storage_;
   TConfig default_config_;
 };
 
-}  // namespace app::storage
+}  // namespace midismith::adc_board::app::storage

@@ -5,16 +5,16 @@
 
 #include "os/queue_requirements.hpp"
 
-using app::midi::AsyncTaskMidiController;
-using app::midi::MidiCommand;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
+using midismith::main_board::app::midi::AsyncTaskMidiController;
+using midismith::main_board::app::midi::MidiCommand;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
 TEST_CASE("The AsyncTaskMidiController class") {
-  Mock<os::QueueRequirements<MidiCommand>> queue_mock;
+  Mock<midismith::common::os::QueueRequirements<MidiCommand>> queue_mock;
   AsyncTaskMidiController controller(queue_mock.get());
 
   SECTION("The SendRawMessage() method") {

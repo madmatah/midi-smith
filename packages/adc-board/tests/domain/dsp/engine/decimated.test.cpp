@@ -9,9 +9,9 @@
 
 TEST_CASE("The Decimated decorator") {
   using Catch::Matchers::WithinAbs;
-  using domain::dsp::engine::Decimated;
-  using domain::dsp::engine::test::CounterStage;
-  using domain::dsp::engine::test::TestContext;
+  using midismith::adc_board::domain::dsp::engine::Decimated;
+  using midismith::adc_board::domain::dsp::engine::test::CounterStage;
+  using midismith::adc_board::domain::dsp::engine::test::TestContext;
 
   SECTION("When configured with Factor=3 and a counter stage") {
     CounterStage::ResetCounts();

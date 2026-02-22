@@ -16,7 +16,7 @@ TEST_CASE("The Sg5Smoother class") {
   SECTION("The Transform() method") {
     SECTION("When called with a constant signal") {
       SECTION("Should return the same constant after warmup") {
-        domain::dsp::filters::Sg5Smoother filter;
+        midismith::adc_board::domain::dsp::filters::Sg5Smoother filter;
         TestContext ctx{};
 
         for (std::uint32_t i = 0; i < 10; ++i) {
@@ -27,7 +27,7 @@ TEST_CASE("The Sg5Smoother class") {
 
     SECTION("When called with a ramp signal") {
       SECTION("Should return the newest sample after warmup") {
-        domain::dsp::filters::Sg5Smoother filter;
+        midismith::adc_board::domain::dsp::filters::Sg5Smoother filter;
         TestContext ctx{};
 
         REQUIRE_THAT(filter.Transform(10.0f, ctx), WithinAbs(10.0f, 0.001f));

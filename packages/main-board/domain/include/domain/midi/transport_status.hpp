@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::midi {
+namespace midismith::main_board::domain::midi {
 
 /**
  * @brief Status of a MIDI transport operation.
@@ -12,4 +12,4 @@ enum class TransportStatus {
   kError          ///< Fatal transport error
 };
 
-}  // namespace domain::midi
+}  // namespace midismith::main_board::domain::midi

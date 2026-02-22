@@ -13,7 +13,7 @@ struct TestData {
   std::uint8_t value;
 };
 
-using TestConfig = domain::config::StorableConfig<TestData, 0x5354474Du, 2>;
+using TestConfig = midismith::adc_board::domain::config::StorableConfig<TestData, 0x5354474Du, 2>;
 
 TestConfig CreateDefaultTestConfig() noexcept {
   TestConfig config{};
@@ -21,7 +21,7 @@ TestConfig CreateDefaultTestConfig() noexcept {
   config.magic_number = TestConfig::kMagicNumber;
   config.version = TestConfig::kVersion;
   config.data.value = 11;
-  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
@@ -30,11 +30,11 @@ TestConfig CreateTestConfig(std::uint8_t value,
   auto config = CreateDefaultTestConfig();
   config.version = version;
   config.data.value = value;
-  domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
-class FlashStorageStub final : public bsp::flash::StorageRequirements {
+class FlashStorageStub final : public midismith::adc_board::bsp::flash::StorageRequirements {
  public:
   static constexpr std::size_t kSectorSize = 128 * 1024;
 
@@ -50,28 +50,29 @@ class FlashStorageStub final : public bsp::flash::StorageRequirements {
     return kSectorSize;
   }
 
-  bsp::flash::OperationResult EraseSector() noexcept override {
+  midismith::adc_board::bsp::flash::OperationResult EraseSector() noexcept override {
     if (erase_should_fail) {
-      return bsp::flash::OperationResult::kError;
+      return midismith::adc_board::bsp::flash::OperationResult::kError;
     }
 
     std::memset(storage_, 0xFF, sizeof(storage_));
     ++erase_count;
-    return bsp::flash::OperationResult::kSuccess;
+    return midismith::adc_board::bsp::flash::OperationResult::kSuccess;
   }
 
-  bsp::flash::OperationResult ProgramFlashWords(std::size_t offset_bytes, const std::uint8_t* data,
-                                                std::size_t length_bytes) noexcept override {
+  midismith::adc_board::bsp::flash::OperationResult ProgramFlashWords(
+      std::size_t offset_bytes, const std::uint8_t* data,
+      std::size_t length_bytes) noexcept override {
     if (program_should_fail) {
-      return bsp::flash::OperationResult::kError;
+      return midismith::adc_board::bsp::flash::OperationResult::kError;
     }
     if (offset_bytes + length_bytes > kSectorSize) {
-      return bsp::flash::OperationResult::kError;
+      return midismith::adc_board::bsp::flash::OperationResult::kError;
     }
 
     std::memcpy(storage_ + offset_bytes, data, length_bytes);
     ++program_count;
-    return bsp::flash::OperationResult::kSuccess;
+    return midismith::adc_board::bsp::flash::OperationResult::kSuccess;
   }
 
   void WriteConfig(const TestConfig& config) noexcept {
@@ -92,27 +93,28 @@ class FlashStorageStub final : public bsp::flash::StorageRequirements {
 TEST_CASE("The StorageManager class") {
   auto default_config = CreateDefaultTestConfig();
   FlashStorageStub flash;
-  app::storage::StorageManager<TestConfig> storage_manager(flash, default_config);
+  midismith::adc_board::app::storage::StorageManager<TestConfig> storage_manager(flash,
+                                                                                 default_config);
 
   SECTION("The Load method") {
     SECTION("When flash is virgin") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kVirginFlash);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kVirginFlash);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
     SECTION("When flash has invalid magic") {
       auto config = CreateTestConfig(22);
       config.magic_number = 0xDEADBEEFu;
-      domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+      midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
       flash.WriteConfig(config);
 
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kInvalidMagic);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kInvalidMagic);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -124,7 +126,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kInvalidCrc);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kInvalidCrc);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -135,7 +137,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kNewerVersion);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kNewerVersion);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -146,7 +148,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kValid);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kValid);
       REQUIRE(ram_config.data.value == 55);
     }
 
@@ -157,7 +159,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == domain::config::ConfigStatus::kOlderVersion);
+      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kOlderVersion);
       REQUIRE(ram_config.data.value == 66);
     }
   }
@@ -169,7 +171,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
       REQUIRE(flash.erase_count == 0);
       REQUIRE(flash.program_count == 0);
     }
@@ -179,7 +181,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
       REQUIRE(flash.program_count == 1);
     }
@@ -190,7 +192,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == bsp::flash::OperationResult::kError);
+      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kError);
       REQUIRE(flash.program_count == 0);
     }
 
@@ -200,7 +202,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == bsp::flash::OperationResult::kError);
+      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kError);
       REQUIRE(flash.erase_count == 1);
     }
 
@@ -209,12 +211,12 @@ TEST_CASE("The StorageManager class") {
       config.crc32 = 0;
 
       auto result = storage_manager.Save(config);
-      REQUIRE(result == bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
 
       TestConfig saved{};
       std::memcpy(&saved, flash.BaseAddress(), sizeof(saved));
-      REQUIRE(domain::config::ConfigValidator<TestConfig>::Validate(saved) ==
-              domain::config::ConfigStatus::kValid);
+      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(saved) ==
+              midismith::adc_board::domain::config::ConfigStatus::kValid);
       REQUIRE(saved.data.value == 88);
     }
   }

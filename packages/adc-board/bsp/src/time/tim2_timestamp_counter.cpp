@@ -3,7 +3,7 @@
 #include "stm32h7xx_hal.h"
 #include "tim.h"
 
-namespace bsp::time {
+namespace midismith::adc_board::bsp::time {
 namespace {
 
 void StartTim2() noexcept {
@@ -20,4 +20,4 @@ TimestampCounter CreateTim2TimestampCounter() noexcept {
   return TimestampCounter(StartTim2, NowTim2Ticks);
 }
 
-}  // namespace bsp::time
+}  // namespace midismith::adc_board::bsp::time

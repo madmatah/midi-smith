@@ -4,10 +4,10 @@
 #include "os/clock.hpp"
 #include "os/task.hpp"
 
-namespace app::Tasks {
+namespace midismith::adc_board::app::tasks {
 
-ShellTask::ShellTask(domain::io::StreamRequirements& stream,
-                     const domain::shell::ShellConfig& config) noexcept
+ShellTask::ShellTask(midismith::adc_board::domain::io::StreamRequirements& stream,
+                     const midismith::adc_board::domain::shell::ShellConfig& config) noexcept
     : _engine(stream, config) {}
 
 void ShellTask::entry(void* ctx) noexcept {
@@ -22,15 +22,18 @@ void ShellTask::run() noexcept {
   for (;;) {
     const bool did_rx = _engine.Poll();
     if (!did_rx) {
-      os::Clock::delay_ms(app::config::SHELL_TASK_IDLE_DELAY_MS);
+      midismith::common::os::Clock::delay_ms(
+          midismith::adc_board::app::config::SHELL_TASK_IDLE_DELAY_MS);
     }
     // If did_rx is true, we loop immediately to stay responsive.
   }
 }
 
 bool ShellTask::start() noexcept {
-  return os::Task::create("ShellTask", ShellTask::entry, this, app::config::SHELL_TASK_STACK_BYTES,
-                          app::config::SHELL_TASK_PRIORITY);
+  return midismith::common::os::Task::create(
+      "ShellTask", ShellTask::entry, this,
+      midismith::adc_board::app::config::SHELL_TASK_STACK_BYTES,
+      midismith::adc_board::app::config::SHELL_TASK_PRIORITY);
 }
 
-}  // namespace app::Tasks
+}  // namespace midismith::adc_board::app::tasks

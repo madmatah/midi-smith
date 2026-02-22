@@ -10,7 +10,7 @@
 extern "C" DMA_HandleTypeDef hdma_adc1;
 extern "C" DMA_HandleTypeDef hdma_adc2;
 
-namespace bsp::adc {
+namespace midismith::adc_board::bsp::adc {
 
 namespace {
 
@@ -23,8 +23,8 @@ alignas(32) BSP_D3_SRAM_NOCACHE
 
 static AdcDma* g_adc_dma = nullptr;
 
-static bool PushDescriptor(os::Queue<AdcFrameDescriptor, 8>& queue, AdcGroup group,
-                           std::uint8_t half, std::uint32_t sequence_id,
+static bool PushDescriptor(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue,
+                           AdcGroup group, std::uint8_t half, std::uint32_t sequence_id,
                            std::uint32_t timestamp_ticks, const void* data,
                            std::uint16_t element_count, std::uint8_t element_size_bytes) noexcept {
   const AdcFrameDescriptor desc{group, half,          sequence_id,       timestamp_ticks,
@@ -33,7 +33,8 @@ static bool PushDescriptor(os::Queue<AdcFrameDescriptor, 8>& queue, AdcGroup gro
 }
 
 std::uint16_t SequencesPerHalfBufferFromConfig() noexcept {
-  constexpr std::uint32_t configured = ::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER;
+  constexpr std::uint32_t configured =
+      ::midismith::adc_board::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER;
   static_assert(configured >= 1u, "ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER must be >= 1");
   static_assert(configured <= AdcDma::kMaxSequencesPerHalfBuffer,
                 "ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER is too large");
@@ -52,9 +53,10 @@ bool IsAdcKernelClockWithinLimit() noexcept {
   if (adc_kernel_clock_hz == 0u) {
     return false;
   }
-  if (adc_kernel_clock_hz > ::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ) {
+  if (adc_kernel_clock_hz > ::midismith::adc_board::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ) {
     (void) SEGGER_RTT_printf(0u, "ADC kernel clock too high: %lu Hz (limit: %lu Hz)\r\n",
-                             adc_kernel_clock_hz, ::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
+                             adc_kernel_clock_hz,
+                             ::midismith::adc_board::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
     return false;
   }
   return true;
@@ -87,7 +89,8 @@ AdcTriggerSchedule& TriggerSchedule() noexcept {
 
 }  // namespace
 
-AdcDma::AdcDma(os::Queue<AdcFrameDescriptor, 8>& queue) noexcept : queue_(queue) {
+AdcDma::AdcDma(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept
+    : queue_(queue) {
   RegisterAdcDma(*this);
 }
 
@@ -114,7 +117,8 @@ bool AdcDma::Start() noexcept {
   (void) SEGGER_RTT_printf(
       0u, "ADC start: kernel=%lu Hz rate=%lu Hz seq_half=%u\r\n",
       static_cast<std::uint32_t>(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_ADC)),
-      static_cast<std::uint32_t>(::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ),
+      static_cast<std::uint32_t>(
+          ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ),
       static_cast<unsigned>(sequences_per_half_buffer));
 
   adc1_halfwords_per_half_buffer_ =
@@ -152,9 +156,10 @@ bool AdcDma::Start() noexcept {
   }
 
   AdcTriggerScheduleConfig schedule_config{};
-  schedule_config.channel_rate_hz = ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
-  schedule_config.adc2_phase_us = ::app::config::ANALOG_ADC2_PHASE_US;
-  schedule_config.adc3_phase_us = ::app::config::ANALOG_ADC3_PHASE_US;
+  schedule_config.channel_rate_hz =
+      ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
+  schedule_config.adc2_phase_us = ::midismith::adc_board::app::config::ANALOG_ADC2_PHASE_US;
+  schedule_config.adc3_phase_us = ::midismith::adc_board::app::config::ANALOG_ADC3_PHASE_US;
 
   if (!TriggerSchedule().Start(schedule_config)) {
     Stop();
@@ -245,4 +250,4 @@ AdcDma* GetAdcDma() noexcept {
   return g_adc_dma;
 }
 
-}  // namespace bsp::adc
+}  // namespace midismith::adc_board::bsp::adc

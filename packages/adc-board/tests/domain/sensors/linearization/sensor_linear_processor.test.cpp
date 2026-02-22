@@ -17,8 +17,8 @@ struct TestContext {};
 
 TEST_CASE("The SensorLinearProcessor class") {
   using Catch::Matchers::WithinAbs;
-  using domain::sensors::linearization::SensorLinearProcessor;
-  using domain::sensors::linearization::SensorLookupTable;
+  using midismith::adc_board::domain::sensors::linearization::SensorLinearProcessor;
+  using midismith::adc_board::domain::sensors::linearization::SensorLookupTable;
 
   constexpr std::size_t kLookupTableSize = 256u;
   SensorLinearProcessor<kLookupTableSize> processor;
@@ -90,8 +90,9 @@ TEST_CASE("The SensorLinearProcessor class") {
   }
 
   SECTION("CNY70 generator + processor maps strike to 0 and rest to 1") {
-    const auto master = domain::sensors::linearization::Cny70DatasheetSensorResponseCurve();
-    const domain::sensors::linearization::SensorCalibration calibration{
+    const auto master =
+        midismith::adc_board::domain::sensors::linearization::Cny70DatasheetSensorResponseCurve();
+    const midismith::adc_board::domain::sensors::linearization::SensorCalibration calibration{
         .rest_current_ma = 0.047f,
         .strike_current_ma = 1.000f,
         .rest_distance_mm = 10.0f,
@@ -99,8 +100,9 @@ TEST_CASE("The SensorLinearProcessor class") {
     };
 
     SensorLookupTable<kLookupTableSize> lookup_table{};
-    const auto result = domain::sensors::linearization::LookupTableGenerator::Generate(
-        master, calibration, lookup_table);
+    const auto result =
+        midismith::adc_board::domain::sensors::linearization::LookupTableGenerator::Generate(
+            master, calibration, lookup_table);
 
     SensorLinearProcessor<kLookupTableSize>::Configuration configuration = result.configuration;
     processor.ApplyConfiguration(&configuration);

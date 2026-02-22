@@ -9,10 +9,10 @@
 
 namespace {
 
-class StreamStub : public domain::io::StreamRequirements {
+class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
  public:
-  domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return domain::io::ReadResult::kNoData;
+  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::adc_board::domain::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {
@@ -31,30 +31,31 @@ class StreamStub : public domain::io::StreamRequirements {
   std::string output_;
 };
 
-class RuntimeStatsMock final : public os::RuntimeStatsRequirements {
+class RuntimeStatsMock final : public midismith::adc_board::os::RuntimeStatsRequirements {
  public:
-  bool CaptureStatusSnapshot(std::uint32_t window_ms,
-                             os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
+  bool CaptureStatusSnapshot(
+      std::uint32_t window_ms,
+      midismith::adc_board::os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
     requested_window_ms = window_ms;
     status_snapshot = snapshot;
     return capture_status_ok;
   }
 
-  bool CaptureTaskSnapshotRows(std::uint32_t, os::RuntimeTaskSnapshotRow*, std::size_t,
-                               std::size_t&, bool&) noexcept override {
+  bool CaptureTaskSnapshotRows(std::uint32_t, midismith::adc_board::os::RuntimeTaskSnapshotRow*,
+                               std::size_t, std::size_t&, bool&) noexcept override {
     return false;
   }
 
   bool capture_status_ok = true;
   std::uint32_t requested_window_ms = 0u;
-  os::RuntimeStatusSnapshot snapshot{};
+  midismith::adc_board::os::RuntimeStatusSnapshot snapshot{};
 };
 
 }  // namespace
 
 TEST_CASE("The StatusCommand class", "[app][shell][commands]") {
   RuntimeStatsMock runtime_stats;
-  app::shell::commands::StatusCommand command(runtime_stats);
+  midismith::adc_board::app::shell::commands::StatusCommand command(runtime_stats);
   StreamStub stream;
 
   SECTION("The Name() method should return 'status'") {

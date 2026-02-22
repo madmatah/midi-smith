@@ -4,11 +4,11 @@
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "os/queue.hpp"
 
-namespace app::analog {
+namespace midismith::adc_board::app::analog {
 
 class QueueAcquisitionControl final : public AcquisitionControlRequirements {
  public:
-  QueueAcquisitionControl(os::Queue<AcquisitionCommand, 4>& queue,
+  QueueAcquisitionControl(midismith::common::os::Queue<AcquisitionCommand, 4>& queue,
                           volatile AcquisitionState& state) noexcept
       : queue_(queue), state_(state) {}
 
@@ -16,14 +16,14 @@ class QueueAcquisitionControl final : public AcquisitionControlRequirements {
     if (state_ == AcquisitionState::kEnabled) {
       return true;
     }
-    return queue_.Send(AcquisitionCommand::kEnable, os::kNoWait);
+    return queue_.Send(AcquisitionCommand::kEnable, midismith::common::os::kNoWait);
   }
 
   bool RequestDisable() noexcept override {
     if (state_ == AcquisitionState::kDisabled) {
       return true;
     }
-    return queue_.Send(AcquisitionCommand::kDisable, os::kNoWait);
+    return queue_.Send(AcquisitionCommand::kDisable, midismith::common::os::kNoWait);
   }
 
   AcquisitionState GetState() const noexcept override {
@@ -31,8 +31,8 @@ class QueueAcquisitionControl final : public AcquisitionControlRequirements {
   }
 
  private:
-  os::Queue<AcquisitionCommand, 4>& queue_;
+  midismith::common::os::Queue<AcquisitionCommand, 4>& queue_;
   volatile AcquisitionState& state_;
 };
 
-}  // namespace app::analog
+}  // namespace midismith::adc_board::app::analog

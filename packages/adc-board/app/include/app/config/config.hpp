@@ -4,12 +4,10 @@
 
 #include "app/config/analog_acquisition.hpp"
 
-namespace app {
-
 /**
  * @brief Centralized configuration for the application.
  */
-namespace config {
+namespace midismith::adc_board::app::config {
 
 // Task priorities
 constexpr uint32_t SHELL_TASK_PRIORITY = 1;
@@ -29,6 +27,4 @@ constexpr uint32_t RTT_TELEMETRY_SENSOR_CHANNEL = 1;
 constexpr uint32_t RTT_TELEMETRY_SENSOR_BUFFER_SIZE = 8192;
 constexpr uint32_t RTT_TELEMETRY_FREQUENCY_HZ = 5000;
 
-}  // namespace config
-
-}  // namespace app
+}  // namespace midismith::adc_board::app::config

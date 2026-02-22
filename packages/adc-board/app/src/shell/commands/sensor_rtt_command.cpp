@@ -7,7 +7,7 @@
 
 #include "app/config/analog_acquisition.hpp"
 
-namespace app::shell::commands {
+namespace midismith::adc_board::app::shell::commands {
 namespace {
 
 std::string_view Arg(int argc, char** argv, int index) noexcept {
@@ -23,22 +23,23 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: sensor_rtt <id>\r\n");
   out.Write("       sensor_rtt freq [hz|max]\r\n");
   out.Write("       sensor_rtt off\r\n");
   out.Write("       sensor_rtt status\r\n");
 }
 
-void WriteRejected(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteRejected(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: request rejected\r\n");
 }
 
-void WriteOk(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteOk(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("ok\r\n");
 }
 
-void WriteUnknownSensorId(domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUnknownSensorId(
+    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: unknown sensor id\r\n");
 }
 
@@ -57,7 +58,8 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   return true;
 }
 
-void WriteUint32(domain::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
+void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+                 std::uint32_t value) noexcept {
   char buf[16]{};
   auto r = std::to_chars(buf, buf + sizeof(buf), value);
   if (r.ec != std::errc()) {
@@ -80,8 +82,9 @@ struct SensorRttParsedCommand {
   std::uint32_t output_hz{0};
 };
 
-void WriteStatus(domain::io::WritableStreamRequirements& out,
-                 const app::telemetry::SensorRttTelemetryStatus& status) noexcept {
+void WriteStatus(
+    midismith::adc_board::domain::io::WritableStreamRequirements& out,
+    const midismith::adc_board::app::telemetry::SensorRttTelemetryStatus& status) noexcept {
   if (!status.enabled) {
     out.Write("off\r\n");
     return;
@@ -98,7 +101,7 @@ void WriteStatus(domain::io::WritableStreamRequirements& out,
 }
 
 bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
-                     domain::io::WritableStreamRequirements& out) noexcept {
+                     midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   const std::string_view op = Arg(argc, argv, 1);
   if (op.empty()) {
     WriteUsage(out);
@@ -122,7 +125,7 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
       return true;
     }
     if (freq_arg == "max") {
-      parsed.output_hz = ::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
+      parsed.output_hz = ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ;
     } else if (!ParseUint32(freq_arg, parsed.output_hz) || parsed.output_hz == 0u) {
       WriteUsage(out);
       return false;
@@ -151,8 +154,9 @@ bool TryParseCommand(int argc, char** argv, SensorRttParsedCommand& parsed,
 
 }  // namespace
 
-void SensorRttCommand::Run(int argc, char** argv,
-                           domain::io::WritableStreamRequirements& out) noexcept {
+void SensorRttCommand::Run(
+    int argc, char** argv,
+    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
   SensorRttParsedCommand parsed{};
   if (!TryParseCommand(argc, argv, parsed, out)) {
     return;
@@ -200,4 +204,4 @@ void SensorRttCommand::Run(int argc, char** argv,
   WriteOk(out);
 }
 
-}  // namespace app::shell::commands
+}  // namespace midismith::adc_board::app::shell::commands

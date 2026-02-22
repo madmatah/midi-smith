@@ -1,6 +1,6 @@
 #pragma once
 
-namespace domain::dsp::logic {
+namespace midismith::adc_board::domain::dsp::logic {
 
 template <typename... Predicates>
 struct Or {
@@ -10,4 +10,4 @@ struct Or {
   }
 };
 
-}  // namespace domain::dsp::logic
+}  // namespace midismith::adc_board::domain::dsp::logic

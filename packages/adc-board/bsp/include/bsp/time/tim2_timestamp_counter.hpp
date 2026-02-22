@@ -2,8 +2,8 @@
 
 #include "bsp/time/timestamp_counter.hpp"
 
-namespace bsp::time {
+namespace midismith::adc_board::bsp::time {
 
 TimestampCounter CreateTim2TimestampCounter() noexcept;
 
-}  // namespace bsp::time
+}  // namespace midismith::adc_board::bsp::time

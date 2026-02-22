@@ -2,15 +2,11 @@
 
 #include <cstdint>
 
-namespace os {
+namespace midismith::common::os {
 
 class Clock {
  public:
   static void delay_ms(std::uint32_t ms) noexcept;
 };
 
-}  // namespace os
-
-namespace midismith::common::os {
-using ::os::Clock;
-}
+}  // namespace midismith::common::os

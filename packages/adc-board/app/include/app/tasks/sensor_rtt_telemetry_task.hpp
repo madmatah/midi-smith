@@ -11,15 +11,17 @@
 #include "domain/sensors/sensor_registry.hpp"
 #include "os/queue.hpp"
 
-namespace app::Tasks {
+namespace midismith::adc_board::app::tasks {
 
 class SensorRttTelemetryTask {
  public:
-  SensorRttTelemetryTask(os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue,
-                         domain::sensors::SensorRegistry& registry,
-                         app::analog::AcquisitionStateRequirements& adc_state,
-                         app::telemetry::TelemetrySenderRequirements& telemetry_sender,
-                         app::telemetry::SensorRttStreamCapture& capture) noexcept;
+  SensorRttTelemetryTask(
+      midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand,
+                                   4>& control_queue,
+      midismith::adc_board::domain::sensors::SensorRegistry& registry,
+      midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
+      midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
+      midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept;
 
   bool start() noexcept;
 
@@ -27,7 +29,8 @@ class SensorRttTelemetryTask {
   static void entry(void* ctx) noexcept;
   void run() noexcept;
 
-  void ApplyCommand(const app::telemetry::SensorRttTelemetryCommand& cmd) noexcept;
+  void ApplyCommand(
+      const midismith::adc_board::app::telemetry::SensorRttTelemetryCommand& cmd) noexcept;
   void ApplyPendingCommands() noexcept;
   bool ReceiveControlCommand(std::uint32_t timeout_ms) noexcept;
   bool IsAnalogAcquisitionEnabled() const noexcept;
@@ -35,11 +38,12 @@ class SensorRttTelemetryTask {
                                std::span<std::uint8_t> schema_frame_bytes) noexcept;
   bool TrySendCapturedDataFrames(std::size_t max_frames_per_write) noexcept;
 
-  os::Queue<app::telemetry::SensorRttTelemetryCommand, 4>& control_queue_;
-  domain::sensors::SensorRegistry& registry_;
-  app::analog::AcquisitionStateRequirements& adc_state_;
-  app::telemetry::TelemetrySenderRequirements& telemetry_sender_;
-  app::telemetry::SensorRttStreamCapture& capture_;
+  midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>&
+      control_queue_;
+  midismith::adc_board::domain::sensors::SensorRegistry& registry_;
+  midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state_;
+  midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender_;
+  midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture_;
 
   bool schema_sent_{false};
   std::uint32_t last_schema_timestamp_us_{0u};
@@ -47,4 +51,4 @@ class SensorRttTelemetryTask {
   std::uint8_t active_sensor_id_{0u};
 };
 
-}  // namespace app::Tasks
+}  // namespace midismith::adc_board::app::tasks

@@ -5,7 +5,7 @@
 #include "stm32h7xx_hal.h"
 #include "tim.h"
 
-namespace bsp::adc {
+namespace midismith::adc_board::bsp::adc {
 namespace {
 
 std::uint32_t Apb1TimerClockHz() noexcept {
@@ -145,4 +145,4 @@ void AdcTriggerSchedule::Stop() noexcept {
   running_ = false;
 }
 
-}  // namespace bsp::adc
+}  // namespace midismith::adc_board::bsp::adc

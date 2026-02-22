@@ -10,7 +10,7 @@ extern "C" {
 extern USBD_HandleTypeDef hUsbDeviceHS;
 }
 
-namespace bsp {
+namespace midismith::main_board::bsp {
 
 void UsbMidi::SendRawMessage(const uint8_t* data, uint8_t length) noexcept {
   (void) TrySendRawMessage(data, length);
@@ -20,20 +20,20 @@ bool UsbMidi::IsAvailable() const noexcept {
   return hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
 }
 
-domain::midi::TransportStatus UsbMidi::TrySendRawMessage(const uint8_t* data,
-                                                         uint8_t length) noexcept {
+midismith::main_board::domain::midi::TransportStatus UsbMidi::TrySendRawMessage(
+    const uint8_t* data, uint8_t length) noexcept {
   if (!IsAvailable()) {
-    return domain::midi::TransportStatus::kNotAvailable;
+    return midismith::main_board::domain::midi::TransportStatus::kNotAvailable;
   }
 
   if (data == nullptr || length == 0 || length > 3) {
-    return domain::midi::TransportStatus::kError;
+    return midismith::main_board::domain::midi::TransportStatus::kError;
   }
 
   USBD_MIDI_HandleTypeDef* hmidi =
       reinterpret_cast<USBD_MIDI_HandleTypeDef*>(hUsbDeviceHS.pClassData);
   if (hmidi == nullptr || hmidi->tx_state != 0) {
-    return domain::midi::TransportStatus::kBusy;
+    return midismith::main_board::domain::midi::TransportStatus::kBusy;
   }
 
   UsbMidiPacket packet{};
@@ -49,15 +49,15 @@ domain::midi::TransportStatus UsbMidi::TrySendRawMessage(const uint8_t* data,
                                        reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
 
   if (status == USBD_OK) {
-    return domain::midi::TransportStatus::kSuccess;
+    return midismith::main_board::domain::midi::TransportStatus::kSuccess;
   }
 
   hmidi->tx_state = 0;
   if (status == USBD_BUSY) {
-    return domain::midi::TransportStatus::kBusy;
+    return midismith::main_board::domain::midi::TransportStatus::kBusy;
   }
 
-  return domain::midi::TransportStatus::kError;
+  return midismith::main_board::domain::midi::TransportStatus::kError;
 }
 
 uint8_t UsbMidi::GetCodeIndexNumber(uint8_t status) const noexcept {
@@ -84,4 +84,4 @@ uint8_t UsbMidi::GetSystemCommonCin(uint8_t status) const noexcept {
   }
 }
 
-}  // namespace bsp
+}  // namespace midismith::main_board::bsp

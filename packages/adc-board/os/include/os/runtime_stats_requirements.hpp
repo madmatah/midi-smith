@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace os {
+namespace midismith::adc_board::os {
 
 constexpr std::size_t kRuntimeTaskNameCapacity = 20u;
 
@@ -37,4 +37,4 @@ class RuntimeStatsRequirements {
                                        bool& snapshot_truncated) noexcept = 0;
 };
 
-}  // namespace os
+}  // namespace midismith::adc_board::os

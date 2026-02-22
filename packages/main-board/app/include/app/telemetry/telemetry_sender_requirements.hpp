@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace app::telemetry {
+namespace midismith::main_board::app::telemetry {
 
 class TelemetrySenderRequirements {
  public:
@@ -11,4 +11,4 @@ class TelemetrySenderRequirements {
   virtual void Send(std::uint32_t value) noexcept = 0;
 };
 
-}  // namespace app::telemetry
+}  // namespace midismith::main_board::app::telemetry

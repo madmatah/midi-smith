@@ -2,7 +2,7 @@
 
 #include "os/runtime_stats_requirements.hpp"
 
-namespace os {
+namespace midismith::adc_board::os {
 
 class RuntimeStats final : public RuntimeStatsRequirements {
  public:
@@ -13,4 +13,4 @@ class RuntimeStats final : public RuntimeStatsRequirements {
                                bool& snapshot_truncated) noexcept override;
 };
 
-}  // namespace os
+}  // namespace midismith::adc_board::os
