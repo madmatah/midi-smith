@@ -5,34 +5,29 @@ description: Runs the unit test suite for this embedded C++ project on the host 
 
 # Running Tests
 
-## 1. Save the active firmware preset
+Use the scripts in this skill. They configure/build with `Host-Debug`, run tests, and restore the previous preset automatically.
+Paths below are relative to the skill directory.
 
-Read `build/current` before switching to `Host-Debug`:
+## 1. Run all host tests
 
 ```bash
-PREVIOUS_PRESET=$(basename "$(readlink build/current 2>/dev/null)")
+bash scripts/run_all_host_tests.sh
 ```
 
-## 2. Configure, build, and run tests
+Optional: pass extra arguments to `ctest`:
 
 ```bash
-cmake --preset Host-Debug
-cmake --build --preset Host-Debug --target unit_tests
-ctest --test-dir build/Host-Debug --output-on-failure
+bash scripts/run_all_host_tests.sh --verbose
 ```
 
-## 3. Restore the firmware preset
-
-Run unconditionally, even if tests failed:
+## 2. Run a specific test by description/regex
 
 ```bash
-[ -n "$PREVIOUS_PRESET" ] && [ "$PREVIOUS_PRESET" != "Host-Debug" ] && cmake --preset "$PREVIOUS_PRESET"
+bash scripts/run_host_test_by_name.sh "The MidiPiano class"
 ```
 
-## Run a specific test
-
-Use `-R` with the `TEST_CASE` name to filter, then apply the same save/restore flow:
+Optional: pass extra arguments to `ctest`:
 
 ```bash
-ctest --test-dir build/Host-Debug -R "The MidiPiano class" --output-on-failure
+bash scripts/run_host_test_by_name.sh "MidiPiano|AsyncTaskMidiController" --verbose
 ```
