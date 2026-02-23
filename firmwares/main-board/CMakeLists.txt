@@ -36,6 +36,10 @@ set(MAIN_COMMON_SRC_DIRS "${MAIN_PROJECT_ROOT}/../../libs/common/src")
 
 set(MAIN_SEGGER_ROOT "${MAIN_PROJECT_ROOT}/../../third_party/SEGGER")
 
+if(NOT TARGET midi)
+    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/midi libs/midi)
+endif()
+
 if(HOST_TESTS)
     enable_testing()
 
@@ -47,6 +51,7 @@ if(HOST_TESTS)
         domain/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
+    target_link_libraries(main_domain PUBLIC midi)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -57,7 +62,7 @@ if(HOST_TESTS)
         os/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(main_app_lib PRIVATE main_domain)
+    target_link_libraries(main_app_lib PRIVATE main_domain midi)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS main_domain)
@@ -148,6 +153,7 @@ target_link_options(${MAIN_FIRMWARE_TARGET} PRIVATE
 
 target_link_libraries(${MAIN_FIRMWARE_TARGET}
     stm32cubemx
+    midi
 
     # Add user defined libraries
 )

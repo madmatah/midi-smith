@@ -39,6 +39,9 @@ set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
 if(NOT TARGET dsp)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/dsp libs/dsp)
 endif()
+if(NOT TARGET midi)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/midi libs/midi)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -57,7 +60,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp)
+    target_link_libraries(adc_domain PUBLIC dsp midi)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -185,6 +188,7 @@ target_link_options(${ADC_FIRMWARE_TARGET} PRIVATE
 target_link_libraries(${ADC_FIRMWARE_TARGET}
     stm32cubemx
     dsp
+    midi
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

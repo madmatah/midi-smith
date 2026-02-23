@@ -12,17 +12,17 @@ namespace {
 class RecordingKeyActionHandler final
     : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
  public:
-  void OnNoteOn(midismith::common::domain::music::Velocity velocity) noexcept override {
+  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
     (void) velocity;
   }
 
-  void OnNoteOff(midismith::common::domain::music::Velocity release_velocity) noexcept override {
+  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
     ++note_off_calls;
     last_release_velocity = release_velocity;
   }
 
   int note_off_calls = 0;
-  midismith::common::domain::music::Velocity last_release_velocity = 0u;
+  midismith::midi::Velocity last_release_velocity = 0u;
 };
 
 class RecordingVelocityMapper final
@@ -33,11 +33,11 @@ class RecordingVelocityMapper final
     last_shank_falling_speed_m_per_s = 0.0f;
   }
 
-  midismith::common::domain::music::Velocity Map(float speed_m_per_s) noexcept override {
+  midismith::midi::Velocity Map(float speed_m_per_s) noexcept override {
     last_shank_falling_speed_m_per_s = speed_m_per_s;
     ++map_calls;
-    return (speed_m_per_s > 0.0f) ? static_cast<midismith::common::domain::music::Velocity>(42u)
-                                  : static_cast<midismith::common::domain::music::Velocity>(1u);
+    return (speed_m_per_s > 0.0f) ? static_cast<midismith::midi::Velocity>(42u)
+                                  : static_cast<midismith::midi::Velocity>(1u);
   }
 
   static inline int map_calls = 0;
@@ -82,8 +82,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         REQUIRE(handler.note_off_calls == 1);
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.25f, 0.0001f));
-        REQUIRE(handler.last_release_velocity ==
-                static_cast<midismith::common::domain::music::Velocity>(42u));
+        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(42u));
         REQUIRE(sensor.is_note_on == false);
       }
     }
@@ -155,8 +154,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity ==
-                static_cast<midismith::common::domain::music::Velocity>(127u));
+        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(127u));
         REQUIRE(sensor.is_note_on == false);
       }
     }
@@ -180,8 +178,7 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity ==
-                static_cast<midismith::common::domain::music::Velocity>(42u));
+        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(42u));
         REQUIRE(RecordingVelocityMapper::map_calls == 1);
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.25f, 0.0001f));

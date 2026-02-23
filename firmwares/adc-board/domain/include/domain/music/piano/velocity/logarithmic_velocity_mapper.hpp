@@ -18,9 +18,9 @@ class LogarithmicVelocityMapper final : public VelocityMapperRequirements {
 
   LogarithmicVelocityMapper() : inverse_log_denominator_(1.0f / std::log1p(kShapeFactor)) {}
 
-  midismith::common::domain::music::Velocity Map(float speed_m_per_s) noexcept override {
+  midismith::midi::Velocity Map(float speed_m_per_s) noexcept override {
     if (!std::isfinite(speed_m_per_s) || speed_m_per_s <= 0.0f) {
-      return static_cast<midismith::common::domain::music::Velocity>(127u);
+      return static_cast<midismith::midi::Velocity>(127u);
     }
 
     const float normalized_speed = std::min(speed_m_per_s / kMaximumSpeedMPerS, 1.0f);
@@ -28,14 +28,13 @@ class LogarithmicVelocityMapper final : public VelocityMapperRequirements {
         127.0f * std::log1p(kShapeFactor * normalized_speed) * inverse_log_denominator_;
 
     if (!std::isfinite(mapped_velocity)) {
-      return static_cast<midismith::common::domain::music::Velocity>(127u);
+      return static_cast<midismith::midi::Velocity>(127u);
     }
 
     const auto rounded = static_cast<std::int32_t>(std::lround(mapped_velocity));
     const auto clamped = std::clamp<std::int32_t>(rounded, 1, 127);
 
-    return static_cast<midismith::common::domain::music::Velocity>(
-        static_cast<std::uint8_t>(clamped));
+    return static_cast<midismith::midi::Velocity>(static_cast<std::uint8_t>(clamped));
   }
 
  private:

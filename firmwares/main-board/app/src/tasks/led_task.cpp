@@ -4,7 +4,7 @@
 #include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/gpio_requirements.hpp"
 #include "domain/music/piano/piano_requirements.hpp"
-#include "domain/music/types.hpp"
+#include "midi/types.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
 
@@ -28,9 +28,9 @@ void LedTask::run() noexcept {
     const bool state = _led.read();
 
     if (state) {
-      _piano.PressKey(midismith::common::domain::music::kNoteC4, 60);
+      _piano.PressKey(midismith::midi::kNoteC4, 60);
     } else {
-      _piano.ReleaseKey(midismith::common::domain::music::kNoteC4);
+      _piano.ReleaseKey(midismith::midi::kNoteC4);
     }
 
     _telemetry.Send(state ? 1u : 0u);

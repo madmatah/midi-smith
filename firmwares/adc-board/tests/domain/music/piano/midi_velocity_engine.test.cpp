@@ -11,17 +11,17 @@ namespace {
 class RecordingKeyActionHandler final
     : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
  public:
-  void OnNoteOn(midismith::common::domain::music::Velocity velocity) noexcept override {
+  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
     ++note_on_calls;
     last_velocity = velocity;
   }
 
-  void OnNoteOff(midismith::common::domain::music::Velocity release_velocity) noexcept override {
+  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
     (void) release_velocity;
   }
 
   int note_on_calls = 0;
-  midismith::common::domain::music::Velocity last_velocity = 0u;
+  midismith::midi::Velocity last_velocity = 0u;
 };
 
 class RecordingVelocityMapper final
@@ -32,10 +32,10 @@ class RecordingVelocityMapper final
     last_speed_m_per_s = 0.0f;
   }
 
-  midismith::common::domain::music::Velocity Map(float speed_m_per_s) noexcept override {
+  midismith::midi::Velocity Map(float speed_m_per_s) noexcept override {
     last_speed_m_per_s = speed_m_per_s;
     ++map_calls;
-    return static_cast<midismith::common::domain::music::Velocity>(23u);
+    return static_cast<midismith::midi::Velocity>(23u);
   }
 
   static inline int map_calls = 0;
@@ -75,8 +75,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.09f, ctx);
 
         REQUIRE(handler.note_on_calls == 1);
-        REQUIRE(handler.last_velocity ==
-                static_cast<midismith::common::domain::music::Velocity>(64u));
+        REQUIRE(handler.last_velocity == static_cast<midismith::midi::Velocity>(64u));
         REQUIRE(sensor.last_midi_velocity == static_cast<std::uint8_t>(64u));
         REQUIRE(sensor.is_note_on == true);
       }
@@ -151,8 +150,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.09f, ctx);
 
         REQUIRE(handler.note_on_calls == 1);
-        REQUIRE(handler.last_velocity ==
-                static_cast<midismith::common::domain::music::Velocity>(23u));
+        REQUIRE(handler.last_velocity == static_cast<midismith::midi::Velocity>(23u));
         REQUIRE(RecordingVelocityMapper::map_calls == 1);
         REQUIRE(RecordingVelocityMapper::last_speed_m_per_s == 1.0f);
       }

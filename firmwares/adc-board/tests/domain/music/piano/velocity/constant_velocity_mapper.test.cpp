@@ -10,13 +10,13 @@ TEST_CASE("The ConstantVelocityMapper class") {
       SECTION("Should return 64 for negative, zero and positive speeds") {
         midismith::adc_board::domain::music::piano::velocity::ConstantVelocityMapper<64u> mapper{};
 
-        const midismith::common::domain::music::Velocity mapped_negative = mapper.Map(-1.0f);
-        const midismith::common::domain::music::Velocity mapped_zero = mapper.Map(0.0f);
-        const midismith::common::domain::music::Velocity mapped_positive = mapper.Map(1.0f);
+        const midismith::midi::Velocity mapped_negative = mapper.Map(-1.0f);
+        const midismith::midi::Velocity mapped_zero = mapper.Map(0.0f);
+        const midismith::midi::Velocity mapped_positive = mapper.Map(1.0f);
 
-        REQUIRE(mapped_negative == static_cast<midismith::common::domain::music::Velocity>(64u));
-        REQUIRE(mapped_zero == static_cast<midismith::common::domain::music::Velocity>(64u));
-        REQUIRE(mapped_positive == static_cast<midismith::common::domain::music::Velocity>(64u));
+        REQUIRE(mapped_negative == static_cast<midismith::midi::Velocity>(64u));
+        REQUIRE(mapped_zero == static_cast<midismith::midi::Velocity>(64u));
+        REQUIRE(mapped_positive == static_cast<midismith::midi::Velocity>(64u));
       }
     }
 
@@ -24,13 +24,13 @@ TEST_CASE("The ConstantVelocityMapper class") {
       SECTION("Should return 127 for negative, zero and positive speeds") {
         midismith::adc_board::domain::music::piano::velocity::ConstantVelocityMapper<127u> mapper{};
 
-        const midismith::common::domain::music::Velocity mapped_negative = mapper.Map(-0.5f);
-        const midismith::common::domain::music::Velocity mapped_zero = mapper.Map(0.0f);
-        const midismith::common::domain::music::Velocity mapped_positive = mapper.Map(0.5f);
+        const midismith::midi::Velocity mapped_negative = mapper.Map(-0.5f);
+        const midismith::midi::Velocity mapped_zero = mapper.Map(0.0f);
+        const midismith::midi::Velocity mapped_positive = mapper.Map(0.5f);
 
-        REQUIRE(mapped_negative == static_cast<midismith::common::domain::music::Velocity>(127u));
-        REQUIRE(mapped_zero == static_cast<midismith::common::domain::music::Velocity>(127u));
-        REQUIRE(mapped_positive == static_cast<midismith::common::domain::music::Velocity>(127u));
+        REQUIRE(mapped_negative == static_cast<midismith::midi::Velocity>(127u));
+        REQUIRE(mapped_zero == static_cast<midismith::midi::Velocity>(127u));
+        REQUIRE(mapped_positive == static_cast<midismith::midi::Velocity>(127u));
       }
     }
   }

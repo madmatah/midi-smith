@@ -18,7 +18,7 @@ class LoggingSensorEventHandler final
     sensor_id_ = sensor_id;
   }
 
-  void OnNoteOn(midismith::common::domain::music::Velocity velocity) noexcept override {
+  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
     if (logger_ == nullptr) {
       return;
     }
@@ -26,7 +26,7 @@ class LoggingSensorEventHandler final
                    static_cast<unsigned>(velocity));
   }
 
-  void OnNoteOff(midismith::common::domain::music::Velocity release_velocity) noexcept override {
+  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
     if (logger_ == nullptr) {
       return;
     }

@@ -2,22 +2,22 @@
 
 #include <cstdint>
 
-#include "domain/midi/midi_transport_requirements.hpp"
+#include "midi/midi_transport_requirements.hpp"
 
 namespace midismith::main_board::bsp {
 
 /**
  * @brief USB MIDI transport implementation using the STM32 USB Device Library.
  */
-class UsbMidi : public midismith::main_board::domain::midi::MidiTransportRequirements {
+class UsbMidi : public midismith::midi::MidiTransportRequirements {
  public:
   UsbMidi() = default;
 
   void SendRawMessage(const uint8_t* data, uint8_t length) noexcept override;
 
   bool IsAvailable() const noexcept override;
-  midismith::main_board::domain::midi::TransportStatus TrySendRawMessage(
-      const uint8_t* data, uint8_t length) noexcept override;
+  midismith::midi::TransportStatus TrySendRawMessage(const uint8_t* data,
+                                                     uint8_t length) noexcept override;
 
  private:
   enum class CodeIndexNumber : uint8_t {
