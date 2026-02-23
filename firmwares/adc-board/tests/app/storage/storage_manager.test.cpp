@@ -34,7 +34,7 @@ TestConfig CreateTestConfig(std::uint8_t value,
   return config;
 }
 
-class FlashStorageStub final : public midismith::adc_board::bsp::flash::StorageRequirements {
+class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorageRequirements {
  public:
   static constexpr std::size_t kSectorSize = 128 * 1024;
 
@@ -50,29 +50,29 @@ class FlashStorageStub final : public midismith::adc_board::bsp::flash::StorageR
     return kSectorSize;
   }
 
-  midismith::adc_board::bsp::flash::OperationResult EraseSector() noexcept override {
+  midismith::bsp::storage::StorageOperationResult EraseSector() noexcept override {
     if (erase_should_fail) {
-      return midismith::adc_board::bsp::flash::OperationResult::kError;
+      return midismith::bsp::storage::StorageOperationResult::kError;
     }
 
     std::memset(storage_, 0xFF, sizeof(storage_));
     ++erase_count;
-    return midismith::adc_board::bsp::flash::OperationResult::kSuccess;
+    return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
-  midismith::adc_board::bsp::flash::OperationResult ProgramFlashWords(
+  midismith::bsp::storage::StorageOperationResult ProgramFlashWords(
       std::size_t offset_bytes, const std::uint8_t* data,
       std::size_t length_bytes) noexcept override {
     if (program_should_fail) {
-      return midismith::adc_board::bsp::flash::OperationResult::kError;
+      return midismith::bsp::storage::StorageOperationResult::kError;
     }
     if (offset_bytes + length_bytes > kSectorSize) {
-      return midismith::adc_board::bsp::flash::OperationResult::kError;
+      return midismith::bsp::storage::StorageOperationResult::kError;
     }
 
     std::memcpy(storage_ + offset_bytes, data, length_bytes);
     ++program_count;
-    return midismith::adc_board::bsp::flash::OperationResult::kSuccess;
+    return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
   void WriteConfig(const TestConfig& config) noexcept {
@@ -171,7 +171,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
       REQUIRE(flash.erase_count == 0);
       REQUIRE(flash.program_count == 0);
     }
@@ -181,7 +181,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
       REQUIRE(flash.program_count == 1);
     }
@@ -192,7 +192,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kError);
+      REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kError);
       REQUIRE(flash.program_count == 0);
     }
 
@@ -202,7 +202,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
 
-      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kError);
+      REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kError);
       REQUIRE(flash.erase_count == 1);
     }
 
@@ -211,7 +211,7 @@ TEST_CASE("The StorageManager class") {
       config.crc32 = 0;
 
       auto result = storage_manager.Save(config);
-      REQUIRE(result == midismith::adc_board::bsp::flash::OperationResult::kSuccess);
+      REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
 
       TestConfig saved{};
       std::memcpy(&saved, flash.BaseAddress(), sizeof(saved));

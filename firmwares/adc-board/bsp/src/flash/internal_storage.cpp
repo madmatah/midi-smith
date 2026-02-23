@@ -10,6 +10,8 @@ extern std::uint32_t __flash_config_start__;
 
 namespace midismith::adc_board::bsp::flash {
 
+using StorageOperationResult = midismith::bsp::storage::StorageOperationResult;
+
 namespace {
 constexpr std::uintptr_t kConfigBaseAddress = 0x081E0000u;
 constexpr std::uint32_t kConfigSectorNumber = 7;
@@ -52,10 +54,10 @@ std::size_t InternalStorage::SectorSizeBytes() const noexcept {
   return kSectorSizeBytes;
 }
 
-OperationResult InternalStorage::EraseSector() noexcept {
+StorageOperationResult InternalStorage::EraseSector() noexcept {
   const void* base_address = BaseAddress();
   if (!HasExpectedBaseAddress(base_address)) {
-    return OperationResult::kError;
+    return StorageOperationResult::kError;
   }
 
   HAL_FLASH_Unlock();
@@ -74,21 +76,21 @@ OperationResult InternalStorage::EraseSector() noexcept {
   HAL_FLASH_Lock();
 
   if (status != HAL_OK || sector_error != 0xFFFFFFFFu) {
-    return OperationResult::kError;
+    return StorageOperationResult::kError;
   }
 
-  return OperationResult::kSuccess;
+  return StorageOperationResult::kSuccess;
 }
 
-OperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
-                                                   const std::uint8_t* data,
-                                                   std::size_t length_bytes) noexcept {
+StorageOperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
+                                                          const std::uint8_t* data,
+                                                          std::size_t length_bytes) noexcept {
   const void* base_address_ptr = BaseAddress();
   if (!HasExpectedBaseAddress(base_address_ptr)) {
-    return OperationResult::kError;
+    return StorageOperationResult::kError;
   }
   if (!HasValidProgramParameters(offset_bytes, data, length_bytes)) {
-    return OperationResult::kError;
+    return StorageOperationResult::kError;
   }
 
   const auto base_address = reinterpret_cast<std::uintptr_t>(base_address_ptr);
@@ -96,7 +98,7 @@ OperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
   HAL_FLASH_Unlock();
   ClearBank2ErrorFlags();
 
-  OperationResult result = OperationResult::kSuccess;
+  StorageOperationResult result = StorageOperationResult::kSuccess;
   std::size_t bytes_written = 0;
 
   while (bytes_written < length_bytes) {
@@ -109,7 +111,7 @@ OperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
         HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, destination_address, source_address);
 
     if (status != HAL_OK) {
-      result = OperationResult::kError;
+      result = StorageOperationResult::kError;
       break;
     }
 

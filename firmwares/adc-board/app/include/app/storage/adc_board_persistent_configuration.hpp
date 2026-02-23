@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "app/storage/storage_manager.hpp"
-#include "bsp/flash/storage_requirements.hpp"
+#include "bsp/storage/flash_sector_storage_requirements.hpp"
 #include "config/config_validator.hpp"
 #include "config/transactional_config_dictionary.hpp"
 #include "domain/config/adc_board_config.hpp"
@@ -14,7 +14,7 @@ namespace midismith::adc_board::app::storage {
 class AdcBoardPersistentConfiguration : public midismith::config::TransactionalConfigDictionary {
  public:
   explicit AdcBoardPersistentConfiguration(
-      midismith::adc_board::bsp::flash::StorageRequirements& flash_storage) noexcept;
+      midismith::bsp::storage::FlashSectorStorageRequirements& flash_storage) noexcept;
 
   std::size_t KeyCount() const noexcept override;
   std::string_view KeyAt(std::size_t index) const noexcept override;

@@ -12,7 +12,7 @@ constexpr std::string_view kCanBoardIdKey = "can_board_id";
 }  // namespace
 
 AdcBoardPersistentConfiguration::AdcBoardPersistentConfiguration(
-    midismith::adc_board::bsp::flash::StorageRequirements& flash_storage) noexcept
+    midismith::bsp::storage::FlashSectorStorageRequirements& flash_storage) noexcept
     : storage_manager_(flash_storage,
                        midismith::adc_board::domain::config::CreateDefaultAdcBoardConfig()),
       ram_config_(midismith::adc_board::domain::config::CreateDefaultAdcBoardConfig()) {}
@@ -98,7 +98,7 @@ bool AdcBoardPersistentConfiguration::UpdateBoardId(std::uint8_t board_id) noexc
 
 midismith::config::TransactionResult AdcBoardPersistentConfiguration::Commit() noexcept {
   auto save_result = storage_manager_.Save(ram_config_);
-  if (save_result == midismith::adc_board::bsp::flash::OperationResult::kSuccess) {
+  if (save_result == midismith::bsp::storage::StorageOperationResult::kSuccess) {
     return midismith::config::TransactionResult::kSuccess;
   }
   return midismith::config::TransactionResult::kFailure;
