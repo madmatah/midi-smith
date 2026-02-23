@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace midismith::adc_board::domain::config {
+namespace midismith::config {
 
 inline constexpr std::size_t kConfigSizeBytes = 256;
 inline constexpr std::size_t kConfigHeaderSizeBytes = 8;
@@ -44,4 +44,4 @@ struct StorableConfigLayout {
 template <typename T, std::uint32_t Magic, std::uint16_t Version>
 inline constexpr bool kStorableConfigLayoutValid = StorableConfigLayout<T, Magic, Version>::kValue;
 
-}  // namespace midismith::adc_board::domain::config
+}  // namespace midismith::config

@@ -81,7 +81,7 @@ void ConfigCommand::Run(int argc, char** argv,
       char value_buffer[kMaxValueSize]{};
       std::size_t value_length = 0u;
       auto status = provider_.GetValue(key, value_buffer, sizeof(value_buffer), value_length);
-      if (status != midismith::adc_board::domain::config::ConfigGetStatus::kOk) {
+      if (status != midismith::config::ConfigGetStatus::kOk) {
         WriteCannotReadValue(out);
         return;
       }
@@ -102,14 +102,14 @@ void ConfigCommand::Run(int argc, char** argv,
     std::size_t value_length = 0u;
     auto status = provider_.GetValue(key, value_buffer, sizeof(value_buffer), value_length);
     switch (status) {
-      case midismith::adc_board::domain::config::ConfigGetStatus::kOk:
+      case midismith::config::ConfigGetStatus::kOk:
         WriteKeyValue(out, key, value_buffer, value_length);
         return;
-      case midismith::adc_board::domain::config::ConfigGetStatus::kUnknownKey:
+      case midismith::config::ConfigGetStatus::kUnknownKey:
         WriteUnknownKey(out);
         return;
-      case midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall:
-      case midismith::adc_board::domain::config::ConfigGetStatus::kUnavailable:
+      case midismith::config::ConfigGetStatus::kBufferTooSmall:
+      case midismith::config::ConfigGetStatus::kUnavailable:
         WriteCannotReadValue(out);
         return;
     }
@@ -126,13 +126,13 @@ void ConfigCommand::Run(int argc, char** argv,
     const std::string_view value = Arg(argc, argv, 3);
     auto status = provider_.SetValue(key, value);
     switch (status) {
-      case midismith::adc_board::domain::config::ConfigSetStatus::kOk:
+      case midismith::config::ConfigSetStatus::kOk:
         WriteOk(out);
         return;
-      case midismith::adc_board::domain::config::ConfigSetStatus::kUnknownKey:
+      case midismith::config::ConfigSetStatus::kUnknownKey:
         WriteUnknownKey(out);
         return;
-      case midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue:
+      case midismith::config::ConfigSetStatus::kInvalidValue:
         WriteInvalidValue(out);
         return;
     }
@@ -146,7 +146,7 @@ void ConfigCommand::Run(int argc, char** argv,
     }
 
     auto save_result = provider_.Commit();
-    if (save_result != midismith::adc_board::domain::config::TransactionResult::kSuccess) {
+    if (save_result != midismith::config::TransactionResult::kSuccess) {
       WriteSaveFailed(out);
       return;
     }

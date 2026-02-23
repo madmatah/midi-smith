@@ -3,13 +3,13 @@
 #include <cstring>
 
 #include "bsp/flash/storage_requirements.hpp"
-#include "domain/config/config_validator.hpp"
+#include "config/config_validator.hpp"
 
 namespace midismith::adc_board::app::storage {
 
-using ConfigStatus = midismith::adc_board::domain::config::ConfigStatus;
+using ConfigStatus = midismith::config::ConfigStatus;
 template <typename TConfig>
-using ConfigValidator = midismith::adc_board::domain::config::ConfigValidator<TConfig>;
+using ConfigValidator = midismith::config::ConfigValidator<TConfig>;
 using OperationResult = midismith::adc_board::bsp::flash::OperationResult;
 using StorageRequirements = midismith::adc_board::bsp::flash::StorageRequirements;
 

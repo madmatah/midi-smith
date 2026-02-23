@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "domain/config/storable_config.hpp"
+#include "config/storable_config.hpp"
 
 namespace midismith::adc_board::domain::config {
 
@@ -17,8 +17,8 @@ struct AdcBoardData {
 inline constexpr std::uint32_t kAdcMagic = 0x41444321u;
 inline constexpr std::uint16_t kAdcVersion = 1;
 
-using AdcBoardConfig = StorableConfig<AdcBoardData, kAdcMagic, kAdcVersion>;
-static_assert(kStorableConfigLayoutValid<AdcBoardData, kAdcMagic, kAdcVersion>);
+using AdcBoardConfig = midismith::config::StorableConfig<AdcBoardData, kAdcMagic, kAdcVersion>;
+static_assert(midismith::config::kStorableConfigLayoutValid<AdcBoardData, kAdcMagic, kAdcVersion>);
 
 bool IsValidBoardId(std::uint8_t board_id) noexcept;
 AdcBoardConfig CreateDefaultAdcBoardConfig() noexcept;

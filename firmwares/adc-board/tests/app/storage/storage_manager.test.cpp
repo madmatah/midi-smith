@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
 
-#include "domain/config/storable_config.hpp"
+#include "config/storable_config.hpp"
 
 namespace {
 
@@ -13,7 +13,7 @@ struct TestData {
   std::uint8_t value;
 };
 
-using TestConfig = midismith::adc_board::domain::config::StorableConfig<TestData, 0x5354474Du, 2>;
+using TestConfig = midismith::config::StorableConfig<TestData, 0x5354474Du, 2>;
 
 TestConfig CreateDefaultTestConfig() noexcept {
   TestConfig config{};
@@ -21,7 +21,7 @@ TestConfig CreateDefaultTestConfig() noexcept {
   config.magic_number = TestConfig::kMagicNumber;
   config.version = TestConfig::kVersion;
   config.data.value = 11;
-  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
@@ -30,7 +30,7 @@ TestConfig CreateTestConfig(std::uint8_t value,
   auto config = CreateDefaultTestConfig();
   config.version = version;
   config.data.value = value;
-  midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+  midismith::config::ConfigValidator<TestConfig>::StampCrc(config);
   return config;
 }
 
@@ -101,20 +101,20 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kVirginFlash);
+      REQUIRE(status == midismith::config::ConfigStatus::kVirginFlash);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
     SECTION("When flash has invalid magic") {
       auto config = CreateTestConfig(22);
       config.magic_number = 0xDEADBEEFu;
-      midismith::adc_board::domain::config::ConfigValidator<TestConfig>::StampCrc(config);
+      midismith::config::ConfigValidator<TestConfig>::StampCrc(config);
       flash.WriteConfig(config);
 
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kInvalidMagic);
+      REQUIRE(status == midismith::config::ConfigStatus::kInvalidMagic);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -126,7 +126,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kInvalidCrc);
+      REQUIRE(status == midismith::config::ConfigStatus::kInvalidCrc);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -137,7 +137,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kNewerVersion);
+      REQUIRE(status == midismith::config::ConfigStatus::kNewerVersion);
       REQUIRE(ram_config.data.value == default_config.data.value);
     }
 
@@ -148,7 +148,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kValid);
+      REQUIRE(status == midismith::config::ConfigStatus::kValid);
       REQUIRE(ram_config.data.value == 55);
     }
 
@@ -159,7 +159,7 @@ TEST_CASE("The StorageManager class") {
       TestConfig ram_config{};
       auto status = storage_manager.Load(ram_config);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kOlderVersion);
+      REQUIRE(status == midismith::config::ConfigStatus::kOlderVersion);
       REQUIRE(ram_config.data.value == 66);
     }
   }
@@ -215,8 +215,8 @@ TEST_CASE("The StorageManager class") {
 
       TestConfig saved{};
       std::memcpy(&saved, flash.BaseAddress(), sizeof(saved));
-      REQUIRE(midismith::adc_board::domain::config::ConfigValidator<TestConfig>::Validate(saved) ==
-              midismith::adc_board::domain::config::ConfigStatus::kValid);
+      REQUIRE(midismith::config::ConfigValidator<TestConfig>::Validate(saved) ==
+              midismith::config::ConfigStatus::kValid);
       REQUIRE(saved.data.value == 88);
     }
   }
