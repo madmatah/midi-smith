@@ -7,7 +7,7 @@
 #include "app/config/sensors.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
-#include "domain/config/transactional_config_dictionary.hpp"
+#include "config/transactional_config_dictionary.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
@@ -16,7 +16,7 @@
 namespace midismith::adc_board::app::composition {
 
 struct ConfigContext {
-  midismith::adc_board::domain::config::TransactionalConfigDictionary& persistent_config;
+  midismith::config::TransactionalConfigDictionary& persistent_config;
 };
 
 struct LoggingContext {

@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "domain/hash/crc32.hpp"
+#include "config/crc32.hpp"
 
-namespace midismith::adc_board::domain::config {
+namespace midismith::config {
 
 enum class ConfigStatus {
   kValid,
@@ -29,8 +29,8 @@ class ConfigValidator {
       return ConfigStatus::kInvalidMagic;
     }
 
-    std::uint32_t computed_crc = hash::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
-                                                    offsetof(TConfig, crc32));
+    std::uint32_t computed_crc = midismith::config::ComputeCrc32(
+        reinterpret_cast<const std::uint8_t*>(&config), offsetof(TConfig, crc32));
     if (computed_crc != config.crc32) {
       return ConfigStatus::kInvalidCrc;
     }
@@ -47,9 +47,9 @@ class ConfigValidator {
   }
 
   static void StampCrc(TConfig& config) noexcept {
-    config.crc32 = hash::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
-                                      offsetof(TConfig, crc32));
+    config.crc32 = midismith::config::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
+                                                   offsetof(TConfig, crc32));
   }
 };
 
-}  // namespace midismith::adc_board::domain::config
+}  // namespace midismith::config

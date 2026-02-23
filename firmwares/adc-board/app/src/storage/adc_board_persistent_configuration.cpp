@@ -28,37 +28,37 @@ std::string_view AdcBoardPersistentConfiguration::KeyAt(std::size_t index) const
   return {};
 }
 
-midismith::adc_board::domain::config::ConfigGetStatus AdcBoardPersistentConfiguration::GetValue(
+midismith::config::ConfigGetStatus AdcBoardPersistentConfiguration::GetValue(
     std::string_view key, char* value_buffer, std::size_t value_buffer_size,
     std::size_t& value_length) const noexcept {
   value_length = 0u;
   if (key != kCanBoardIdKey) {
-    return midismith::adc_board::domain::config::ConfigGetStatus::kUnknownKey;
+    return midismith::config::ConfigGetStatus::kUnknownKey;
   }
   if (value_buffer == nullptr || value_buffer_size == 0u) {
-    return midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall;
+    return midismith::config::ConfigGetStatus::kBufferTooSmall;
   }
 
   auto result = std::to_chars(value_buffer, value_buffer + value_buffer_size,
                               static_cast<std::uint32_t>(ram_config_.data.can_board_id));
   if (result.ec == std::errc::value_too_large) {
-    return midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall;
+    return midismith::config::ConfigGetStatus::kBufferTooSmall;
   }
   if (result.ec != std::errc()) {
-    return midismith::adc_board::domain::config::ConfigGetStatus::kUnavailable;
+    return midismith::config::ConfigGetStatus::kUnavailable;
   }
 
   value_length = static_cast<std::size_t>(result.ptr - value_buffer);
-  return midismith::adc_board::domain::config::ConfigGetStatus::kOk;
+  return midismith::config::ConfigGetStatus::kOk;
 }
 
-midismith::adc_board::domain::config::ConfigSetStatus AdcBoardPersistentConfiguration::SetValue(
+midismith::config::ConfigSetStatus AdcBoardPersistentConfiguration::SetValue(
     std::string_view key, std::string_view value) noexcept {
   if (key != kCanBoardIdKey) {
-    return midismith::adc_board::domain::config::ConfigSetStatus::kUnknownKey;
+    return midismith::config::ConfigSetStatus::kUnknownKey;
   }
   if (value.empty()) {
-    return midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
+    return midismith::config::ConfigSetStatus::kInvalidValue;
   }
 
   std::uint32_t parsed_value = 0u;
@@ -66,22 +66,21 @@ midismith::adc_board::domain::config::ConfigSetStatus AdcBoardPersistentConfigur
   const char* end = begin + value.size();
   auto parse_result = std::from_chars(begin, end, parsed_value);
   if (parse_result.ec != std::errc() || parse_result.ptr != end) {
-    return midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
+    return midismith::config::ConfigSetStatus::kInvalidValue;
   }
   if (parsed_value > 255u) {
-    return midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
+    return midismith::config::ConfigSetStatus::kInvalidValue;
   }
   if (!UpdateBoardId(static_cast<std::uint8_t>(parsed_value))) {
-    return midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue;
+    return midismith::config::ConfigSetStatus::kInvalidValue;
   }
 
-  return midismith::adc_board::domain::config::ConfigSetStatus::kOk;
+  return midismith::config::ConfigSetStatus::kOk;
 }
 
-midismith::adc_board::domain::config::ConfigStatus
-AdcBoardPersistentConfiguration::Load() noexcept {
+midismith::config::ConfigStatus AdcBoardPersistentConfiguration::Load() noexcept {
   auto status = storage_manager_.Load(ram_config_);
-  if (status == midismith::adc_board::domain::config::ConfigStatus::kOlderVersion) {
+  if (status == midismith::config::ConfigStatus::kOlderVersion) {
     ram_config_ = midismith::adc_board::domain::config::MigrateAdcBoardConfig(ram_config_,
                                                                               ram_config_.version);
   }
@@ -97,13 +96,12 @@ bool AdcBoardPersistentConfiguration::UpdateBoardId(std::uint8_t board_id) noexc
   return true;
 }
 
-midismith::adc_board::domain::config::TransactionResult
-AdcBoardPersistentConfiguration::Commit() noexcept {
+midismith::config::TransactionResult AdcBoardPersistentConfiguration::Commit() noexcept {
   auto save_result = storage_manager_.Save(ram_config_);
   if (save_result == midismith::adc_board::bsp::flash::OperationResult::kSuccess) {
-    return midismith::adc_board::domain::config::TransactionResult::kSuccess;
+    return midismith::config::TransactionResult::kSuccess;
   }
-  return midismith::adc_board::domain::config::TransactionResult::kFailure;
+  return midismith::config::TransactionResult::kFailure;
 }
 
 const midismith::adc_board::domain::config::AdcBoardConfig&

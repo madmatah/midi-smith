@@ -6,7 +6,7 @@
 #include <cstring>
 #include <string_view>
 
-#include "domain/config/config_validator.hpp"
+#include "config/config_validator.hpp"
 
 namespace {
 
@@ -70,7 +70,7 @@ midismith::adc_board::domain::config::AdcBoardConfig CreateValidConfig(
   auto config = midismith::adc_board::domain::config::CreateDefaultAdcBoardConfig();
   config.version = version;
   config.data.can_board_id = board_id;
-  midismith::adc_board::domain::config::ConfigValidator<
+  midismith::config::ConfigValidator<
       midismith::adc_board::domain::config::AdcBoardConfig>::StampCrc(config);
   return config;
 }
@@ -85,7 +85,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
     SECTION("When flash is virgin") {
       auto status = persistent_config.Load();
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kVirginFlash);
+      REQUIRE(status == midismith::config::ConfigStatus::kVirginFlash);
       REQUIRE(persistent_config.active_config().data.can_board_id ==
               midismith::adc_board::domain::config::kDefaultBoardId);
       REQUIRE(persistent_config.active_config().magic_number ==
@@ -97,7 +97,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
       auto status = persistent_config.Load();
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kValid);
+      REQUIRE(status == midismith::config::ConfigStatus::kValid);
       REQUIRE(persistent_config.active_config().data.can_board_id == 7);
     }
 
@@ -108,7 +108,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
       auto status = persistent_config.Load();
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kInvalidCrc);
+      REQUIRE(status == midismith::config::ConfigStatus::kInvalidCrc);
       REQUIRE(persistent_config.active_config().data.can_board_id ==
               midismith::adc_board::domain::config::kDefaultBoardId);
     }
@@ -119,7 +119,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
       auto status = persistent_config.Load();
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigStatus::kOlderVersion);
+      REQUIRE(status == midismith::config::ConfigStatus::kOlderVersion);
       REQUIRE(persistent_config.active_config().data.can_board_id ==
               midismith::adc_board::domain::config::kDefaultBoardId);
     }
@@ -141,13 +141,13 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       persistent_config.UpdateBoardId(6);
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == midismith::adc_board::domain::config::TransactionResult::kSuccess);
+      REQUIRE(result == midismith::config::TransactionResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
       REQUIRE(flash.program_count == 1);
 
       midismith::adc_board::app::storage::AdcBoardPersistentConfiguration reloaded(flash);
       auto load_status = reloaded.Load();
-      REQUIRE(load_status == midismith::adc_board::domain::config::ConfigStatus::kValid);
+      REQUIRE(load_status == midismith::config::ConfigStatus::kValid);
       REQUIRE(reloaded.active_config().data.can_board_id == 6);
     }
 
@@ -156,7 +156,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       flash.erase_should_fail = true;
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == midismith::adc_board::domain::config::TransactionResult::kFailure);
+      REQUIRE(result == midismith::config::TransactionResult::kFailure);
     }
 
     SECTION("When program fails") {
@@ -164,7 +164,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       flash.program_should_fail = true;
 
       auto result = persistent_config.Commit();
-      REQUIRE(result == midismith::adc_board::domain::config::TransactionResult::kFailure);
+      REQUIRE(result == midismith::config::TransactionResult::kFailure);
     }
   }
 
@@ -183,7 +183,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       auto status = persistent_config.GetValue("can_board_id", value_buffer, sizeof(value_buffer),
                                                value_length);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigGetStatus::kOk);
+      REQUIRE(status == midismith::config::ConfigGetStatus::kOk);
       REQUIRE(std::string_view(value_buffer, value_length) == "1");
     }
 
@@ -194,7 +194,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       auto status =
           persistent_config.GetValue("unknown", value_buffer, sizeof(value_buffer), value_length);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigGetStatus::kUnknownKey);
+      REQUIRE(status == midismith::config::ConfigGetStatus::kUnknownKey);
     }
 
     SECTION("GetValue should report buffer-too-small when no buffer is provided") {
@@ -202,7 +202,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
       auto status = persistent_config.GetValue("can_board_id", nullptr, 0u, value_length);
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigGetStatus::kBufferTooSmall);
+      REQUIRE(status == midismith::config::ConfigGetStatus::kBufferTooSmall);
     }
 
     SECTION("SetValue with valid board id should update config") {
@@ -210,23 +210,23 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
       auto status = persistent_config.SetValue("can_board_id", "5");
 
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigSetStatus::kOk);
+      REQUIRE(status == midismith::config::ConfigSetStatus::kOk);
       REQUIRE(persistent_config.active_config().data.can_board_id == 5);
     }
 
     SECTION("SetValue with invalid number should fail") {
       auto status = persistent_config.SetValue("can_board_id", "abc");
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue);
+      REQUIRE(status == midismith::config::ConfigSetStatus::kInvalidValue);
     }
 
     SECTION("SetValue with value outside uint8 should fail") {
       auto status = persistent_config.SetValue("can_board_id", "999");
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigSetStatus::kInvalidValue);
+      REQUIRE(status == midismith::config::ConfigSetStatus::kInvalidValue);
     }
 
     SECTION("SetValue with unknown key should fail") {
       auto status = persistent_config.SetValue("unknown", "5");
-      REQUIRE(status == midismith::adc_board::domain::config::ConfigSetStatus::kUnknownKey);
+      REQUIRE(status == midismith::config::ConfigSetStatus::kUnknownKey);
     }
   }
 }

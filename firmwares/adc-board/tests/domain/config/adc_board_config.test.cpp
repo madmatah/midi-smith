@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
 
-#include "domain/config/config_validator.hpp"
+#include "config/config_validator.hpp"
 
 namespace {
 
@@ -14,7 +14,7 @@ midismith::adc_board::domain::config::AdcBoardConfig CreateBoardConfig(
   auto config = midismith::adc_board::domain::config::CreateDefaultAdcBoardConfig();
   config.version = version;
   config.data.can_board_id = board_id;
-  midismith::adc_board::domain::config::ConfigValidator<
+  midismith::config::ConfigValidator<
       midismith::adc_board::domain::config::AdcBoardConfig>::StampCrc(config);
   return config;
 }
@@ -27,9 +27,9 @@ TEST_CASE("The CreateDefaultAdcBoardConfig function") {
   REQUIRE(config.magic_number == midismith::adc_board::domain::config::kAdcMagic);
   REQUIRE(config.version == midismith::adc_board::domain::config::kAdcVersion);
   REQUIRE(config.data.can_board_id == midismith::adc_board::domain::config::kDefaultBoardId);
-  REQUIRE(midismith::adc_board::domain::config::ConfigValidator<
+  REQUIRE(midismith::config::ConfigValidator<
               midismith::adc_board::domain::config::AdcBoardConfig>::Validate(config) ==
-          midismith::adc_board::domain::config::ConfigStatus::kValid);
+          midismith::config::ConfigStatus::kValid);
 }
 
 TEST_CASE("The IsValidBoardId function") {
@@ -52,9 +52,9 @@ TEST_CASE("The MigrateAdcBoardConfig function") {
     REQUIRE(migrated.data.can_board_id == 5);
     REQUIRE(migrated.version == midismith::adc_board::domain::config::kAdcVersion);
     REQUIRE(migrated.magic_number == midismith::adc_board::domain::config::kAdcMagic);
-    REQUIRE(midismith::adc_board::domain::config::ConfigValidator<
+    REQUIRE(midismith::config::ConfigValidator<
                 midismith::adc_board::domain::config::AdcBoardConfig>::Validate(migrated) ==
-            midismith::adc_board::domain::config::ConfigStatus::kValid);
+            midismith::config::ConfigStatus::kValid);
   }
 
   SECTION("When old board ID is invalid") {
@@ -64,9 +64,9 @@ TEST_CASE("The MigrateAdcBoardConfig function") {
         midismith::adc_board::domain::config::MigrateAdcBoardConfig(old_config, old_config.version);
 
     REQUIRE(migrated.data.can_board_id == midismith::adc_board::domain::config::kDefaultBoardId);
-    REQUIRE(midismith::adc_board::domain::config::ConfigValidator<
+    REQUIRE(midismith::config::ConfigValidator<
                 midismith::adc_board::domain::config::AdcBoardConfig>::Validate(migrated) ==
-            midismith::adc_board::domain::config::ConfigStatus::kValid);
+            midismith::config::ConfigStatus::kValid);
   }
 }
 

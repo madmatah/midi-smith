@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "domain/config/config_validator.hpp"
+#include "config/config_validator.hpp"
 
 namespace midismith::adc_board::domain::config {
 
@@ -18,7 +18,7 @@ AdcBoardConfig CreateDefaultAdcBoardConfig() noexcept {
   config.version = AdcBoardConfig::kVersion;
   config.data.can_board_id = kDefaultBoardId;
 
-  ConfigValidator<AdcBoardConfig>::StampCrc(config);
+  midismith::config::ConfigValidator<AdcBoardConfig>::StampCrc(config);
   return config;
 }
 
@@ -32,7 +32,7 @@ AdcBoardConfig MigrateAdcBoardConfig(const AdcBoardConfig& old_config,
     }
   }
 
-  ConfigValidator<AdcBoardConfig>::StampCrc(migrated);
+  midismith::config::ConfigValidator<AdcBoardConfig>::StampCrc(migrated);
   return migrated;
 }
 

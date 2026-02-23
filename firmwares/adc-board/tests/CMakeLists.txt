@@ -40,10 +40,7 @@ add_executable(adc_unit_tests
     domain/music/piano/velocity/logarithmic_velocity_mapper.test.cpp
     domain/music/piano/midi_velocity_engine.test.cpp
     domain/music/piano/note_release_detector_stage.test.cpp
-    domain/hash/crc32.test.cpp
-    domain/config/config_validator.test.cpp
     domain/config/adc_board_config.test.cpp
-    domain/config/transactional_config_dictionary.test.cpp
     app/storage/storage_manager.test.cpp
     app/storage/adc_board_persistent_configuration.test.cpp
     app/analog/adc_rank_mapped_frame_decoder.test.cpp
@@ -68,6 +65,7 @@ target_link_libraries(adc_unit_tests PRIVATE
     logging
     io
     sensor_linearization
+    config
 )
 target_include_directories(adc_unit_tests PRIVATE
     ${ADC_PROJECT_ROOT}/app/include

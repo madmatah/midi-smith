@@ -54,6 +54,9 @@ endif()
 if(NOT TARGET sensor_linearization)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/sensor-linearization libs/sensor-linearization)
 endif()
+if(NOT TARGET config)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/config libs/config)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -68,7 +71,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi io shell)
+    target_link_libraries(adc_domain PUBLIC dsp midi io shell config)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -197,6 +200,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     io
     shell
     sensor_linearization
+    config
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
