@@ -1,9 +1,9 @@
-#include "domain/shell/commands/config_command.hpp"
+#include "shell-cmd-config/config_command.hpp"
 
 #include <cstddef>
 #include <string_view>
 
-namespace midismith::adc_board::domain::shell::commands {
+namespace midismith::shell_cmd_config {
 namespace {
 
 constexpr std::size_t kMaxValueSize = 64u;
@@ -158,4 +158,4 @@ void ConfigCommand::Run(int argc, char** argv,
   WriteUsage(out);
 }
 
-}  // namespace midismith::adc_board::domain::shell::commands
+}  // namespace midismith::shell_cmd_config

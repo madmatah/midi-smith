@@ -54,6 +54,9 @@ endif()
 if(NOT TARGET shell)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell libs/shell)
 endif()
+if(NOT TARGET shell_cmd_config)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell-cmd-config libs/shell-cmd-config)
+endif()
 if(NOT TARGET sensor_linearization)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/sensor-linearization libs/sensor-linearization)
 endif()
@@ -67,14 +70,13 @@ if(HOST_TESTS)
     add_library(adc_domain STATIC)
     target_sources(adc_domain PRIVATE
         domain/src/config/adc_board_config.cpp
-        domain/src/shell/commands/config_command.cpp
         domain/src/shell/commands/version_command.cpp
     )
     target_include_directories(adc_domain PUBLIC
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io shell config)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io shell shell_cmd_config config)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -139,7 +141,6 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     bsp/src/rtt_telemetry_sender.cpp
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
-    domain/src/shell/commands/config_command.cpp
     app/src/shell/commands/ps_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
     app/src/shell/commands/status_command.cpp
@@ -203,6 +204,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     logging
     io
     shell
+    shell_cmd_config
     sensor_linearization
     config
 

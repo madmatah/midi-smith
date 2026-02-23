@@ -3,7 +3,7 @@
 #include "config/transactional_config_dictionary.hpp"
 #include "shell/command_requirements.hpp"
 
-namespace midismith::adc_board::domain::shell::commands {
+namespace midismith::shell_cmd_config {
 
 class ConfigCommand final : public midismith::shell::CommandRequirements {
  public:
@@ -24,4 +24,4 @@ class ConfigCommand final : public midismith::shell::CommandRequirements {
   midismith::config::TransactionalConfigDictionary& provider_;
 };
 
-}  // namespace midismith::adc_board::domain::shell::commands
+}  // namespace midismith::shell_cmd_config

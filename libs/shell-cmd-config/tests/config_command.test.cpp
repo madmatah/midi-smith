@@ -1,4 +1,4 @@
-#include "domain/shell/commands/config_command.hpp"
+#include "shell-cmd-config/config_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
@@ -98,7 +98,7 @@ class ConfigurationProviderMock final : public midismith::config::TransactionalC
 
 TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
   ConfigurationProviderMock provider;
-  midismith::adc_board::domain::shell::commands::ConfigCommand command(provider);
+  midismith::shell_cmd_config::ConfigCommand command(provider);
   StreamStub stream;
 
   SECTION("The Name method should return config") {

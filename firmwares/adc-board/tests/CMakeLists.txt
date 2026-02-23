@@ -40,12 +40,10 @@ add_executable(adc_unit_tests
     app/analog/acquisition_sequencer.test.cpp
     app/telemetry/sensor_rtt_stream_capture.test.cpp
     app/telemetry/sensor_rtt_schema_frame_builder.test.cpp
-    domain/shell/commands/config_command.test.cpp
     app/shell/commands/sensor_rtt_command.test.cpp
     app/shell/commands/status_command.test.cpp
     app/shell/commands/ps_command.test.cpp
     ${ADC_PROJECT_ROOT}/app/src/storage/adc_board_persistent_configuration.cpp
-    ${ADC_PROJECT_ROOT}/domain/src/shell/commands/config_command.cpp
     ${ADC_PROJECT_ROOT}/app/src/shell/commands/sensor_rtt_command.cpp
     ${ADC_PROJECT_ROOT}/app/src/shell/commands/status_command.cpp
     ${ADC_PROJECT_ROOT}/app/src/shell/commands/ps_command.cpp
@@ -57,6 +55,7 @@ target_link_libraries(adc_unit_tests PRIVATE
     adc_domain
     logging
     io
+    shell_cmd_config
     piano_sensing
     sensor_linearization
     config
