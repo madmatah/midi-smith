@@ -16,20 +16,11 @@ jobs:
   lint_and_format_check:
     name: Lint + format-check
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build clang-format python3-pip
-
-      - name: Install cpplint
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install cpplint
 
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
@@ -43,15 +34,14 @@ jobs:
   host_tests:
     name: Host tests
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build git
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Cache CMake FetchContent (_deps)
         uses: actions/cache@v4
@@ -73,6 +63,8 @@ jobs:
   firmware_build:
     name: Build firmware (${{ matrix.name }})
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
     strategy:
       matrix:
         include:
@@ -87,14 +79,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install tools + ARM GCC
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build \
-            gcc-arm-none-eabi binutils-arm-none-eabi \
-            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
       - name: Configure (${{ matrix.preset }})
         run: cmake --preset ${{ matrix.preset }}
@@ -114,6 +98,8 @@ jobs:
   firmware_size_analysis:
     name: Firmware size analysis (${{ matrix.name }})
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
     if: github.event_name == 'pull_request'
     strategy:
       matrix:
@@ -127,14 +113,6 @@ jobs:
             elf: main-board.elf
             package_dir: firmwares/main-board
     steps:
-      - name: Install tools + ARM GCC
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build \
-            gcc-arm-none-eabi binutils-arm-none-eabi \
-            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
-
       - name: Checkout PR
         uses: actions/checkout@v4
         with:

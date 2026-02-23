@@ -12,17 +12,11 @@ jobs:
   build_and_release:
     name: Build + GitHub Release
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install tools + ARM GCC
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build \
-            gcc-arm-none-eabi binutils-arm-none-eabi \
-            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
       - name: Configure adc-board (Release)
         run: cmake --preset adc-Release
