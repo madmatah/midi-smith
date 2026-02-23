@@ -3,10 +3,10 @@
 #include <cstddef>
 #include <string_view>
 
-#include "domain/io/stream_requirements.hpp"
 #include "domain/shell/command_requirements.hpp"
 #include "domain/shell/commands/help_command.hpp"
 #include "domain/shell/help_provider.hpp"
+#include "io/stream_requirements.hpp"
 
 namespace midismith::adc_board::domain::shell {
 
@@ -34,7 +34,7 @@ class CommandDispatcher : public HelpProvider {
   }
 
   void Dispatch(int argc, char** argv,
-                midismith::adc_board::domain::io::WritableStreamRequirements& out) const noexcept {
+                midismith::io::WritableStreamRequirements& out) const noexcept {
     if (argc <= 0) {
       return;
     }
@@ -73,8 +73,7 @@ class CommandDispatcher : public HelpProvider {
     return found;
   }
 
-  void ShowHelp(
-      midismith::adc_board::domain::io::WritableStreamRequirements& out) const noexcept override {
+  void ShowHelp(midismith::io::WritableStreamRequirements& out) const noexcept override {
     out.Write("Available commands:\r\n");
     for (std::size_t i = 0; i < count_; ++i) {
       out.Write("  ");
@@ -89,7 +88,7 @@ class CommandDispatcher : public HelpProvider {
   }
 
  private:
-  void WritePadding(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+  void WritePadding(midismith::io::WritableStreamRequirements& out,
                     std::size_t name_length) const noexcept {
     const std::size_t kNameColumnWidth = 20;
     for (std::size_t j = name_length; j < kNameColumnWidth; ++j) {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "app/logging/logger_requirements.hpp"
 #include "app/midi/midi_command.hpp"
+#include "logging/logger_requirements.hpp"
 #include "midi/midi_transport_requirements.hpp"
 #include "os/queue_requirements.hpp"
 
@@ -24,8 +24,7 @@ class MidiTask {
    */
   MidiTask(midismith::common::os::QueueRequirements<MidiCommand>& queue,
            midismith::midi::MidiTransportRequirements& transport,
-           midismith::common::app::logging::LoggerRequirements& logger,
-           uint32_t retry_timeout_ms = 100) noexcept
+           midismith::logging::LoggerRequirements& logger, uint32_t retry_timeout_ms = 100) noexcept
       : _queue(queue),
         _transport(transport),
         _logger(logger),
@@ -42,7 +41,7 @@ class MidiTask {
 
   midismith::common::os::QueueRequirements<MidiCommand>& _queue;
   midismith::midi::MidiTransportRequirements& _transport;
-  midismith::common::app::logging::LoggerRequirements& _logger;
+  midismith::logging::LoggerRequirements& _logger;
   uint32_t _retry_timeout_ms;
 };
 

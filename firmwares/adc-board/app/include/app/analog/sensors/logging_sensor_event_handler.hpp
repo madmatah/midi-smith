@@ -2,15 +2,15 @@
 
 #include <cstdint>
 
-#include "app/logging/logger_requirements.hpp"
 #include "domain/music/piano/key_action_requirements.hpp"
+#include "logging/logger_requirements.hpp"
 
 namespace midismith::adc_board::app::analog::sensors {
 
 class LoggingSensorEventHandler final
     : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
  public:
-  void SetLogger(midismith::common::app::logging::LoggerRequirements* logger) noexcept {
+  void SetLogger(midismith::logging::LoggerRequirements* logger) noexcept {
     logger_ = logger;
   }
 
@@ -35,7 +35,7 @@ class LoggingSensorEventHandler final
   }
 
  private:
-  midismith::common::app::logging::LoggerRequirements* logger_ = nullptr;
+  midismith::logging::LoggerRequirements* logger_ = nullptr;
   std::uint8_t sensor_id_ = 0u;
 };
 

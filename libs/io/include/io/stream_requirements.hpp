@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace midismith::adc_board::domain::io {
+namespace midismith::io {
 
 enum class ReadResult {
   kOk,
@@ -37,4 +37,4 @@ class StreamRequirements : public WritableStreamRequirements, public ReadableStr
   virtual ~StreamRequirements() = default;
 };
 
-}  // namespace midismith::adc_board::domain::io
+}  // namespace midismith::io

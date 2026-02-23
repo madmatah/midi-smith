@@ -21,37 +21,35 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: config getall\r\n");
   out.Write("       config get <key>\r\n");
   out.Write("       config set <key> <value>\r\n");
   out.Write("       config save\r\n");
 }
 
-void WriteUnknownKey(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUnknownKey(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: unknown key\r\n");
 }
 
-void WriteInvalidValue(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteInvalidValue(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: invalid value\r\n");
 }
 
-void WriteCannotReadValue(
-    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteCannotReadValue(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: cannot read value\r\n");
 }
 
-void WriteSaveFailed(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteSaveFailed(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("error: save failed\r\n");
 }
 
-void WriteOk(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteOk(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("ok\r\n");
 }
 
-void WriteKeyValue(midismith::adc_board::domain::io::WritableStreamRequirements& out,
-                   std::string_view key, const char* value_buffer,
-                   std::size_t value_length) noexcept {
+void WriteKeyValue(midismith::io::WritableStreamRequirements& out, std::string_view key,
+                   const char* value_buffer, std::size_t value_length) noexcept {
   out.Write(key);
   out.Write(": ");
   out.Write(std::string_view(value_buffer, value_length));
@@ -60,9 +58,8 @@ void WriteKeyValue(midismith::adc_board::domain::io::WritableStreamRequirements&
 
 }  // namespace
 
-void ConfigCommand::Run(
-    int argc, char** argv,
-    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void ConfigCommand::Run(int argc, char** argv,
+                        midismith::io::WritableStreamRequirements& out) noexcept {
   const std::string_view op = Arg(argc, argv, 1);
   if (op.empty()) {
     WriteUsage(out);

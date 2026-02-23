@@ -1,13 +1,13 @@
 #pragma once
 
-#include "domain/io/stream_requirements.hpp"
 #include "domain/shell/shell_engine.hpp"
+#include "io/stream_requirements.hpp"
 
 namespace midismith::adc_board::app::tasks {
 
 class ShellTask {
  public:
-  explicit ShellTask(midismith::adc_board::domain::io::StreamRequirements& stream,
+  explicit ShellTask(midismith::io::StreamRequirements& stream,
                      const midismith::adc_board::domain::shell::ShellConfig& config) noexcept;
 
   static void entry(void* ctx) noexcept;

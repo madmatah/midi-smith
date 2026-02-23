@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "Host-Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/Host-Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HOST_TESTS": "ON"
+      }
+    }
+  ]
+}

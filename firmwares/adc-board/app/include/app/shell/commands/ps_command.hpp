@@ -21,8 +21,7 @@ class PsCommand final : public midismith::adc_board::domain::shell::CommandRequi
     return "Show task runtime usage table";
   }
 
-  void Run(int argc, char** argv,
-           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv, midismith::io::WritableStreamRequirements& out) noexcept override;
 
  private:
   midismith::adc_board::os::RuntimeStatsRequirements& runtime_stats_;

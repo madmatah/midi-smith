@@ -154,7 +154,7 @@ VelocityHandlers() noexcept {
 
 void AttachSensorVelocityHandlersToProcessors(
     std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
-    midismith::common::app::logging::LoggerRequirements& logger) noexcept {
+    midismith::logging::LoggerRequirements& logger) noexcept {
   auto& handlers = VelocityHandlers();
   for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
     handlers[i].SetLogger(&logger);
@@ -217,7 +217,7 @@ bool RegenerateAnalogSensorLookupTables(
 
 AdcControlContext CreateAnalogSubsystem(
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
-    midismith::common::app::logging::LoggerRequirements& logger) noexcept {
+    midismith::logging::LoggerRequirements& logger) noexcept {
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount > 0u,
                 "Sensor count must be > 0");
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount == 22u,

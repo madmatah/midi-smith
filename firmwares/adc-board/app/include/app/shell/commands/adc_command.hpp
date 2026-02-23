@@ -17,8 +17,7 @@ class AdcCommand final : public midismith::adc_board::domain::shell::CommandRequ
   std::string_view Help() const noexcept override {
     return "Control ADC acquisition (on/off/status)";
   }
-  void Run(int argc, char** argv,
-           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override;
+  void Run(int argc, char** argv, midismith::io::WritableStreamRequirements& out) noexcept override;
 
  private:
   midismith::adc_board::app::analog::AcquisitionControlRequirements& control_;

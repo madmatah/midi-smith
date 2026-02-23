@@ -26,7 +26,7 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: status [window_ms]\r\n");
 }
 
@@ -45,8 +45,7 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   return true;
 }
 
-void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
-                 std::uint32_t value) noexcept {
+void WriteUint32(midismith::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
   char buf[16]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -55,8 +54,7 @@ void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& o
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
-void WriteUint64(midismith::adc_board::domain::io::WritableStreamRequirements& out,
-                 std::uint64_t value) noexcept {
+void WriteUint64(midismith::io::WritableStreamRequirements& out, std::uint64_t value) noexcept {
   char buf[32]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -65,7 +63,7 @@ void WriteUint64(midismith::adc_board::domain::io::WritableStreamRequirements& o
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
-void WritePermilleAsPercent(midismith::adc_board::domain::io::WritableStreamRequirements& out,
+void WritePermilleAsPercent(midismith::io::WritableStreamRequirements& out,
                             std::uint32_t permille) noexcept {
   WriteUint32(out, permille / 10u);
   out.Write('.');
@@ -74,9 +72,8 @@ void WritePermilleAsPercent(midismith::adc_board::domain::io::WritableStreamRequ
 
 }  // namespace
 
-void StatusCommand::Run(
-    int argc, char** argv,
-    midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void StatusCommand::Run(int argc, char** argv,
+                        midismith::io::WritableStreamRequirements& out) noexcept {
   if (argc > 2) {
     WriteUsage(out);
     return;
