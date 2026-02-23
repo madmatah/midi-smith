@@ -16,8 +16,8 @@ namespace midismith::adc_board::app::tasks {
 class SensorRttTelemetryTask {
  public:
   SensorRttTelemetryTask(
-      midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand,
-                                   4>& control_queue,
+      midismith::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>&
+          control_queue,
       midismith::adc_board::domain::sensors::SensorRegistry& registry,
       midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
       midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
@@ -38,7 +38,7 @@ class SensorRttTelemetryTask {
                                std::span<std::uint8_t> schema_frame_bytes) noexcept;
   bool TrySendCapturedDataFrames(std::size_t max_frames_per_write) noexcept;
 
-  midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>&
+  midismith::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>&
       control_queue_;
   midismith::adc_board::domain::sensors::SensorRegistry& registry_;
   midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state_;

@@ -5,7 +5,7 @@
 #include "cmsis_os2.h"
 #include "os/queue_requirements.hpp"
 
-namespace midismith::common::os {
+namespace midismith::os {
 
 template <typename T, std::uint32_t Capacity>
 class Queue : public QueueRequirements<T> {
@@ -59,4 +59,4 @@ class Queue : public QueueRequirements<T> {
   alignas(4) std::uint8_t queue_memory_[Capacity * sizeof(T)];
 };
 
-}  // namespace midismith::common::os
+}  // namespace midismith::os

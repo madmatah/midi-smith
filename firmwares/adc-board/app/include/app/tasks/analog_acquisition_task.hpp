@@ -35,8 +35,8 @@ class AnalogAcquisitionTask {
   using TimestampCounterRequirements =
       midismith::adc_board::app::time::TimestampCounterRequirements;
 
-  AnalogAcquisitionTask(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue,
-                        midismith::common::os::Queue<AcquisitionCommand, 4>& control_queue,
+  AnalogAcquisitionTask(midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
+                        midismith::os::Queue<AcquisitionCommand, 4>& control_queue,
                         GpioRequirements& tia_shutdown, AdcDma& adc_dma,
                         TimestampCounterRequirements& timestamp_counter,
                         volatile AnalogAcquisitionState& state,
@@ -58,8 +58,8 @@ class AnalogAcquisitionTask {
   void ProcessAdc2Frame(const AdcFrameDescriptor& desc) noexcept;
   void ProcessAdc3Frame(const AdcFrameDescriptor& desc) noexcept;
 
-  midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue_;
-  midismith::common::os::Queue<AcquisitionCommand, 4>& control_queue_;
+  midismith::os::Queue<AdcFrameDescriptor, 8>& queue_;
+  midismith::os::Queue<AcquisitionCommand, 4>& control_queue_;
   GpioRequirements& tia_shutdown_;
   AdcDma& adc_dma_;
   TimestampCounterRequirements& timestamp_counter_;

@@ -2,7 +2,7 @@
 
 #include "cmsis_os2.h"
 
-namespace midismith::common::os {
+namespace midismith::os {
 
 static osPriority_t to_priority(std::uint32_t p) {
   if (p >= static_cast<std::uint32_t>(osPriorityRealtime)) {
@@ -25,4 +25,4 @@ bool Task::create(const char* name, TaskFn fn, void* arg, std::size_t stack_byte
   return osThreadNew(reinterpret_cast<osThreadFunc_t>(fn), arg, &attr) != nullptr;
 }
 
-}  // namespace midismith::common::os
+}  // namespace midismith::os

@@ -32,8 +32,8 @@ void Application::create_tasks() noexcept {
   static midismith::common::bsp::RttLogger logger;
 
   // 1. MIDI System
-  static midismith::common::os::Queue<midismith::main_board::app::midi::MidiCommand,
-                                      midismith::main_board::app::config::MIDI_QUEUE_CAPACITY>
+  static midismith::os::Queue<midismith::main_board::app::midi::MidiCommand,
+                              midismith::main_board::app::config::MIDI_QUEUE_CAPACITY>
       midi_queue;
   static midismith::main_board::bsp::UsbMidi usb_midi;
   static midismith::main_board::app::midi::AsyncTaskMidiController midi_controller(midi_queue);
@@ -45,10 +45,9 @@ void Application::create_tasks() noexcept {
   static midismith::piano_controller::MidiPiano piano(midi_controller, piano_config);
 
   // Start MIDI Task
-  (void) midismith::common::os::Task::create(
-      "MidiTask", midi_task_entry, &midi_task,
-      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
-      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
+  (void) midismith::os::Task::create("MidiTask", midi_task_entry, &midi_task,
+                                     midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
+                                     midismith::main_board::app::config::MIDI_TASK_PRIORITY);
 
   // 2. LED Task
   alignas(midismith::main_board::app::tasks::LedTask) static std::uint8_t

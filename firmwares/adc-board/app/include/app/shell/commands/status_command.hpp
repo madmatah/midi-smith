@@ -2,7 +2,7 @@
 
 #include "shell/command_requirements.hpp"
 
-namespace midismith::adc_board::os {
+namespace midismith::os {
 class RuntimeStatsRequirements;
 }
 
@@ -10,7 +10,7 @@ namespace midismith::adc_board::app::shell::commands {
 
 class StatusCommand final : public midismith::shell::CommandRequirements {
  public:
-  explicit StatusCommand(midismith::adc_board::os::RuntimeStatsRequirements& runtime_stats) noexcept
+  explicit StatusCommand(midismith::os::RuntimeStatsRequirements& runtime_stats) noexcept
       : runtime_stats_(runtime_stats) {}
 
   std::string_view Name() const noexcept override {
@@ -24,7 +24,7 @@ class StatusCommand final : public midismith::shell::CommandRequirements {
   void Run(int argc, char** argv, midismith::io::WritableStreamRequirements& out) noexcept override;
 
  private:
-  midismith::adc_board::os::RuntimeStatsRequirements& runtime_stats_;
+  midismith::os::RuntimeStatsRequirements& runtime_stats_;
 };
 
 }  // namespace midismith::adc_board::app::shell::commands

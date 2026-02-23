@@ -13,7 +13,7 @@ void AsyncTaskMidiController::SendRawMessage(const uint8_t* data, uint8_t length
   std::memcpy(command.data, data, length);
   command.length = length;
 
-  (void) _queue.Send(command, midismith::common::os::kNoWait);
+  (void) _queue.Send(command, midismith::os::kNoWait);
 }
 
 }  // namespace midismith::main_board::app::midi

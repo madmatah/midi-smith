@@ -14,7 +14,7 @@ namespace midismith::main_board::app::midi {
  */
 class AsyncTaskMidiController : public midismith::midi::MidiControllerRequirements {
  public:
-  explicit AsyncTaskMidiController(midismith::common::os::QueueRequirements<MidiCommand>& queue)
+  explicit AsyncTaskMidiController(midismith::os::QueueRequirements<MidiCommand>& queue)
       : _queue(queue) {}
 
   /**
@@ -23,7 +23,7 @@ class AsyncTaskMidiController : public midismith::midi::MidiControllerRequiremen
   void SendRawMessage(const uint8_t* data, uint8_t length) noexcept override;
 
  private:
-  midismith::common::os::QueueRequirements<MidiCommand>& _queue;
+  midismith::os::QueueRequirements<MidiCommand>& _queue;
 };
 
 }  // namespace midismith::main_board::app::midi

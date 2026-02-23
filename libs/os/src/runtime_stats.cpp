@@ -8,7 +8,7 @@
 #include "cmsis_os2.h"
 #include "task.h"
 
-namespace midismith::adc_board::os {
+namespace midismith::os {
 namespace {
 
 constexpr UBaseType_t kSnapshotCapacityMargin = 4u;
@@ -283,4 +283,4 @@ bool RuntimeStats::CaptureTaskSnapshotRows(std::uint32_t window_ms,
   return true;
 }
 
-}  // namespace midismith::adc_board::os
+}  // namespace midismith::os

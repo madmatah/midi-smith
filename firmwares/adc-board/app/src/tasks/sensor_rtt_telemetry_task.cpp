@@ -31,8 +31,8 @@ constexpr std::uint32_t ClampOutputHz(std::uint32_t hz) noexcept {
 }  // namespace
 
 SensorRttTelemetryTask::SensorRttTelemetryTask(
-    midismith::common::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand,
-                                 4>& control_queue,
+    midismith::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>&
+        control_queue,
     midismith::adc_board::domain::sensors::SensorRegistry& registry,
     midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
     midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
@@ -91,7 +91,7 @@ void SensorRttTelemetryTask::ApplyCommand(
 
 void SensorRttTelemetryTask::ApplyPendingCommands() noexcept {
   midismith::adc_board::app::telemetry::SensorRttTelemetryCommand cmd{};
-  while (control_queue_.Receive(cmd, midismith::common::os::kNoWait)) {
+  while (control_queue_.Receive(cmd, midismith::os::kNoWait)) {
     ApplyCommand(cmd);
   }
 }
@@ -190,7 +190,7 @@ void SensorRttTelemetryTask::run() noexcept {
 
   for (;;) {
     if (active_sensor_id_ == 0u) {
-      (void) ReceiveControlCommand(midismith::common::os::kWaitForever);
+      (void) ReceiveControlCommand(midismith::os::kWaitForever);
       continue;
     }
 
@@ -216,7 +216,7 @@ void SensorRttTelemetryTask::run() noexcept {
 }
 
 bool SensorRttTelemetryTask::start() noexcept {
-  return midismith::common::os::Task::create(
+  return midismith::os::Task::create(
       "SensorRtt", SensorRttTelemetryTask::entry, this,
       midismith::adc_board::app::config::SENSOR_RTT_TELEMETRY_TASK_STACK_BYTES,
       midismith::adc_board::app::config::SENSOR_RTT_TELEMETRY_TASK_PRIORITY);

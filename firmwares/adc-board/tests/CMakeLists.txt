@@ -59,11 +59,11 @@ target_link_libraries(adc_unit_tests PRIVATE
     piano_sensing
     sensor_linearization
     config
+    os
 )
 target_include_directories(adc_unit_tests PRIVATE
     ${ADC_PROJECT_ROOT}/app/include
     ${ADC_PROJECT_ROOT}/bsp/include
-    ${ADC_PROJECT_ROOT}/os/include
     ${ADC_COMMON_INCLUDE_DIRS}
 )
 target_compile_definitions(adc_unit_tests PRIVATE UNIT_TESTS=1)

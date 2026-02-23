@@ -31,24 +31,24 @@ class StreamStub : public midismith::io::StreamRequirements {
   std::string output_;
 };
 
-class RuntimeStatsMock final : public midismith::adc_board::os::RuntimeStatsRequirements {
+class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
  public:
   bool CaptureStatusSnapshot(
       std::uint32_t window_ms,
-      midismith::adc_board::os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
+      midismith::os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
     requested_window_ms = window_ms;
     status_snapshot = snapshot;
     return capture_status_ok;
   }
 
-  bool CaptureTaskSnapshotRows(std::uint32_t, midismith::adc_board::os::RuntimeTaskSnapshotRow*,
-                               std::size_t, std::size_t&, bool&) noexcept override {
+  bool CaptureTaskSnapshotRows(std::uint32_t, midismith::os::RuntimeTaskSnapshotRow*, std::size_t,
+                               std::size_t&, bool&) noexcept override {
     return false;
   }
 
   bool capture_status_ok = true;
   std::uint32_t requested_window_ms = 0u;
-  midismith::adc_board::os::RuntimeStatusSnapshot snapshot{};
+  midismith::os::RuntimeStatusSnapshot snapshot{};
 };
 
 }  // namespace

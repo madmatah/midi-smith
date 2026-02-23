@@ -32,15 +32,15 @@ class StreamStub : public midismith::io::StreamRequirements {
   std::string output_;
 };
 
-class RuntimeStatsMock final : public midismith::adc_board::os::RuntimeStatsRequirements {
+class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
  public:
   bool CaptureStatusSnapshot(std::uint32_t,
-                             midismith::adc_board::os::RuntimeStatusSnapshot&) noexcept override {
+                             midismith::os::RuntimeStatusSnapshot&) noexcept override {
     return false;
   }
 
   bool CaptureTaskSnapshotRows(std::uint32_t window_ms,
-                               midismith::adc_board::os::RuntimeTaskSnapshotRow* task_rows,
+                               midismith::os::RuntimeTaskSnapshotRow* task_rows,
                                std::size_t max_task_rows, std::size_t& task_row_count,
                                bool& snapshot_truncated) noexcept override {
     requested_window_ms = window_ms;
@@ -63,12 +63,12 @@ class RuntimeStatsMock final : public midismith::adc_board::os::RuntimeStatsRequ
   std::uint32_t requested_window_ms = 0u;
   bool truncated = false;
   std::size_t task_rows_to_copy = 0u;
-  midismith::adc_board::os::RuntimeTaskSnapshotRow source_rows[4]{};
+  midismith::os::RuntimeTaskSnapshotRow source_rows[4]{};
 };
 
-void SetTaskName(midismith::adc_board::os::RuntimeTaskSnapshotRow& row, const char* task_name) {
-  std::strncpy(row.task_name, task_name, midismith::adc_board::os::kRuntimeTaskNameCapacity - 1u);
-  row.task_name[midismith::adc_board::os::kRuntimeTaskNameCapacity - 1u] = '\0';
+void SetTaskName(midismith::os::RuntimeTaskSnapshotRow& row, const char* task_name) {
+  std::strncpy(row.task_name, task_name, midismith::os::kRuntimeTaskNameCapacity - 1u);
+  row.task_name[midismith::os::kRuntimeTaskNameCapacity - 1u] = '\0';
 }
 
 }  // namespace
