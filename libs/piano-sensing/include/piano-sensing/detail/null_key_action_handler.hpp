@@ -1,8 +1,8 @@
 #pragma once
 
-#include "domain/music/piano/key_action_requirements.hpp"
+#include "piano-sensing/key_action_requirements.hpp"
 
-namespace midismith::adc_board::domain::music::piano::detail {
+namespace midismith::piano_sensing::detail {
 
 class NullKeyActionHandler final : public KeyActionRequirements {
  public:
@@ -15,4 +15,4 @@ class NullKeyActionHandler final : public KeyActionRequirements {
   }
 };
 
-}  // namespace midismith::adc_board::domain::music::piano::detail
+}  // namespace midismith::piano_sensing::detail

@@ -1,12 +1,12 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/music/piano/velocity/linear_velocity_mapper.hpp"
+#include "piano-sensing/velocity/logarithmic_velocity_mapper.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <limits>
 
-TEST_CASE("LinearVelocityMapper") {
-  using Mapper = midismith::adc_board::domain::music::piano::velocity::LinearVelocityMapper<1.0f>;
+TEST_CASE("LogarithmicVelocityMapper") {
+  using Mapper = midismith::piano_sensing::velocity::LogarithmicVelocityMapper<1.0f, 10.0f>;
   Mapper mapper{};
 
   SECTION("Returns 127 in fail-safe conditions") {
@@ -26,8 +26,8 @@ TEST_CASE("LinearVelocityMapper") {
     REQUIRE(mapper.Map(2.0f) == static_cast<midismith::midi::Velocity>(127u));
   }
 
-  SECTION("Maps an intermediate speed linearly") {
-    REQUIRE(mapper.Map(0.5f) == static_cast<midismith::midi::Velocity>(64u));
+  SECTION("Maps an intermediate speed with logarithmic shaping") {
+    REQUIRE(mapper.Map(0.5f) == static_cast<midismith::midi::Velocity>(95u));
   }
 }
 

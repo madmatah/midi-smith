@@ -2,13 +2,12 @@
 
 #include <cstdint>
 
-#include "domain/music/piano/key_action_requirements.hpp"
 #include "logging/logger_requirements.hpp"
+#include "piano-sensing/key_action_requirements.hpp"
 
 namespace midismith::adc_board::app::analog::sensors {
 
-class LoggingSensorEventHandler final
-    : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
+class LoggingSensorEventHandler final : public midismith::piano_sensing::KeyActionRequirements {
  public:
   void SetLogger(midismith::logging::LoggerRequirements* logger) noexcept {
     logger_ = logger;

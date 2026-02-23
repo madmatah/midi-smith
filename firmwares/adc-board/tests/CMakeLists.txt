@@ -33,13 +33,6 @@ add_executable(adc_unit_tests
     domain/sensors/capture_sensor_state.test.cpp
     domain/sensors/sensor_member_reader.test.cpp
     domain/sensors/sensor_state.test.cpp
-    domain/music/piano/velocity/constant_velocity_mapper.test.cpp
-    domain/music/piano/velocity/exponential_velocity_mapper.test.cpp
-    domain/music/piano/velocity/goebl_logarithmic_velocity_mapper.test.cpp
-    domain/music/piano/velocity/linear_velocity_mapper.test.cpp
-    domain/music/piano/velocity/logarithmic_velocity_mapper.test.cpp
-    domain/music/piano/midi_velocity_engine.test.cpp
-    domain/music/piano/note_release_detector_stage.test.cpp
     domain/config/adc_board_config.test.cpp
     app/storage/storage_manager.test.cpp
     app/storage/adc_board_persistent_configuration.test.cpp
@@ -64,6 +57,7 @@ target_link_libraries(adc_unit_tests PRIVATE
     adc_domain
     logging
     io
+    piano_sensing
     sensor_linearization
     config
 )

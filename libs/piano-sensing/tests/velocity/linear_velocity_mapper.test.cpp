@@ -1,13 +1,12 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/music/piano/velocity/exponential_velocity_mapper.hpp"
+#include "piano-sensing/velocity/linear_velocity_mapper.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <limits>
 
-TEST_CASE("ExponentialVelocityMapper") {
-  using Mapper =
-      midismith::adc_board::domain::music::piano::velocity::ExponentialVelocityMapper<1.0f, 2.0f>;
+TEST_CASE("LinearVelocityMapper") {
+  using Mapper = midismith::piano_sensing::velocity::LinearVelocityMapper<1.0f>;
   Mapper mapper{};
 
   SECTION("Returns 127 in fail-safe conditions") {
@@ -27,8 +26,8 @@ TEST_CASE("ExponentialVelocityMapper") {
     REQUIRE(mapper.Map(2.0f) == static_cast<midismith::midi::Velocity>(127u));
   }
 
-  SECTION("Maps an intermediate speed with exponential shaping") {
-    REQUIRE(mapper.Map(0.5f) == static_cast<midismith::midi::Velocity>(32u));
+  SECTION("Maps an intermediate speed linearly") {
+    REQUIRE(mapper.Map(0.5f) == static_cast<midismith::midi::Velocity>(64u));
   }
 }
 

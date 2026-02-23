@@ -1,16 +1,13 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/music/piano/note_release_detector_stage.hpp"
+#include "piano-sensing/note_release_detector_stage.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "domain/sensors/sensor_state.hpp"
-
 namespace {
 
-class RecordingKeyActionHandler final
-    : public midismith::adc_board::domain::music::piano::KeyActionRequirements {
+class RecordingKeyActionHandler final : public midismith::piano_sensing::KeyActionRequirements {
  public:
   void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
     (void) velocity;
@@ -26,7 +23,7 @@ class RecordingKeyActionHandler final
 };
 
 class RecordingVelocityMapper final
-    : public midismith::adc_board::domain::music::piano::velocity::VelocityMapperRequirements {
+    : public midismith::piano_sensing::velocity::VelocityMapperRequirements {
  public:
   static void Reset() noexcept {
     map_calls = 0;
@@ -45,68 +42,67 @@ class RecordingVelocityMapper final
 };
 
 struct TestContext {
-  midismith::adc_board::domain::sensors::SensorState& sensor;
+  struct Sensor {
+    float last_shank_position_smoothed_norm = 0.0f;
+    float last_shank_falling_speed_m_per_s = 0.0f;
+    bool is_note_on = false;
+  } sensor;
 };
 
 }  // namespace
 
 TEST_CASE("The NoteReleaseDetectorStage class") {
   using Catch::Matchers::WithinAbs;
-  using Constant127Mapper =
-      midismith::adc_board::domain::music::piano::velocity::ConstantVelocityMapper<127u>;
-  using DefaultStage =
-      midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
+  using Constant127Mapper = midismith::piano_sensing::velocity::ConstantVelocityMapper<127u>;
+  using DefaultStage = midismith::piano_sensing::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
   using CustomMapperStage =
-      midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<RecordingVelocityMapper,
-                                                                           0.5f>;
+      midismith::piano_sensing::NoteReleaseDetectorStage<RecordingVelocityMapper, 0.5f>;
 
   SECTION("The note release detection") {
     SECTION("When note is on and position crosses the threshold upwards") {
       SECTION("Should emit NoteOff and clear is_note_on") {
-        midismith::adc_board::domain::sensors::SensorState sensor{};
-        TestContext ctx{sensor};
+        TestContext ctx{};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
         stage.SetKeyActionHandler(&handler);
         RecordingVelocityMapper::Reset();
 
-        sensor.is_note_on = true;
-        sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        sensor.last_shank_position_smoothed_norm = 0.49f;
+        ctx.sensor.is_note_on = true;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
         stage.Execute(0.0f, ctx);
 
-        sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.25f, 0.0001f));
         REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(42u));
-        REQUIRE(sensor.is_note_on == false);
+        REQUIRE(ctx.sensor.is_note_on == false);
       }
     }
 
     SECTION("When speed becomes gated at the threshold") {
       SECTION("Should map the last latched positive speed") {
-        midismith::adc_board::domain::sensors::SensorState sensor{};
-        TestContext ctx{sensor};
+        TestContext ctx{};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
         stage.SetKeyActionHandler(&handler);
         RecordingVelocityMapper::Reset();
 
-        sensor.is_note_on = true;
-        sensor.last_shank_falling_speed_m_per_s = 0.10f;
-        sensor.last_shank_position_smoothed_norm = 0.40f;
+        ctx.sensor.is_note_on = true;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.10f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
         stage.Execute(0.0f, ctx);
 
-        sensor.last_shank_falling_speed_m_per_s = 0.35f;
-        sensor.last_shank_position_smoothed_norm = 0.45f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.35f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.45f;
         stage.Execute(0.0f, ctx);
 
-        sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
@@ -117,64 +113,61 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
 
     SECTION("When note is off") {
       SECTION("Should not emit NoteOff") {
-        midismith::adc_board::domain::sensors::SensorState sensor{};
-        TestContext ctx{sensor};
+        TestContext ctx{};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
         stage.SetKeyActionHandler(&handler);
         RecordingVelocityMapper::Reset();
 
-        sensor.is_note_on = false;
-        sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        sensor.last_shank_position_smoothed_norm = 0.49f;
+        ctx.sensor.is_note_on = false;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
         stage.Execute(0.0f, ctx);
-        sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 0);
-        REQUIRE(sensor.is_note_on == false);
+        REQUIRE(ctx.sensor.is_note_on == false);
       }
     }
 
     SECTION("When no custom velocity mapper is configured") {
       SECTION("Should emit NoteOff with default velocity 127") {
-        midismith::adc_board::domain::sensors::SensorState sensor{};
-        TestContext ctx{sensor};
+        TestContext ctx{};
         DefaultStage stage{};
         RecordingKeyActionHandler handler{};
         stage.SetKeyActionHandler(&handler);
 
-        sensor.is_note_on = true;
-        sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        sensor.last_shank_position_smoothed_norm = 0.49f;
+        ctx.sensor.is_note_on = true;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
         stage.Execute(0.0f, ctx);
 
-        sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);
         REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(127u));
-        REQUIRE(sensor.is_note_on == false);
+        REQUIRE(ctx.sensor.is_note_on == false);
       }
     }
 
     SECTION("When configured with a custom mapper type") {
       SECTION("Should use the custom mapper output to emit NoteOff") {
-        midismith::adc_board::domain::sensors::SensorState sensor{};
-        TestContext ctx{sensor};
+        TestContext ctx{};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
         stage.SetKeyActionHandler(&handler);
         RecordingVelocityMapper::Reset();
 
-        sensor.is_note_on = true;
-        sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        sensor.last_shank_position_smoothed_norm = 0.49f;
+        ctx.sensor.is_note_on = true;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
         stage.Execute(0.0f, ctx);
 
-        sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
         stage.Execute(0.0f, ctx);
 
         REQUIRE(handler.note_off_calls == 1);

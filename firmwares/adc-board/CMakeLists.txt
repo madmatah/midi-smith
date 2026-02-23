@@ -42,6 +42,9 @@ endif()
 if(NOT TARGET midi)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/midi libs/midi)
 endif()
+if(NOT TARGET piano_sensing)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/piano-sensing libs/piano-sensing)
+endif()
 if(NOT TARGET logging)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/logging libs/logging)
 endif()
@@ -71,7 +74,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi io shell config)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io shell config)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -196,6 +199,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     stm32cubemx
     dsp
     midi
+    piano_sensing
     logging
     io
     shell

@@ -6,11 +6,6 @@
 
 #include "app/config/signal_processing.hpp"
 #include "app/telemetry/sensor_rtt_stream_tap.hpp"
-#include "domain/music/piano/key_action_requirements.hpp"
-#include "domain/music/piano/midi_velocity_engine.hpp"
-#include "domain/music/piano/note_release_detector_stage.hpp"
-#include "domain/music/piano/velocity/goebl_logarithmic_velocity_mapper.hpp"
-#include "domain/music/piano/velocity/logarithmic_velocity_mapper.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -28,6 +23,11 @@
 #include "dsp/logic/switch.hpp"
 #include "dsp/math/central_difference.hpp"
 #include "dsp/math/sliding_linear_regression.hpp"
+#include "piano-sensing/key_action_requirements.hpp"
+#include "piano-sensing/midi_velocity_engine.hpp"
+#include "piano-sensing/note_release_detector_stage.hpp"
+#include "piano-sensing/velocity/goebl_logarithmic_velocity_mapper.hpp"
+#include "piano-sensing/velocity/logarithmic_velocity_mapper.hpp"
 #include "sensor-linearization/sensor_linear_processor.hpp"
 
 namespace midismith::adc_board::app::analog::signal_processing::workflow {
@@ -62,11 +62,10 @@ using And = midismith::dsp::logic::And<PredicateTs...>;
 template <auto ValueProvider>
 using IsTrue = midismith::dsp::logic::IsTrue<ValueProvider>;
 using GoeblLogarithmicVelocityMapper =
-    midismith::adc_board::domain::music::piano::velocity::GoeblLogarithmicVelocityMapper;
+    midismith::piano_sensing::velocity::GoeblLogarithmicVelocityMapper;
 template <float kMaximumSpeedMPerS, float kShapeFactor>
 using LogarithmicVelocityMapper =
-    midismith::adc_board::domain::music::piano::velocity::LogarithmicVelocityMapper<
-        kMaximumSpeedMPerS, kShapeFactor>;
+    midismith::piano_sensing::velocity::LogarithmicVelocityMapper<kMaximumSpeedMPerS, kShapeFactor>;
 
 // =============================================================================
 // Preprocessing Trunk
@@ -124,7 +123,7 @@ using PhysicalVelocityPipelineTap = Tap<PhysicalVelocityPipeline>;
 // =============================================================================
 
 using NoteOnVelocityMapper = GoeblLogarithmicVelocityMapper;
-using NoteOnStage = midismith::adc_board::domain::music::piano::MidiVelocityEngine<
+using NoteOnStage = midismith::piano_sensing::MidiVelocityEngine<
     NoteOnVelocityMapper, config::HAMMER_POSITION_DAMPER, config::HAMMER_POSITION_LETOFF,
     config::HAMMER_POSITION_STRIKE, config::HAMMER_POSITION_DROP, config::HAMMER_POSITION_REARM>;
 
@@ -171,8 +170,9 @@ using DamperReleasePhysicalStageStage = Tap<DamperReleasePhysicalStage>;
 
 using NoteOffVelocityMapper = LogarithmicVelocityMapper<config::NOTE_OFF_VELOCITY_MAX_M_PER_S,
                                                         config::NOTE_OFF_VELOCITY_SHAPE_FACTOR>;
-using NoteOffStage = midismith::adc_board::domain::music::piano::NoteReleaseDetectorStage<
-    NoteOffVelocityMapper, config::HAMMER_POSITION_DAMPER>;
+using NoteOffStage =
+    midismith::piano_sensing::NoteReleaseDetectorStage<NoteOffVelocityMapper,
+                                                       config::HAMMER_POSITION_DAMPER>;
 using NoteOffTapStage = Tap<NoteOffStage>;
 
 
@@ -207,7 +207,7 @@ using Workflow = StageWorkflow<
 
 using ProcessorWorkflow = Workflow;
 using LinearizerConfiguration = typename LinearizerStage::Configuration;
-using KeyActionHandler = midismith::adc_board::domain::music::piano::KeyActionRequirements;
+using KeyActionHandler = midismith::piano_sensing::KeyActionRequirements;
 
 struct StageAccess {
   static constexpr std::size_t kLinearizerStageIndex =
