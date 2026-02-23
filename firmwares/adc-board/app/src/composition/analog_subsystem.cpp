@@ -27,10 +27,9 @@ namespace {
     midismith::adc_board::app::config::sensors::validation::AreUnique(
         midismith::adc_board::app::config::sensors::kSensorIds);
 
-midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>&
+midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>&
 AdcControlQueue() noexcept {
-  static midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>
-      queue;
+  static midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4> queue;
   return queue;
 }
 
@@ -164,7 +163,7 @@ void AttachSensorVelocityHandlersToProcessors(
 }
 
 void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
-  static midismith::common::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
+  static midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
       adc_frame_queue;
   static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue);
   static midismith::adc_board::bsp::time::TimestampCounter timestamp_counter =

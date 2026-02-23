@@ -11,29 +11,28 @@ namespace midismith::adc_board::app::telemetry {
 
 class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlRequirements {
  public:
-  QueueSensorRttTelemetryControl(
-      ::midismith::common::os::Queue<SensorRttTelemetryCommand, 4>& queue,
-      SensorRttStreamCapture& capture) noexcept
+  QueueSensorRttTelemetryControl(::midismith::os::Queue<SensorRttTelemetryCommand, 4>& queue,
+                                 SensorRttStreamCapture& capture) noexcept
       : queue_(queue), capture_(capture) {}
 
   bool RequestOff() noexcept override {
     SensorRttTelemetryCommand cmd{};
     cmd.kind = SensorRttTelemetryCommandKind::kOff;
-    return queue_.Send(cmd, ::midismith::common::os::kNoWait);
+    return queue_.Send(cmd, ::midismith::os::kNoWait);
   }
 
   bool RequestObserve(std::uint8_t sensor_id) noexcept override {
     SensorRttTelemetryCommand cmd{};
     cmd.kind = SensorRttTelemetryCommandKind::kObserve;
     cmd.sensor_id = sensor_id;
-    return queue_.Send(cmd, ::midismith::common::os::kNoWait);
+    return queue_.Send(cmd, ::midismith::os::kNoWait);
   }
 
   bool RequestSetOutputHz(std::uint32_t output_hz) noexcept override {
     SensorRttTelemetryCommand cmd{};
     cmd.kind = SensorRttTelemetryCommandKind::kSetOutputHz;
     cmd.output_hz = output_hz;
-    return queue_.Send(cmd, ::midismith::common::os::kNoWait);
+    return queue_.Send(cmd, ::midismith::os::kNoWait);
   }
 
   SensorRttTelemetryStatus GetStatus() const noexcept override {
@@ -48,7 +47,7 @@ class QueueSensorRttTelemetryControl final : public SensorRttTelemetryControlReq
   }
 
  private:
-  ::midismith::common::os::Queue<SensorRttTelemetryCommand, 4>& queue_;
+  ::midismith::os::Queue<SensorRttTelemetryCommand, 4>& queue_;
   SensorRttStreamCapture& capture_;
 };
 

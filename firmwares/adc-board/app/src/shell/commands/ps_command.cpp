@@ -16,7 +16,7 @@ constexpr std::uint32_t kDefaultWindowMs = 250u;
 constexpr std::uint32_t kMinWindowMs = 50u;
 constexpr std::uint32_t kMaxWindowMs = 2000u;
 constexpr std::size_t kMaxTaskRows = 48u;
-BSP_AXI_SRAM static midismith::adc_board::os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
+BSP_AXI_SRAM static midismith::os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
 
 std::string_view Arg(int argc, char** argv, int index) noexcept {
   if (argv == nullptr) {

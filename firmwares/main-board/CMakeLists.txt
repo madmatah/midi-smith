@@ -45,6 +45,9 @@ endif()
 if(NOT TARGET logging)
     add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/logging libs/logging)
 endif()
+if(NOT TARGET os)
+    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/os libs/os)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -54,7 +57,7 @@ if(HOST_TESTS)
         domain/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(main_domain INTERFACE piano_controller midi)
+    target_link_libraries(main_domain INTERFACE piano_controller midi os)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -62,7 +65,6 @@ if(HOST_TESTS)
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
-        os/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
@@ -115,12 +117,6 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/midi/midi_task.cpp
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
-    ${MAIN_COMMON_SRC_DIRS}/os/clock.cpp
-    ${MAIN_COMMON_SRC_DIRS}/os/task.cpp
-    ${MAIN_COMMON_SRC_DIRS}/os/queue.cpp
-    ${MAIN_COMMON_SRC_DIRS}/os/binary_semaphore.cpp
-    ${MAIN_COMMON_SRC_DIRS}/os/memory.cpp
-    ${MAIN_COMMON_SRC_DIRS}/os/this_task.cpp
 )
 
 # Add include paths
@@ -131,7 +127,6 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/include/bsp/usb_midi
     ${MAIN_SEGGER_ROOT}/RTT/RTT
     ${MAIN_SEGGER_ROOT}/RTT/Config
-    os/include
     domain/include
     ${MAIN_COMMON_INCLUDE_DIRS}
 )
@@ -158,6 +153,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     midi
     piano_controller
     logging
+    os
 
     # Add user defined libraries
 )

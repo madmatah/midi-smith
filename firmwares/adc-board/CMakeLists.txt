@@ -51,6 +51,9 @@ endif()
 if(NOT TARGET io)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/io libs/io)
 endif()
+if(NOT TARGET os)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/os libs/os)
+endif()
 if(NOT TARGET shell)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell libs/shell)
 endif()
@@ -76,7 +79,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io shell shell_cmd_config config)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io os shell shell_cmd_config config)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -146,13 +149,6 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/shell/commands/status_command.cpp
     ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
     ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
-    ${ADC_COMMON_SRC_DIRS}/os/clock.cpp
-    ${ADC_COMMON_SRC_DIRS}/os/task.cpp
-    ${ADC_COMMON_SRC_DIRS}/os/queue.cpp
-    ${ADC_COMMON_SRC_DIRS}/os/binary_semaphore.cpp
-    ${ADC_COMMON_SRC_DIRS}/os/memory.cpp
-    os/src/runtime_stats.cpp
-    ${ADC_COMMON_SRC_DIRS}/os/this_task.cpp
 )
 
 
@@ -164,7 +160,6 @@ target_include_directories(${ADC_FIRMWARE_TARGET} PRIVATE
     bsp/include
     ${ADC_SEGGER_ROOT}/RTT/RTT
     ${ADC_SEGGER_ROOT}/RTT/Config
-    os/include
     domain/include
     ${ADC_COMMON_INCLUDE_DIRS}
 )
@@ -203,6 +198,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     piano_sensing
     logging
     io
+    os
     shell
     shell_cmd_config
     sensor_linearization

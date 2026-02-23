@@ -20,8 +20,7 @@ SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
       midismith::adc_board::app::config::RTT_TELEMETRY_SENSOR_CHANNEL, "SensorTelemetry",
       telemetry_buffer, static_cast<unsigned>(sizeof(telemetry_buffer)));
 
-  static midismith::common::os::Queue<
-      midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>
+  static midismith::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>
       control_queue;
   static midismith::adc_board::app::telemetry::QueueSensorRttTelemetryControl control(control_queue,
                                                                                       capture);

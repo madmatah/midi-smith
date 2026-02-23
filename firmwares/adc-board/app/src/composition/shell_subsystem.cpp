@@ -39,7 +39,7 @@ void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
     static midismith::shell_cmd_config::ConfigCommand config_cmd(config.persistent_config);
     shell_task_ptr->RegisterCommand(config_cmd);
 
-    static midismith::adc_board::os::RuntimeStats runtime_stats;
+    static midismith::os::RuntimeStats runtime_stats;
 
     static midismith::adc_board::app::shell::commands::StatusCommand status_cmd(runtime_stats);
     shell_task_ptr->RegisterCommand(status_cmd);

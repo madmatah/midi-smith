@@ -34,14 +34,14 @@ void LedTask::run() noexcept {
     }
 
     _telemetry.Send(state ? 1u : 0u);
-    midismith::common::os::Clock::delay_ms(midismith::main_board::app::config::LED_BLINK_PERIOD_MS);
+    midismith::os::Clock::delay_ms(midismith::main_board::app::config::LED_BLINK_PERIOD_MS);
   }
 }
 
 bool LedTask::start() noexcept {
-  return midismith::common::os::Task::create(
-      "LedTask", LedTask::entry, this, midismith::main_board::app::config::LED_TASK_STACK_BYTES,
-      midismith::main_board::app::config::LED_TASK_PRIORITY);
+  return midismith::os::Task::create("LedTask", LedTask::entry, this,
+                                     midismith::main_board::app::config::LED_TASK_STACK_BYTES,
+                                     midismith::main_board::app::config::LED_TASK_PRIORITY);
 }
 
 }  // namespace midismith::main_board::app::tasks

@@ -14,7 +14,7 @@ using midismith::main_board::app::midi::MidiCommand;
 #define fakeit_Method(mock, method) Method(mock, method)
 
 TEST_CASE("The AsyncTaskMidiController class") {
-  Mock<midismith::common::os::QueueRequirements<MidiCommand>> queue_mock;
+  Mock<midismith::os::QueueRequirements<MidiCommand>> queue_mock;
   AsyncTaskMidiController controller(queue_mock.get());
 
   SECTION("The SendRawMessage() method") {

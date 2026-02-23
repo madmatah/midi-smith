@@ -22,7 +22,7 @@ class MidiTask {
    * @param logger For error reporting.
    * @param retry_timeout_ms Max time to retry sending if transport is busy.
    */
-  MidiTask(midismith::common::os::QueueRequirements<MidiCommand>& queue,
+  MidiTask(midismith::os::QueueRequirements<MidiCommand>& queue,
            midismith::midi::MidiTransportRequirements& transport,
            midismith::logging::LoggerRequirements& logger, uint32_t retry_timeout_ms = 100) noexcept
       : _queue(queue),
@@ -39,7 +39,7 @@ class MidiTask {
   void ProcessCommand(const MidiCommand& command) noexcept;
   void TransmitWithRetry(const MidiCommand& command) noexcept;
 
-  midismith::common::os::QueueRequirements<MidiCommand>& _queue;
+  midismith::os::QueueRequirements<MidiCommand>& _queue;
   midismith::midi::MidiTransportRequirements& _transport;
   midismith::logging::LoggerRequirements& _logger;
   uint32_t _retry_timeout_ms;

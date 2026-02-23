@@ -92,7 +92,7 @@ void StatusCommand::Run(int argc, char** argv,
     }
   }
 
-  midismith::adc_board::os::RuntimeStatusSnapshot status_snapshot{};
+  midismith::os::RuntimeStatusSnapshot status_snapshot{};
   if (!runtime_stats_.CaptureStatusSnapshot(window_ms, status_snapshot)) {
     out.Write("error: runtime counter unavailable\r\n");
     return;

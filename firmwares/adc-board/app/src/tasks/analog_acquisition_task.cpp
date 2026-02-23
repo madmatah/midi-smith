@@ -76,11 +76,11 @@ class TimestampCounterDelay final : public midismith::adc_board::app::analog::De
 };
 
 bool ReceiveLatestCommand(
-    midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& queue,
+    midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& queue,
     midismith::adc_board::app::analog::AcquisitionCommand& cmd) noexcept {
   bool did_receive = false;
   midismith::adc_board::app::analog::AcquisitionCommand tmp{};
-  while (queue.Receive(tmp, midismith::common::os::kNoWait)) {
+  while (queue.Receive(tmp, midismith::os::kNoWait)) {
     cmd = tmp;
     did_receive = true;
   }
@@ -90,9 +90,8 @@ bool ReceiveLatestCommand(
 }  // namespace
 
 AnalogAcquisitionTask::AnalogAcquisitionTask(
-    midismith::common::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>& queue,
-    midismith::common::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>&
-        control_queue,
+    midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>& queue,
+    midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& control_queue,
     midismith::common::bsp::GpioRequirements& tia_shutdown,
     midismith::adc_board::bsp::adc::AdcDma& adc_dma,
     midismith::adc_board::app::time::TimestampCounterRequirements& timestamp_counter,
@@ -128,7 +127,7 @@ void AnalogAcquisitionTask::ResetDecodingState() noexcept {
 void AnalogAcquisitionTask::DrainFrameQueue() noexcept {
   for (;;) {
     midismith::adc_board::bsp::adc::AdcFrameDescriptor desc{};
-    if (!queue_.Receive(desc, midismith::common::os::kNoWait)) {
+    if (!queue_.Receive(desc, midismith::os::kNoWait)) {
       return;
     }
   }
@@ -145,7 +144,7 @@ void AnalogAcquisitionTask::EnterDisabledState() noexcept {
 void AnalogAcquisitionTask::HandleDisabledState(
     midismith::adc_board::app::analog::AcquisitionSequencer& sequencer) noexcept {
   midismith::adc_board::app::analog::AcquisitionCommand cmd{};
-  if (!control_queue_.Receive(cmd, midismith::common::os::kWaitForever)) {
+  if (!control_queue_.Receive(cmd, midismith::os::kWaitForever)) {
     return;
   }
 
@@ -283,7 +282,7 @@ void AnalogAcquisitionTask::run() noexcept {
 }
 
 bool AnalogAcquisitionTask::start() noexcept {
-  return midismith::common::os::Task::create(
+  return midismith::os::Task::create(
       "AnalogAcq", AnalogAcquisitionTask::entry, this,
       ::midismith::adc_board::app::config::ANALOG_ACQUISITION_TASK_STACK_BYTES,
       ::midismith::adc_board::app::config::ANALOG_ACQUISITION_TASK_PRIORITY);

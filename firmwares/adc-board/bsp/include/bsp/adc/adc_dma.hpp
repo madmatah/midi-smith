@@ -42,7 +42,7 @@ class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequ
   static constexpr std::size_t kMaxAdc2HalfwordsPerBuffer = 2 * kMaxAdc2HalfwordsPerHalfBuffer;
   static constexpr std::size_t kMaxAdc3HalfwordsPerBuffer = 2 * kMaxAdc3HalfwordsPerHalfBuffer;
 
-  explicit AdcDma(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept;
+  explicit AdcDma(midismith::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept;
 
   bool Start() noexcept override;
   void Stop() noexcept override;
@@ -55,7 +55,7 @@ class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequ
   std::uint16_t adc2_halfwords_per_half_buffer_ = 0;
   std::uint16_t adc3_halfwords_per_half_buffer_ = 0;
 
-  midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue_;
+  midismith::os::Queue<AdcFrameDescriptor, 8>& queue_;
   std::uint32_t adc1_sequence_id_ = 0;
   std::uint32_t adc2_sequence_id_ = 0;
   std::uint32_t adc3_sequence_id_ = 0;

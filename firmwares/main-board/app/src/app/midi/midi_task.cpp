@@ -7,7 +7,7 @@ namespace midismith::main_board::app::midi {
 [[noreturn]] void MidiTask::Run() noexcept {
   while (true) {
     MidiCommand command{};
-    if (_queue.Receive(command, midismith::common::os::kWaitForever)) {
+    if (_queue.Receive(command, midismith::os::kWaitForever)) {
       ProcessCommand(command);
     }
   }
@@ -31,7 +31,7 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
     }
 
     if (status == midismith::midi::TransportStatus::kBusy) {
-      midismith::common::os::Clock::delay_ms(kRetryIntervalMs);
+      midismith::os::Clock::delay_ms(kRetryIntervalMs);
       elapsed_ms += kRetryIntervalMs;
       continue;
     }

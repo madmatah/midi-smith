@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace midismith::common::os {
+namespace midismith::os {
 
 using TaskFn = void (*)(void* ctx) noexcept;
 
@@ -13,4 +13,4 @@ class Task {
                      std::uint32_t priority) noexcept;
 };
 
-}  // namespace midismith::common::os
+}  // namespace midismith::os

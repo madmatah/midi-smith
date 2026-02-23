@@ -23,8 +23,8 @@ alignas(32) BSP_D3_SRAM_NOCACHE
 
 static AdcDma* g_adc_dma = nullptr;
 
-static bool PushDescriptor(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue,
-                           AdcGroup group, std::uint8_t half, std::uint32_t sequence_id,
+static bool PushDescriptor(midismith::os::Queue<AdcFrameDescriptor, 8>& queue, AdcGroup group,
+                           std::uint8_t half, std::uint32_t sequence_id,
                            std::uint32_t timestamp_ticks, const void* data,
                            std::uint16_t element_count, std::uint8_t element_size_bytes) noexcept {
   const AdcFrameDescriptor desc{group, half,          sequence_id,       timestamp_ticks,
@@ -89,8 +89,7 @@ AdcTriggerSchedule& TriggerSchedule() noexcept {
 
 }  // namespace
 
-AdcDma::AdcDma(midismith::common::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept
-    : queue_(queue) {
+AdcDma::AdcDma(midismith::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept : queue_(queue) {
   RegisterAdcDma(*this);
 }
 
