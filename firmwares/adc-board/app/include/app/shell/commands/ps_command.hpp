@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/shell/command_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::os {
 class RuntimeStatsRequirements;
@@ -8,7 +8,7 @@ class RuntimeStatsRequirements;
 
 namespace midismith::adc_board::app::shell::commands {
 
-class PsCommand final : public midismith::adc_board::domain::shell::CommandRequirements {
+class PsCommand final : public midismith::shell::CommandRequirements {
  public:
   explicit PsCommand(midismith::adc_board::os::RuntimeStatsRequirements& runtime_stats) noexcept
       : runtime_stats_(runtime_stats) {}

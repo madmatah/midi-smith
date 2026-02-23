@@ -48,6 +48,9 @@ endif()
 if(NOT TARGET io)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/io libs/io)
 endif()
+if(NOT TARGET shell)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell libs/shell)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -55,10 +58,6 @@ if(HOST_TESTS)
     add_library(adc_domain STATIC)
     target_sources(adc_domain PRIVATE
         domain/src/config/adc_board_config.cpp
-        domain/src/shell/command_parser.cpp
-        domain/src/shell/line_editor.cpp
-        domain/src/shell/command_dispatcher.cpp
-        domain/src/shell/shell_engine.cpp
         domain/src/shell/commands/config_command.cpp
         domain/src/shell/commands/version_command.cpp
     )
@@ -66,7 +65,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi io)
+    target_link_libraries(adc_domain PUBLIC dsp midi io shell)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -115,10 +114,6 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/tasks/sensor_rtt_telemetry_task.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     domain/src/config/adc_board_config.cpp
-    domain/src/shell/command_parser.cpp
-    domain/src/shell/line_editor.cpp
-    domain/src/shell/command_dispatcher.cpp
-    domain/src/shell/shell_engine.cpp
     domain/src/shell/commands/version_command.cpp
     bsp/src/board.cpp
     bsp/src/flash/internal_storage.cpp
@@ -197,6 +192,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     midi
     logging
     io
+    shell
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

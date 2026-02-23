@@ -17,7 +17,7 @@ namespace midismith::adc_board::app::composition {
 void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept {
-  static const midismith::adc_board::domain::shell::ShellConfig shell_config{"adc-board> "};
+  static const midismith::shell::ShellConfig shell_config{"adc-board> "};
 
   alignas(midismith::adc_board::app::tasks::ShellTask) static std::uint8_t
       shell_task_storage[sizeof(midismith::adc_board::app::tasks::ShellTask)];

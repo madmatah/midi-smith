@@ -5,7 +5,7 @@
 
 #include "io/stream_requirements.hpp"
 
-namespace midismith::adc_board::domain::shell {
+namespace midismith::shell {
 
 template <std::size_t kBufferSize>
 class LineEditor {
@@ -105,4 +105,4 @@ class LineEditor {
   bool _last_was_newline;
 };
 
-}  // namespace midismith::adc_board::domain::shell
+}  // namespace midismith::shell

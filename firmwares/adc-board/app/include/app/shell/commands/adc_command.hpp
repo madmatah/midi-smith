@@ -1,11 +1,11 @@
 #pragma once
 
 #include "app/analog/acquisition_control_requirements.hpp"
-#include "domain/shell/command_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
 
-class AdcCommand final : public midismith::adc_board::domain::shell::CommandRequirements {
+class AdcCommand final : public midismith::shell::CommandRequirements {
  public:
   explicit AdcCommand(
       midismith::adc_board::app::analog::AcquisitionControlRequirements& control) noexcept
