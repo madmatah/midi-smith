@@ -27,28 +27,6 @@ target_include_directories(adc_fakeit INTERFACE
 )
 
 add_executable(adc_unit_tests
-    domain/dsp/filters/biquad.test.cpp
-    domain/dsp/filters/sg5_smoother.test.cpp
-    domain/dsp/filters/ema_filter.test.cpp
-    domain/dsp/filters/simple_moving_average.test.cpp
-    domain/dsp/filters/constant_filter.test.cpp
-    domain/dsp/engine/workflow.test.cpp
-    domain/dsp/engine/decimated.test.cpp
-    domain/dsp/engine/observers.test.cpp
-    domain/dsp/engine/temporal_continuity_guard.test.cpp
-    domain/dsp/filters/identity_filter.test.cpp
-    domain/dsp/logic/input_gate.test.cpp
-    domain/dsp/logic/gate_open.test.cpp
-    domain/dsp/logic/is_true.test.cpp
-    domain/dsp/logic/is_false.test.cpp
-    domain/dsp/logic/and.test.cpp
-    domain/dsp/logic/or.test.cpp
-    domain/dsp/logic/switch.test.cpp
-    domain/dsp/converters/tia_current_converter.test.cpp
-    domain/dsp/converters/linear_scaler.test.cpp
-    domain/dsp/math/sliding_linear_regression.test.cpp
-    domain/dsp/math/backward_difference.test.cpp
-    domain/dsp/math/central_difference.test.cpp
     domain/shell/command_parser.test.cpp
     domain/shell/line_editor.test.cpp
     domain/shell/command_dispatcher.test.cpp

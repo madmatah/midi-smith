@@ -5,17 +5,16 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "domain/dsp/concepts.hpp"
 #include "domain/sensors/sensor_state.hpp"
+#include "dsp/concepts.hpp"
 
 namespace midismith::adc_board::domain::sensors {
 
 template <typename ProcessorT, typename ContextT>
 class ProcessedSensorGroup {
  public:
-  static_assert(
-      midismith::adc_board::domain::dsp::concepts::SignalTransformer<ProcessorT, ContextT>,
-      "ProcessorT must satisfy SignalTransformer for ContextT");
+  static_assert(midismith::dsp::concepts::SignalTransformer<ProcessorT, ContextT>,
+                "ProcessorT must satisfy SignalTransformer for ContextT");
   static_assert(std::is_constructible_v<ContextT, std::uint32_t, SensorState&>,
                 "ContextT must be constructible from (timestamp_ticks, sensor_state)");
 

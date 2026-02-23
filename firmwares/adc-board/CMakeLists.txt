@@ -36,6 +36,10 @@ set(ADC_COMMON_SRC_DIRS "${ADC_PROJECT_ROOT}/../../libs/common/src")
 
 set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
 
+if(NOT TARGET dsp)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/dsp libs/dsp)
+endif()
+
 if(HOST_TESTS)
     enable_testing()
 
@@ -53,6 +57,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
+    target_link_libraries(adc_domain PUBLIC dsp)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -179,6 +184,7 @@ target_link_options(${ADC_FIRMWARE_TARGET} PRIVATE
 
 target_link_libraries(${ADC_FIRMWARE_TARGET}
     stm32cubemx
+    dsp
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

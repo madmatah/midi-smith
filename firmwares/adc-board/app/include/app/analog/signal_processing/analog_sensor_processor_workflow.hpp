@@ -6,20 +6,6 @@
 
 #include "app/config/signal_processing.hpp"
 #include "app/telemetry/sensor_rtt_stream_tap.hpp"
-#include "domain/dsp/converters/linear_scaler.hpp"
-#include "domain/dsp/converters/tia_current_converter.hpp"
-#include "domain/dsp/engine/tap.hpp"
-#include "domain/dsp/engine/temporal_continuity_guard.hpp"
-#include "domain/dsp/engine/workflow.hpp"
-#include "domain/dsp/filters/constant_filter.hpp"
-#include "domain/dsp/filters/identity_filter.hpp"
-#include "domain/dsp/filters/simple_moving_average.hpp"
-#include "domain/dsp/logic/and.hpp"
-#include "domain/dsp/logic/gate_open.hpp"
-#include "domain/dsp/logic/is_true.hpp"
-#include "domain/dsp/logic/switch.hpp"
-#include "domain/dsp/math/central_difference.hpp"
-#include "domain/dsp/math/sliding_linear_regression.hpp"
 #include "domain/music/piano/key_action_requirements.hpp"
 #include "domain/music/piano/midi_velocity_engine.hpp"
 #include "domain/music/piano/note_release_detector_stage.hpp"
@@ -29,32 +15,42 @@
 #include "domain/sensors/linearization/sensor_linear_processor.hpp"
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
+#include "dsp/converters/linear_scaler.hpp"
+#include "dsp/converters/tia_current_converter.hpp"
+#include "dsp/engine/tap.hpp"
+#include "dsp/engine/temporal_continuity_guard.hpp"
+#include "dsp/engine/workflow.hpp"
+#include "dsp/filters/constant_filter.hpp"
+#include "dsp/filters/identity_filter.hpp"
+#include "dsp/filters/simple_moving_average.hpp"
+#include "dsp/logic/and.hpp"
+#include "dsp/logic/gate_open.hpp"
+#include "dsp/logic/is_true.hpp"
+#include "dsp/logic/switch.hpp"
+#include "dsp/math/central_difference.hpp"
+#include "dsp/math/sliding_linear_regression.hpp"
 
 namespace midismith::adc_board::app::analog::signal_processing::workflow {
 
 // -- Template shorthand aliases ---------------------------------------------------
 
 template <typename... StageTs>
-using StageWorkflow = midismith::adc_board::domain::dsp::engine::Workflow<StageTs...>;
+using StageWorkflow = midismith::dsp::engine::Workflow<StageTs...>;
 template <typename ContentT>
-using Tap = midismith::adc_board::domain::dsp::engine::Tap<ContentT>;
+using Tap = midismith::dsp::engine::Tap<ContentT>;
 template <typename StageT, std::uint32_t kGapFactor>
-using TemporalContinuityGuard =
-    midismith::adc_board::domain::dsp::engine::TemporalContinuityGuard<StageT, kGapFactor>;
+using TemporalContinuityGuard = midismith::dsp::engine::TemporalContinuityGuard<StageT, kGapFactor>;
 template <typename PredicateT, typename TrueStageT, typename FalseStageT>
-using Switch =
-    midismith::adc_board::domain::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
+using Switch = midismith::dsp::logic::Switch<PredicateT, TrueStageT, FalseStageT>;
 template <float kValue>
-using ConstantFilter = midismith::adc_board::domain::dsp::filters::ConstantFilter<kValue>;
+using ConstantFilter = midismith::dsp::filters::ConstantFilter<kValue>;
 template <float kScale>
-using LinearScaler = midismith::adc_board::domain::dsp::converters::LinearScaler<kScale>;
+using LinearScaler = midismith::dsp::converters::LinearScaler<kScale>;
 template <std::uint32_t kWindowSize>
-using SimpleMovingAverage =
-    midismith::adc_board::domain::dsp::filters::SimpleMovingAverage<kWindowSize>;
+using SimpleMovingAverage = midismith::dsp::filters::SimpleMovingAverage<kWindowSize>;
 template <std::uint32_t kWindowSize>
-using SlidingLinearRegression =
-    midismith::adc_board::domain::dsp::math::SlidingLinearRegression<kWindowSize>;
-using CentralDifference = midismith::adc_board::domain::dsp::math::CentralDifference;
+using SlidingLinearRegression = midismith::dsp::math::SlidingLinearRegression<kWindowSize>;
+using CentralDifference = midismith::dsp::math::CentralDifference;
 template <auto SensorMemberPtr>
 using CaptureState = midismith::adc_board::domain::sensors::CaptureSensorState<SensorMemberPtr>;
 template <auto SensorMemberPtr>
@@ -62,9 +58,9 @@ using SensorMemberReader =
     midismith::adc_board::domain::sensors::SensorMemberReader<SensorMemberPtr>;
 using SensorState = midismith::adc_board::domain::sensors::SensorState;
 template <typename... PredicateTs>
-using And = midismith::adc_board::domain::dsp::logic::And<PredicateTs...>;
+using And = midismith::dsp::logic::And<PredicateTs...>;
 template <auto ValueProvider>
-using IsTrue = midismith::adc_board::domain::dsp::logic::IsTrue<ValueProvider>;
+using IsTrue = midismith::dsp::logic::IsTrue<ValueProvider>;
 using GoeblLogarithmicVelocityMapper =
     midismith::adc_board::domain::music::piano::velocity::GoeblLogarithmicVelocityMapper;
 template <float kMaximumSpeedMPerS, float kShapeFactor>
@@ -79,14 +75,14 @@ using LogarithmicVelocityMapper =
 
 using FilteringEnabledPipeline =
     StageWorkflow<SimpleMovingAverage<config::ADC_OUTPUT_SMA_WINDOW_SIZE>>;
-using FilteringDisabledPipeline =
-    StageWorkflow<midismith::adc_board::domain::dsp::filters::IdentityFilter>;
+using FilteringDisabledPipeline = StageWorkflow<midismith::dsp::filters::IdentityFilter>;
 using FilteringStage = std::conditional_t<config::SIGNAL_FILTERING_ENABLED,
                                           FilteringEnabledPipeline, FilteringDisabledPipeline>;
 
-using TiaCurrentConverter = midismith::adc_board::domain::dsp::converters::TiaCurrentConverter<
-    config::ADC_REFERENCE_VOLTAGE_MILLI_VOLTS, config::ADC_RESOLUTION_BITS,
-    config::TIA_FEEDBACK_RESISTOR_OHMS>;
+using TiaCurrentConverter =
+    midismith::dsp::converters::TiaCurrentConverter<config::ADC_REFERENCE_VOLTAGE_MILLI_VOLTS,
+                                                    config::ADC_RESOLUTION_BITS,
+                                                    config::TIA_FEEDBACK_RESISTOR_OHMS>;
 
 using LinearizerStage = midismith::adc_board::domain::sensors::linearization::SensorLinearProcessor<
     config::kSensorLookupTableSize>;
@@ -104,8 +100,7 @@ using GuardedShankSpeedEstimator = TemporalContinuityGuard<
     config::SIGNAL_TEMPORAL_CONTINUITY_GAP_FACTOR>;
 
 using IsShankInActiveZone =
-    midismith::adc_board::domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER,
-                                                       ShankPositionReader{}>;
+    midismith::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER, ShankPositionReader{}>;
 
 using SmartShankSlopeEstimator =
     Switch<IsShankInActiveZone, GuardedShankSpeedEstimator, ConstantFilter<0.0f>>;
@@ -147,8 +142,7 @@ using NoteOnReader = SensorMemberReader<&SensorState::is_note_on>;
 
 using IsNoteOn = IsTrue<NoteOnReader{}>;
 using IsSmoothedShankPositionInActiveZone =
-    midismith::adc_board::domain::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER,
-                                                       ShankPositionSmoothedReader{}>;
+    midismith::dsp::logic::GateOpen<config::HAMMER_POSITION_DAMPER, ShankPositionSmoothedReader{}>;
 using IsDamperFalling = And<IsSmoothedShankPositionInActiveZone, IsNoteOn>;
 
 using GuardedFallingShankSpeedEstimator = TemporalContinuityGuard<

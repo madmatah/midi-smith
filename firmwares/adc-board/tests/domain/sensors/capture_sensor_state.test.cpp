@@ -6,9 +6,9 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "app/analog/signal_context.hpp"
-#include "domain/dsp/concepts.hpp"
-#include "domain/dsp/engine/workflow.hpp"
 #include "domain/sensors/sensor_state.hpp"
+#include "dsp/concepts.hpp"
+#include "dsp/engine/workflow.hpp"
 
 namespace {
 
@@ -36,17 +36,15 @@ TEST_CASE("CaptureSensorState") {
   using Catch::Matchers::WithinAbs;
 
   using midismith::adc_board::app::analog::SignalContext;
-  using midismith::adc_board::domain::dsp::engine::Workflow;
   using midismith::adc_board::domain::sensors::CaptureSensorState;
   using midismith::adc_board::domain::sensors::SensorState;
+  using midismith::dsp::engine::Workflow;
 
   using CaptureLastPosition = CaptureSensorState<&SensorState::last_shank_position_norm>;
-  static_assert(midismith::adc_board::domain::dsp::concepts::SignalTransformer<CaptureLastPosition,
-                                                                               SignalContext>);
+  static_assert(midismith::dsp::concepts::SignalTransformer<CaptureLastPosition, SignalContext>);
 
   using Pipeline = Workflow<PlusTenStage, CaptureLastPosition, TimesTwoStage>;
-  static_assert(
-      midismith::adc_board::domain::dsp::concepts::SignalTransformer<Pipeline, SignalContext>);
+  static_assert(midismith::dsp::concepts::SignalTransformer<Pipeline, SignalContext>);
 
   SensorState sensor{};
   sensor.id = 1u;
