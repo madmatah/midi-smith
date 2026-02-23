@@ -1,53 +1,20 @@
-cmake_minimum_required(VERSION 3.22)
-
-option(HOST_TESTS "Build host-only unit tests" OFF)
-
-# Setup compiler settings
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
-
-# Define the build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 
 set(MAIN_FIRMWARE_TARGET "main-board")
 set(MAIN_TARGET_PREFIX "main")
 set(MAIN_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 
-# Enable compile command to ease indexing with e.g. clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-
-# Core project settings
 project(${MAIN_FIRMWARE_TARGET})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-# Enable CMake support for ASM and C languages
-enable_language(C ASM CXX)
-
-# Set the C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 set(MAIN_SEGGER_ROOT "${MAIN_PROJECT_ROOT}/../../third_party/SEGGER")
 
-if(NOT TARGET midi)
-    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/midi libs/midi)
-endif()
-if(NOT TARGET piano_controller)
-    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/piano-controller libs/piano-controller)
-endif()
-if(NOT TARGET logging)
-    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/logging libs/logging)
-endif()
-if(NOT TARGET bsp)
-    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/bsp libs/bsp)
-endif()
-if(NOT TARGET os)
-    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/os libs/os)
-endif()
+midismith_require_lib(midi)
+midismith_require_lib(piano-controller)
+midismith_require_lib(logging)
+midismith_require_lib(bsp)
+midismith_require_lib(os)
 
 if(HOST_TESTS)
     enable_testing()
@@ -90,11 +57,6 @@ target_compile_options(${MAIN_FIRMWARE_TARGET} PRIVATE
 set(CMAKE_PROJECT_NAME "${MAIN_FIRMWARE_TARGET}")
 add_subdirectory(cmake/stm32cubemx)
 
-# Link directories setup
-target_link_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
-    # Add user defined library search paths
-)
-
 # Add sources to executable
 target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     # Add user sources here
@@ -129,11 +91,6 @@ target_compile_definitions(${MAIN_FIRMWARE_TARGET} PRIVATE
     SEGGER_RTT_SECTION=\".rtt\"
 )
 
-# Add project symbols (macros)
-target_compile_definitions(${MAIN_FIRMWARE_TARGET} PRIVATE
-    # Add user defined symbols
-)
-
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
@@ -152,13 +109,4 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
 
     # Add user defined libraries
 )
-endif()
-
-# Update build/current symlink after each preset change
-if(PROJECT_IS_TOP_LEVEL AND CMAKE_EXPORT_COMPILE_COMMANDS)
-    file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
-    message(STATUS "Updating build/current symlink to : ${CMAKE_BINARY_DIR}")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_BINARY_DIR}"
-        "${CMAKE_SOURCE_DIR}/build/current")
 endif()
