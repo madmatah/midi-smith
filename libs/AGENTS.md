@@ -4,7 +4,7 @@
 
 ## L.0 Package Structure
 
-**Domain lib** (cas standard — `dsp`, `midi`, `piano`…) :
+**Domain lib** (standard case — `dsp`, `midi`, `piano`…):
 
 ```
 <lib-name>/
@@ -16,7 +16,7 @@
 └── CMakeLists.txt                # Standalone target with project() and Host-Debug preset
 ```
 
-**Infrastructure lib** (`os`, `bsp`) :
+**Infrastructure lib** (`os`, `bsp`):
 
 ```
 <lib-name>/
@@ -28,11 +28,9 @@
                                   # No tests/ — FreeRTOS/HAL not available outside firmware context.
 ```
 
-> **Note sur `common`** : sa structure actuelle (`include/domain/`, `include/os/`, `include/bsp/`) est héritée de son rôle de catch-all transitoire. Elle ne suit pas le modèle cible ci-dessus.
-
 ### Namespace
 
-**Domain libs** (cas standard — `dsp`, `midi`, `piano`…) : `midismith::<scope>::<sub-domain>` — pas de niveau layer (la lib entière est domaine).
+**Domain libs** (standard case — `dsp`, `midi`, `piano`…): `midismith::<scope>::<sub-domain>` — no layer level (the entire lib is the domain).
 
 | Level | Value | Purpose | Example |
 |-------|-------|---------|---------|
@@ -40,16 +38,12 @@
 | **2 — Scope** | lib name | Identifies the library | `midismith::dsp::` |
 | **3 — Sub-domain** | functional area (optional) | `filters`, `math`, `engine`… | `midismith::dsp::filters::` |
 
-**Infrastructure libs** (`os`, `bsp`) : `midismith::<scope>::` — scope = nom de la lib, pas de sub-domain supplémentaire attendu.
-
-> **Note** : `common` conserve temporairement le pattern `midismith::common::<layer>::`. Il sera décomposé en libs sémantiques au fur et à mesure.
+**Infrastructure libs** (`os`, `bsp`) : `midismith::<scope>::` — scope = lib name, no additional sub-domain expected.
 
 Namespaces mirror the directory structure.
 
 | Directory | Namespace |
 |-----------|-----------|
-| `libs/common/include/domain/storage/` | `midismith::common::domain::storage` |
-| `libs/common/include/os/` | `midismith::common::os` |
 | `libs/dsp/include/dsp/filters/` | `midismith::dsp::filters` |
 | `libs/midi/include/midi/` | `midismith::midi` |
 | `libs/os/include/os/` | `midismith::os` |
