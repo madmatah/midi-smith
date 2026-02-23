@@ -1,6 +1,6 @@
 #pragma once
 
-namespace midismith::adc_board::domain::sensors::linearization {
+namespace midismith::sensor_linearization {
 
 struct SensorCalibration {
   float rest_current_ma = 0.0f;
@@ -9,4 +9,4 @@ struct SensorCalibration {
   float strike_distance_mm = 0.0f;
 };
 
-}  // namespace midismith::adc_board::domain::sensors::linearization
+}  // namespace midismith::sensor_linearization

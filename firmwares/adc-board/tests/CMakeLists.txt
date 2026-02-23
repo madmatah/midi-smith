@@ -30,8 +30,6 @@ add_executable(adc_unit_tests
     domain/shell/commands/version_command.test.cpp
     domain/sensors/processed_sensor_group.test.cpp
     domain/sensors/sensor_registry.test.cpp
-    domain/sensors/linearization/sensor_response_curve.test.cpp
-    domain/sensors/linearization/sensor_linear_processor.test.cpp
     domain/sensors/capture_sensor_state.test.cpp
     domain/sensors/sensor_member_reader.test.cpp
     domain/sensors/sensor_state.test.cpp
@@ -69,6 +67,7 @@ target_link_libraries(adc_unit_tests PRIVATE
     adc_domain
     logging
     io
+    sensor_linearization
 )
 target_include_directories(adc_unit_tests PRIVATE
     ${ADC_PROJECT_ROOT}/app/include

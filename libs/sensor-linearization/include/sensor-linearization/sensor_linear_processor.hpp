@@ -5,9 +5,9 @@
 #include <cmath>
 #include <cstddef>
 
-#include "domain/sensors/linearization/sensor_linear_processor_configuration.hpp"
+#include "sensor-linearization/sensor_linear_processor_configuration.hpp"
 
-namespace midismith::adc_board::domain::sensors::linearization {
+namespace midismith::sensor_linearization {
 
 template <std::size_t kLookupTableSize>
 class SensorLinearProcessor {
@@ -55,4 +55,4 @@ class SensorLinearProcessor {
   std::atomic<const Configuration*> configuration_{nullptr};
 };
 
-}  // namespace midismith::adc_board::domain::sensors::linearization
+}  // namespace midismith::sensor_linearization
