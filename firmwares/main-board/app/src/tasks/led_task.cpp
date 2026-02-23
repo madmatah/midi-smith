@@ -3,16 +3,16 @@
 #include "app/config.hpp"
 #include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/gpio_requirements.hpp"
-#include "domain/music/piano/piano_requirements.hpp"
 #include "midi/types.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
+#include "piano-controller/piano_requirements.hpp"
 
 namespace midismith::main_board::app::tasks {
 
 LedTask::LedTask(midismith::common::bsp::GpioRequirements& led,
                  midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
-                 midismith::main_board::domain::music::piano::PianoRequirements& piano) noexcept
+                 midismith::piano_controller::PianoRequirements& piano) noexcept
     : _led(led), _telemetry(telemetry), _piano(piano) {}
 
 void LedTask::entry(void* ctx) noexcept {

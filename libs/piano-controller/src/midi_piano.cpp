@@ -1,8 +1,8 @@
-#include "domain/music/piano/midi_piano.hpp"
+#include "piano-controller/midi_piano.hpp"
 
 #include <cstdint>
 
-namespace midismith::main_board::domain::music::piano {
+namespace midismith::piano_controller {
 
 MidiPiano::MidiPiano(midismith::midi::MidiControllerRequirements& midi_controller,
                      const Config& config) noexcept
@@ -39,4 +39,4 @@ void MidiPiano::SetSostenuto(bool active) noexcept {
   midi_controller_.SendRawMessage(message, sizeof(message));
 }
 
-}  // namespace midismith::main_board::domain::music::piano
+}  // namespace midismith::piano_controller

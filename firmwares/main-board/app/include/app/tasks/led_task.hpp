@@ -8,7 +8,7 @@ namespace midismith::main_board::app::telemetry {
 class TelemetrySenderRequirements;
 }
 
-namespace midismith::main_board::domain::music::piano {
+namespace midismith::piano_controller {
 class PianoRequirements;
 }
 
@@ -18,7 +18,7 @@ class LedTask {
  public:
   LedTask(midismith::common::bsp::GpioRequirements& led,
           midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
-          midismith::main_board::domain::music::piano::PianoRequirements& piano) noexcept;
+          midismith::piano_controller::PianoRequirements& piano) noexcept;
 
   bool start() noexcept;
 
@@ -28,7 +28,7 @@ class LedTask {
 
   midismith::common::bsp::GpioRequirements& _led;
   midismith::main_board::app::telemetry::TelemetrySenderRequirements& _telemetry;
-  midismith::main_board::domain::music::piano::PianoRequirements& _piano;
+  midismith::piano_controller::PianoRequirements& _piano;
 };
 
 }  // namespace midismith::main_board::app::tasks
