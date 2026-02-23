@@ -2,10 +2,10 @@
 
 #include <cstddef>
 
-#include "domain/io/stream_requirements.hpp"
 #include "domain/shell/command_dispatcher.hpp"
 #include "domain/shell/command_parser.hpp"
 #include "domain/shell/line_editor.hpp"
+#include "io/stream_requirements.hpp"
 
 namespace midismith::adc_board::domain::shell {
 
@@ -16,8 +16,7 @@ struct ShellConfig {
 template <std::size_t kLineBufferSize, std::size_t kMaxCommands, std::size_t kMaxArgs>
 class ShellEngine {
  public:
-  ShellEngine(midismith::adc_board::domain::io::StreamRequirements& stream,
-              const ShellConfig& config) noexcept
+  ShellEngine(midismith::io::StreamRequirements& stream, const ShellConfig& config) noexcept
       : _stream(stream), _config(config) {}
 
   void Init() noexcept {
@@ -57,15 +56,14 @@ class ShellEngine {
 
  private:
   static void OnCompletion(char* buffer, std::size_t& cursor, std::size_t max_size,
-                           midismith::adc_board::domain::io::WritableStreamRequirements& writer,
+                           midismith::io::WritableStreamRequirements& writer,
                            void* user_data) noexcept {
     auto* self = static_cast<ShellEngine*>(user_data);
     self->HandleCompletion(buffer, cursor, max_size, writer);
   }
 
-  void HandleCompletion(
-      char* buffer, std::size_t& cursor, std::size_t max_size,
-      midismith::adc_board::domain::io::WritableStreamRequirements& writer) noexcept {
+  void HandleCompletion(char* buffer, std::size_t& cursor, std::size_t max_size,
+                        midismith::io::WritableStreamRequirements& writer) noexcept {
     if (IsCompletingArgument(buffer, cursor)) {
       return;
     }
@@ -119,7 +117,7 @@ class ShellEngine {
     _stream.Write(_config.prompt);
   }
 
-  midismith::adc_board::domain::io::StreamRequirements& _stream;
+  midismith::io::StreamRequirements& _stream;
   ShellConfig _config;
   LineEditor<kLineBufferSize> _editor;
   CommandDispatcher<kMaxCommands> _dispatcher;

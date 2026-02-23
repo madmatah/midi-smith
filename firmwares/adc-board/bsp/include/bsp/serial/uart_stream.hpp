@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "domain/io/stream_requirements.hpp"
+#include "io/stream_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
 namespace midismith::adc_board::bsp::serial {
@@ -35,8 +35,7 @@ using UartIdleCallback = void (*)(void* ctx) noexcept;
  * @endcode
  */
 template <std::size_t kRxBufferSize, std::size_t kTxFifoSize>
-class UartStream final : public midismith::adc_board::domain::io::StreamRequirements,
-                         public UartStreamBase {
+class UartStream final : public midismith::io::StreamRequirements, public UartStreamBase {
  public:
   explicit UartStream(UART_HandleTypeDef& huart) noexcept : huart_(huart) {
     RegisterUartStream(*this);
@@ -59,9 +58,9 @@ class UartStream final : public midismith::adc_board::domain::io::StreamRequirem
     return true;
   }
 
-  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
+  midismith::io::ReadResult Read(std::uint8_t& byte) noexcept override {
     if (huart_.hdmarx == nullptr) {
-      return midismith::adc_board::domain::io::ReadResult::kError;
+      return midismith::io::ReadResult::kError;
     }
 
     const std::uint16_t remaining =
@@ -70,7 +69,7 @@ class UartStream final : public midismith::adc_board::domain::io::StreamRequirem
         static_cast<std::size_t>((kRxBufferSize - remaining) % kRxBufferSize);
 
     if (read_idx_ == write_idx) {
-      return midismith::adc_board::domain::io::ReadResult::kNoData;
+      return midismith::io::ReadResult::kNoData;
     }
 
     byte = rx_buffer_[read_idx_];
@@ -79,7 +78,7 @@ class UartStream final : public midismith::adc_board::domain::io::StreamRequirem
       read_idx_ = 0;
     }
 
-    return midismith::adc_board::domain::io::ReadResult::kOk;
+    return midismith::io::ReadResult::kOk;
   }
 
   void Write(char c) noexcept override {

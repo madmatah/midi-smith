@@ -42,6 +42,12 @@ endif()
 if(NOT TARGET midi)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/midi libs/midi)
 endif()
+if(NOT TARGET logging)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/logging libs/logging)
+endif()
+if(NOT TARGET io)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/io libs/io)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -60,7 +66,7 @@ if(HOST_TESTS)
         domain/include
         ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi)
+    target_link_libraries(adc_domain PUBLIC dsp midi io)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -189,6 +195,8 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     stm32cubemx
     dsp
     midi
+    logging
+    io
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

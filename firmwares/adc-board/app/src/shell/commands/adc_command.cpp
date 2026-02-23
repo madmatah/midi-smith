@@ -23,12 +23,11 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
   return std::string_view(argv[index]);
 }
 
-void WriteUsage(midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: adc on|off|status\r\n");
 }
 
-void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& out,
-                 std::uint32_t value) noexcept {
+void WriteUint32(midismith::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
   char buf[16]{};
   auto r = std::to_chars(buf, buf + sizeof(buf), value);
   if (r.ec != std::errc()) {
@@ -40,7 +39,7 @@ void WriteUint32(midismith::adc_board::domain::io::WritableStreamRequirements& o
 }  // namespace
 
 void AdcCommand::Run(int argc, char** argv,
-                     midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept {
+                     midismith::io::WritableStreamRequirements& out) noexcept {
   const std::string_view op = Arg(argc, argv, 1);
   if (op.empty()) {
     WriteUsage(out);

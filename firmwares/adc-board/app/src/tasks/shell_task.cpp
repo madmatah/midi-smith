@@ -6,7 +6,7 @@
 
 namespace midismith::adc_board::app::tasks {
 
-ShellTask::ShellTask(midismith::adc_board::domain::io::StreamRequirements& stream,
+ShellTask::ShellTask(midismith::io::StreamRequirements& stream,
                      const midismith::adc_board::domain::shell::ShellConfig& config) noexcept
     : _engine(stream, config) {}
 

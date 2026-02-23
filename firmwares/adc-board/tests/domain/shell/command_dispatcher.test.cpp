@@ -7,10 +7,10 @@
 
 namespace {
 
-class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
+class StreamStub : public midismith::io::StreamRequirements {
  public:
-  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return midismith::adc_board::domain::io::ReadResult::kNoData;
+  midismith::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::io::ReadResult::kNoData;
   }
   void Write(char c) noexcept override {
     _output += c;
@@ -37,8 +37,7 @@ class TestCommand : public midismith::adc_board::domain::shell::CommandRequireme
   std::string_view Help() const noexcept override {
     return _help;
   }
-  void Run(int, char**,
-           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override {
+  void Run(int, char**, midismith::io::WritableStreamRequirements& out) noexcept override {
     _call_count++;
     out.Write(_response);
   }

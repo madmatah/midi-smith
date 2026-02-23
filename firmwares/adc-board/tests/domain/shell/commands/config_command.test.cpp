@@ -6,14 +6,14 @@
 #include <string_view>
 
 #include "domain/config/transactional_config_dictionary.hpp"
-#include "domain/io/stream_requirements.hpp"
+#include "io/stream_requirements.hpp"
 
 namespace {
 
-class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
+class StreamStub : public midismith::io::StreamRequirements {
  public:
-  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t&) noexcept override {
-    return midismith::adc_board::domain::io::ReadResult::kNoData;
+  midismith::io::ReadResult Read(std::uint8_t&) noexcept override {
+    return midismith::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {

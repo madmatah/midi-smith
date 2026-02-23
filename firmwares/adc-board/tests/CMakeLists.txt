@@ -71,6 +71,8 @@ target_link_libraries(adc_unit_tests PRIVATE
     Catch2::Catch2WithMain
     adc_fakeit
     adc_domain
+    logging
+    io
 )
 target_include_directories(adc_unit_tests PRIVATE
     ${ADC_PROJECT_ROOT}/app/include

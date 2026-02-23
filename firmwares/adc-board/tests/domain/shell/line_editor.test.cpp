@@ -6,7 +6,7 @@
 
 namespace {
 
-class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
+class StreamStub : public midismith::io::StreamRequirements {
  public:
   void PushInput(const std::string& input) {
     for (char c : input) {
@@ -21,12 +21,12 @@ class StreamStub : public midismith::adc_board::domain::io::StreamRequirements {
     _output.clear();
   }
 
-  midismith::adc_board::domain::io::ReadResult Read(std::uint8_t& byte) noexcept override {
+  midismith::io::ReadResult Read(std::uint8_t& byte) noexcept override {
     if (_read_idx < _input.size()) {
       byte = _input[_read_idx++];
-      return midismith::adc_board::domain::io::ReadResult::kOk;
+      return midismith::io::ReadResult::kOk;
     }
-    return midismith::adc_board::domain::io::ReadResult::kNoData;
+    return midismith::io::ReadResult::kNoData;
   }
 
   void Write(char c) noexcept override {

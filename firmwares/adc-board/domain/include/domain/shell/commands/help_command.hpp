@@ -17,8 +17,7 @@ class HelpCommand : public CommandRequirements {
     return "Show this help message";
   }
 
-  void Run(int, char**,
-           midismith::adc_board::domain::io::WritableStreamRequirements& out) noexcept override {
+  void Run(int, char**, midismith::io::WritableStreamRequirements& out) noexcept override {
     provider_.ShowHelp(out);
   }
 
