@@ -11,6 +11,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 if(HOST_TESTS)
     enable_testing()
+    # Auto-discover standalone domain libs (identified by the presence of CMakePresets.json).
+    # Infra libs (os, bsp) intentionally have no CMakePresets.json and are excluded here —
+    # they depend on FreeRTOS/HAL headers not available in a host build.
+    file(GLOB LIB_CANDIDATES RELATIVE ${CMAKE_SOURCE_DIR} libs/*)
+    foreach(LIB_CANDIDATE ${LIB_CANDIDATES})
+        if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/${LIB_CANDIDATE} AND
+           EXISTS ${CMAKE_SOURCE_DIR}/${LIB_CANDIDATE}/CMakePresets.json)
+            add_subdirectory(${LIB_CANDIDATE})
+        endif()
+    endforeach()
     add_subdirectory(firmwares/adc-board)
     add_subdirectory(firmwares/main-board)
 else()
@@ -30,13 +40,11 @@ endif()
 # clang-format respects .clang-format-ignore for IDE/local tooling; in CI, the explicit file list
 # produced by this GLOB is the authoritative scope (same list for lint and format).
 file(GLOB_RECURSE MONOREPO_SOURCE_FILES CONFIGURE_DEPENDS
-    "firmwares/adc-board/app/*.*"    "firmwares/adc-board/bsp/*.*"
-    "firmwares/adc-board/os/*.*"     "firmwares/adc-board/domain/*.*"
-    "firmwares/adc-board/tests/*.*"
-    "firmwares/main-board/app/*.*"   "firmwares/main-board/bsp/*.*"
-    "firmwares/main-board/os/*.*"    "firmwares/main-board/domain/*.*"
-    "firmwares/main-board/tests/*.*"
-    "libs/common/include/*.*"        "libs/common/src/*.*"
+    "firmwares/*/app/*.*"    "firmwares/*/bsp/*.*"
+    "firmwares/*/os/*.*"     "firmwares/*/domain/*.*"
+    "firmwares/*/tests/*.*"
+    "libs/*/include/*.*"
+    "libs/*/src/*.*"
 )
 set(FILES_TO_CHECK "")
 foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})
@@ -46,12 +54,12 @@ foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})
 endforeach()
 
 add_custom_target(lint
-    COMMAND cpplint --quiet ${FILES_TO_CHECK}
+    COMMAND cpplint ${FILES_TO_CHECK}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Lint (monorepo)"
 )
 add_custom_target(format
-    COMMAND clang-format -i ${FILES_TO_CHECK}
+    COMMAND clang-format --verbose -i ${FILES_TO_CHECK}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Format (monorepo)"
 )
