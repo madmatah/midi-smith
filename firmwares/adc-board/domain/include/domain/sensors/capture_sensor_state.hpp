@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/dsp/engine/capture.hpp"
+#include "dsp/engine/capture.hpp"
 
 namespace midismith::adc_board::domain::sensors {
 
@@ -13,7 +13,6 @@ struct SensorMemberWriter {
 
 
 template <auto MemberPtr>
-using CaptureSensorState =
-    midismith::adc_board::domain::dsp::engine::Capture<SensorMemberWriter<MemberPtr>{}>;
+using CaptureSensorState = midismith::dsp::engine::Capture<SensorMemberWriter<MemberPtr>{}>;
 
 }  // namespace midismith::adc_board::domain::sensors

@@ -4,7 +4,7 @@
 
 #include "dsp/concepts.hpp"
 
-namespace midismith::adc_board::domain::dsp::converters {
+namespace midismith::dsp::converters {
 
 /**
  * @brief Converts raw ADC counts from a TIA stage into physical current (mA).
@@ -32,4 +32,4 @@ class TiaCurrentConverter {
   }
 };
 
-}  // namespace midismith::adc_board::domain::dsp::converters
+}  // namespace midismith::dsp::converters
