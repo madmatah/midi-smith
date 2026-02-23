@@ -4,6 +4,6 @@
 
 namespace midismith::adc_board::bsp::time {
 
-TimestampCounter CreateTim2TimestampCounter() noexcept;
+midismith::bsp::time::TimestampCounter CreateTim2TimestampCounter() noexcept;
 
 }  // namespace midismith::adc_board::bsp::time

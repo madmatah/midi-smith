@@ -1,6 +1,6 @@
 #pragma once
 
-namespace midismith::common::bsp {
+namespace midismith::bsp {
 
 class GpioRequirements {
  public:
@@ -12,4 +12,4 @@ class GpioRequirements {
   virtual bool read() const noexcept = 0;
 };
 
-}  // namespace midismith::common::bsp
+}  // namespace midismith::bsp

@@ -166,7 +166,7 @@ void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
   static midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
       adc_frame_queue;
   static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue);
-  static midismith::adc_board::bsp::time::TimestampCounter timestamp_counter =
+  static midismith::bsp::time::TimestampCounter timestamp_counter =
       midismith::adc_board::bsp::time::CreateTim2TimestampCounter();
 
   alignas(midismith::adc_board::app::tasks::AnalogAcquisitionTask) static std::uint8_t

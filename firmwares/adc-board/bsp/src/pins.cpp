@@ -14,8 +14,8 @@ std::uintptr_t PortAddress(GPIO_TypeDef* port) noexcept {
 
 }  // namespace
 
-midismith::common::bsp::GpioRequirements& TiaShutdown() noexcept {
-  static midismith::common::bsp::Gpio pin(PortAddress(TIA_SHDN_GPIO_Port), TIA_SHDN_Pin);
+midismith::bsp::GpioRequirements& TiaShutdown() noexcept {
+  static midismith::bsp::Gpio pin(PortAddress(TIA_SHDN_GPIO_Port), TIA_SHDN_Pin);
   return pin;
 }
 

@@ -53,6 +53,7 @@ target_link_libraries(adc_unit_tests PRIVATE
     Catch2::Catch2WithMain
     adc_fakeit
     adc_domain
+    bsp
     logging
     io
     shell_cmd_config
@@ -64,7 +65,6 @@ target_link_libraries(adc_unit_tests PRIVATE
 target_include_directories(adc_unit_tests PRIVATE
     ${ADC_PROJECT_ROOT}/app/include
     ${ADC_PROJECT_ROOT}/bsp/include
-    ${ADC_COMMON_INCLUDE_DIRS}
 )
 target_compile_definitions(adc_unit_tests PRIVATE UNIT_TESTS=1)
 target_compile_features(adc_unit_tests PRIVATE cxx_std_20)

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace midismith::adc_board::app::time {
+namespace midismith::bsp::time {
 
 class TimestampCounterRequirements {
  public:
@@ -12,4 +12,4 @@ class TimestampCounterRequirements {
   virtual std::uint32_t NowTicks() const noexcept = 0;
 };
 
-}  // namespace midismith::adc_board::app::time
+}  // namespace midismith::bsp::time

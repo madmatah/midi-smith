@@ -4,7 +4,7 @@
 
 #include "bsp/gpio_requirements.hpp"
 
-namespace midismith::common::bsp {
+namespace midismith::bsp {
 
 class Gpio : public GpioRequirements {
  public:
@@ -20,4 +20,4 @@ class Gpio : public GpioRequirements {
   std::uint16_t pin_;
 };
 
-}  // namespace midismith::common::bsp
+}  // namespace midismith::bsp

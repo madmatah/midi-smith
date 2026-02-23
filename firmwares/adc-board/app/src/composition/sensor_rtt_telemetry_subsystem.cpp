@@ -5,20 +5,39 @@
 #include "app/config/config.hpp"
 #include "app/tasks/sensor_rtt_telemetry_task.hpp"
 #include "app/telemetry/queue_sensor_rtt_telemetry_control.hpp"
+#include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/memory_sections.hpp"
 #include "bsp/rtt_telemetry_sender.hpp"
 #include "os/queue.hpp"
 
 namespace midismith::adc_board::app::composition {
+namespace {
+
+class RttTelemetrySenderAdapter final
+    : public midismith::adc_board::app::telemetry::TelemetrySenderRequirements {
+ public:
+  explicit RttTelemetrySenderAdapter(midismith::bsp::RttTelemetrySender& sender) noexcept
+      : sender_(sender) {}
+
+  std::size_t Send(std::span<const std::uint8_t> data) noexcept override {
+    return sender_.Send(data);
+  }
+
+ private:
+  midismith::bsp::RttTelemetrySender& sender_;
+};
+
+}  // namespace
 
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept {
   alignas(4) BSP_AXI_SRAM static std::uint8_t
       telemetry_buffer[midismith::adc_board::app::config::RTT_TELEMETRY_SENSOR_BUFFER_SIZE];
-  static midismith::adc_board::bsp::RttTelemetrySender telemetry(
+  static midismith::bsp::RttTelemetrySender telemetry_sender(
       midismith::adc_board::app::config::RTT_TELEMETRY_SENSOR_CHANNEL, "SensorTelemetry",
       telemetry_buffer, static_cast<unsigned>(sizeof(telemetry_buffer)));
+  static RttTelemetrySenderAdapter telemetry(telemetry_sender);
 
   static midismith::os::Queue<midismith::adc_board::app::telemetry::SensorRttTelemetryCommand, 4>
       control_queue;

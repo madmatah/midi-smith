@@ -31,9 +31,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-set(MAIN_COMMON_INCLUDE_DIRS "${MAIN_PROJECT_ROOT}/../../libs/common/include")
-set(MAIN_COMMON_SRC_DIRS "${MAIN_PROJECT_ROOT}/../../libs/common/src")
-
 set(MAIN_SEGGER_ROOT "${MAIN_PROJECT_ROOT}/../../third_party/SEGGER")
 
 if(NOT TARGET midi)
@@ -45,6 +42,9 @@ endif()
 if(NOT TARGET logging)
     add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/logging libs/logging)
 endif()
+if(NOT TARGET bsp)
+    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/bsp libs/bsp)
+endif()
 if(NOT TARGET os)
     add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/os libs/os)
 endif()
@@ -55,9 +55,8 @@ if(HOST_TESTS)
     add_library(main_domain INTERFACE)
     target_include_directories(main_domain INTERFACE
         domain/include
-        ${MAIN_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(main_domain INTERFACE piano_controller midi os)
+    target_link_libraries(main_domain INTERFACE piano_controller midi bsp os)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -65,7 +64,6 @@ if(HOST_TESTS)
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
-        ${MAIN_COMMON_INCLUDE_DIRS}
     )
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
 
@@ -104,9 +102,6 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app_entry.cpp
     app/src/tasks/led_task.cpp
     bsp/src/board.cpp
-    ${MAIN_COMMON_SRC_DIRS}/bsp/gpio.cpp
-    ${MAIN_COMMON_SRC_DIRS}/bsp/rtt_logger.cpp
-    bsp/src/rtt_telemetry_sender.cpp
     bsp/src/spi.cpp
     bsp/src/stm32_octospi.cpp
     bsp/src/stm32_spi_flash.cpp
@@ -128,7 +123,6 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     ${MAIN_SEGGER_ROOT}/RTT/RTT
     ${MAIN_SEGGER_ROOT}/RTT/Config
     domain/include
-    ${MAIN_COMMON_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${MAIN_FIRMWARE_TARGET} PRIVATE
@@ -152,6 +146,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     stm32cubemx
     midi
     piano_controller
+    bsp
     logging
     os
 

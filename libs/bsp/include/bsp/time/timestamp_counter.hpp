@@ -2,12 +2,11 @@
 
 #include <cstdint>
 
-#include "app/time/timestamp_counter_requirements.hpp"
+#include "bsp/time/timestamp_counter_requirements.hpp"
 
-namespace midismith::adc_board::bsp::time {
+namespace midismith::bsp::time {
 
-class TimestampCounter final
-    : public midismith::adc_board::app::time::TimestampCounterRequirements {
+class TimestampCounter final : public midismith::bsp::time::TimestampCounterRequirements {
  public:
   using StartFn = void (*)() noexcept;
   using NowFn = std::uint32_t (*)() noexcept;
@@ -33,4 +32,4 @@ class TimestampCounter final
   NowFn now_fn_ = nullptr;
 };
 
-}  // namespace midismith::adc_board::bsp::time
+}  // namespace midismith::bsp::time

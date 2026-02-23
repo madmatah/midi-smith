@@ -4,6 +4,6 @@
 
 namespace midismith::adc_board::bsp::pins {
 
-midismith::common::bsp::GpioRequirements& TiaShutdown() noexcept;
+midismith::bsp::GpioRequirements& TiaShutdown() noexcept;
 
 }  // namespace midismith::adc_board::bsp::pins

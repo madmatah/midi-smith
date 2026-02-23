@@ -16,8 +16,8 @@ std::uint32_t NowTim2Ticks() noexcept {
 
 }  // namespace
 
-TimestampCounter CreateTim2TimestampCounter() noexcept {
-  return TimestampCounter(StartTim2, NowTim2Ticks);
+midismith::bsp::time::TimestampCounter CreateTim2TimestampCounter() noexcept {
+  return midismith::bsp::time::TimestampCounter(StartTim2, NowTim2Ticks);
 }
 
 }  // namespace midismith::adc_board::bsp::time

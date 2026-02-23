@@ -8,9 +8,9 @@
 #include "app/analog/signal_context.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
 #include "app/config/sensors.hpp"
-#include "app/time/timestamp_counter_requirements.hpp"
 #include "bsp/adc/adc_dma.hpp"
 #include "bsp/gpio_requirements.hpp"
+#include "bsp/time/timestamp_counter_requirements.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "os/queue.hpp"
 
@@ -31,9 +31,8 @@ class AnalogAcquisitionTask {
   using AdcDma = midismith::adc_board::bsp::adc::AdcDma;
   using AdcRankMappedFrameDecoder = midismith::adc_board::app::analog::AdcRankMappedFrameDecoder;
   using AnalogAcquisitionState = midismith::adc_board::app::analog::AcquisitionState;
-  using GpioRequirements = midismith::common::bsp::GpioRequirements;
-  using TimestampCounterRequirements =
-      midismith::adc_board::app::time::TimestampCounterRequirements;
+  using GpioRequirements = midismith::bsp::GpioRequirements;
+  using TimestampCounterRequirements = midismith::bsp::time::TimestampCounterRequirements;
 
   AnalogAcquisitionTask(midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
                         midismith::os::Queue<AcquisitionCommand, 4>& control_queue,

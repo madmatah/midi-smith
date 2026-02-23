@@ -12,14 +12,14 @@ namespace midismith::main_board::bsp {
 class Board {
  public:
   static void init() noexcept;
-  static midismith::common::bsp::GpioRequirements& user_led() noexcept;
+  static midismith::bsp::GpioRequirements& user_led() noexcept;
   static Spi& spi2() noexcept;
   static UsbMidi& usb_midi() noexcept;
   static Stm32Octospi& octospi_flash() noexcept;
   static Stm32SpiFlash& spi_flash() noexcept;
 
  private:
-  static midismith::common::bsp::Gpio _user_led;
+  static midismith::bsp::Gpio _user_led;
   static Spi _spi2;
   static UsbMidi _usb_midi;
   static Stm32Octospi _octospi_flash;
