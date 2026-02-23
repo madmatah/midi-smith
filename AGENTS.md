@@ -68,10 +68,9 @@ monorepo-root/
 │   └── main-board/               # Firmware — STM32H7B0
 │
 ├── libs/                         # Shared library packages (host-portable, domain code)
-│   ├── common/                   # Transitional catch-all — will be decomposed into focused libs
-│   ├── os/                       # (future) FreeRTOS abstraction — infra, not standalone
-│   ├── bsp/                      # (future) Hardware abstraction — infra, not standalone
-│   └── <domain-lib>/             # (future) e.g. dsp, midi, piano — pure domain, standalone
+│   ├── os/                       # FreeRTOS abstraction — infra, not standalone
+│   ├── bsp/                      # Hardware abstraction — infra, not standalone
+│   └── <domain-lib>/             # e.g. dsp, midi, shell, config, piano-sensing… — pure domain, standalone
 │
 ├── tools/                        # Debug and development host tools
 ├── third_party/                  # Vendored external code (unmodified)

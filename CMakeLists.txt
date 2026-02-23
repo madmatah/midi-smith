@@ -35,7 +35,7 @@ else()
 endif()
 
 # Monorepo-wide lint, format and format_check targets.
-# Covers all project-owned code across both packages and common.
+# Covers all project-owned code across all packages.
 # cpplint reads CPPLINT.cfg by walking up from each file — the root CPPLINT.cfg applies to all.
 # clang-format respects .clang-format-ignore for IDE/local tooling; in CI, the explicit file list
 # produced by this GLOB is the authoritative scope (same list for lint and format).
