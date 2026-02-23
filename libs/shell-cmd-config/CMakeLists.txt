@@ -1,20 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 project(shell_cmd_config LANGUAGES CXX)
 
-if(NOT TARGET shell)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../shell shell)
-endif()
-if(NOT TARGET config)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../config config)
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
-add_library(shell_cmd_config STATIC)
-target_compile_features(shell_cmd_config PUBLIC cxx_std_20)
-target_include_directories(shell_cmd_config PUBLIC include)
-target_sources(shell_cmd_config PRIVATE src/config_command.cpp)
-target_link_libraries(shell_cmd_config PUBLIC shell config)
-
-if(HOST_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
+midismith_add_lib(NAME shell_cmd_config
+    SOURCES src/config_command.cpp
+    DEPENDS shell config
+)

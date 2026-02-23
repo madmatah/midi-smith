@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(dsp LANGUAGES CXX)
 
-add_library(dsp INTERFACE)
-target_compile_features(dsp INTERFACE cxx_std_20)
-target_include_directories(dsp INTERFACE include)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
-if(HOST_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
+midismith_add_lib(NAME dsp)

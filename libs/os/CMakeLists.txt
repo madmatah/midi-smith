@@ -1,10 +1,7 @@
-add_library(os INTERFACE)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_infra_lib.cmake)
 
-target_compile_features(os INTERFACE cxx_std_20)
-target_include_directories(os INTERFACE include)
-
-if(NOT HOST_TESTS)
-    target_sources(os INTERFACE
+midismith_add_infra_lib(NAME os
+    SOURCES
         src/binary_semaphore.cpp
         src/clock.cpp
         src/memory.cpp
@@ -12,5 +9,4 @@ if(NOT HOST_TESTS)
         src/task.cpp
         src/this_task.cpp
         src/runtime_stats.cpp
-    )
-endif()
+)

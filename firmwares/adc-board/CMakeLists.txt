@@ -1,71 +1,26 @@
-cmake_minimum_required(VERSION 3.22)
-
-option(HOST_TESTS "Build host-only unit tests" OFF)
-
-# Setup compiler settings
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
-
-# Define the build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 
 set(ADC_FIRMWARE_TARGET "adc-board")
 set(ADC_TARGET_PREFIX "adc")
 set(ADC_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 
-# Enable compile command to ease indexing with e.g. clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-
-# Core project settings
 project(${ADC_FIRMWARE_TARGET})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-# Enable CMake support for ASM and C languages
-enable_language(C ASM CXX)
-
-# Set the C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
 
-if(NOT TARGET dsp)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/dsp libs/dsp)
-endif()
-if(NOT TARGET midi)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/midi libs/midi)
-endif()
-if(NOT TARGET piano_sensing)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/piano-sensing libs/piano-sensing)
-endif()
-if(NOT TARGET logging)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/logging libs/logging)
-endif()
-if(NOT TARGET bsp)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/bsp libs/bsp)
-endif()
-if(NOT TARGET io)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/io libs/io)
-endif()
-if(NOT TARGET os)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/os libs/os)
-endif()
-if(NOT TARGET shell)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell libs/shell)
-endif()
-if(NOT TARGET shell_cmd_config)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell-cmd-config libs/shell-cmd-config)
-endif()
-if(NOT TARGET sensor_linearization)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/sensor-linearization libs/sensor-linearization)
-endif()
-if(NOT TARGET config)
-    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/config libs/config)
-endif()
+midismith_require_lib(dsp)
+midismith_require_lib(midi)
+midismith_require_lib(piano-sensing)
+midismith_require_lib(logging)
+midismith_require_lib(bsp)
+midismith_require_lib(io)
+midismith_require_lib(os)
+midismith_require_lib(shell)
+midismith_require_lib(shell-cmd-config)
+midismith_require_lib(sensor-linearization)
+midismith_require_lib(config)
 
 if(HOST_TESTS)
     enable_testing()
@@ -80,8 +35,33 @@ if(HOST_TESTS)
     )
     target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config)
 
+    add_library(adc_app_lib STATIC)
+    target_sources(adc_app_lib PRIVATE
+        app/src/storage/adc_board_persistent_configuration.cpp
+        app/src/shell/commands/sensor_rtt_command.cpp
+        app/src/shell/commands/status_command.cpp
+        app/src/shell/commands/ps_command.cpp
+        app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
+    )
+    target_include_directories(adc_app_lib PUBLIC
+        app/include
+        bsp/include
+    )
+    target_link_libraries(adc_app_lib PRIVATE
+        adc_domain
+        bsp
+        logging
+        io
+        shell_cmd_config
+        piano_sensing
+        sensor_linearization
+        config
+        os
+    )
+
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
+        add_library(app_lib ALIAS adc_app_lib)
     endif()
 
     add_subdirectory(tests)
@@ -105,11 +85,6 @@ target_compile_options(${ADC_FIRMWARE_TARGET} PRIVATE
 # regardless of whether the package is built standalone or from the monorepo root.
 set(CMAKE_PROJECT_NAME "${ADC_FIRMWARE_TARGET}")
 add_subdirectory(cmake/stm32cubemx)
-
-# Link directories setup
-target_link_directories(${ADC_FIRMWARE_TARGET} PRIVATE
-    # Add user defined library search paths
-)
 
 # Add sources to executable
 target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
@@ -163,11 +138,6 @@ target_compile_definitions(${ADC_FIRMWARE_TARGET} PRIVATE
     SEGGER_RTT_SECTION=\".rtt\"
 )
 
-# Add project symbols (macros)
-target_compile_definitions(${ADC_FIRMWARE_TARGET} PRIVATE
-    # Add user defined symbols
-)
-
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
@@ -215,13 +185,4 @@ add_custom_command(TARGET ${ADC_FIRMWARE_TARGET} POST_BUILD
     VERBATIM
 )
 
-endif()
-
-# Update build/current symlink after each preset change
-if(PROJECT_IS_TOP_LEVEL AND CMAKE_EXPORT_COMPILE_COMMANDS)
-    file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
-    message(STATUS "Updating build/current symlink to : ${CMAKE_BINARY_DIR}")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_BINARY_DIR}"
-        "${CMAKE_SOURCE_DIR}/build/current")
 endif()
