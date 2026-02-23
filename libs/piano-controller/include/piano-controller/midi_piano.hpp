@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-#include "domain/music/piano/piano_requirements.hpp"
 #include "midi/midi_controller_requirements.hpp"
+#include "piano-controller/piano_requirements.hpp"
 
-namespace midismith::main_board::domain::music::piano {
+namespace midismith::piano_controller {
 
 class MidiPiano : public PianoRequirements {
  public:
@@ -32,4 +32,4 @@ class MidiPiano : public PianoRequirements {
   Config config_;
 };
 
-}  // namespace midismith::main_board::domain::music::piano
+}  // namespace midismith::piano_controller

@@ -12,9 +12,9 @@
 #include "bsp/rtt_logger.hpp"
 #include "bsp/rtt_telemetry_sender.hpp"
 #include "bsp/usb_midi.hpp"
-#include "domain/music/piano/midi_piano.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
+#include "piano-controller/midi_piano.hpp"
 
 namespace midismith::main_board::app {
 
@@ -40,10 +40,9 @@ void Application::create_tasks() noexcept {
   static midismith::main_board::app::midi::MidiTask midi_task(
       midi_queue, usb_midi, logger, midismith::main_board::app::config::MIDI_RETRY_TIMEOUT_MS);
 
-  static midismith::main_board::domain::music::piano::MidiPiano::Config piano_config = {
+  static midismith::piano_controller::MidiPiano::Config piano_config = {
       .channel = 0, .sustain_cc = 64, .soft_cc = 67, .sostenuto_cc = 66};
-  static midismith::main_board::domain::music::piano::MidiPiano piano(midi_controller,
-                                                                      piano_config);
+  static midismith::piano_controller::MidiPiano piano(midi_controller, piano_config);
 
   // Start MIDI Task
   (void) midismith::common::os::Task::create(

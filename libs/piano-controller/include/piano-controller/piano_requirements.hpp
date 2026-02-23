@@ -2,7 +2,7 @@
 
 #include "midi/types.hpp"
 
-namespace midismith::main_board::domain::music::piano {
+namespace midismith::piano_controller {
 
 class PianoRequirements {
  public:
@@ -17,4 +17,4 @@ class PianoRequirements {
   virtual void SetSostenuto(bool active) noexcept = 0;
 };
 
-}  // namespace midismith::main_board::domain::music::piano
+}  // namespace midismith::piano_controller

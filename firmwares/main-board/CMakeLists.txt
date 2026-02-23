@@ -39,6 +39,9 @@ set(MAIN_SEGGER_ROOT "${MAIN_PROJECT_ROOT}/../../third_party/SEGGER")
 if(NOT TARGET midi)
     add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/midi libs/midi)
 endif()
+if(NOT TARGET piano_controller)
+    add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/piano-controller libs/piano-controller)
+endif()
 if(NOT TARGET logging)
     add_subdirectory(${MAIN_PROJECT_ROOT}/../../libs/logging libs/logging)
 endif()
@@ -46,15 +49,12 @@ endif()
 if(HOST_TESTS)
     enable_testing()
 
-    add_library(main_domain STATIC)
-    target_sources(main_domain PRIVATE
-        domain/src/music/piano/midi_piano.cpp
-    )
-    target_include_directories(main_domain PUBLIC
+    add_library(main_domain INTERFACE)
+    target_include_directories(main_domain INTERFACE
         domain/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(main_domain PUBLIC midi)
+    target_link_libraries(main_domain INTERFACE piano_controller midi)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -65,7 +65,7 @@ if(HOST_TESTS)
         os/include
         ${MAIN_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(main_app_lib PRIVATE main_domain midi logging)
+    target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS main_domain)
@@ -113,7 +113,6 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/usb_midi/usbd_midi.c
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
-    domain/src/music/piano/midi_piano.cpp
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
     ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
     ${MAIN_COMMON_SRC_DIRS}/os/clock.cpp
@@ -157,6 +156,7 @@ target_link_options(${MAIN_FIRMWARE_TARGET} PRIVATE
 target_link_libraries(${MAIN_FIRMWARE_TARGET}
     stm32cubemx
     midi
+    piano_controller
     logging
 
     # Add user defined libraries

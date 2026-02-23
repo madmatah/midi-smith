@@ -1,4 +1,4 @@
-#include "domain/music/piano/midi_piano.hpp"
+#include "piano-controller/midi_piano.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <fakeit.hpp>
@@ -6,8 +6,8 @@
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using midismith::main_board::domain::music::piano::MidiPiano;
 using midismith::midi::MidiControllerRequirements;
+using midismith::piano_controller::MidiPiano;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
