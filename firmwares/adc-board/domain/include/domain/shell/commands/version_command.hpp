@@ -2,11 +2,11 @@
 
 #include <string_view>
 
-#include "domain/shell/command_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::domain::shell::commands {
 
-class VersionCommand : public CommandRequirements {
+class VersionCommand : public midismith::shell::CommandRequirements {
  public:
   explicit VersionCommand(std::string_view full_version, std::string_view build_type,
                           std::string_view commit_date) noexcept;

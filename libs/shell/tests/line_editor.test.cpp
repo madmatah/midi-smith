@@ -1,4 +1,4 @@
-#include "domain/shell/line_editor.hpp"
+#include "shell/line_editor.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -45,7 +45,7 @@ class StreamStub : public midismith::io::StreamRequirements {
 }  // namespace
 
 TEST_CASE("The LineEditor class", "[shell]") {
-  midismith::adc_board::domain::shell::LineEditor<16> editor;
+  midismith::shell::LineEditor<16> editor;
   StreamStub stream;
 
   SECTION("The Poll() method") {

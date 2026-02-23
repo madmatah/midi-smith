@@ -1,11 +1,11 @@
 #pragma once
 
 #include "domain/config/transactional_config_dictionary.hpp"
-#include "domain/shell/command_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::domain::shell::commands {
 
-class ConfigCommand final : public CommandRequirements {
+class ConfigCommand final : public midismith::shell::CommandRequirements {
  public:
   explicit ConfigCommand(
       midismith::adc_board::domain::config::TransactionalConfigDictionary& provider) noexcept

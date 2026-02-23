@@ -5,11 +5,11 @@
 
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
-#include "domain/shell/command_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
 
-class SensorRttCommand final : public midismith::adc_board::domain::shell::CommandRequirements {
+class SensorRttCommand final : public midismith::shell::CommandRequirements {
  public:
   SensorRttCommand(
       midismith::adc_board::domain::sensors::SensorRegistry& registry,

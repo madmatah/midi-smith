@@ -4,7 +4,7 @@
 
 #include "io/stream_requirements.hpp"
 
-namespace midismith::adc_board::domain::shell {
+namespace midismith::shell {
 
 class CommandRequirements {
  public:
@@ -16,4 +16,4 @@ class CommandRequirements {
                    midismith::io::WritableStreamRequirements& out) noexcept = 0;
 };
 
-}  // namespace midismith::adc_board::domain::shell
+}  // namespace midismith::shell

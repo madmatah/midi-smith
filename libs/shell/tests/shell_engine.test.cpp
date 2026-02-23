@@ -1,4 +1,4 @@
-#include "domain/shell/shell_engine.hpp"
+#include "shell/shell_engine.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -45,7 +45,7 @@ class StreamStub : public midismith::io::StreamRequirements {
   std::string _output;
 };
 
-class TestCommand : public midismith::adc_board::domain::shell::CommandRequirements {
+class TestCommand : public midismith::shell::CommandRequirements {
  public:
   explicit TestCommand(const char* name) : _name(name) {}
 
@@ -65,8 +65,8 @@ class TestCommand : public midismith::adc_board::domain::shell::CommandRequireme
 
 TEST_CASE("The ShellEngine class completion") {
   StreamStub stream;
-  midismith::adc_board::domain::shell::ShellConfig config{"shell> "};
-  midismith::adc_board::domain::shell::ShellEngine<32, 4, 4> engine(stream, config);
+  midismith::shell::ShellConfig config{"shell> "};
+  midismith::shell::ShellEngine<32, 4, 4> engine(stream, config);
 
   TestCommand status_command("status");
   TestCommand start_command("start");

@@ -27,10 +27,6 @@ target_include_directories(adc_fakeit INTERFACE
 )
 
 add_executable(adc_unit_tests
-    domain/shell/command_parser.test.cpp
-    domain/shell/line_editor.test.cpp
-    domain/shell/command_dispatcher.test.cpp
-    domain/shell/shell_engine.test.cpp
     domain/shell/commands/version_command.test.cpp
     domain/sensors/processed_sensor_group.test.cpp
     domain/sensors/sensor_registry.test.cpp

@@ -3,12 +3,12 @@
 #include <cstddef>
 #include <string_view>
 
-#include "domain/shell/command_requirements.hpp"
-#include "domain/shell/commands/help_command.hpp"
-#include "domain/shell/help_provider.hpp"
 #include "io/stream_requirements.hpp"
+#include "shell/command_requirements.hpp"
+#include "shell/commands/help_command.hpp"
+#include "shell/help_provider.hpp"
 
-namespace midismith::adc_board::domain::shell {
+namespace midismith::shell {
 
 template <std::size_t kMaxCommands>
 class CommandDispatcher : public HelpProvider {
@@ -101,4 +101,4 @@ class CommandDispatcher : public HelpProvider {
   std::size_t count_;
 };
 
-}  // namespace midismith::adc_board::domain::shell
+}  // namespace midismith::shell

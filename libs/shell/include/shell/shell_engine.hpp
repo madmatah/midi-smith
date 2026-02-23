@@ -2,12 +2,12 @@
 
 #include <cstddef>
 
-#include "domain/shell/command_dispatcher.hpp"
-#include "domain/shell/command_parser.hpp"
-#include "domain/shell/line_editor.hpp"
 #include "io/stream_requirements.hpp"
+#include "shell/command_dispatcher.hpp"
+#include "shell/command_parser.hpp"
+#include "shell/line_editor.hpp"
 
-namespace midismith::adc_board::domain::shell {
+namespace midismith::shell {
 
 struct ShellConfig {
   const char* prompt = "shell> ";
@@ -123,4 +123,4 @@ class ShellEngine {
   CommandDispatcher<kMaxCommands> _dispatcher;
 };
 
-}  // namespace midismith::adc_board::domain::shell
+}  // namespace midismith::shell
