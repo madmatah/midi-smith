@@ -2,12 +2,12 @@
 
 #include <type_traits>
 
-#include "domain/music/piano/detail/null_key_action_handler.hpp"
-#include "domain/music/piano/key_action_requirements.hpp"
-#include "domain/music/piano/velocity/constant_velocity_mapper.hpp"
-#include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
+#include "piano-sensing/detail/null_key_action_handler.hpp"
+#include "piano-sensing/key_action_requirements.hpp"
+#include "piano-sensing/velocity/constant_velocity_mapper.hpp"
+#include "piano-sensing/velocity/velocity_mapper_requirements.hpp"
 
-namespace midismith::adc_board::domain::music::piano {
+namespace midismith::piano_sensing {
 
 template <typename MapperT, float kReleaseThreshold>
 class NoteReleaseDetectorStage {
@@ -89,4 +89,4 @@ template <float kReleaseThreshold>
 using DefaultNoteReleaseDetectorStage =
     NoteReleaseDetectorStage<velocity::ConstantVelocityMapper<127u>, kReleaseThreshold>;
 
-}  // namespace midismith::adc_board::domain::music::piano
+}  // namespace midismith::piano_sensing

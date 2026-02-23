@@ -2,7 +2,7 @@
 
 #include "midi/types.hpp"
 
-namespace midismith::adc_board::domain::music::piano {
+namespace midismith::piano_sensing {
 
 class KeyActionRequirements {
  public:
@@ -12,4 +12,4 @@ class KeyActionRequirements {
   virtual void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept = 0;
 };
 
-}  // namespace midismith::adc_board::domain::music::piano
+}  // namespace midismith::piano_sensing

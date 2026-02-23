@@ -4,9 +4,9 @@
 #include <cmath>
 #include <cstdint>
 
-#include "domain/music/piano/velocity/velocity_mapper_requirements.hpp"
+#include "piano-sensing/velocity/velocity_mapper_requirements.hpp"
 
-namespace midismith::adc_board::domain::music::piano::velocity {
+namespace midismith::piano_sensing::velocity {
 
 template <float kMaximumSpeedMPerS, float kShapeFactor>
 class ExponentialVelocityMapper final : public VelocityMapperRequirements {
@@ -35,4 +35,4 @@ class ExponentialVelocityMapper final : public VelocityMapperRequirements {
   }
 };
 
-}  // namespace midismith::adc_board::domain::music::piano::velocity
+}  // namespace midismith::piano_sensing::velocity

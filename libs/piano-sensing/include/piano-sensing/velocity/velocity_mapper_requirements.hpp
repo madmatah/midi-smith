@@ -2,7 +2,7 @@
 
 #include "midi/types.hpp"
 
-namespace midismith::adc_board::domain::music::piano::velocity {
+namespace midismith::piano_sensing::velocity {
 
 class VelocityMapperRequirements {
  public:
@@ -11,4 +11,4 @@ class VelocityMapperRequirements {
   virtual midismith::midi::Velocity Map(float speed_m_per_s) noexcept = 0;
 };
 
-}  // namespace midismith::adc_board::domain::music::piano::velocity
+}  // namespace midismith::piano_sensing::velocity

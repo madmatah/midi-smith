@@ -1,11 +1,11 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/music/piano/velocity/goebl_logarithmic_velocity_mapper.hpp"
+#include "piano-sensing/velocity/goebl_logarithmic_velocity_mapper.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("GoeblLogarithmicVelocityMapper") {
-  midismith::adc_board::domain::music::piano::velocity::GoeblLogarithmicVelocityMapper mapper{};
+  midismith::piano_sensing::velocity::GoeblLogarithmicVelocityMapper mapper{};
 
   SECTION("Clamps non-positive speed to 1") {
     REQUIRE(mapper.Map(0.0f) == static_cast<midismith::midi::Velocity>(1u));
