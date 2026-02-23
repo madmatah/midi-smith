@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/music/types.hpp"
+#include "midi/types.hpp"
 
 namespace midismith::main_board::domain::music::piano {
 
@@ -8,9 +8,9 @@ class PianoRequirements {
  public:
   virtual ~PianoRequirements() = default;
 
-  virtual void PressKey(midismith::common::domain::music::NoteNumber note,
-                        midismith::common::domain::music::Velocity velocity) noexcept = 0;
-  virtual void ReleaseKey(midismith::common::domain::music::NoteNumber note) noexcept = 0;
+  virtual void PressKey(midismith::midi::NoteNumber note,
+                        midismith::midi::Velocity velocity) noexcept = 0;
+  virtual void ReleaseKey(midismith::midi::NoteNumber note) noexcept = 0;
 
   virtual void SetSustain(bool active) noexcept = 0;
   virtual void SetSoft(bool active) noexcept = 0;

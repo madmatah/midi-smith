@@ -26,22 +26,22 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
   while (elapsed_ms <= _retry_timeout_ms) {
     const auto status = _transport.TrySendRawMessage(command.data, command.length);
 
-    if (status == midismith::main_board::domain::midi::TransportStatus::kSuccess) {
+    if (status == midismith::midi::TransportStatus::kSuccess) {
       return;
     }
 
-    if (status == midismith::main_board::domain::midi::TransportStatus::kBusy) {
+    if (status == midismith::midi::TransportStatus::kBusy) {
       midismith::common::os::Clock::delay_ms(kRetryIntervalMs);
       elapsed_ms += kRetryIntervalMs;
       continue;
     }
 
-    if (status == midismith::main_board::domain::midi::TransportStatus::kError) {
+    if (status == midismith::midi::TransportStatus::kError) {
       _logger.logf(midismith::common::app::logging::Level::Error, "MidiTask: Transport error");
       return;
     }
 
-    if (status == midismith::main_board::domain::midi::TransportStatus::kNotAvailable) {
+    if (status == midismith::midi::TransportStatus::kNotAvailable) {
       return;
     }
   }

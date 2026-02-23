@@ -12,7 +12,7 @@ class ConstantVelocityMapper final : public VelocityMapperRequirements {
   static_assert(kFixedVelocity >= 1u && kFixedVelocity <= 127u,
                 "kFixedVelocity must be in range [1, 127].");
 
-  midismith::common::domain::music::Velocity Map(float speed_m_per_s) noexcept override {
+  midismith::midi::Velocity Map(float speed_m_per_s) noexcept override {
     (void) speed_m_per_s;
     return kFixedVelocity;
   }

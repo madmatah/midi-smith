@@ -99,7 +99,7 @@ class MidiVelocityEngine {
   State state_ = State::IDLE;
   bool has_prev_position_ = false;
   float prev_position_ = 1.0f;
-  midismith::common::domain::music::Velocity latched_velocity_ = 0u;
+  midismith::midi::Velocity latched_velocity_ = 0u;
 
   MapperT mapper_impl_{};
   detail::NullKeyActionHandler null_handler_{};

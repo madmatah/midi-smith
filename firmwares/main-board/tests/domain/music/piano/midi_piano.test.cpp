@@ -6,8 +6,8 @@
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using midismith::main_board::domain::midi::MidiControllerRequirements;
 using midismith::main_board::domain::music::piano::MidiPiano;
+using midismith::midi::MidiControllerRequirements;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 

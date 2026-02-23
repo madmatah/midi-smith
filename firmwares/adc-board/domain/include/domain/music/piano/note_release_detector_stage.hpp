@@ -62,7 +62,7 @@ class NoteReleaseDetectorStage {
     }
 
     if (is_note_on && prev_position_ < kReleaseThreshold && position >= kReleaseThreshold) {
-      const midismith::common::domain::music::Velocity release_velocity =
+      const midismith::midi::Velocity release_velocity =
           mapper_impl_.Map(latched_release_speed_m_per_s_);
       handler_->OnNoteOff(release_velocity);
       ctx.sensor.is_note_on = false;
