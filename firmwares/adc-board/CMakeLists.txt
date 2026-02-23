@@ -31,9 +31,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-set(ADC_COMMON_INCLUDE_DIRS "${ADC_PROJECT_ROOT}/../../libs/common/include")
-set(ADC_COMMON_SRC_DIRS "${ADC_PROJECT_ROOT}/../../libs/common/src")
-
 set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
 
 if(NOT TARGET dsp)
@@ -47,6 +44,9 @@ if(NOT TARGET piano_sensing)
 endif()
 if(NOT TARGET logging)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/logging libs/logging)
+endif()
+if(NOT TARGET bsp)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/bsp libs/bsp)
 endif()
 if(NOT TARGET io)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/io libs/io)
@@ -77,9 +77,8 @@ if(HOST_TESTS)
     )
     target_include_directories(adc_domain PUBLIC
         domain/include
-        ${ADC_COMMON_INCLUDE_DIRS}
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing io os shell shell_cmd_config config)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
@@ -138,10 +137,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     bsp/src/adc/adc_dma_callbacks.cpp
     bsp/src/adc/adc_trigger_schedule.cpp
     bsp/src/time/tim2_timestamp_counter.cpp
-    ${ADC_COMMON_SRC_DIRS}/bsp/gpio.cpp
     bsp/src/pins.cpp
-    ${ADC_COMMON_SRC_DIRS}/bsp/rtt_logger.cpp
-    bsp/src/rtt_telemetry_sender.cpp
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
     app/src/shell/commands/ps_command.cpp
@@ -161,7 +157,6 @@ target_include_directories(${ADC_FIRMWARE_TARGET} PRIVATE
     ${ADC_SEGGER_ROOT}/RTT/RTT
     ${ADC_SEGGER_ROOT}/RTT/Config
     domain/include
-    ${ADC_COMMON_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${ADC_FIRMWARE_TARGET} PRIVATE
@@ -196,6 +191,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     dsp
     midi
     piano_sensing
+    bsp
     logging
     io
     os

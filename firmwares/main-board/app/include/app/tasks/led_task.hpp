@@ -1,6 +1,6 @@
 #pragma once
 
-namespace midismith::common::bsp {
+namespace midismith::bsp {
 class GpioRequirements;
 }
 
@@ -16,7 +16,7 @@ namespace midismith::main_board::app::tasks {
 
 class LedTask {
  public:
-  LedTask(midismith::common::bsp::GpioRequirements& led,
+  LedTask(midismith::bsp::GpioRequirements& led,
           midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
           midismith::piano_controller::PianoRequirements& piano) noexcept;
 
@@ -26,7 +26,7 @@ class LedTask {
   static void entry(void* ctx) noexcept;
   void run() noexcept;
 
-  midismith::common::bsp::GpioRequirements& _led;
+  midismith::bsp::GpioRequirements& _led;
   midismith::main_board::app::telemetry::TelemetrySenderRequirements& _telemetry;
   midismith::piano_controller::PianoRequirements& _piano;
 };

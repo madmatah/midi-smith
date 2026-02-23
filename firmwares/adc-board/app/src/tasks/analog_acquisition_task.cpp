@@ -58,7 +58,7 @@ inline void ForEachTimestampedSequenceInHalfBuffer(const SampleT* data,
 class TimestampCounterDelay final : public midismith::adc_board::app::analog::DelayRequirements {
  public:
   explicit TimestampCounterDelay(
-      midismith::adc_board::app::time::TimestampCounterRequirements& timestamp_counter) noexcept
+      midismith::bsp::time::TimestampCounterRequirements& timestamp_counter) noexcept
       : timestamp_counter_(timestamp_counter) {}
 
   void DelayUs(std::uint32_t delay_us) noexcept override {
@@ -72,7 +72,7 @@ class TimestampCounterDelay final : public midismith::adc_board::app::analog::De
   }
 
  private:
-  midismith::adc_board::app::time::TimestampCounterRequirements& timestamp_counter_;
+  midismith::bsp::time::TimestampCounterRequirements& timestamp_counter_;
 };
 
 bool ReceiveLatestCommand(
@@ -92,9 +92,8 @@ bool ReceiveLatestCommand(
 AnalogAcquisitionTask::AnalogAcquisitionTask(
     midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>& queue,
     midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& control_queue,
-    midismith::common::bsp::GpioRequirements& tia_shutdown,
-    midismith::adc_board::bsp::adc::AdcDma& adc_dma,
-    midismith::adc_board::app::time::TimestampCounterRequirements& timestamp_counter,
+    midismith::bsp::GpioRequirements& tia_shutdown, midismith::adc_board::bsp::adc::AdcDma& adc_dma,
+    midismith::bsp::time::TimestampCounterRequirements& timestamp_counter,
     volatile midismith::adc_board::app::analog::AcquisitionState& state,
     ProcessedSensorGroup& analog_group) noexcept
     : queue_(queue),

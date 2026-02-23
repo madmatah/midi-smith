@@ -14,7 +14,7 @@ enum class Call : std::uint8_t {
   kAdcStop = 4,
 };
 
-class FakeGpio final : public midismith::common::bsp::GpioRequirements {
+class FakeGpio final : public midismith::bsp::GpioRequirements {
  public:
   explicit FakeGpio(std::vector<Call>& calls) noexcept : calls_(calls) {}
 

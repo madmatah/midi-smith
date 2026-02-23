@@ -2,7 +2,7 @@
 
 #include "stm32h7xx_hal.h"
 
-namespace midismith::common::bsp {
+namespace midismith::bsp {
 
 static GPIO_TypeDef* PortFromAddress(std::uintptr_t address) {
   return reinterpret_cast<GPIO_TypeDef*>(address);
@@ -23,4 +23,4 @@ void Gpio::toggle() noexcept {
 bool Gpio::read() const noexcept {
   return HAL_GPIO_ReadPin(PortFromAddress(port_), pin_) == GPIO_PIN_SET;
 }
-}  // namespace midismith::common::bsp
+}  // namespace midismith::bsp

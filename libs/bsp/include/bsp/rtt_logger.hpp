@@ -2,7 +2,7 @@
 
 #include "logging/logger_requirements.hpp"
 
-namespace midismith::common::bsp {
+namespace midismith::bsp {
 
 class RttLogger final : public midismith::logging::LoggerRequirements {
  public:
@@ -12,4 +12,4 @@ class RttLogger final : public midismith::logging::LoggerRequirements {
              std::va_list* args) noexcept override;
 };
 
-}  // namespace midismith::common::bsp
+}  // namespace midismith::bsp

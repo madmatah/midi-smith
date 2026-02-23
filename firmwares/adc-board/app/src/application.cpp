@@ -17,7 +17,7 @@ void Application::init() noexcept {
 }
 
 void Application::create_tasks() noexcept {
-  static midismith::common::bsp::RttLogger logger;
+  static midismith::bsp::RttLogger logger;
   BSP_AXI_SRAM static midismith::adc_board::app::telemetry::SensorRttStreamCapture
       sensor_rtt_capture;
   sensor_rtt_capture.SetOutputHz(

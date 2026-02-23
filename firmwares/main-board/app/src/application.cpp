@@ -2,12 +2,14 @@
 
 #include <cstdint>
 #include <new>
+#include <span>
 
 #include "app/config.hpp"
 #include "app/midi/async_task_midi_controller.hpp"
 #include "app/midi/midi_command.hpp"
 #include "app/midi/midi_task.hpp"
 #include "app/tasks/led_task.hpp"
+#include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/board.hpp"
 #include "bsp/rtt_logger.hpp"
 #include "bsp/rtt_telemetry_sender.hpp"
@@ -17,6 +19,23 @@
 #include "piano-controller/midi_piano.hpp"
 
 namespace midismith::main_board::app {
+namespace {
+
+class RttTelemetrySenderAdapter final
+    : public midismith::main_board::app::telemetry::TelemetrySenderRequirements {
+ public:
+  explicit RttTelemetrySenderAdapter(midismith::bsp::RttTelemetrySender& sender) noexcept
+      : sender_(sender) {}
+
+  std::size_t Send(std::span<const std::uint8_t> data) noexcept override {
+    return sender_.Send(data);
+  }
+
+ private:
+  midismith::bsp::RttTelemetrySender& sender_;
+};
+
+}  // namespace
 
 // Helper to run the MidiTask loop from a static function
 static void midi_task_entry(void* ctx) noexcept {
@@ -29,7 +48,7 @@ void Application::init() noexcept {
 }
 
 void Application::create_tasks() noexcept {
-  static midismith::common::bsp::RttLogger logger;
+  static midismith::bsp::RttLogger logger;
 
   // 1. MIDI System
   static midismith::os::Queue<midismith::main_board::app::midi::MidiCommand,
@@ -58,9 +77,10 @@ void Application::create_tasks() noexcept {
 
   alignas(4) static std::uint8_t
       led_telemetry_buffer[midismith::main_board::app::config::RTT_TELEMETRY_LED_BUFFER_SIZE];
-  static midismith::main_board::bsp::RttTelemetrySender telemetry(
+  static midismith::bsp::RttTelemetrySender telemetry_sender(
       midismith::main_board::app::config::RTT_TELEMETRY_LED_CHANNEL, "LedTelemetry",
       led_telemetry_buffer, sizeof(led_telemetry_buffer));
+  static RttTelemetrySenderAdapter telemetry(telemetry_sender);
 
   midismith::main_board::app::tasks::LedTask* led_task_ptr = nullptr;
   if (!led_constructed) {

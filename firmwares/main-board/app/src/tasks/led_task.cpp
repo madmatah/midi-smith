@@ -10,7 +10,7 @@
 
 namespace midismith::main_board::app::tasks {
 
-LedTask::LedTask(midismith::common::bsp::GpioRequirements& led,
+LedTask::LedTask(midismith::bsp::GpioRequirements& led,
                  midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
                  midismith::piano_controller::PianoRequirements& piano) noexcept
     : _led(led), _telemetry(telemetry), _piano(piano) {}
