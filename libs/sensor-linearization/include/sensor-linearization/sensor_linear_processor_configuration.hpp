@@ -2,9 +2,9 @@
 
 #include <cstddef>
 
-#include "domain/sensors/linearization/sensor_lookup_table.hpp"
+#include "sensor-linearization/sensor_lookup_table.hpp"
 
-namespace midismith::adc_board::domain::sensors::linearization {
+namespace midismith::sensor_linearization {
 
 template <std::size_t kLookupTableSize>
 struct SensorLinearProcessorConfiguration {
@@ -13,4 +13,4 @@ struct SensorLinearProcessorConfiguration {
   float input_to_lut_index_bias = 0.0f;
 };
 
-}  // namespace midismith::adc_board::domain::sensors::linearization
+}  // namespace midismith::sensor_linearization

@@ -14,11 +14,11 @@
 #include "bsp/memory_sections.hpp"
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
-#include "domain/sensors/linearization/lookup_table_generator.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/sensors/sensor_state.hpp"
 #include "os/queue.hpp"
+#include "sensor-linearization/lookup_table_generator.hpp"
 
 namespace midismith::adc_board::app::composition {
 namespace {
@@ -72,9 +72,9 @@ using Processor = midismith::adc_board::app::analog::signal_processing::AnalogSe
 using ProcessedSensorGroup = midismith::adc_board::domain::sensors::ProcessedSensorGroup<
     Processor, midismith::adc_board::app::analog::SignalContext>;
 
-using LookupTable = midismith::adc_board::domain::sensors::linearization::SensorLookupTable<
+using LookupTable = midismith::sensor_linearization::SensorLookupTable<
     midismith::adc_board::app::config::kSensorLookupTableSize>;
-using SensorCalibration = midismith::adc_board::domain::sensors::linearization::SensorCalibration;
+using SensorCalibration = midismith::sensor_linearization::SensorCalibration;
 using LinearizerConfiguration = Processor::LinearizerConfiguration;
 
 std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
@@ -111,9 +111,8 @@ void GenerateAnalogSensorLookupTables(
   const auto sensorResponseCurve =
       midismith::adc_board::app::config::kSensorResponseCurveProvider();
   for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
-    const auto result =
-        midismith::adc_board::domain::sensors::linearization::LookupTableGenerator::Generate(
-            sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
+    const auto result = midismith::sensor_linearization::LookupTableGenerator::Generate(
+        sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
 
     configurations[i] = result.configuration;
     processors[i].SetLinearizerConfiguration(&configurations[i]);
@@ -201,7 +200,7 @@ SensorsContext CreateSensorsContext() noexcept {
 }
 
 bool RegenerateAnalogSensorLookupTables(
-    const std::array<midismith::adc_board::domain::sensors::linearization::SensorCalibration,
+    const std::array<midismith::sensor_linearization::SensorCalibration,
                      midismith::adc_board::app::config::sensors::kSensorCount>&
         calibration_by_index) noexcept {
   if (AdcState() != midismith::adc_board::app::analog::AcquisitionState::kDisabled) {

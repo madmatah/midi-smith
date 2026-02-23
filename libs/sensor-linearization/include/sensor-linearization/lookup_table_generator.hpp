@@ -4,12 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "domain/sensors/linearization/sensor_calibration.hpp"
-#include "domain/sensors/linearization/sensor_linear_processor_configuration.hpp"
-#include "domain/sensors/linearization/sensor_lookup_table.hpp"
-#include "domain/sensors/linearization/sensor_response_curve.hpp"
+#include "sensor-linearization/sensor_calibration.hpp"
+#include "sensor-linearization/sensor_linear_processor_configuration.hpp"
+#include "sensor-linearization/sensor_lookup_table.hpp"
+#include "sensor-linearization/sensor_response_curve.hpp"
 
-namespace midismith::adc_board::domain::sensors::linearization {
+namespace midismith::sensor_linearization {
 
 enum class LookupTableGenerationStatus : std::uint8_t {
   kOk = 0,
@@ -118,4 +118,4 @@ class LookupTableGenerator {
   }
 };
 
-}  // namespace midismith::adc_board::domain::sensors::linearization
+}  // namespace midismith::sensor_linearization

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
-namespace midismith::adc_board::domain::sensors::linearization {
+namespace midismith::sensor_linearization {
 
 struct SensorResponsePoint {
   float distance_mm = 0.0f;
@@ -135,4 +135,4 @@ class SensorResponseCurve {
   std::size_t count_ = 0u;
 };
 
-}  // namespace midismith::adc_board::domain::sensors::linearization
+}  // namespace midismith::sensor_linearization

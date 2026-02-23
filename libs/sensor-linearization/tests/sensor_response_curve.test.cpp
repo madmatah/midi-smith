@@ -3,12 +3,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "domain/sensors/linearization/cny70_response_curve.hpp"
+#include "sensor-linearization/cny70_response_curve.hpp"
 
 TEST_CASE("The CNY70 master signature table") {
   using Catch::Matchers::WithinAbs;
-  using midismith::adc_board::domain::sensors::linearization::Cny70DatasheetSensorResponseCurve;
-  using midismith::adc_board::domain::sensors::linearization::kCny70DatasheetResponseCurve;
+  using midismith::sensor_linearization::Cny70DatasheetSensorResponseCurve;
+  using midismith::sensor_linearization::kCny70DatasheetResponseCurve;
 
   const auto table = Cny70DatasheetSensorResponseCurve();
 

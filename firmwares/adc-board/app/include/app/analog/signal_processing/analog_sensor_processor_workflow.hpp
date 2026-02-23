@@ -12,7 +12,6 @@
 #include "domain/music/piano/velocity/goebl_logarithmic_velocity_mapper.hpp"
 #include "domain/music/piano/velocity/logarithmic_velocity_mapper.hpp"
 #include "domain/sensors/capture_sensor_state.hpp"
-#include "domain/sensors/linearization/sensor_linear_processor.hpp"
 #include "domain/sensors/sensor_member_reader.hpp"
 #include "domain/sensors/sensor_state.hpp"
 #include "dsp/converters/linear_scaler.hpp"
@@ -29,6 +28,7 @@
 #include "dsp/logic/switch.hpp"
 #include "dsp/math/central_difference.hpp"
 #include "dsp/math/sliding_linear_regression.hpp"
+#include "sensor-linearization/sensor_linear_processor.hpp"
 
 namespace midismith::adc_board::app::analog::signal_processing::workflow {
 
@@ -84,8 +84,8 @@ using TiaCurrentConverter =
                                                     config::ADC_RESOLUTION_BITS,
                                                     config::TIA_FEEDBACK_RESISTOR_OHMS>;
 
-using LinearizerStage = midismith::adc_board::domain::sensors::linearization::SensorLinearProcessor<
-    config::kSensorLookupTableSize>;
+using LinearizerStage =
+    midismith::sensor_linearization::SensorLinearProcessor<config::kSensorLookupTableSize>;
 
 // =============================================================================
 // TAP 1 - Physical Velocity Pipeline

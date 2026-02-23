@@ -51,6 +51,9 @@ endif()
 if(NOT TARGET shell)
     add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/shell libs/shell)
 endif()
+if(NOT TARGET sensor_linearization)
+    add_subdirectory(${ADC_PROJECT_ROOT}/../../libs/sensor-linearization libs/sensor-linearization)
+endif()
 
 if(HOST_TESTS)
     enable_testing()
@@ -193,6 +196,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     logging
     io
     shell
+    sensor_linearization
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
