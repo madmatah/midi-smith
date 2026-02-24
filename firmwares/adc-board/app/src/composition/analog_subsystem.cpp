@@ -162,10 +162,11 @@ void AttachSensorVelocityHandlersToProcessors(
   }
 }
 
-void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group) noexcept {
+void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group,
+                                midismith::logging::LoggerRequirements& logger) noexcept {
   static midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
       adc_frame_queue;
-  static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue);
+  static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue, logger);
   static midismith::bsp::time::TimestampCounter timestamp_counter =
       midismith::adc_board::bsp::time::CreateTim2TimestampCounter();
 
@@ -239,7 +240,7 @@ AdcControlContext CreateAnalogSubsystem(
   static ProcessedSensorGroup analog_group(
       sensors.data(), processors.data(), midismith::adc_board::app::config::sensors::kSensorCount);
 
-  StartAnalogAcquisitionTask(analog_group);
+  StartAnalogAcquisitionTask(analog_group, logger);
   return AdcControlContext{AdcControl()};
 }
 

@@ -8,8 +8,6 @@ set(ADC_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 project(${ADC_FIRMWARE_TARGET})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(ADC_SEGGER_ROOT "${ADC_PROJECT_ROOT}/../../third_party/SEGGER")
-
 midismith_require_lib(dsp)
 midismith_require_lib(midi)
 midismith_require_lib(piano-sensing)
@@ -118,8 +116,6 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/shell/commands/ps_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
     app/src/shell/commands/status_command.cpp
-    ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
-    ${ADC_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
 )
 
 
@@ -129,13 +125,7 @@ target_include_directories(${ADC_FIRMWARE_TARGET} PRIVATE
     app/include
     ${CMAKE_BINARY_DIR}/generated
     bsp/include
-    ${ADC_SEGGER_ROOT}/RTT/RTT
-    ${ADC_SEGGER_ROOT}/RTT/Config
     domain/include
-)
-
-target_compile_definitions(${ADC_FIRMWARE_TARGET} PRIVATE
-    SEGGER_RTT_SECTION=\".rtt\"
 )
 
 # Remove wrong libob.a library dependency when using cpp files
