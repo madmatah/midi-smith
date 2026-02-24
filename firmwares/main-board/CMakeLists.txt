@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 
@@ -42,24 +43,16 @@ else()
 # Create an executable object type
 add_executable(${MAIN_FIRMWARE_TARGET})
 
-# Add compile options for embedded C++
-target_compile_options(${MAIN_FIRMWARE_TARGET} PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>
-)
-
-# Add STM32CubeMX generated sources
-# CubeMX uses ${CMAKE_PROJECT_NAME} to refer to the firmware target, but when built from the
-# monorepo root, CMAKE_PROJECT_NAME resolves to the root project name ("midi-smith-monorepo").
-# Shadowing it here ensures the CubeMX-generated CMakeLists.txt targets the correct executable,
-# regardless of whether the package is built standalone or from the monorepo root.
-set(CMAKE_PROJECT_NAME "${MAIN_FIRMWARE_TARGET}")
-add_subdirectory(cmake/stm32cubemx)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
+midismith_firmware_versioning(${MAIN_FIRMWARE_TARGET})
+midismith_add_stm32cubemx(${MAIN_FIRMWARE_TARGET})
 
 # Add sources to executable
 target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     # Add user sources here
     app/src/application.cpp
     app/src/app_entry.cpp
+    app/src/version.cpp
     app/src/tasks/led_task.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
@@ -81,13 +74,7 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     domain/include
 )
 
-# Remove wrong libob.a library dependency when using cpp files
-list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
-
-# Add linked libraries
-target_link_options(${MAIN_FIRMWARE_TARGET} PRIVATE
-    -Wl,-Map=${MAIN_FIRMWARE_TARGET}.map
-)
+midismith_firmware_link_map(${MAIN_FIRMWARE_TARGET})
 
 target_link_libraries(${MAIN_FIRMWARE_TARGET}
     stm32cubemx
