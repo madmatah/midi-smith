@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "app/analog/adc_dma_control_requirements.hpp"
+#include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 
 namespace midismith::adc_board::bsp::adc {
@@ -42,7 +43,8 @@ class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequ
   static constexpr std::size_t kMaxAdc2HalfwordsPerBuffer = 2 * kMaxAdc2HalfwordsPerHalfBuffer;
   static constexpr std::size_t kMaxAdc3HalfwordsPerBuffer = 2 * kMaxAdc3HalfwordsPerHalfBuffer;
 
-  explicit AdcDma(midismith::os::Queue<AdcFrameDescriptor, 8>& queue) noexcept;
+  AdcDma(midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
+         midismith::logging::LoggerRequirements& logger) noexcept;
 
   bool Start() noexcept override;
   void Stop() noexcept override;
@@ -56,6 +58,7 @@ class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequ
   std::uint16_t adc3_halfwords_per_half_buffer_ = 0;
 
   midismith::os::Queue<AdcFrameDescriptor, 8>& queue_;
+  midismith::logging::LoggerRequirements& logger_;
   std::uint32_t adc1_sequence_id_ = 0;
   std::uint32_t adc2_sequence_id_ = 0;
   std::uint32_t adc3_sequence_id_ = 0;

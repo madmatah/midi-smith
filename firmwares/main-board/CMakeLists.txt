@@ -8,8 +8,6 @@ set(MAIN_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 project(${MAIN_FIRMWARE_TARGET})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(MAIN_SEGGER_ROOT "${MAIN_PROJECT_ROOT}/../../third_party/SEGGER")
-
 midismith_require_lib(midi)
 midismith_require_lib(piano-controller)
 midismith_require_lib(logging)
@@ -72,8 +70,6 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/usb_midi/usbd_midi.c
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
-    ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT.c
-    ${MAIN_SEGGER_ROOT}/RTT/RTT/SEGGER_RTT_printf.c
 )
 
 # Add include paths
@@ -82,13 +78,7 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/include
     bsp/include
     bsp/include/bsp/usb_midi
-    ${MAIN_SEGGER_ROOT}/RTT/RTT
-    ${MAIN_SEGGER_ROOT}/RTT/Config
     domain/include
-)
-
-target_compile_definitions(${MAIN_FIRMWARE_TARGET} PRIVATE
-    SEGGER_RTT_SECTION=\".rtt\"
 )
 
 # Remove wrong libob.a library dependency when using cpp files
