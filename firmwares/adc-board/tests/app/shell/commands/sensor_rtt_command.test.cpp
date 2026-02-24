@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "app/shell/commands/sensor_rtt_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -190,3 +191,4 @@ TEST_CASE("The SensorRttCommand class", "[app][shell][commands]") {
     }
   }
 }
+#endif

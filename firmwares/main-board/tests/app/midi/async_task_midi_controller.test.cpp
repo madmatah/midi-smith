@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "app/midi/async_task_midi_controller.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -77,3 +78,4 @@ TEST_CASE("The AsyncTaskMidiController class") {
     }
   }
 }
+#endif

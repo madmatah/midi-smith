@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "app/shell/commands/status_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -102,3 +103,4 @@ TEST_CASE("The StatusCommand class", "[app][shell][commands]") {
     }
   }
 }
+#endif
