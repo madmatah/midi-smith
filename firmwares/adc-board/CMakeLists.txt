@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 
@@ -68,21 +69,9 @@ else()
 # Create an executable object type
 add_executable(${ADC_FIRMWARE_TARGET})
 
-# Versioning
-include(cmake/version/versioning.cmake)
-
-# Add compile options for embedded C++
-target_compile_options(${ADC_FIRMWARE_TARGET} PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>
-)
-
-# Add STM32CubeMX generated sources
-# CubeMX uses ${CMAKE_PROJECT_NAME} to refer to the firmware target, but when built from the
-# monorepo root, CMAKE_PROJECT_NAME resolves to the root project name ("midi-smith-monorepo").
-# Shadowing it here ensures the CubeMX-generated CMakeLists.txt targets the correct executable,
-# regardless of whether the package is built standalone or from the monorepo root.
-set(CMAKE_PROJECT_NAME "${ADC_FIRMWARE_TARGET}")
-add_subdirectory(cmake/stm32cubemx)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
+midismith_firmware_versioning(${ADC_FIRMWARE_TARGET})
+midismith_add_stm32cubemx(${ADC_FIRMWARE_TARGET})
 
 # Add sources to executable
 target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
@@ -123,13 +112,9 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
 target_include_directories(${ADC_FIRMWARE_TARGET} PRIVATE
     # Add user defined include paths
     app/include
-    ${CMAKE_BINARY_DIR}/generated
     bsp/include
     domain/include
 )
-
-# Remove wrong libob.a library dependency when using cpp files
-list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
 # CMSIS-DSP (GCC, Cortex-M7 little-endian, single-precision FPU)
 set(CMSIS_DSP_LIB
@@ -141,10 +126,7 @@ target_compile_definitions(${ADC_FIRMWARE_TARGET} PRIVATE
     ARM_MATH_CM7
 )
 
-# Add linked libraries
-target_link_options(${ADC_FIRMWARE_TARGET} PRIVATE
-    -Wl,-Map=${ADC_FIRMWARE_TARGET}.map
-)
+midismith_firmware_link_map(${ADC_FIRMWARE_TARGET})
 
 target_link_libraries(${ADC_FIRMWARE_TARGET}
     stm32cubemx
@@ -163,8 +145,6 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
 )
-
-add_dependencies(${ADC_FIRMWARE_TARGET} version_check)
 
 set(FLASH_LAYOUT_CHECK_SCRIPT "${ADC_PROJECT_ROOT}/cmake/check_flash_layout.cmake")
 add_custom_command(TARGET ${ADC_FIRMWARE_TARGET} POST_BUILD

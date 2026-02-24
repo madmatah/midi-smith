@@ -5,7 +5,7 @@ if(NOT DEFINED OUTPUT_HEADER)
 endif()
 
 if(NOT DEFINED SOURCE_DIR)
-  get_filename_component(SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+  message(FATAL_ERROR "SOURCE_DIR is required")
 endif()
 get_filename_component(SOURCE_DIR "${SOURCE_DIR}" ABSOLUTE)
 
@@ -73,4 +73,3 @@ set(tmp_header "${OUTPUT_HEADER}.tmp")
 file(WRITE "${tmp_header}" "${header_contents}")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${tmp_header}" "${OUTPUT_HEADER}")
 file(REMOVE "${tmp_header}")
-
