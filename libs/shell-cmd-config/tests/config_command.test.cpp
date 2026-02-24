@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "shell-cmd-config/config_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -192,3 +193,4 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
     }
   }
 }
+#endif

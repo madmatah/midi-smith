@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "app/shell/commands/ps_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -132,3 +133,4 @@ TEST_CASE("The PsCommand class", "[app][shell][commands]") {
     }
   }
 }
+#endif

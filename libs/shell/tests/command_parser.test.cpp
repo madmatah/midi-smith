@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "shell/command_parser.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -58,3 +59,4 @@ TEST_CASE("The CommandParser class", "[shell]") {
     }
   }
 }
+#endif

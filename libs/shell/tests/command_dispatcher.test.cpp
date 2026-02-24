@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "shell/command_dispatcher.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -161,3 +162,4 @@ TEST_CASE("The CommandDispatcher class", "[shell]") {
     }
   }
 }
+#endif

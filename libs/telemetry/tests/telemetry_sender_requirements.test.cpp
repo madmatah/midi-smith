@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include <catch2/catch_test_macros.hpp>
 #include <telemetry/telemetry_sender_requirements.hpp>
 #include <vector>
@@ -41,3 +42,4 @@ TEST_CASE("TelemetrySenderRequirements can send types via template", "[telemetry
 }
 
 }  // namespace midismith::telemetry
+#endif

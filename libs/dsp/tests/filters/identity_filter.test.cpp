@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "dsp/filters/identity_filter.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -25,3 +26,4 @@ TEST_CASE("The IdentityFilter class") {
     }
   }
 }
+#endif

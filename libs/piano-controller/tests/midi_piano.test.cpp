@@ -1,3 +1,4 @@
+#if defined(UNIT_TESTS)
 #include "piano-controller/midi_piano.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -116,3 +117,4 @@ TEST_CASE("The MidiPiano class") {
     }
   }
 }
+#endif
