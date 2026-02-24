@@ -20,6 +20,7 @@ midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-config)
 midismith_require_lib(sensor-linearization)
 midismith_require_lib(config)
+midismith_require_lib(telemetry)
 
 if(HOST_TESTS)
     enable_testing()
@@ -32,7 +33,7 @@ if(HOST_TESTS)
     target_include_directories(adc_domain PUBLIC
         domain/include
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config telemetry)
 
     add_library(adc_app_lib STATIC)
     target_sources(adc_app_lib PRIVATE
@@ -141,6 +142,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     shell_cmd_config
     sensor_linearization
     config
+    telemetry
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

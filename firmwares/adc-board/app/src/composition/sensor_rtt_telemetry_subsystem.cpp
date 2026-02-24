@@ -5,16 +5,15 @@
 #include "app/config/config.hpp"
 #include "app/tasks/sensor_rtt_telemetry_task.hpp"
 #include "app/telemetry/queue_sensor_rtt_telemetry_control.hpp"
-#include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/memory_sections.hpp"
 #include "bsp/rtt_telemetry_sender.hpp"
 #include "os/queue.hpp"
+#include "telemetry/telemetry_sender_requirements.hpp"
 
 namespace midismith::adc_board::app::composition {
 namespace {
 
-class RttTelemetrySenderAdapter final
-    : public midismith::adc_board::app::telemetry::TelemetrySenderRequirements {
+class RttTelemetrySenderAdapter final : public midismith::telemetry::TelemetrySenderRequirements {
  public:
   explicit RttTelemetrySenderAdapter(midismith::bsp::RttTelemetrySender& sender) noexcept
       : sender_(sender) {}

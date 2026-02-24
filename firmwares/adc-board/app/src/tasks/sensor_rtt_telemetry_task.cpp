@@ -35,7 +35,7 @@ SensorRttTelemetryTask::SensorRttTelemetryTask(
         control_queue,
     midismith::adc_board::domain::sensors::SensorRegistry& registry,
     midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
-    midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
+    midismith::telemetry::TelemetrySenderRequirements& telemetry_sender,
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept
     : control_queue_(control_queue),
       registry_(registry),

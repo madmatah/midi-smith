@@ -4,7 +4,7 @@ namespace midismith::bsp {
 class GpioRequirements;
 }
 
-namespace midismith::main_board::app::telemetry {
+namespace midismith::telemetry {
 class TelemetrySenderRequirements;
 }
 
@@ -17,7 +17,7 @@ namespace midismith::main_board::app::tasks {
 class LedTask {
  public:
   LedTask(midismith::bsp::GpioRequirements& led,
-          midismith::main_board::app::telemetry::TelemetrySenderRequirements& telemetry,
+          midismith::telemetry::TelemetrySenderRequirements& telemetry,
           midismith::piano_controller::PianoRequirements& piano) noexcept;
 
   bool start() noexcept;
@@ -27,7 +27,7 @@ class LedTask {
   void run() noexcept;
 
   midismith::bsp::GpioRequirements& _led;
-  midismith::main_board::app::telemetry::TelemetrySenderRequirements& _telemetry;
+  midismith::telemetry::TelemetrySenderRequirements& _telemetry;
   midismith::piano_controller::PianoRequirements& _piano;
 };
 

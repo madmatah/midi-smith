@@ -9,7 +9,6 @@
 #include "app/midi/midi_command.hpp"
 #include "app/midi/midi_task.hpp"
 #include "app/tasks/led_task.hpp"
-#include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "bsp/board.hpp"
 #include "bsp/rtt_logger.hpp"
 #include "bsp/rtt_telemetry_sender.hpp"
@@ -17,12 +16,12 @@
 #include "os/queue.hpp"
 #include "os/task.hpp"
 #include "piano-controller/midi_piano.hpp"
+#include "telemetry/telemetry_sender_requirements.hpp"
 
 namespace midismith::main_board::app {
 namespace {
 
-class RttTelemetrySenderAdapter final
-    : public midismith::main_board::app::telemetry::TelemetrySenderRequirements {
+class RttTelemetrySenderAdapter final : public midismith::telemetry::TelemetrySenderRequirements {
  public:
   explicit RttTelemetrySenderAdapter(midismith::bsp::RttTelemetrySender& sender) noexcept
       : sender_(sender) {}
