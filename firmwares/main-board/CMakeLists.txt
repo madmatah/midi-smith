@@ -14,6 +14,7 @@ midismith_require_lib(piano-controller)
 midismith_require_lib(logging)
 midismith_require_lib(bsp)
 midismith_require_lib(os)
+midismith_require_lib(telemetry)
 
 if(HOST_TESTS)
     enable_testing()
@@ -22,7 +23,7 @@ if(HOST_TESTS)
     target_include_directories(main_domain INTERFACE
         domain/include
     )
-    target_link_libraries(main_domain INTERFACE piano_controller midi bsp os)
+    target_link_libraries(main_domain INTERFACE piano_controller midi bsp os telemetry)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -83,6 +84,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     bsp
     logging
     os
+    telemetry
 
     # Add user defined libraries
 )

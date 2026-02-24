@@ -7,9 +7,9 @@
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_command.hpp"
-#include "app/telemetry/telemetry_sender_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "os/queue.hpp"
+#include "telemetry/telemetry_sender_requirements.hpp"
 
 namespace midismith::adc_board::app::tasks {
 
@@ -20,7 +20,7 @@ class SensorRttTelemetryTask {
           control_queue,
       midismith::adc_board::domain::sensors::SensorRegistry& registry,
       midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state,
-      midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender,
+      midismith::telemetry::TelemetrySenderRequirements& telemetry_sender,
       midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept;
 
   bool start() noexcept;
@@ -42,7 +42,7 @@ class SensorRttTelemetryTask {
       control_queue_;
   midismith::adc_board::domain::sensors::SensorRegistry& registry_;
   midismith::adc_board::app::analog::AcquisitionStateRequirements& adc_state_;
-  midismith::adc_board::app::telemetry::TelemetrySenderRequirements& telemetry_sender_;
+  midismith::telemetry::TelemetrySenderRequirements& telemetry_sender_;
   midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture_;
 
   bool schema_sent_{false};
