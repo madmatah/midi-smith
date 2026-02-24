@@ -21,6 +21,7 @@ midismith_require_lib(shell-cmd-config)
 midismith_require_lib(sensor-linearization)
 midismith_require_lib(config)
 midismith_require_lib(telemetry)
+midismith_require_lib(shell-cmd-version)
 
 if(HOST_TESTS)
     enable_testing()
@@ -28,12 +29,12 @@ if(HOST_TESTS)
     add_library(adc_domain STATIC)
     target_sources(adc_domain PRIVATE
         domain/src/config/adc_board_config.cpp
-        domain/src/shell/commands/version_command.cpp
+        domain/src/config/adc_board_config.cpp
     )
     target_include_directories(adc_domain PUBLIC
         domain/include
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config telemetry)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config telemetry shell_cmd_version)
 
     add_library(adc_app_lib STATIC)
     target_sources(adc_app_lib PRIVATE
@@ -57,6 +58,7 @@ if(HOST_TESTS)
         sensor_linearization
         config
         os
+        shell_cmd_version
     )
 
     if(PROJECT_IS_TOP_LEVEL)
@@ -90,7 +92,6 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/tasks/sensor_rtt_telemetry_task.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     domain/src/config/adc_board_config.cpp
-    domain/src/shell/commands/version_command.cpp
     bsp/src/board.cpp
     bsp/src/flash/internal_storage.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
@@ -143,6 +144,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     sensor_linearization
     config
     telemetry
+    shell_cmd_version
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
