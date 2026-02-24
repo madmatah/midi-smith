@@ -2,7 +2,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/midismith_add_firmware_test.cma
 
 midismith_add_firmware_test(NAME adc
     SOURCES
-        domain/shell/commands/version_command.test.cpp
         domain/sensors/processed_sensor_group.test.cpp
         domain/sensors/sensor_registry.test.cpp
         domain/sensors/capture_sensor_state.test.cpp

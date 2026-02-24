@@ -1,4 +1,4 @@
-#include "domain/shell/commands/version_command.hpp"
+#include "shell-cmd-version/version_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -30,8 +30,7 @@ class StreamStub : public midismith::io::StreamRequirements {
 
 TEST_CASE("The VersionCommand class", "[shell][commands]") {
   StreamStub stream;
-  midismith::adc_board::domain::shell::commands::VersionCommand version_cmd("1.2.3", "Debug",
-                                                                            "2026-01-28");
+  midismith::shell_cmd_version::VersionCommand version_cmd("1.2.3", "Debug", "2026-01-28");
 
   SECTION("The Name() method") {
     SECTION("Should return 'version'") {

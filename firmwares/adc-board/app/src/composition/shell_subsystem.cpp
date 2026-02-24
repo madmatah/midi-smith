@@ -8,9 +8,9 @@
 #include "app/shell/commands/status_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
-#include "domain/shell/commands/version_command.hpp"
 #include "os/runtime_stats.hpp"
 #include "shell-cmd-config/config_command.hpp"
+#include "shell-cmd-version/version_command.hpp"
 
 namespace midismith::adc_board::app::composition {
 
@@ -29,7 +29,7 @@ void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
         midismith::adc_board::app::tasks::ShellTask(console.stream, shell_config);
     shell_constructed = true;
 
-    static midismith::adc_board::domain::shell::commands::VersionCommand version_cmd(
+    static midismith::shell_cmd_version::VersionCommand version_cmd(
         version::kFullVersion, version::kBuildType, version::kCommitDate);
     shell_task_ptr->RegisterCommand(version_cmd);
 

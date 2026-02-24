@@ -4,7 +4,7 @@
 
 #include "shell/command_requirements.hpp"
 
-namespace midismith::adc_board::domain::shell::commands {
+namespace midismith::shell_cmd_version {
 
 class VersionCommand : public midismith::shell::CommandRequirements {
  public:
@@ -25,4 +25,4 @@ class VersionCommand : public midismith::shell::CommandRequirements {
   std::string_view _commit_date;
 };
 
-}  // namespace midismith::adc_board::domain::shell::commands
+}  // namespace midismith::shell_cmd_version

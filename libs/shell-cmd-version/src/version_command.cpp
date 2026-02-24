@@ -1,6 +1,6 @@
-#include "domain/shell/commands/version_command.hpp"
+#include "shell-cmd-version/version_command.hpp"
 
-namespace midismith::adc_board::domain::shell::commands {
+namespace midismith::shell_cmd_version {
 
 VersionCommand::VersionCommand(std::string_view full_version, std::string_view build_type,
                                std::string_view commit_date) noexcept
@@ -16,4 +16,4 @@ void VersionCommand::Run(int, char**, midismith::io::WritableStreamRequirements&
   out.Write("\r\n");
 }
 
-}  // namespace midismith::adc_board::domain::shell::commands
+}  // namespace midismith::shell_cmd_version
