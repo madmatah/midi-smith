@@ -15,6 +15,11 @@ midismith_require_lib(logging)
 midismith_require_lib(bsp)
 midismith_require_lib(os)
 midismith_require_lib(telemetry)
+midismith_require_lib(io)
+midismith_require_lib(shell)
+midismith_require_lib(shell-cmd-version)
+midismith_require_lib(shell-cmd-os-stats)
+midismith_require_lib(os-types)
 
 if(HOST_TESTS)
     enable_testing()
@@ -55,6 +60,10 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app_entry.cpp
     app/src/version.cpp
     app/src/tasks/led_task.cpp
+    app/src/tasks/shell_task.cpp
+    app/src/composition/midi_subsystem.cpp
+    app/src/composition/led_subsystem.cpp
+    app/src/composition/shell_subsystem.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
     bsp/src/stm32_octospi.cpp
@@ -62,6 +71,8 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
     bsp/src/usb_midi/usbd_midi.c
+    bsp/src/serial/uart_stream_registry.cpp
+    bsp/src/cortex/axi_sram_nocache_mpu.cpp
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
 )
@@ -85,6 +96,10 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     logging
     os
     telemetry
+    io
+    shell
+    shell_cmd_version
+    shell_cmd_os_stats
 
     # Add user defined libraries
 )

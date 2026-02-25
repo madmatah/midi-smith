@@ -75,22 +75,6 @@
           }
         ]
       },
-      "graphConfig": [
-        {
-          "label": "LED state",
-          "timespan": 5,
-          "type": "realtime",
-          "maximum": 1,
-          "minimum": 0,
-          "plots": [
-            {
-              "graphId": "led_state",
-              "label": "LED state",
-              "color": "#ff0000"
-            }
-          ]
-        }
-      ],
       "preLaunchTask": "Main: configure+build Debug"
     }
   ]
