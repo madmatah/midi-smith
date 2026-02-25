@@ -1,15 +1,17 @@
 #include <cstdint>
 #include <new>
+#include <span>
 
 #include "app/composition/subsystems.hpp"
 #include "app/shell/commands/adc_command.hpp"
-#include "app/shell/commands/ps_command.hpp"
 #include "app/shell/commands/sensor_rtt_command.hpp"
-#include "app/shell/commands/status_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
+#include "bsp/memory_sections.hpp"
 #include "os/runtime_stats.hpp"
 #include "shell-cmd-config/config_command.hpp"
+#include "shell-cmd-os-stats/ps_command.hpp"
+#include "shell-cmd-os-stats/status_command.hpp"
 #include "shell-cmd-version/version_command.hpp"
 
 namespace midismith::adc_board::app::composition {
@@ -41,10 +43,12 @@ void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
 
     static midismith::os::RuntimeStats runtime_stats;
 
-    static midismith::adc_board::app::shell::commands::StatusCommand status_cmd(runtime_stats);
+    static midismith::shell_cmd_os_stats::StatusCommand status_cmd(runtime_stats);
     shell_task_ptr->RegisterCommand(status_cmd);
 
-    static midismith::adc_board::app::shell::commands::PsCommand ps_cmd(runtime_stats);
+    constexpr std::size_t kMaxTaskRows = 48u;
+    BSP_AXI_SRAM static midismith::os::RuntimeTaskSnapshotRow task_rows[kMaxTaskRows];
+    static midismith::shell_cmd_os_stats::PsCommand ps_cmd(runtime_stats, task_rows);
     shell_task_ptr->RegisterCommand(ps_cmd);
 
     static midismith::adc_board::app::shell::commands::SensorRttCommand sensor_rtt_cmd(

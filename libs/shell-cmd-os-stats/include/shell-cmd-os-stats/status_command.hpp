@@ -1,12 +1,9 @@
 #pragma once
 
+#include "os-types/runtime_stats_requirements.hpp"
 #include "shell/command_requirements.hpp"
 
-namespace midismith::os {
-class RuntimeStatsRequirements;
-}
-
-namespace midismith::adc_board::app::shell::commands {
+namespace midismith::shell_cmd_os_stats {
 
 class StatusCommand final : public midismith::shell::CommandRequirements {
  public:
@@ -27,4 +24,4 @@ class StatusCommand final : public midismith::shell::CommandRequirements {
   midismith::os::RuntimeStatsRequirements& runtime_stats_;
 };
 
-}  // namespace midismith::adc_board::app::shell::commands
+}  // namespace midismith::shell_cmd_os_stats

@@ -1,12 +1,12 @@
 #if defined(UNIT_TESTS)
-#include "app/shell/commands/status_command.hpp"
+#include "shell-cmd-os-stats/status_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <string>
 
 #include "io/stream_requirements.hpp"
-#include "os/runtime_stats_requirements.hpp"
+#include "os-types/runtime_stats_requirements.hpp"
 
 namespace {
 
@@ -54,9 +54,9 @@ class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
 
 }  // namespace
 
-TEST_CASE("The StatusCommand class", "[app][shell][commands]") {
+TEST_CASE("The StatusCommand class", "[libs][shell-cmd-os-stats]") {
   RuntimeStatsMock runtime_stats;
-  midismith::adc_board::app::shell::commands::StatusCommand command(runtime_stats);
+  midismith::shell_cmd_os_stats::StatusCommand command(runtime_stats);
   StreamStub stream;
 
   SECTION("The Name() method should return 'status'") {

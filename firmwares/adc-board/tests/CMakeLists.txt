@@ -15,8 +15,6 @@ midismith_add_firmware_test(NAME adc
         app/telemetry/sensor_rtt_stream_capture.test.cpp
         app/telemetry/sensor_rtt_schema_frame_builder.test.cpp
         app/shell/commands/sensor_rtt_command.test.cpp
-        app/shell/commands/status_command.test.cpp
-        app/shell/commands/ps_command.test.cpp
     LINK_LIBRARIES adc_domain adc_app_lib
     USE_FAKEIT
 )
