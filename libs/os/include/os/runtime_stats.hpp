@@ -1,6 +1,6 @@
 #pragma once
 
-#include "os/runtime_stats_requirements.hpp"
+#include "os-types/runtime_stats_requirements.hpp"
 
 namespace midismith::os {
 

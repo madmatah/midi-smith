@@ -22,6 +22,7 @@ midismith_require_lib(sensor-linearization)
 midismith_require_lib(config)
 midismith_require_lib(telemetry)
 midismith_require_lib(shell-cmd-version)
+midismith_require_lib(shell-cmd-os-stats)
 
 if(HOST_TESTS)
     enable_testing()
@@ -40,8 +41,6 @@ if(HOST_TESTS)
     target_sources(adc_app_lib PRIVATE
         app/src/storage/adc_board_persistent_configuration.cpp
         app/src/shell/commands/sensor_rtt_command.cpp
-        app/src/shell/commands/status_command.cpp
-        app/src/shell/commands/ps_command.cpp
         app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
@@ -59,6 +58,7 @@ if(HOST_TESTS)
         config
         os
         shell_cmd_version
+        shell_cmd_os_stats
     )
 
     if(PROJECT_IS_TOP_LEVEL)
@@ -104,9 +104,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     bsp/src/pins.cpp
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
-    app/src/shell/commands/ps_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
-    app/src/shell/commands/status_command.cpp
 )
 
 
@@ -145,6 +143,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     config
     telemetry
     shell_cmd_version
+    shell_cmd_os_stats
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

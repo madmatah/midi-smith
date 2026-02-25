@@ -1,13 +1,14 @@
 #if defined(UNIT_TESTS)
-#include "app/shell/commands/ps_command.hpp"
+#include "shell-cmd-os-stats/ps_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <string>
 
 #include "io/stream_requirements.hpp"
-#include "os/runtime_stats_requirements.hpp"
+#include "os-types/runtime_stats_requirements.hpp"
 
 namespace {
 
@@ -74,9 +75,10 @@ void SetTaskName(midismith::os::RuntimeTaskSnapshotRow& row, const char* task_na
 
 }  // namespace
 
-TEST_CASE("The PsCommand class", "[app][shell][commands]") {
+TEST_CASE("The PsCommand class", "[libs][shell-cmd-os-stats]") {
   RuntimeStatsMock runtime_stats;
-  midismith::adc_board::app::shell::commands::PsCommand command(runtime_stats);
+  midismith::os::RuntimeTaskSnapshotRow buffer[8]{};
+  midismith::shell_cmd_os_stats::PsCommand command(runtime_stats, buffer);
   StreamStub stream;
 
   SECTION("The Name() method should return 'ps'") {
