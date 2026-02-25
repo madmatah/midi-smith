@@ -54,7 +54,7 @@ foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})
 endforeach()
 
 add_custom_target(lint
-    COMMAND cpplint ${FILES_TO_CHECK}
+    COMMAND cpplint --quiet ${FILES_TO_CHECK}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Lint (monorepo)"
 )
