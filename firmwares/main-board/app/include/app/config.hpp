@@ -8,12 +8,17 @@
 namespace midismith::main_board::app::config {
 
 // Task priorities
+constexpr uint32_t SHELL_TASK_PRIORITY = 1;
 constexpr uint32_t LED_TASK_PRIORITY = 2;
 constexpr uint32_t MIDI_TASK_PRIORITY = 3;
 
 // Stack sizes
+constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
 constexpr uint32_t LED_TASK_STACK_BYTES = 1024;
 constexpr uint32_t MIDI_TASK_STACK_BYTES = 2048;
+
+// Idle delays
+constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 
 // Queue capacities
 constexpr uint32_t MIDI_QUEUE_CAPACITY = 64;
