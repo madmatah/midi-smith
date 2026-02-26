@@ -77,7 +77,7 @@ Adjust later according to required filters and buffer sizes.
     * **Std Filters Nbr**: 1
     * **Rx Fifo0 Elmts Nbr**: 32
 
-5.  **NVIC Settings** : Enable `FDCAN1 interrupt 0`.
+5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
 
 ---
 
