@@ -54,6 +54,8 @@ Namespaces mirror the directory structure. Scope names use underscores (`adc-boa
 ## F.1 CubeMX & Regenerability
 
 - CubeMX generates only hardware infrastructure (HAL, CMSIS, startup, FreeRTOS config).
+- Updates in CubeMX MUST be documented in docs/stm32cubemx-configuration-guide.md
+- Updates in CubeMX MUST be done manually by the operator (stop and ask him to apply them and regenerate the code)
 - Regeneration is always safe: it must never delete or invalidate application code.
 - Generated code implements no business logic; all application logic lives outside generated files.
 - User code lives in directories unknown to CubeMX (`app/`, `bsp/`, `domain/`, `os/`).
