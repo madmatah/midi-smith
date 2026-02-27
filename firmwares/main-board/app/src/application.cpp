@@ -21,6 +21,8 @@ void Application::create_tasks() noexcept {
       console_stream(huart1);
   (void) console_stream.StartRxDma();
 
+  (void) midismith::main_board::app::composition::CreateCanSubsystem(rtt_logger);
+
   auto midi_context = midismith::main_board::app::composition::CreateMidiSubsystem(rtt_logger);
 
   midismith::main_board::app::composition::CreateLedSubsystem(midi_context);

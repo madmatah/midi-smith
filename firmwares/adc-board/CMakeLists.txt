@@ -82,6 +82,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/application.cpp
     app/src/app_entry.cpp
     app/src/version.cpp
+    app/src/composition/can_subsystem.cpp
     app/src/composition/analog_subsystem.cpp
     app/src/composition/config_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
