@@ -29,6 +29,8 @@ void Application::create_tasks() noexcept {
   (void) console_stream.StartRxDma();
 
   midismith::adc_board::app::composition::ConsoleContext console{console_stream};
+  (void) midismith::adc_board::app::composition::CreateCanSubsystem(logger);
+
   midismith::adc_board::app::composition::ConfigContext config =
       midismith::adc_board::app::composition::CreateConfigSubsystem();
 

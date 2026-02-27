@@ -7,6 +7,7 @@
 #include "app/config/sensors.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
+#include "bsp/can/fdcan_transceiver_requirements.hpp"
 #include "config/transactional_config_dictionary.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
@@ -14,6 +15,10 @@
 #include "sensor-linearization/sensor_calibration.hpp"
 
 namespace midismith::adc_board::app::composition {
+
+struct CanContext {
+  midismith::bsp::can::FdcanTransceiverRequirements& transceiver;
+};
 
 struct ConfigContext {
   midismith::config::TransactionalConfigDictionary& persistent_config;
@@ -43,6 +48,7 @@ struct SensorRttTelemetryControlContext {
   midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
 
+CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 ConfigContext CreateConfigSubsystem() noexcept;
 
 AdcControlContext CreateAnalogSubsystem(
