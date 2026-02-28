@@ -5,16 +5,16 @@
 
 namespace midismith::protocol {
 
-enum class NoteEventType : std::uint8_t { kNoteOff = 0, kNoteOn = 1 };
+enum class SensorEventType : std::uint8_t { kNoteOff = 0, kNoteOn = 1 };
 
-struct NoteEvent {
-  NoteEventType type;
-  std::uint8_t note_index;
+struct SensorEvent {
+  SensorEventType type;
+  std::uint8_t sensor_id;
   std::uint8_t velocity;
 
   bool Serialize(std::span<uint8_t> out_buffer) const;
 
-  constexpr bool operator==(const NoteEvent&) const = default;
+  constexpr bool operator==(const SensorEvent&) const = default;
 };
 
 struct Heartbeat {

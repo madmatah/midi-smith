@@ -20,7 +20,7 @@ class CanIdentifierMapper {
   static constexpr std::uint8_t kNodeIdentifierBitWidth = 4;
   static constexpr std::uint16_t kNodeIdentifierBitMask = 0x0F;
 
-  static constexpr std::uint8_t kRealTimeNoteEventFunctionCode = 0x01;
+  static constexpr std::uint8_t kRealTimeSensorEventFunctionCode = 0x01;
   static constexpr std::uint8_t kControlBroadcastFunctionCode = 0x10;
   static constexpr std::uint8_t kControlUnicastFunctionCode = 0x11;
   static constexpr std::uint8_t kBulkDataSegmentFunctionCode = 0x21;
@@ -42,7 +42,7 @@ constexpr std::uint16_t CanIdentifierMapper::EncodeId(const protocol::TransportH
   using protocol::MessageCategory;
 
   if (header.category == MessageCategory::kRealTime) {
-    return AssembleCanId(kRealTimeNoteEventFunctionCode, header.source_node_id);
+    return AssembleCanId(kRealTimeSensorEventFunctionCode, header.source_node_id);
   }
 
   if (header.category == MessageCategory::kControl) {
@@ -76,9 +76,9 @@ constexpr std::optional<protocol::TransportHeader> CanIdentifierMapper::DecodeId
   const auto function_code = static_cast<std::uint8_t>(can_id >> kNodeIdentifierBitWidth);
   const auto node_id = static_cast<std::uint8_t>(can_id & kNodeIdentifierBitMask);
 
-  if (function_code == kRealTimeNoteEventFunctionCode) {
+  if (function_code == kRealTimeSensorEventFunctionCode) {
     return TransportHeader::ReconstructFromTransport(
-        MessageCategory::kRealTime, MessageType::kNoteEvent, node_id, kMainBoardNodeId);
+        MessageCategory::kRealTime, MessageType::kSensorEvent, node_id, kMainBoardNodeId);
   }
 
   if (function_code == kControlBroadcastFunctionCode && node_id == kMainBoardNodeId) {
