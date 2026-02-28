@@ -1,28 +1,32 @@
 #include "protocol/messages.hpp"
 
+#include "byte-codec/little_endian.hpp"
+
 namespace midismith::protocol {
+
+using byte_codec::WriteLittleEndian;
 
 bool NoteEvent::Serialize(std::span<uint8_t> out_buffer) const {
   if (out_buffer.size() < 3) return false;
 
-  out_buffer[0] = static_cast<uint8_t>(type);
-  out_buffer[1] = note_index;
-  out_buffer[2] = velocity;
+  WriteLittleEndian<std::uint8_t>(out_buffer, 0, static_cast<std::uint8_t>(type));
+  WriteLittleEndian<std::uint8_t>(out_buffer, 1, note_index);
+  WriteLittleEndian<std::uint8_t>(out_buffer, 2, velocity);
   return true;
 }
 
 bool Heartbeat::Serialize(std::span<uint8_t> out_buffer) const {
   if (out_buffer.empty()) return false;
 
-  out_buffer[0] = device_state;
+  WriteLittleEndian<std::uint8_t>(out_buffer, 0, device_state);
   return true;
 }
 
 bool Command::Serialize(std::span<uint8_t> out_buffer) const {
   if (out_buffer.size() < 2) return false;
 
-  out_buffer[0] = action_code;
-  out_buffer[1] = parameter;
+  WriteLittleEndian<std::uint8_t>(out_buffer, 0, action_code);
+  WriteLittleEndian<std::uint8_t>(out_buffer, 1, parameter);
   return true;
 }
 
