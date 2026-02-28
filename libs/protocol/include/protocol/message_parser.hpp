@@ -9,7 +9,7 @@
 
 namespace midismith::protocol {
 
-using IncomingMessage = std::variant<std::monostate, NoteEvent, Command, Heartbeat>;
+using IncomingMessage = std::variant<std::monostate, SensorEvent, Command, Heartbeat>;
 
 class MessageParser {
  public:

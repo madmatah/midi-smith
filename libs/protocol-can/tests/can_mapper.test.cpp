@@ -1,8 +1,9 @@
 #if defined(UNIT_TESTS)
 
+#include "protocol-can/can_mapper.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
-#include "protocol-can/can_mapper.hpp"
 #include "protocol/builders.hpp"
 #include "protocol/topology.hpp"
 #include "protocol/transport_header.hpp"
@@ -32,8 +33,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When the header category is kControl and destination is the main board") {
       SECTION("Should encode to exactly 0x100") {
-        auto header = TransportHeader::ReconstructFromTransport(
-            MessageCategory::kControl, MessageType::kCommand, 0, 0);
+        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kControl,
+                                                                MessageType::kCommand, 0, 0);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x100);
       }
@@ -59,8 +60,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When the header category is kBulkData in DUMP direction") {
       SECTION("Should place the ADC source node ID in the 0x21x identifier range") {
-        auto header = TransportHeader::ReconstructFromTransport(
-            MessageCategory::kBulkData, MessageType::kDataSegment, 4, 0);
+        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
+                                                                MessageType::kDataSegment, 4, 0);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x214);
       }
@@ -68,8 +69,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When the header category is kBulkData in LOAD direction") {
       SECTION("Should place the ADC destination node ID in the 0x21x identifier range") {
-        auto header = TransportHeader::ReconstructFromTransport(
-            MessageCategory::kBulkData, MessageType::kDataSegment, 0, 6);
+        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
+                                                                MessageType::kDataSegment, 0, 6);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x216);
       }
@@ -87,12 +88,12 @@ TEST_CASE("The CanIdentifierMapper class") {
 
   SECTION("The DecodeId() method") {
     SECTION("When given an identifier in the 0x01x range") {
-      SECTION("Should reconstruct a kRealTime kNoteEvent header with node ID as source") {
+      SECTION("Should reconstruct a kRealTime kSensorEvent header with node ID as source") {
         auto result = CanIdentifierMapper::DecodeId(0x013);
 
         REQUIRE(result.has_value());
         REQUIRE(result->category == MessageCategory::kRealTime);
-        REQUIRE(result->type == MessageType::kNoteEvent);
+        REQUIRE(result->type == MessageType::kSensorEvent);
         REQUIRE(result->source_node_id == 3);
         REQUIRE(result->destination_node_id == 0);
       }
@@ -187,8 +188,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When encoding and then decoding a kControl broadcast header") {
       SECTION("Should recover the original header without loss") {
-        auto header = TransportHeader::ReconstructFromTransport(
-            MessageCategory::kControl, MessageType::kCommand, 0, 0);
+        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kControl,
+                                                                MessageType::kCommand, 0, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
@@ -211,8 +212,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When encoding and then decoding a kBulkData DUMP header") {
       SECTION("Should recover the original header without loss") {
-        auto header = TransportHeader::ReconstructFromTransport(
-            MessageCategory::kBulkData, MessageType::kDataSegment, 4, 0);
+        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
+                                                                MessageType::kDataSegment, 4, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 

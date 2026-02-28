@@ -6,11 +6,11 @@ namespace midismith::protocol {
 
 using byte_codec::WriteLittleEndian;
 
-bool NoteEvent::Serialize(std::span<uint8_t> out_buffer) const {
+bool SensorEvent::Serialize(std::span<uint8_t> out_buffer) const {
   if (out_buffer.size() < 3) return false;
 
   WriteLittleEndian<std::uint8_t>(out_buffer, 0, static_cast<std::uint8_t>(type));
-  WriteLittleEndian<std::uint8_t>(out_buffer, 1, note_index);
+  WriteLittleEndian<std::uint8_t>(out_buffer, 1, sensor_id);
   WriteLittleEndian<std::uint8_t>(out_buffer, 2, velocity);
   return true;
 }

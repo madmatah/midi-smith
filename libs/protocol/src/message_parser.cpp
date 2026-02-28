@@ -10,17 +10,17 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
                                                      std::span<const uint8_t> payload) {
   switch (header.category) {
     case MessageCategory::kRealTime:
-      if (header.type == MessageType::kNoteEvent) {
+      if (header.type == MessageType::kSensorEvent) {
         if (payload.size() < 3) return std::nullopt;
 
         if (ReadLittleEndian<std::uint8_t>(payload, 0) >
-            static_cast<std::uint8_t>(NoteEventType::kNoteOn)) {
+            static_cast<std::uint8_t>(SensorEventType::kNoteOn)) {
           return std::nullopt;
         }
 
-        return NoteEvent{
-            .type = static_cast<NoteEventType>(ReadLittleEndian<std::uint8_t>(payload, 0)),
-            .note_index = ReadLittleEndian<std::uint8_t>(payload, 1),
+        return SensorEvent{
+            .type = static_cast<SensorEventType>(ReadLittleEndian<std::uint8_t>(payload, 0)),
+            .sensor_id = ReadLittleEndian<std::uint8_t>(payload, 1),
             .velocity = ReadLittleEndian<std::uint8_t>(payload, 2)};
       }
       break;

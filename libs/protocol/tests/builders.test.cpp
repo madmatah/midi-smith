@@ -1,8 +1,8 @@
 #if defined(UNIT_TESTS)
 
-#include <catch2/catch_test_macros.hpp>
-
 #include "protocol/builders.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace midismith::protocol;
 
@@ -14,11 +14,11 @@ TEST_CASE("The AdcMessageBuilder class") {
         auto [header, msg] = builder.BuildNoteOn(60, 100);
 
         REQUIRE(header.category == MessageCategory::kRealTime);
-        REQUIRE(header.type == MessageType::kNoteEvent);
+        REQUIRE(header.type == MessageType::kSensorEvent);
         REQUIRE(header.source_node_id == 4);
         REQUIRE(header.destination_node_id == 0);
-        REQUIRE(msg.type == NoteEventType::kNoteOn);
-        REQUIRE(msg.note_index == 60);
+        REQUIRE(msg.type == SensorEventType::kNoteOn);
+        REQUIRE(msg.sensor_id == 60);
         REQUIRE(msg.velocity == 100);
       }
     }

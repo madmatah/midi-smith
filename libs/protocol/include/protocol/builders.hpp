@@ -12,16 +12,17 @@ class AdcMessageBuilder {
  public:
   explicit constexpr AdcMessageBuilder(std::uint8_t my_node_id) : node_id_(my_node_id) {}
 
-  [[nodiscard]] constexpr std::pair<TransportHeader, NoteEvent> BuildNoteOn(
-      std::uint8_t note, std::uint8_t velocity) const {
-    return {TransportHeader(MessageCategory::kRealTime, MessageType::kNoteEvent, node_id_, 0),
-            NoteEvent{.type = NoteEventType::kNoteOn, .note_index = note, .velocity = velocity}};
+  [[nodiscard]] constexpr std::pair<TransportHeader, SensorEvent> BuildNoteOn(
+      std::uint8_t sensor_id, std::uint8_t velocity) const {
+    return {TransportHeader(MessageCategory::kRealTime, MessageType::kSensorEvent, node_id_, 0),
+            SensorEvent{
+                .type = SensorEventType::kNoteOn, .sensor_id = sensor_id, .velocity = velocity}};
   }
 
-  [[nodiscard]] constexpr std::pair<TransportHeader, NoteEvent> BuildNoteOff(
-      std::uint8_t note) const {
-    return {TransportHeader(MessageCategory::kRealTime, MessageType::kNoteEvent, node_id_, 0),
-            NoteEvent{.type = NoteEventType::kNoteOff, .note_index = note, .velocity = 0}};
+  [[nodiscard]] constexpr std::pair<TransportHeader, SensorEvent> BuildNoteOff(
+      std::uint8_t sensor_id) const {
+    return {TransportHeader(MessageCategory::kRealTime, MessageType::kSensorEvent, node_id_, 0),
+            SensorEvent{.type = SensorEventType::kNoteOff, .sensor_id = sensor_id, .velocity = 0}};
   }
 
   [[nodiscard]] constexpr std::pair<TransportHeader, Heartbeat> BuildHeartbeat(
