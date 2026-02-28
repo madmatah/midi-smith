@@ -5,10 +5,10 @@
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
+#include "app/storage/adc_board_persistent_configuration.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
-#include "config/transactional_config_dictionary.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
@@ -21,7 +21,7 @@ struct CanContext {
 };
 
 struct ConfigContext {
-  midismith::config::TransactionalConfigDictionary& persistent_config;
+  midismith::adc_board::app::storage::AdcBoardPersistentConfiguration& adc_board_config;
 };
 
 struct LoggingContext {

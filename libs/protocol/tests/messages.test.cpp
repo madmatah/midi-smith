@@ -14,7 +14,7 @@ TEST_CASE("The SensorEvent struct") {
         SensorEvent event{SensorEventType::kNoteOn, 60, 100};
         std::array<std::uint8_t, 3> buffer{};
 
-        REQUIRE(event.Serialize(buffer) == true);
+        REQUIRE(event.Serialize(buffer) == 3u);
         REQUIRE(buffer[0] == static_cast<std::uint8_t>(SensorEventType::kNoteOn));
         REQUIRE(buffer[1] == 60);
         REQUIRE(buffer[2] == 100);
@@ -26,7 +26,7 @@ TEST_CASE("The SensorEvent struct") {
         SensorEvent event{SensorEventType::kNoteOn, 60, 100};
         std::array<std::uint8_t, 2> buffer{};
 
-        REQUIRE(event.Serialize(buffer) == false);
+        REQUIRE_FALSE(event.Serialize(buffer).has_value());
       }
     }
   }
@@ -39,7 +39,7 @@ TEST_CASE("The Heartbeat struct") {
         Heartbeat hb{DeviceState::kCalibrating};
         std::array<std::uint8_t, 1> buffer{};
 
-        REQUIRE(hb.Serialize(buffer) == true);
+        REQUIRE(hb.Serialize(buffer) == 1u);
         REQUIRE(buffer[0] == static_cast<std::uint8_t>(DeviceState::kCalibrating));
       }
     }
@@ -49,7 +49,7 @@ TEST_CASE("The Heartbeat struct") {
         Heartbeat hb{DeviceState::kIdle};
         std::array<std::uint8_t, 0> buffer{};
 
-        REQUIRE(hb.Serialize(buffer) == false);
+        REQUIRE_FALSE(hb.Serialize(buffer).has_value());
       }
     }
   }
@@ -60,7 +60,7 @@ TEST_CASE("The Command variant — Serialize()") {
     Command cmd = AdcStart{};
     std::array<std::uint8_t, 1> buffer{};
 
-    REQUIRE(Serialize(cmd, buffer) == true);
+    REQUIRE(Serialize(cmd, buffer) == 1u);
     REQUIRE(buffer[0] == 0x01);
   }
 
@@ -68,7 +68,7 @@ TEST_CASE("The Command variant — Serialize()") {
     Command cmd = AdcStop{};
     std::array<std::uint8_t, 1> buffer{};
 
-    REQUIRE(Serialize(cmd, buffer) == true);
+    REQUIRE(Serialize(cmd, buffer) == 1u);
     REQUIRE(buffer[0] == 0x02);
   }
 
@@ -77,7 +77,7 @@ TEST_CASE("The Command variant — Serialize()") {
       Command cmd = CalibStart{CalibMode::kAuto};
       std::array<std::uint8_t, 2> buffer{};
 
-      REQUIRE(Serialize(cmd, buffer) == true);
+      REQUIRE(Serialize(cmd, buffer) == 2u);
       REQUIRE(buffer[0] == 0x03);
       REQUIRE(buffer[1] == static_cast<std::uint8_t>(CalibMode::kAuto));
     }
@@ -86,7 +86,7 @@ TEST_CASE("The Command variant — Serialize()") {
       Command cmd = CalibStart{CalibMode::kManual};
       std::array<std::uint8_t, 2> buffer{};
 
-      REQUIRE(Serialize(cmd, buffer) == true);
+      REQUIRE(Serialize(cmd, buffer) == 2u);
       REQUIRE(buffer[0] == 0x03);
       REQUIRE(buffer[1] == static_cast<std::uint8_t>(CalibMode::kManual));
     }
@@ -96,7 +96,7 @@ TEST_CASE("The Command variant — Serialize()") {
         Command cmd = CalibStart{CalibMode::kAuto};
         std::array<std::uint8_t, 1> buffer{};
 
-        REQUIRE(Serialize(cmd, buffer) == false);
+        REQUIRE_FALSE(Serialize(cmd, buffer).has_value());
       }
     }
   }
@@ -105,7 +105,7 @@ TEST_CASE("The Command variant — Serialize()") {
     Command cmd = DumpRequest{};
     std::array<std::uint8_t, 1> buffer{};
 
-    REQUIRE(Serialize(cmd, buffer) == true);
+    REQUIRE(Serialize(cmd, buffer) == 1u);
     REQUIRE(buffer[0] == 0x04);
   }
 }

@@ -4,7 +4,7 @@
 
 namespace midismith::protocol {
 
-enum class NodeRole : std::uint8_t { kMainBoard = 0, kAdcBoard = 1 };
+inline constexpr std::uint8_t kMainBoardNodeId = 0;
 
 enum class MessageCategory : std::uint8_t {
   kRealTime = 0,
