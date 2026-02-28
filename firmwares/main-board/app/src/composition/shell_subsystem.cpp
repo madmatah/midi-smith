@@ -1,6 +1,7 @@
 #include <new>
 
 #include "app/composition/subsystems.hpp"
+#include "app/shell/can_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "os/runtime_stats.hpp"
@@ -10,7 +11,7 @@
 
 namespace midismith::main_board::app::composition {
 
-void CreateShellSubsystem(ConsoleContext& console) noexcept {
+void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept {
   static midismith::shell::ShellConfig shell_config = {.prompt = "main-board> "};
 
   alignas(midismith::main_board::app::tasks::ShellTask) static std::uint8_t
@@ -41,6 +42,9 @@ void CreateShellSubsystem(ConsoleContext& console) noexcept {
   static midismith::os::RuntimeTaskSnapshotRow task_rows[32];
   static midismith::shell_cmd_os_stats::PsCommand ps_cmd(runtime_stats, task_rows);
   shell_task_ptr->RegisterCommand(ps_cmd);
+
+  static midismith::main_board::app::shell::CanCommand can_cmd(can.message_sender);
+  shell_task_ptr->RegisterCommand(can_cmd);
 
   (void) shell_task_ptr->start();
 }

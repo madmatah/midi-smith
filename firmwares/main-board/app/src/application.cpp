@@ -21,14 +21,14 @@ void Application::create_tasks() noexcept {
       console_stream(huart1);
   (void) console_stream.StartRxDma();
 
-  (void) midismith::main_board::app::composition::CreateCanSubsystem(rtt_logger);
+  auto can_ctx = midismith::main_board::app::composition::CreateCanSubsystem(rtt_logger);
 
   auto midi_context = midismith::main_board::app::composition::CreateMidiSubsystem(rtt_logger);
 
   midismith::main_board::app::composition::CreateLedSubsystem(midi_context);
 
   midismith::main_board::app::composition::ConsoleContext console_ctx = {.stream = console_stream};
-  midismith::main_board::app::composition::CreateShellSubsystem(console_ctx);
+  midismith::main_board::app::composition::CreateShellSubsystem(console_ctx, can_ctx);
 }
 
 }  // namespace midismith::main_board::app

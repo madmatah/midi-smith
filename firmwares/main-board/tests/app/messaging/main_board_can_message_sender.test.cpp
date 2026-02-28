@@ -105,8 +105,7 @@ TEST_CASE("The MainBoardCanMessageSender class") {
 
       SECTION("Should encode kManual in the second payload byte") {
         REQUIRE(transceiver.last_frame().has_value());
-        REQUIRE(transceiver.last_frame()->data[1] ==
-                static_cast<std::uint8_t>(CalibMode::kManual));
+        REQUIRE(transceiver.last_frame()->data[1] == static_cast<std::uint8_t>(CalibMode::kManual));
       }
     }
   }
