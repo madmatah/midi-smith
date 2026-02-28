@@ -18,16 +18,41 @@ bool SensorEvent::Serialize(std::span<uint8_t> out_buffer) const {
 bool Heartbeat::Serialize(std::span<uint8_t> out_buffer) const {
   if (out_buffer.empty()) return false;
 
-  WriteLittleEndian<std::uint8_t>(out_buffer, 0, device_state);
+  WriteLittleEndian<std::uint8_t>(out_buffer, 0, static_cast<std::uint8_t>(device_state));
   return true;
 }
 
-bool Command::Serialize(std::span<uint8_t> out_buffer) const {
-  if (out_buffer.size() < 2) return false;
+bool Serialize(const Command& command, std::span<uint8_t> out_buffer) {
+  return std::visit(
+      [&out_buffer](const auto& cmd) -> bool {
+        using T = std::decay_t<decltype(cmd)>;
 
-  WriteLittleEndian<std::uint8_t>(out_buffer, 0, action_code);
-  WriteLittleEndian<std::uint8_t>(out_buffer, 1, parameter);
-  return true;
+        if constexpr (std::is_same_v<T, AdcStart>) {
+          if (out_buffer.empty()) return false;
+          WriteLittleEndian<std::uint8_t>(out_buffer, 0,
+                                          static_cast<std::uint8_t>(CommandAction::kAdcStart));
+          return true;
+        } else if constexpr (std::is_same_v<T, AdcStop>) {
+          if (out_buffer.empty()) return false;
+          WriteLittleEndian<std::uint8_t>(out_buffer, 0,
+                                          static_cast<std::uint8_t>(CommandAction::kAdcStop));
+          return true;
+        } else if constexpr (std::is_same_v<T, CalibStart>) {
+          if (out_buffer.size() < 2) return false;
+          WriteLittleEndian<std::uint8_t>(out_buffer, 0,
+                                          static_cast<std::uint8_t>(CommandAction::kCalibStart));
+          WriteLittleEndian<std::uint8_t>(out_buffer, 1, static_cast<std::uint8_t>(cmd.mode));
+          return true;
+        } else if constexpr (std::is_same_v<T, DumpRequest>) {
+          if (out_buffer.empty()) return false;
+          WriteLittleEndian<std::uint8_t>(out_buffer, 0,
+                                          static_cast<std::uint8_t>(CommandAction::kDumpRequest));
+          return true;
+        } else {
+          static_assert(!sizeof(T), "Unhandled Command variant type in Serialize");
+        }
+      },
+      command);
 }
 
 }  // namespace midismith::protocol
