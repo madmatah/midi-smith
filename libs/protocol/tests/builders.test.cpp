@@ -63,6 +63,32 @@ TEST_CASE("The MainBoardMessageBuilder class") {
       }
     }
   }
+
+  SECTION("The BuildStartAdc() method") {
+    SECTION("Should produce a kControl AdcStart command targeting the given node") {
+      MainBoardMessageBuilder builder;
+      auto [header, cmd] = builder.BuildStartAdc(7);
+
+      REQUIRE(header.category == MessageCategory::kControl);
+      REQUIRE(header.type == MessageType::kCommand);
+      REQUIRE(header.source_node_id == kMainBoardNodeId);
+      REQUIRE(header.destination_node_id == 7);
+      REQUIRE(std::get_if<AdcStart>(&cmd) != nullptr);
+    }
+  }
+
+  SECTION("The BuildStopAdc() method") {
+    SECTION("Should produce a kControl AdcStop command targeting the given node") {
+      MainBoardMessageBuilder builder;
+      auto [header, cmd] = builder.BuildStopAdc(7);
+
+      REQUIRE(header.category == MessageCategory::kControl);
+      REQUIRE(header.type == MessageType::kCommand);
+      REQUIRE(header.source_node_id == kMainBoardNodeId);
+      REQUIRE(header.destination_node_id == 7);
+      REQUIRE(std::get_if<AdcStop>(&cmd) != nullptr);
+    }
+  }
 }
 
 #endif

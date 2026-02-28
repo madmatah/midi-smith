@@ -43,6 +43,20 @@ class MainBoardMessageBuilder {
  public:
   explicit constexpr MainBoardMessageBuilder() = default;
 
+  [[nodiscard]] constexpr std::pair<TransportHeader, Command> BuildStartAdc(
+      std::uint8_t target_node_id) const {
+    return {TransportHeader(MessageCategory::kControl, MessageType::kCommand, kMainBoardNodeId,
+                            target_node_id),
+            Command(AdcStart{})};
+  }
+
+  [[nodiscard]] constexpr std::pair<TransportHeader, Command> BuildStopAdc(
+      std::uint8_t target_node_id) const {
+    return {TransportHeader(MessageCategory::kControl, MessageType::kCommand, kMainBoardNodeId,
+                            target_node_id),
+            Command(AdcStop{})};
+  }
+
   [[nodiscard]] constexpr std::pair<TransportHeader, Command> BuildStartCalibration(
       std::uint8_t target_node_id, CalibMode mode) const {
     return {TransportHeader(MessageCategory::kControl, MessageType::kCommand, kMainBoardNodeId,
