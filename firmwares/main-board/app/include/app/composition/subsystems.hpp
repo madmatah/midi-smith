@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bsp/can/fdcan_transceiver_requirements.hpp"
+#include "bsp-types/can/fdcan_transceiver_requirements.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
 #include "piano-controller/piano_requirements.hpp"

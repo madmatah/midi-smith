@@ -15,7 +15,9 @@ FDCAN_HandleTypeDef* HalHandle(void* handle) noexcept {
 
 }  // namespace
 
-FdcanTransceiver::FdcanTransceiver(void* hfdcan_handle) noexcept : hfdcan_handle_(hfdcan_handle) {
+FdcanTransceiver::FdcanTransceiver(
+    void* hfdcan_handle, midismith::os::QueueRequirements<FdcanFrame>& receive_queue) noexcept
+    : hfdcan_handle_(hfdcan_handle), receive_queue_(receive_queue) {
   __disable_irq();
   g_transceiver = this;
   __enable_irq();
@@ -55,11 +57,6 @@ bool FdcanTransceiver::Transmit(const FdcanFrame& frame) noexcept {
          HAL_OK;
 }
 
-void FdcanTransceiver::SetReceiveCallback(FdcanReceiveCallback callback, void* context) noexcept {
-  receive_callback_ = callback;
-  receive_callback_context_ = context;
-}
-
 void FdcanTransceiver::HandleRxFifo0MessagePending() noexcept {
   while (HAL_FDCAN_GetRxFifoFillLevel(HalHandle(hfdcan_handle_), FDCAN_RX_FIFO0) > 0) {
     FDCAN_RxHeaderTypeDef rx_header = {};
@@ -73,9 +70,7 @@ void FdcanTransceiver::HandleRxFifo0MessagePending() noexcept {
     frame.identifier = rx_header.Identifier;
     frame.data_length_bytes = static_cast<std::uint8_t>(rx_header.DataLength);
 
-    if (receive_callback_ != nullptr) {
-      receive_callback_(frame, receive_callback_context_);
-    }
+    (void) receive_queue_.SendFromIsr(frame);
   }
 }
 

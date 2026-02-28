@@ -19,6 +19,11 @@ constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
 constexpr uint32_t ANALOG_ACQUISITION_TASK_STACK_BYTES = 2048;
 constexpr uint32_t SENSOR_RTT_TELEMETRY_TASK_STACK_BYTES = 1024;
 
+// CAN
+constexpr uint32_t CAN_RECEIVE_QUEUE_CAPACITY = 16;
+constexpr uint32_t CAN_TASK_STACK_BYTES = 1024;
+constexpr uint32_t CAN_TASK_PRIORITY = 2;
+
 // Shell
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 
