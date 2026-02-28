@@ -1,5 +1,6 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
+#include "app/messaging/main_board_can_message_sender.hpp"
 #include "bsp/can/fdcan_transceiver.hpp"
 #include "can-broker/can_task.hpp"
 #include "fdcan.h"
@@ -50,7 +51,10 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) no
                                      app::config::CAN_TASK_STACK_BYTES,
                                      app::config::CAN_TASK_PRIORITY);
 
-  return CanContext{transceiver};
+  static midismith::main_board::app::messaging::MainBoardCanMessageSender message_sender(
+      transceiver);
+
+  return CanContext{transceiver, message_sender};
 }
 
 }  // namespace midismith::main_board::app::composition
