@@ -1,0 +1,16 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "Host-Debug",
+            "displayName": "Host Compiler (Debug)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/host-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "HOST_TESTS": "ON"
+            }
+        }
+    ]
+}
