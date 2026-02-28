@@ -1,6 +1,10 @@
 #include "protocol/message_parser.hpp"
 
+#include "byte-codec/little_endian.hpp"
+
 namespace midismith::protocol {
+
+using byte_codec::ReadLittleEndian;
 
 std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& header,
                                                      std::span<const uint8_t> payload) {
@@ -9,13 +13,15 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
       if (header.type == MessageType::kNoteEvent) {
         if (payload.size() < 3) return std::nullopt;
 
-        if (payload[0] > static_cast<std::uint8_t>(NoteEventType::kNoteOn)) {
+        if (ReadLittleEndian<std::uint8_t>(payload, 0) >
+            static_cast<std::uint8_t>(NoteEventType::kNoteOn)) {
           return std::nullopt;
         }
 
-        return NoteEvent{.type = static_cast<NoteEventType>(payload[0]),
-                         .note_index = payload[1],
-                         .velocity = payload[2]};
+        return NoteEvent{
+            .type = static_cast<NoteEventType>(ReadLittleEndian<std::uint8_t>(payload, 0)),
+            .note_index = ReadLittleEndian<std::uint8_t>(payload, 1),
+            .velocity = ReadLittleEndian<std::uint8_t>(payload, 2)};
       }
       break;
 
@@ -23,7 +29,8 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
       if (header.type == MessageType::kCommand) {
         if (payload.size() < 2) return std::nullopt;
 
-        return Command{.action_code = payload[0], .parameter = payload[1]};
+        return Command{.action_code = ReadLittleEndian<std::uint8_t>(payload, 0),
+                       .parameter = ReadLittleEndian<std::uint8_t>(payload, 1)};
       }
       break;
 
@@ -31,7 +38,7 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
       if (header.type == MessageType::kHeartbeat) {
         if (payload.empty()) return std::nullopt;
 
-        return Heartbeat{.device_state = payload[0]};
+        return Heartbeat{.device_state = ReadLittleEndian<std::uint8_t>(payload, 0)};
       }
       break;
 
