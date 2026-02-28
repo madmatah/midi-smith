@@ -20,6 +20,8 @@ midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
 midismith_require_lib(os-types)
+midismith_require_lib(bsp-types)
+midismith_require_lib(can-broker)
 
 if(HOST_TESTS)
     enable_testing()
@@ -101,6 +103,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     shell
     shell_cmd_version
     shell_cmd_os_stats
+    can_broker
 
     # Add user defined libraries
 )

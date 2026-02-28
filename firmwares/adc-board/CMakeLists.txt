@@ -23,6 +23,8 @@ midismith_require_lib(config)
 midismith_require_lib(telemetry)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
+midismith_require_lib(bsp-types)
+midismith_require_lib(can-broker)
 
 if(HOST_TESTS)
     enable_testing()
@@ -145,6 +147,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     telemetry
     shell_cmd_version
     shell_cmd_os_stats
+    can_broker
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
