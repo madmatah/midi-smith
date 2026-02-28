@@ -22,6 +22,8 @@ midismith_require_lib(shell-cmd-os-stats)
 midismith_require_lib(os-types)
 midismith_require_lib(bsp-types)
 midismith_require_lib(can-broker)
+midismith_require_lib(protocol)
+midismith_require_lib(protocol-can)
 
 if(HOST_TESTS)
     enable_testing()
@@ -35,10 +37,12 @@ if(HOST_TESTS)
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
         app/src/app/midi/async_task_midi_controller.cpp
+        app/src/messaging/main_board_can_message_sender.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
 
     if(PROJECT_IS_TOP_LEVEL)
@@ -78,6 +82,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
+    app/src/messaging/main_board_can_message_sender.cpp
 )
 
 # Add include paths
@@ -104,6 +109,8 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     shell_cmd_version
     shell_cmd_os_stats
     can_broker
+    protocol
+    protocol_can
 
     # Add user defined libraries
 )
