@@ -26,7 +26,7 @@ class AdcMessageBuilder {
   }
 
   [[nodiscard]] constexpr std::pair<TransportHeader, Heartbeat> BuildHeartbeat(
-      std::uint8_t device_state) const {
+      DeviceState device_state) const {
     return {TransportHeader(MessageCategory::kSystem, MessageType::kHeartbeat, node_id_, 0),
             Heartbeat{.device_state = device_state}};
   }
@@ -40,12 +40,10 @@ class MainBoardMessageBuilder {
   explicit constexpr MainBoardMessageBuilder() = default;
 
   [[nodiscard]] constexpr std::pair<TransportHeader, Command> BuildStartCalibration(
-      std::uint8_t target_node_id, bool auto_mode) const {
+      std::uint8_t target_node_id, CalibMode mode) const {
     return {TransportHeader(MessageCategory::kControl, MessageType::kCommand,
                             static_cast<std::uint8_t>(NodeRole::kMainBoard), target_node_id),
-            Command{.action_code = 0x03,
-                    .parameter = auto_mode ? static_cast<std::uint8_t>(0x00)
-                                           : static_cast<std::uint8_t>(0x01)}};
+            Command(CalibStart{.mode = mode})};
   }
 };
 

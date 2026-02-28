@@ -43,7 +43,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kControl with a specific ADC destination") {
       SECTION("Should place the destination node ID in the 0x11x identifier range") {
         MainBoardMessageBuilder builder;
-        auto [header, cmd] = builder.BuildStartCalibration(5, true);
+        auto [header, cmd] = builder.BuildStartCalibration(5, CalibMode::kAuto);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x115);
       }
@@ -51,7 +51,7 @@ TEST_CASE("The CanIdentifierMapper class") {
       SECTION("Should produce a distinct identifier for each ADC node") {
         for (std::uint8_t node_id = 1; node_id <= 8; ++node_id) {
           MainBoardMessageBuilder builder;
-          auto [header, cmd] = builder.BuildStartCalibration(node_id, false);
+          auto [header, cmd] = builder.BuildStartCalibration(node_id, CalibMode::kManual);
 
           REQUIRE(CanIdentifierMapper::EncodeId(header) == (0x110 | node_id));
         }
@@ -79,7 +79,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kSystem") {
       SECTION("Should place the source node ID in the 0x71x identifier range") {
         AdcMessageBuilder builder(2);
-        auto [header, heartbeat] = builder.BuildHeartbeat(0x01);
+        auto [header, heartbeat] = builder.BuildHeartbeat(DeviceState::kRunning);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x712);
       }
@@ -201,7 +201,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When encoding and then decoding a kControl unicast header") {
       SECTION("Should recover the original header without loss") {
         MainBoardMessageBuilder builder;
-        auto [header, cmd] = builder.BuildStartCalibration(3, false);
+        auto [header, cmd] = builder.BuildStartCalibration(3, CalibMode::kManual);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
@@ -225,7 +225,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When encoding and then decoding a kSystem header") {
       SECTION("Should recover the original header without loss") {
         AdcMessageBuilder builder(1);
-        auto [header, hb] = builder.BuildHeartbeat(0x00);
+        auto [header, hb] = builder.BuildHeartbeat(DeviceState::kIdle);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 

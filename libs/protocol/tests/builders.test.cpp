@@ -23,19 +23,43 @@ TEST_CASE("The AdcMessageBuilder class") {
       }
     }
   }
+
+  SECTION("The BuildHeartbeat() method") {
+    SECTION("Should carry the provided DeviceState") {
+      AdcMessageBuilder builder(2);
+      auto [header, msg] = builder.BuildHeartbeat(DeviceState::kRunning);
+
+      REQUIRE(header.category == MessageCategory::kSystem);
+      REQUIRE(header.type == MessageType::kHeartbeat);
+      REQUIRE(msg.device_state == DeviceState::kRunning);
+    }
+  }
 }
 
 TEST_CASE("The MainBoardMessageBuilder class") {
   SECTION("The BuildStartCalibration() method") {
-    SECTION("When called with a target ADC node and auto mode enabled") {
-      SECTION("Should produce a kControl command targeting that node with auto mode parameter") {
+    SECTION("When called with kAuto mode") {
+      SECTION("Should produce a kControl CalibStart command with kAuto mode") {
         MainBoardMessageBuilder builder;
-        auto [header, msg] = builder.BuildStartCalibration(5, true);
+        auto [header, cmd] = builder.BuildStartCalibration(5, CalibMode::kAuto);
 
         REQUIRE(header.source_node_id == static_cast<std::uint8_t>(NodeRole::kMainBoard));
         REQUIRE(header.destination_node_id == 5);
-        REQUIRE(msg.action_code == 0x03);
-        REQUIRE(msg.parameter == 0x00);
+        auto* calib = std::get_if<CalibStart>(&cmd);
+        REQUIRE(calib != nullptr);
+        REQUIRE(calib->mode == CalibMode::kAuto);
+      }
+    }
+
+    SECTION("When called with kManual mode") {
+      SECTION("Should produce a kControl CalibStart command with kManual mode") {
+        MainBoardMessageBuilder builder;
+        auto [header, cmd] = builder.BuildStartCalibration(3, CalibMode::kManual);
+
+        REQUIRE(header.destination_node_id == 3);
+        auto* calib = std::get_if<CalibStart>(&cmd);
+        REQUIRE(calib != nullptr);
+        REQUIRE(calib->mode == CalibMode::kManual);
       }
     }
   }
