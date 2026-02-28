@@ -7,7 +7,6 @@ midismith_add_lib(NAME protocol
     SOURCES
         src/messages.cpp
         src/message_parser.cpp
-        src/builders.cpp
     DEPENDS
         byte-codec
 )

@@ -3,6 +3,7 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/analog_acquisition.hpp"
 #include "app/config/config.hpp"
+#include "app/messaging/adc_board_can_message_sender.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
 #include "bsp/board.hpp"
 #include "bsp/memory_sections.hpp"
@@ -29,10 +30,14 @@ void Application::create_tasks() noexcept {
   (void) console_stream.StartRxDma();
 
   midismith::adc_board::app::composition::ConsoleContext console{console_stream};
-  (void) midismith::adc_board::app::composition::CreateCanSubsystem(logger);
+  midismith::adc_board::app::composition::CanContext can_context =
+      midismith::adc_board::app::composition::CreateCanSubsystem(logger);
 
   midismith::adc_board::app::composition::ConfigContext config =
       midismith::adc_board::app::composition::CreateConfigSubsystem();
+
+  static midismith::adc_board::app::messaging::AdcBoardCanMessageSender can_message_sender(
+      can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);
 
   midismith::adc_board::app::composition::AdcControlContext adc_control =
       midismith::adc_board::app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger);

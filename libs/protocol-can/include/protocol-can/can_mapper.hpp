@@ -26,8 +26,7 @@ class CanIdentifierMapper {
   static constexpr std::uint8_t kBulkDataSegmentFunctionCode = 0x21;
   static constexpr std::uint8_t kSystemHeartbeatFunctionCode = 0x71;
 
-  static constexpr std::uint8_t kMainBoardNodeId =
-      static_cast<std::uint8_t>(protocol::NodeRole::kMainBoard);
+  static constexpr std::uint8_t kMainBoardNodeId = protocol::kMainBoardNodeId;
 
   static constexpr std::uint16_t AssembleCanId(std::uint8_t function_code, std::uint8_t node_id);
 };

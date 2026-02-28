@@ -25,6 +25,8 @@ midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
 midismith_require_lib(bsp-types)
 midismith_require_lib(can-broker)
+midismith_require_lib(protocol)
+midismith_require_lib(protocol-can)
 
 if(HOST_TESTS)
     enable_testing()
@@ -44,10 +46,15 @@ if(HOST_TESTS)
         app/src/storage/adc_board_persistent_configuration.cpp
         app/src/shell/commands/sensor_rtt_command.cpp
         app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
+        app/src/messaging/adc_board_can_message_sender.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
         app/include
         bsp/include
+    )
+    target_link_libraries(adc_app_lib PUBLIC
+        protocol
+        protocol_can
     )
     target_link_libraries(adc_app_lib PRIVATE
         adc_domain
@@ -85,6 +92,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/app_entry.cpp
     app/src/version.cpp
     app/src/composition/can_subsystem.cpp
+    app/src/messaging/adc_board_can_message_sender.cpp
     app/src/composition/analog_subsystem.cpp
     app/src/composition/config_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
@@ -148,6 +156,8 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     shell_cmd_version
     shell_cmd_os_stats
     can_broker
+    protocol
+    protocol_can
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"

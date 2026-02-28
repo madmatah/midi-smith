@@ -16,7 +16,7 @@ TEST_CASE("The AdcMessageBuilder class") {
         REQUIRE(header.category == MessageCategory::kRealTime);
         REQUIRE(header.type == MessageType::kSensorEvent);
         REQUIRE(header.source_node_id == 4);
-        REQUIRE(header.destination_node_id == 0);
+        REQUIRE(header.destination_node_id == kMainBoardNodeId);
         REQUIRE(msg.type == SensorEventType::kNoteOn);
         REQUIRE(msg.sensor_id == 60);
         REQUIRE(msg.velocity == 100);
@@ -43,7 +43,7 @@ TEST_CASE("The MainBoardMessageBuilder class") {
         MainBoardMessageBuilder builder;
         auto [header, cmd] = builder.BuildStartCalibration(5, CalibMode::kAuto);
 
-        REQUIRE(header.source_node_id == static_cast<std::uint8_t>(NodeRole::kMainBoard));
+        REQUIRE(header.source_node_id == kMainBoardNodeId);
         REQUIRE(header.destination_node_id == 5);
         auto* calib = std::get_if<CalibStart>(&cmd);
         REQUIRE(calib != nullptr);
