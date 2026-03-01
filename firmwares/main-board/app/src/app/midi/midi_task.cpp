@@ -37,7 +37,7 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
     }
 
     if (status == midismith::midi::TransportStatus::kError) {
-      _logger.logf(midismith::logging::Level::Error, "MidiTask: Transport error");
+      _logger.logf(midismith::logging::Level::Error, "MidiTask: Transport error\n");
       return;
     }
 
@@ -46,7 +46,7 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
     }
   }
 
-  _logger.logf(midismith::logging::Level::Warn, "MidiTask: Drop message (timeout)");
+  _logger.logf(midismith::logging::Level::Warn, "MidiTask: Drop message (timeout)\n");
 }
 
 }  // namespace midismith::main_board::app::midi

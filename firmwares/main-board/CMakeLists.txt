@@ -68,11 +68,9 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/application.cpp
     app/src/app_entry.cpp
     app/src/version.cpp
-    app/src/tasks/led_task.cpp
     app/src/tasks/shell_task.cpp
     app/src/composition/can_subsystem.cpp
     app/src/composition/midi_subsystem.cpp
-    app/src/composition/led_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
