@@ -35,7 +35,7 @@ TEST_CASE("The MidiPiano class") {
   }
 
   SECTION("The ReleaseKey() method") {
-    SECTION("When called with middle C (60)") {
+    SECTION("When called with middle C (60) and velocity 0") {
       SECTION("Should send a Note OFF message (0x85) with velocity 0") {
         When(fakeit_Method(midi_mock, SendRawMessage)).Do([](const uint8_t* data, uint8_t length) {
           REQUIRE(length == 3);
@@ -44,7 +44,22 @@ TEST_CASE("The MidiPiano class") {
           REQUIRE(data[2] == 0);     // Velocity 0
         });
 
-        piano.ReleaseKey(60);
+        piano.ReleaseKey(60, 0);
+
+        Verify(fakeit_Method(midi_mock, SendRawMessage)).Once();
+      }
+    }
+
+    SECTION("When called with middle C (60) and velocity 45") {
+      SECTION("Should send a Note OFF message (0x85) with velocity 45") {
+        When(fakeit_Method(midi_mock, SendRawMessage)).Do([](const uint8_t* data, uint8_t length) {
+          REQUIRE(length == 3);
+          REQUIRE(data[0] == 0x85);
+          REQUIRE(data[1] == 60);
+          REQUIRE(data[2] == 45);
+        });
+
+        piano.ReleaseKey(60, 45);
 
         Verify(fakeit_Method(midi_mock, SendRawMessage)).Once();
       }

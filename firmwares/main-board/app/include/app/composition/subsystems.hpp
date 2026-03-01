@@ -23,7 +23,8 @@ struct MidiContext {
   midismith::piano_controller::PianoRequirements& piano;
 };
 
-CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
+CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
+                              midismith::piano_controller::PianoRequirements& piano) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept;
 

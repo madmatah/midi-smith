@@ -2,6 +2,7 @@
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_can_message_sender.hpp"
 #include "app/messaging/main_board_inbound_sensor_event_logging_handler.hpp"
+#include "app/messaging/main_board_inbound_sensor_event_midi_handler.hpp"
 #include "bsp/can/can_bus_stats.hpp"
 #include "bsp/can/fdcan_transceiver.hpp"
 #include "can-broker/can_task.hpp"
@@ -24,7 +25,8 @@ void CanTaskEntry(void* ctx) noexcept {
 
 }  // namespace
 
-CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) noexcept {
+CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
+                              midismith::piano_controller::PianoRequirements& piano) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -33,8 +35,10 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) no
                                                            receive_queue, stats);
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventLoggingHandler
       inbound_logging_handler(logger);
+  static midismith::main_board::app::messaging::MainBoardInboundSensorEventMidiHandler
+      inbound_midi_handler(piano);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
-      inbound_logging_handler);
+      inbound_logging_handler, inbound_midi_handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 
