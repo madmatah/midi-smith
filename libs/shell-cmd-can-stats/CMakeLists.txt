@@ -9,6 +9,7 @@ midismith_add_lib(NAME shell_cmd_can_stats
     DEPENDS
         shell
         bsp-types
+        io
 )
 
 if(UNIT_TESTS)

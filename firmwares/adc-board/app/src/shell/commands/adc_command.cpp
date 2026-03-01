@@ -1,11 +1,9 @@
 #include "app/shell/commands/adc_command.hpp"
 
-#include <charconv>
-#include <cstdint>
 #include <string_view>
-#include <system_error>
 
 #include "app/config/analog_acquisition.hpp"
+#include "io/stream_format.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
 namespace {
@@ -25,15 +23,6 @@ std::string_view Arg(int argc, char** argv, int index) noexcept {
 
 void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("usage: adc on|off|status\r\n");
-}
-
-void WriteUint32(midismith::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
-  char buf[16]{};
-  auto r = std::to_chars(buf, buf + sizeof(buf), value);
-  if (r.ec != std::errc()) {
-    return;
-  }
-  out.Write(std::string_view(buf, static_cast<std::size_t>(r.ptr - buf)));
 }
 
 }  // namespace
@@ -72,14 +61,17 @@ void AdcCommand::Run(int argc, char** argv,
       out.Write("disabled");
     }
     out.Write(" channel_rate_hz=");
-    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
+    midismith::io::WriteUint32(
+        out, ::midismith::adc_board::app::config::ANALOG_ACQUISITION_CHANNEL_RATE_HZ);
     out.Write(" seq_half=");
-    WriteUint32(out,
-                ::midismith::adc_board::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER);
+    midismith::io::WriteUint32(
+        out, ::midismith::adc_board::app::config::ANALOG_ACQUISITION_SEQUENCES_PER_HALF_BUFFER);
     out.Write(" adc_kernel_limit_hz=");
-    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
+    midismith::io::WriteUint32(
+        out, ::midismith::adc_board::app::config::ANALOG_ADC_KERNEL_CLOCK_LIMIT_HZ);
     out.Write(" ticks_per_seq_est=");
-    WriteUint32(out, ::midismith::adc_board::app::config::ANALOG_TICKS_PER_SEQUENCE_ESTIMATE);
+    midismith::io::WriteUint32(
+        out, ::midismith::adc_board::app::config::ANALOG_TICKS_PER_SEQUENCE_ESTIMATE);
     out.Write("\r\n");
     return;
   }
