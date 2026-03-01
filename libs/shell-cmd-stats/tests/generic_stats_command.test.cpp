@@ -101,6 +101,25 @@ class PartialProvider final : public midismith::stats::StatsProviderRequirements
   }
 };
 
+class FullProvider final : public midismith::stats::StatsProviderRequirements<TestRequest> {
+ public:
+  std::string_view Category() const noexcept override {
+    return "full";
+  }
+
+  midismith::stats::StatsPublishStatus ProvideStats(
+      const TestRequest&,
+      midismith::stats::StatsVisitorRequirements& visitor) const noexcept override {
+    visitor.OnMetric("u32", static_cast<std::uint32_t>(1));
+    visitor.OnMetric("i32", static_cast<std::int32_t>(-2));
+    visitor.OnMetric("u64", static_cast<std::uint64_t>(3));
+    visitor.OnMetric("i64", static_cast<std::int64_t>(-4));
+    visitor.OnMetric("b", true);
+    visitor.OnMetric("s", std::string_view("text"));
+    return midismith::stats::StatsPublishStatus::kOk;
+  }
+};
+
 class EmptyProvider final
     : public midismith::stats::StatsProviderRequirements<midismith::stats::EmptyStatsRequest> {
  public:
@@ -118,71 +137,102 @@ class EmptyProvider final
 
 }  // namespace
 
-TEST_CASE("The GenericStatsCommand template", "[libs][shell-cmd-stats]") {
-  SECTION("Name() and Help() should return constructor values") {
-    OkProvider provider;
-    midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
-    midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
-        "status", "Show status", providers);
+TEST_CASE("The GenericStatsCommand class") {
+  SECTION("The Name() method") {
+    SECTION("When initialized with 'status' name") {
+      SECTION("Should return 'status'") {
+        OkProvider provider;
+        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
+        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
+            "status", "Show status", providers);
 
-    REQUIRE(command.Name() == "status");
-    REQUIRE(command.Help() == "Show status");
+        REQUIRE(command.Name() == "status");
+      }
+    }
   }
 
-  SECTION("Run() should render provider categories and metrics in order") {
-    OkProvider ok_provider;
-    UnavailableProvider unavailable_provider;
-    PartialProvider partial_provider;
-    midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {
-        &ok_provider,
-        &unavailable_provider,
-        &partial_provider,
-    };
-    midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 3u, SuccessParser> command(
-        "status", "Show status", providers);
-    StreamStub stream;
+  SECTION("The Help() method") {
+    SECTION("When initialized with 'Show status' help text") {
+      SECTION("Should return 'Show status'") {
+        OkProvider provider;
+        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
+        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
+            "status", "Show status", providers);
 
-    char* argv[] = {const_cast<char*>("status")};
-    command.Run(1, argv, stream);
-
-    REQUIRE(stream.GetOutput() ==
-            "[ok]\r\n"
-            "  count: 123\r\n"
-            "  active: true\r\n"
-            "  label: ready\r\n"
-            "\r\n"
-            "[unavailable]\r\n"
-            "  error: unavailable\r\n"
-            "\r\n"
-            "[partial]\r\n"
-            "  partial: true\r\n");
+        REQUIRE(command.Help() == "Show status");
+      }
+    }
   }
 
-  SECTION("Run() should use parser failure output without invoking providers") {
-    OkProvider provider;
-    midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
-    midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, FailingParser> command(
-        "status", "Show status", providers);
-    StreamStub stream;
+  SECTION("The Run() method") {
+    SECTION("When receiving 1 argument ('status')") {
+      SECTION("Should render ok, unavailable, partial, and full metrics") {
+        OkProvider ok_provider;
+        UnavailableProvider unavailable_provider;
+        PartialProvider partial_provider;
+        FullProvider full_provider;
+        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {
+            &ok_provider, nullptr, &unavailable_provider, &partial_provider, &full_provider,
+        };
+        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 5u, SuccessParser> command(
+            "status", "Show status", providers);
+        StreamStub stream;
 
-    char* argv[] = {const_cast<char*>("status"), const_cast<char*>("extra")};
-    command.Run(2, argv, stream);
+        char* argv[] = {const_cast<char*>("status")};
+        command.Run(1, argv, stream);
 
-    REQUIRE(stream.GetOutput() == "usage: status [value]\r\n");
-  }
+        REQUIRE(stream.GetOutput() ==
+                "[ok]\r\n"
+                "  count: 123\r\n"
+                "  active: true\r\n"
+                "  label: ready\r\n"
+                "\r\n"
+                "[unavailable]\r\n"
+                "  error: unavailable\r\n"
+                "\r\n"
+                "[partial]\r\n"
+                "  partial: true\r\n"
+                "\r\n"
+                "[full]\r\n"
+                "  u32: 1\r\n"
+                "  i32: -2\r\n"
+                "  u64: 3\r\n"
+                "  i64: -4\r\n"
+                "  b: true\r\n"
+                "  s: text\r\n");
+      }
+    }
 
-  SECTION("Default parser should reject extra args and print usage") {
-    EmptyProvider provider;
-    midismith::stats::StatsProviderRequirements<midismith::stats::EmptyStatsRequest>* providers[] =
-        {&provider};
-    midismith::shell_cmd_stats::GenericStatsCommand<midismith::stats::EmptyStatsRequest, 1u>
-        command("can_stats", "Show CAN stats", providers);
-    StreamStub stream;
+    SECTION("When parser returns false") {
+      SECTION("Should print usage and not invoke providers") {
+        OkProvider provider;
+        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
+        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, FailingParser> command(
+            "status", "Show status", providers);
+        StreamStub stream;
 
-    char* argv[] = {const_cast<char*>("can_stats"), const_cast<char*>("extra")};
-    command.Run(2, argv, stream);
+        char* argv[] = {const_cast<char*>("status"), const_cast<char*>("extra")};
+        command.Run(2, argv, stream);
 
-    REQUIRE(stream.GetOutput() == "usage: can_stats\r\n");
+        REQUIRE(stream.GetOutput() == "usage: status [value]\r\n");
+      }
+    }
+
+    SECTION("When using default parser with extra arguments") {
+      SECTION("Should reject extra args and print usage") {
+        EmptyProvider provider;
+        midismith::stats::StatsProviderRequirements<midismith::stats::EmptyStatsRequest>*
+            providers[] = {&provider};
+        midismith::shell_cmd_stats::GenericStatsCommand<midismith::stats::EmptyStatsRequest, 1u>
+            command("can_stats", "Show CAN stats", providers);
+        StreamStub stream;
+
+        char* argv[] = {const_cast<char*>("can_stats"), const_cast<char*>("extra")};
+        command.Run(2, argv, stream);
+
+        REQUIRE(stream.GetOutput() == "usage: can_stats\r\n");
+      }
+    }
   }
 }
 #endif

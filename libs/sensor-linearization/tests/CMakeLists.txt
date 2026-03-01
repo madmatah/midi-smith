@@ -4,4 +4,5 @@ midismith_add_test(NAME sensor_linearization
     SOURCES
         sensor_linear_processor.test.cpp
         sensor_response_curve.test.cpp
+        lookup_table_generator.test.cpp
 )

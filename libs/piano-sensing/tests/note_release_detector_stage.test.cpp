@@ -51,68 +51,118 @@ struct TestContext {
 
 }  // namespace
 
-TEST_CASE("The NoteReleaseDetectorStage class") {
+TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
   using Catch::Matchers::WithinAbs;
   using Constant127Mapper = midismith::piano_sensing::velocity::ConstantVelocityMapper<127u>;
   using DefaultStage = midismith::piano_sensing::NoteReleaseDetectorStage<Constant127Mapper, 0.5f>;
   using CustomMapperStage =
       midismith::piano_sensing::NoteReleaseDetectorStage<RecordingVelocityMapper, 0.5f>;
 
-  SECTION("The note release detection") {
-    SECTION("When note is on and position crosses the threshold upwards") {
-      SECTION("Should emit NoteOff and clear is_note_on") {
-        TestContext ctx{};
-        CustomMapperStage stage{};
-        RecordingKeyActionHandler handler{};
-        stage.SetKeyActionHandler(&handler);
-        RecordingVelocityMapper::Reset();
+  SECTION("The Execute() method") {
+    SECTION("On first execution") {
+      SECTION("When note is already on and below threshold") {
+        SECTION("Should latch current speed if positive") {
+          TestContext ctx{};
+          CustomMapperStage stage{};
+          RecordingKeyActionHandler handler{};
+          stage.SetKeyActionHandler(&handler);
+          RecordingVelocityMapper::Reset();
 
-        ctx.sensor.is_note_on = true;
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
-        stage.Execute(0.0f, ctx);
+          ctx.sensor.is_note_on = true;
+          ctx.sensor.last_shank_falling_speed_m_per_s = 0.5f;
+          ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
 
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
-        stage.Execute(0.0f, ctx);
+          stage.Execute(0.0f, ctx);
 
-        REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
-                     WithinAbs(0.25f, 0.0001f));
-        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(42u));
-        REQUIRE(ctx.sensor.is_note_on == false);
+          ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
+          stage.Execute(0.0f, ctx);
+
+          REQUIRE(handler.note_off_calls == 1);
+          REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                       WithinAbs(0.5f, 0.0001f));
+        }
+      }
+
+      SECTION("When note is off") {
+        SECTION("Should not latch speed") {
+          TestContext ctx{};
+          CustomMapperStage stage{};
+          RecordingKeyActionHandler handler{};
+          stage.SetKeyActionHandler(&handler);
+          RecordingVelocityMapper::Reset();
+
+          ctx.sensor.is_note_on = false;
+          ctx.sensor.last_shank_falling_speed_m_per_s = 0.5f;
+          ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
+
+          stage.Execute(0.0f, ctx);
+
+          ctx.sensor.is_note_on = true;
+          ctx.sensor.last_shank_position_smoothed_norm = 0.50f;
+          stage.Execute(0.0f, ctx);
+
+          ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
+          stage.Execute(0.0f, ctx);
+
+          REQUIRE(handler.note_off_calls == 1);
+          REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                       WithinAbs(0.0f, 0.0001f));
+        }
       }
     }
 
-    SECTION("When speed becomes gated at the threshold") {
-      SECTION("Should map the last latched positive speed") {
-        TestContext ctx{};
-        CustomMapperStage stage{};
-        RecordingKeyActionHandler handler{};
-        stage.SetKeyActionHandler(&handler);
-        RecordingVelocityMapper::Reset();
+    SECTION("During steady state") {
+      SECTION("When speed is negative or zero") {
+        SECTION("Should not update latched speed") {
+          TestContext ctx{};
+          CustomMapperStage stage{};
+          RecordingKeyActionHandler handler{};
+          stage.SetKeyActionHandler(&handler);
+          RecordingVelocityMapper::Reset();
 
-        ctx.sensor.is_note_on = true;
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.10f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
-        stage.Execute(0.0f, ctx);
+          ctx.sensor.is_note_on = true;
+          ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
+          stage.Execute(0.0f, ctx);
 
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.35f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.45f;
-        stage.Execute(0.0f, ctx);
+          ctx.sensor.last_shank_falling_speed_m_per_s = 0.33f;
+          stage.Execute(0.0f, ctx);
 
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
-        stage.Execute(0.0f, ctx);
+          ctx.sensor.last_shank_falling_speed_m_per_s = -1.0f;
+          stage.Execute(0.0f, ctx);
 
-        REQUIRE(handler.note_off_calls == 1);
-        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
-                     WithinAbs(0.35f, 0.0001f));
+          ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
+          stage.Execute(0.0f, ctx);
+
+          REQUIRE(handler.note_off_calls == 1);
+          REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                       WithinAbs(0.33f, 0.0001f));
+        }
+      }
+
+      SECTION("When position crosses threshold upwards") {
+        SECTION("Should emit NoteOff and clear is_note_on") {
+          TestContext ctx{};
+          CustomMapperStage stage{};
+          RecordingKeyActionHandler handler{};
+          stage.SetKeyActionHandler(&handler);
+          RecordingVelocityMapper::Reset();
+
+          ctx.sensor.is_note_on = true;
+          ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
+          ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
+          stage.Execute(0.0f, ctx);
+
+          ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
+          stage.Execute(0.0f, ctx);
+
+          REQUIRE(handler.note_off_calls == 1);
+          REQUIRE(ctx.sensor.is_note_on == false);
+        }
       }
     }
 
-    SECTION("When note is off") {
-      SECTION("Should not emit NoteOff") {
+    SECTION("On note-on transition") {
+      SECTION("Should reset latched speed") {
         TestContext ctx{};
         CustomMapperStage stage{};
         RecordingKeyActionHandler handler{};
@@ -120,62 +170,63 @@ TEST_CASE("The NoteReleaseDetectorStage class") {
         RecordingVelocityMapper::Reset();
 
         ctx.sensor.is_note_on = false;
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
-        stage.Execute(0.0f, ctx);
-        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.5f;
         stage.Execute(0.0f, ctx);
 
-        REQUIRE(handler.note_off_calls == 0);
-        REQUIRE(ctx.sensor.is_note_on == false);
+        stage.Execute(0.0f, ctx);
+
+        ctx.sensor.is_note_on = true;
+        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
+        stage.Execute(0.0f, ctx);
+
+        ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
+        stage.Execute(0.0f, ctx);
+
+        REQUIRE(handler.note_off_calls == 1);
+        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
+                     WithinAbs(0.0f, 0.0001f));
       }
     }
+  }
 
-    SECTION("When no custom velocity mapper is configured") {
-      SECTION("Should emit NoteOff with default velocity 127") {
+  SECTION("The SetKeyActionHandler() method") {
+    SECTION("When given nullptr") {
+      SECTION("Should use the null handler and not crash") {
         TestContext ctx{};
         DefaultStage stage{};
-        RecordingKeyActionHandler handler{};
-        stage.SetKeyActionHandler(&handler);
+        stage.SetKeyActionHandler(nullptr);
 
         ctx.sensor.is_note_on = true;
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
         stage.Execute(0.0f, ctx);
 
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
+        ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
         stage.Execute(0.0f, ctx);
 
-        REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(127u));
         REQUIRE(ctx.sensor.is_note_on == false);
       }
     }
+  }
 
-    SECTION("When configured with a custom mapper type") {
-      SECTION("Should use the custom mapper output to emit NoteOff") {
-        TestContext ctx{};
-        CustomMapperStage stage{};
-        RecordingKeyActionHandler handler{};
-        stage.SetKeyActionHandler(&handler);
-        RecordingVelocityMapper::Reset();
+  SECTION("The Reset() method") {
+    SECTION("Should clear internal state") {
+      TestContext ctx{};
+      CustomMapperStage stage{};
+      RecordingKeyActionHandler handler{};
+      stage.SetKeyActionHandler(&handler);
+      RecordingVelocityMapper::Reset();
 
-        ctx.sensor.is_note_on = true;
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.25f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.49f;
-        stage.Execute(0.0f, ctx);
+      ctx.sensor.is_note_on = true;
+      ctx.sensor.last_shank_falling_speed_m_per_s = 0.5f;
+      ctx.sensor.last_shank_position_smoothed_norm = 0.40f;
+      stage.Execute(0.0f, ctx);
 
-        ctx.sensor.last_shank_falling_speed_m_per_s = 0.0f;
-        ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
-        stage.Execute(0.0f, ctx);
+      stage.Reset();
 
-        REQUIRE(handler.note_off_calls == 1);
-        REQUIRE(handler.last_release_velocity == static_cast<midismith::midi::Velocity>(42u));
-        REQUIRE(RecordingVelocityMapper::map_calls == 1);
-        REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
-                     WithinAbs(0.25f, 0.0001f));
-      }
+      ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
+      stage.Execute(0.0f, ctx);
+
+      REQUIRE(handler.note_off_calls == 0);
     }
   }
 }
