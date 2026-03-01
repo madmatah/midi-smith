@@ -22,6 +22,7 @@ midismith_add_infra_lib(NAME bsp
         src/gpio.cpp
         src/rtt_logger.cpp
         src/rtt_telemetry_sender.cpp
+        src/can/can_bus_stats.cpp
         src/can/fdcan_transceiver.cpp
     DEPENDS logging bsp-types os-types
 )

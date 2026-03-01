@@ -8,6 +8,7 @@
 #include "app/storage/adc_board_persistent_configuration.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
+#include "bsp-types/can/can_bus_stats_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
@@ -18,6 +19,7 @@ namespace midismith::adc_board::app::composition {
 
 struct CanContext {
   midismith::bsp::can::FdcanTransceiverRequirements& transceiver;
+  midismith::bsp::can::CanBusStatsRequirements& stats;
 };
 
 struct ConfigContext {
@@ -65,7 +67,7 @@ bool RegenerateAnalogSensorLookupTables(
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept;
-void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
+void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;
 
