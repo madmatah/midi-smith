@@ -1,6 +1,7 @@
 include_guard(GLOBAL)
 
 set(_MIDISMITH_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "")
+include(${_MIDISMITH_CMAKE_DIR}/midismith_coverage.cmake)
 
 macro(midismith_add_test)
     cmake_parse_arguments(_MSTEST "USE_FAKEIT" "NAME" "SOURCES;LINK_LIBRARIES" ${ARGN})
@@ -26,6 +27,9 @@ macro(midismith_add_test)
 
     target_compile_definitions(${_MSTEST_TARGET} PRIVATE UNIT_TESTS=1)
     target_compile_features(${_MSTEST_TARGET} PRIVATE cxx_std_20)
+    midismith_enable_coverage_compile(${_MSTEST_TARGET})
+    midismith_enable_coverage_link(${_MSTEST_TARGET})
+    midismith_register_test_executable(${_MSTEST_TARGET})
     catch_discover_tests(${_MSTEST_TARGET})
 
     unset(_MSTEST_TARGET)

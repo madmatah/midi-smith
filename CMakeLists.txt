@@ -29,6 +29,19 @@ if(HOST_TESTS)
     endforeach()
     add_subdirectory(firmwares/adc-board)
     add_subdirectory(firmwares/main-board)
+
+    get_property(MIDISMITH_TEST_EXECUTABLE_TARGETS GLOBAL PROPERTY MIDISMITH_TEST_EXECUTABLE_TARGETS)
+    add_custom_target(coverage
+        COMMAND ${CMAKE_COMMAND}
+            -DMIDISMITH_REPO_ROOT=${CMAKE_SOURCE_DIR}
+            -DMIDISMITH_BINARY_DIR=${CMAKE_BINARY_DIR}
+            -P ${CMAKE_SOURCE_DIR}/cmake/run_host_coverage.cmake
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Run host tests and generate coverage reports"
+    )
+    if(MIDISMITH_TEST_EXECUTABLE_TARGETS)
+        add_dependencies(coverage ${MIDISMITH_TEST_EXECUTABLE_TARGETS})
+    endif()
 else()
     if(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "adc")
         add_subdirectory(firmwares/adc-board)
