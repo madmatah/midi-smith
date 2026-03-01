@@ -6,7 +6,7 @@ ARG ARM_GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu/15.2.rel1/
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      cmake ninja-build git g++ \
+      cmake ninja-build git g++ gcov \
       clang-format python3-pip python3-venv \
       curl xz-utils \
  && python3 -m pip install --break-system-packages cpplint \
