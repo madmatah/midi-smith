@@ -25,7 +25,6 @@ struct MidiContext {
 
 CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
-void CreateLedSubsystem(MidiContext& midi) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept;
 
 }  // namespace midismith::main_board::app::composition
