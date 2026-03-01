@@ -48,6 +48,7 @@ if(HOST_TESTS)
         app/src/shell/commands/sensor_rtt_command.cpp
         app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
         app/src/messaging/adc_board_can_message_sender.cpp
+        app/src/messaging/adc_inbound_command_handler.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
         app/include
@@ -94,6 +95,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/version.cpp
     app/src/composition/can_subsystem.cpp
     app/src/messaging/adc_board_can_message_sender.cpp
+    app/src/messaging/adc_inbound_command_handler.cpp
     app/src/composition/analog_subsystem.cpp
     app/src/composition/config_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
