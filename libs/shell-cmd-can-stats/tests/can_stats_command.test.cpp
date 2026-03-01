@@ -78,9 +78,10 @@ TEST_CASE("The CanStatsCommand class", "[libs][shell-cmd-can-stats]") {
       char* argv[] = {const_cast<char*>("can_stats")};
       command.Run(1, argv, stream);
 
-      REQUIRE(stream.GetOutput() ==
-              "tx_sent=42 tx_failed=1 rx_received=100 rx_overflows=0 "
-              "bus_off=0 error_passive=0 warning=0 last_error_code=none tec=0 rec=0\r\n");
+      REQUIRE(
+          stream.GetOutput() ==
+          "tx_sent=42 tx_failed=1 rx_received=100 rx_overflows=0 "
+          "bus_off=false error_passive=false warning=false last_error_code=none tec=0 rec=0\r\n");
     }
 
     SECTION("When bus is in error-passive state, should reflect it in the output") {
@@ -93,9 +94,10 @@ TEST_CASE("The CanStatsCommand class", "[libs][shell-cmd-can-stats]") {
       char* argv[] = {const_cast<char*>("can_stats")};
       command.Run(1, argv, stream);
 
-      REQUIRE(stream.GetOutput() ==
-              "tx_sent=0 tx_failed=0 rx_received=0 rx_overflows=0 "
-              "bus_off=0 error_passive=1 warning=1 last_error_code=crc tec=128 rec=64\r\n");
+      REQUIRE(
+          stream.GetOutput() ==
+          "tx_sent=0 tx_failed=0 rx_received=0 rx_overflows=0 "
+          "bus_off=false error_passive=true warning=true last_error_code=crc tec=128 rec=64\r\n");
     }
 
     SECTION("When bus is in bus-off state, should reflect it in the output") {
@@ -107,9 +109,10 @@ TEST_CASE("The CanStatsCommand class", "[libs][shell-cmd-can-stats]") {
       char* argv[] = {const_cast<char*>("can_stats")};
       command.Run(1, argv, stream);
 
-      REQUIRE(stream.GetOutput() ==
-              "tx_sent=0 tx_failed=0 rx_received=0 rx_overflows=0 "
-              "bus_off=1 error_passive=0 warning=1 last_error_code=ack tec=255 rec=0\r\n");
+      REQUIRE(
+          stream.GetOutput() ==
+          "tx_sent=0 tx_failed=0 rx_received=0 rx_overflows=0 "
+          "bus_off=true error_passive=false warning=true last_error_code=ack tec=255 rec=0\r\n");
     }
   }
 }

@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <string_view>
 
-#include "io/stream_format.hpp"
-#include "os-types/runtime_stats_requirements.hpp"
 #include "shell_cmd_os_stats_utils.hpp"
 
 namespace midismith::shell_cmd_os_stats {
@@ -20,11 +18,12 @@ void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
 
 }  // namespace
 
-void StatusCommand::Run(int argc, char** argv,
-                        midismith::io::WritableStreamRequirements& out) noexcept {
+bool StatusRequestParser::operator()(
+    std::string_view, int argc, char** argv, midismith::os::OsStatusRequest& out_request,
+    midismith::io::WritableStreamRequirements& out) const noexcept {
   if (argc > 2) {
     WriteUsage(out);
-    return;
+    return false;
   }
 
   std::uint32_t window_ms = kDefaultWindowMs;
@@ -32,36 +31,21 @@ void StatusCommand::Run(int argc, char** argv,
   if (!window_arg.empty()) {
     if (!ParseUint32(window_arg, window_ms)) {
       WriteUsage(out);
-      return;
+      return false;
     }
     if (window_ms < kMinWindowMs || window_ms > kMaxWindowMs) {
       WriteUsage(out);
-      return;
+      return false;
     }
   }
 
-  midismith::os::RuntimeStatusSnapshot status_snapshot{};
-  if (!runtime_stats_.CaptureStatusSnapshot(window_ms, status_snapshot)) {
-    out.Write("error: runtime counter unavailable\r\n");
-    return;
-  }
+  out_request.window_ms = window_ms;
+  return true;
+}
 
-  out.Write("cpu=");
-  WritePermilleAsPercent(out, status_snapshot.cpu_load_permille);
-  out.Write("% window_ms=");
-  midismith::io::WriteUint32(out, status_snapshot.window_ms);
-  out.Write(" tasks=");
-  midismith::io::WriteUint32(out, status_snapshot.task_count);
-  out.Write(" heap_free=");
-  midismith::io::WriteUint32(out, status_snapshot.heap_free_bytes);
-  out.Write(" heap_min=");
-  midismith::io::WriteUint32(out, status_snapshot.heap_min_bytes);
-  out.Write(" uptime_ms=");
-  midismith::io::WriteUint64(out, status_snapshot.uptime_ms);
-  if (status_snapshot.truncated) {
-    out.Write(" truncated=1");
-  }
-  out.Write("\r\n");
+void StatusCommand::Run(int argc, char** argv,
+                        midismith::io::WritableStreamRequirements& out) noexcept {
+  command_.Run(argc, argv, out);
 }
 
 }  // namespace midismith::shell_cmd_os_stats

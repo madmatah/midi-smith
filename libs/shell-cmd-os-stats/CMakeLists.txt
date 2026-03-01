@@ -8,9 +8,8 @@ midismith_add_lib(NAME shell_cmd_os_stats
         src/ps_command.cpp
         src/status_command.cpp
     DEPENDS
-        shell
+        shell-cmd-stats
         os-types
-        io
 )
 
 if(UNIT_TESTS)
