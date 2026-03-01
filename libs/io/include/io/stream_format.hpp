@@ -18,7 +18,25 @@ inline void WriteUint32(WritableStreamRequirements& out, std::uint32_t value) no
   out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
 }
 
+inline void WriteInt32(WritableStreamRequirements& out, std::int32_t value) noexcept {
+  char buf[16]{};
+  const auto result = std::to_chars(buf, buf + sizeof(buf), value);
+  if (result.ec != std::errc()) {
+    return;
+  }
+  out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
+}
+
 inline void WriteUint64(WritableStreamRequirements& out, std::uint64_t value) noexcept {
+  char buf[32]{};
+  const auto result = std::to_chars(buf, buf + sizeof(buf), value);
+  if (result.ec != std::errc()) {
+    return;
+  }
+  out.Write(std::string_view(buf, static_cast<std::size_t>(result.ptr - buf)));
+}
+
+inline void WriteInt64(WritableStreamRequirements& out, std::int64_t value) noexcept {
   char buf[32]{};
   const auto result = std::to_chars(buf, buf + sizeof(buf), value);
   if (result.ec != std::errc()) {
@@ -32,7 +50,7 @@ inline void WriteUint8(WritableStreamRequirements& out, std::uint8_t value) noex
 }
 
 inline void WriteBool(WritableStreamRequirements& out, bool value) noexcept {
-  out.Write(value ? '1' : '0');
+  out.Write(value ? "true" : "false");
 }
 
 }  // namespace midismith::io

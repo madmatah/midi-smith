@@ -1,17 +1,20 @@
 #if defined(UNIT_TESTS)
 
 #include "io/stream_format.hpp"
-#include "io/stream_requirements.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <string>
 
+#include "io/stream_requirements.hpp"
+
 namespace {
 
 class RecordingWritableStream : public midismith::io::WritableStreamRequirements {
  public:
-  void Write(char c) noexcept override { output_.push_back(c); }
+  void Write(char c) noexcept override {
+    output_.push_back(c);
+  }
 
   void Write(const char* str) noexcept override {
     if (str != nullptr) {
@@ -21,9 +24,13 @@ class RecordingWritableStream : public midismith::io::WritableStreamRequirements
     }
   }
 
-  std::string Output() const { return output_; }
+  std::string Output() const {
+    return output_;
+  }
 
-  void Clear() { output_.clear(); }
+  void Clear() {
+    output_.clear();
+  }
 
  private:
   std::string output_;
@@ -86,6 +93,44 @@ TEST_CASE("The WriteUint64 function") {
   }
 }
 
+TEST_CASE("The WriteInt32 function") {
+  RecordingWritableStream out;
+
+  SECTION("When value is 0") {
+    midismith::io::WriteInt32(out, 0);
+    REQUIRE(out.Output() == "0");
+  }
+
+  SECTION("When value is positive") {
+    midismith::io::WriteInt32(out, 42);
+    REQUIRE(out.Output() == "42");
+  }
+
+  SECTION("When value is negative") {
+    midismith::io::WriteInt32(out, -42);
+    REQUIRE(out.Output() == "-42");
+  }
+}
+
+TEST_CASE("The WriteInt64 function") {
+  RecordingWritableStream out;
+
+  SECTION("When value is 0") {
+    midismith::io::WriteInt64(out, 0LL);
+    REQUIRE(out.Output() == "0");
+  }
+
+  SECTION("When value is positive") {
+    midismith::io::WriteInt64(out, 1234567890123LL);
+    REQUIRE(out.Output() == "1234567890123");
+  }
+
+  SECTION("When value is negative") {
+    midismith::io::WriteInt64(out, -1234567890123LL);
+    REQUIRE(out.Output() == "-1234567890123");
+  }
+}
+
 TEST_CASE("The WriteUint8 function") {
   RecordingWritableStream out;
 
@@ -108,16 +153,16 @@ TEST_CASE("The WriteBool function") {
   RecordingWritableStream out;
 
   SECTION("When value is true") {
-    SECTION("Should write '1'") {
+    SECTION("Should write 'true'") {
       midismith::io::WriteBool(out, true);
-      REQUIRE(out.Output() == "1");
+      REQUIRE(out.Output() == "true");
     }
   }
 
   SECTION("When value is false") {
-    SECTION("Should write '0'") {
+    SECTION("Should write 'false'") {
       midismith::io::WriteBool(out, false);
-      REQUIRE(out.Output() == "0");
+      REQUIRE(out.Output() == "false");
     }
   }
 }

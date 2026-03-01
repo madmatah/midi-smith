@@ -81,7 +81,9 @@ TEST_CASE("The StatusCommand class", "[libs][shell-cmd-os-stats]") {
       runtime_stats.capture_status_ok = false;
       char* argv[] = {const_cast<char*>("status")};
       command.Run(1, argv, stream);
-      REQUIRE(stream.GetOutput() == "error: runtime counter unavailable\r\n");
+      REQUIRE(stream.GetOutput() ==
+              "[os]\r\n"
+              "  error: unavailable\r\n");
     }
 
     SECTION("When provider capture succeeds, should display status values") {
@@ -98,8 +100,14 @@ TEST_CASE("The StatusCommand class", "[libs][shell-cmd-os-stats]") {
 
       REQUIRE(runtime_stats.requested_window_ms == 300u);
       REQUIRE(stream.GetOutput() ==
-              "cpu=45.6% window_ms=300 tasks=8 heap_free=12000 heap_min=9000 uptime_ms=123456 "
-              "truncated=1\r\n");
+              "[os]\r\n"
+              "  cpu_load: 45.6%\r\n"
+              "  window_ms: 300\r\n"
+              "  task_count: 8\r\n"
+              "  heap_free_bytes: 12000\r\n"
+              "  heap_min_bytes: 9000\r\n"
+              "  uptime_ms: 123456\r\n"
+              "  truncated: true\r\n");
     }
   }
 }
