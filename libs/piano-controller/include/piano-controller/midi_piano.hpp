@@ -21,7 +21,8 @@ class MidiPiano : public PianoRequirements {
 
   void PressKey(midismith::midi::NoteNumber note,
                 midismith::midi::Velocity velocity) noexcept override;
-  void ReleaseKey(midismith::midi::NoteNumber note) noexcept override;
+  void ReleaseKey(midismith::midi::NoteNumber note,
+                  midismith::midi::Velocity velocity) noexcept override;
 
   void SetSustain(bool active) noexcept override;
   void SetSoft(bool active) noexcept override;

@@ -16,8 +16,9 @@ void MidiPiano::PressKey(midismith::midi::NoteNumber note,
   midi_controller_.SendRawMessage(message, sizeof(message));
 }
 
-void MidiPiano::ReleaseKey(midismith::midi::NoteNumber note) noexcept {
-  uint8_t message[3] = {static_cast<uint8_t>(0x80 | config_.channel), note, 0};
+void MidiPiano::ReleaseKey(midismith::midi::NoteNumber note,
+                           midismith::midi::Velocity velocity) noexcept {
+  uint8_t message[3] = {static_cast<uint8_t>(0x80 | config_.channel), note, velocity};
   midi_controller_.SendRawMessage(message, sizeof(message));
 }
 
