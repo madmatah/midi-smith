@@ -31,35 +31,6 @@ jobs:
       - name: Format check (clang-format)
         run: cmake --build --preset Host-Debug --target format_check
 
-  host_tests:
-    name: Host tests
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ github.repository }}/ci:latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Mark workspace as safe for git
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Cache CMake FetchContent (_deps)
-        uses: actions/cache@v4
-        with:
-          path: build/Host-Debug/_deps
-          key: ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
-          restore-keys: |
-            ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-
-
-      - name: Configure (Host-Debug)
-        run: cmake --preset Host-Debug
-
-      - name: Build
-        run: cmake --build --preset Host-Debug
-
-      - name: Run tests
-        run: ctest --preset Host-Debug --output-on-failure
-
   firmware_build:
     name: Build firmware (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -151,3 +122,42 @@ jobs:
           bloaty-args: pr.elf -- base.elf
           output-to-summary: true
           summary-title: "Memory Impact Report — ${{ matrix.name }} (vs ${{ github.base_ref }})"
+
+  host_tests:
+    name: Host tests
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Cache CMake FetchContent (_deps)
+        uses: actions/cache@v4
+        with:
+          path: build/Host-Debug/_deps
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-
+
+      - name: Configure (Host-Debug)
+        run: cmake --preset Host-Debug
+
+      - name: Build
+        run: cmake --build --preset Host-Debug
+
+      - name: Run tests
+        if: github.event_name != 'pull_request'
+        run: ctest --preset Host-Debug --output-on-failure
+
+      - name: Run coverage (PR only)
+        if: github.event_name == 'pull_request'
+        run: cmake --build --preset Host-Debug --target coverage
+
+      - name: Publish coverage report
+        if: github.event_name == 'pull_request'
+        run: |
+          cat build/Host-Debug/coverage/report.md >> "$GITHUB_STEP_SUMMARY"

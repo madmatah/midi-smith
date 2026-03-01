@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_coverage.cmake)
 
 set(MAIN_FIRMWARE_TARGET "main-board")
 set(MAIN_TARGET_PREFIX "main")
@@ -48,6 +49,7 @@ if(HOST_TESTS)
     )
     target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
+    midismith_enable_coverage_compile(main_app_lib)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS main_domain)

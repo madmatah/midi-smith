@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_coverage.cmake)
 
 set(ADC_FIRMWARE_TARGET "adc-board")
 set(ADC_TARGET_PREFIX "adc")
@@ -71,6 +72,8 @@ if(HOST_TESTS)
         shell_cmd_version
         shell_cmd_os_stats
     )
+    midismith_enable_coverage_compile(adc_domain)
+    midismith_enable_coverage_compile(adc_app_lib)
 
     if(PROJECT_IS_TOP_LEVEL)
         add_library(domain ALIAS adc_domain)
