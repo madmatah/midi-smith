@@ -9,7 +9,7 @@ RUN apt-get update \
       cmake ninja-build git g++ \
       clang-format python3-pip python3-venv \
       curl xz-utils \
- && python3 -m pip install --break-system-packages cpplint \
+ && python3 -m pip install --break-system-packages cpplint gcovr \
  && curl -fSL "$ARM_GCC_URL" | tar -xJ -C /opt \
  && rm -rf /var/lib/apt/lists/*
 
