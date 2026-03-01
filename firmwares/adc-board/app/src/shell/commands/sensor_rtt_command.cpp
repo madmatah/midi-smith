@@ -6,6 +6,7 @@
 #include <system_error>
 
 #include "app/config/analog_acquisition.hpp"
+#include "io/stream_format.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
 namespace {
@@ -57,15 +58,6 @@ bool ParseUint32(std::string_view text, std::uint32_t& out_value) noexcept {
   return true;
 }
 
-void WriteUint32(midismith::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
-  char buf[16]{};
-  auto r = std::to_chars(buf, buf + sizeof(buf), value);
-  if (r.ec != std::errc()) {
-    return;
-  }
-  out.Write(std::string_view(buf, static_cast<std::size_t>(r.ptr - buf)));
-}
-
 struct SensorRttParsedCommand {
   enum class Kind : std::uint8_t {
     kOff = 0,
@@ -88,13 +80,13 @@ void WriteStatus(
     return;
   }
   out.Write("on id=");
-  WriteUint32(out, status.sensor_id);
+  midismith::io::WriteUint32(out, status.sensor_id);
   out.Write(" output_hz=");
-  WriteUint32(out, status.output_hz);
+  midismith::io::WriteUint32(out, status.output_hz);
   out.Write(" dropped=");
-  WriteUint32(out, status.dropped_frames);
+  midismith::io::WriteUint32(out, status.dropped_frames);
   out.Write(" backlog=");
-  WriteUint32(out, status.backlog_frames);
+  midismith::io::WriteUint32(out, status.backlog_frames);
   out.Write("\r\n");
 }
 
@@ -175,7 +167,7 @@ void SensorRttCommand::Run(int argc, char** argv,
 
   if (parsed.kind == SensorRttParsedCommand::Kind::kGetFreq) {
     const auto status = control_.GetStatus();
-    WriteUint32(out, status.output_hz);
+    midismith::io::WriteUint32(out, status.output_hz);
     out.Write("\r\n");
     return;
   }

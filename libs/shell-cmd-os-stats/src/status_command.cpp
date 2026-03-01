@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string_view>
 
+#include "io/stream_format.hpp"
 #include "os-types/runtime_stats_requirements.hpp"
 #include "shell_cmd_os_stats_utils.hpp"
 
@@ -48,15 +49,15 @@ void StatusCommand::Run(int argc, char** argv,
   out.Write("cpu=");
   WritePermilleAsPercent(out, status_snapshot.cpu_load_permille);
   out.Write("% window_ms=");
-  WriteUint32(out, status_snapshot.window_ms);
+  midismith::io::WriteUint32(out, status_snapshot.window_ms);
   out.Write(" tasks=");
-  WriteUint32(out, status_snapshot.task_count);
+  midismith::io::WriteUint32(out, status_snapshot.task_count);
   out.Write(" heap_free=");
-  WriteUint32(out, status_snapshot.heap_free_bytes);
+  midismith::io::WriteUint32(out, status_snapshot.heap_free_bytes);
   out.Write(" heap_min=");
-  WriteUint32(out, status_snapshot.heap_min_bytes);
+  midismith::io::WriteUint32(out, status_snapshot.heap_min_bytes);
   out.Write(" uptime_ms=");
-  WriteUint64(out, status_snapshot.uptime_ms);
+  midismith::io::WriteUint64(out, status_snapshot.uptime_ms);
   if (status_snapshot.truncated) {
     out.Write(" truncated=1");
   }

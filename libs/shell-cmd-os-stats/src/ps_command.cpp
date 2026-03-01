@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
+#include "io/stream_format.hpp"
 #include "os-types/runtime_stats_requirements.hpp"
 #include "shell_cmd_os_stats_utils.hpp"
 
@@ -49,7 +50,7 @@ void PsCommand::Run(int argc, char** argv,
   }
 
   out.Write("name cpu% stack_free_b prio state runtime_delta window_ms=");
-  WriteUint32(out, window_ms);
+  midismith::io::WriteUint32(out, window_ms);
   if (snapshot_truncated) {
     out.Write(" truncated=1");
   }
@@ -60,13 +61,13 @@ void PsCommand::Run(int argc, char** argv,
     out.Write(' ');
     WritePermilleAsPercent(out, task_rows_[i].cpu_load_permille);
     out.Write(' ');
-    WriteUint32(out, task_rows_[i].stack_free_bytes);
+    midismith::io::WriteUint32(out, task_rows_[i].stack_free_bytes);
     out.Write(' ');
-    WriteUint32(out, task_rows_[i].priority);
+    midismith::io::WriteUint32(out, task_rows_[i].priority);
     out.Write(' ');
     out.Write(task_rows_[i].state_code);
     out.Write(' ');
-    WriteUint32(out, task_rows_[i].runtime_delta);
+    midismith::io::WriteUint32(out, task_rows_[i].runtime_delta);
     out.Write("\r\n");
   }
 }
