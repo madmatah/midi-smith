@@ -14,6 +14,7 @@
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
+#include "protocol-can/can_inbound_decode_stats_requirements.hpp"
 #include "sensor-linearization/sensor_calibration.hpp"
 
 namespace midismith::adc_board::app::composition {
@@ -21,6 +22,7 @@ namespace midismith::adc_board::app::composition {
 struct CanContext {
   midismith::bsp::can::FdcanTransceiverRequirements& transceiver;
   midismith::bsp::can::CanBusStatsRequirements& stats;
+  midismith::protocol_can::CanInboundDecodeStatsRequirements& inbound_decode_stats;
 };
 
 struct ConfigContext {

@@ -62,7 +62,7 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
   static midismith::main_board::app::messaging::MainBoardCanMessageSender message_sender(
       transceiver);
 
-  return CanContext{transceiver, stats, message_sender};
+  return CanContext{transceiver, stats, message_sender, inbound_adapter};
 }
 
 }  // namespace midismith::main_board::app::composition

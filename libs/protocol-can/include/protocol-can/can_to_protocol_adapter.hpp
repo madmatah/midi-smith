@@ -5,19 +5,15 @@
 #include <span>
 
 #include "can-broker/can_frame_handler_requirements.hpp"
+#include "protocol-can/can_inbound_decode_stats_requirements.hpp"
 #include "protocol-can/can_mapper.hpp"
 #include "protocol/message_parser.hpp"
 
 namespace midismith::protocol_can {
 
-struct CanInboundDecodeStats {
-  std::uint32_t unknown_identifier_count = 0;
-  std::uint32_t invalid_payload_count = 0;
-  std::uint32_t dropped_message_count = 0;
-};
-
 template <typename TDispatcher>
-class CanToProtocolAdapter final : public midismith::can_broker::CanFrameHandlerRequirements {
+class CanToProtocolAdapter final : public midismith::can_broker::CanFrameHandlerRequirements,
+                                   public CanInboundDecodeStatsRequirements {
  public:
   explicit CanToProtocolAdapter(TDispatcher& dispatcher) noexcept : dispatcher_(dispatcher) {}
 
@@ -41,12 +37,14 @@ class CanToProtocolAdapter final : public midismith::can_broker::CanFrameHandler
       return;
     }
 
-    if (!dispatcher_.Dispatch(*decoded_message)) {
+    if (dispatcher_.Dispatch(*decoded_message)) {
+      ++decode_stats_.dispatched_message_count;
+    } else {
       ++decode_stats_.dropped_message_count;
     }
   }
 
-  [[nodiscard]] CanInboundDecodeStats CaptureDecodeStats() const noexcept {
+  [[nodiscard]] CanInboundDecodeStats CaptureDecodeStats() const noexcept override {
     return decode_stats_;
   }
 

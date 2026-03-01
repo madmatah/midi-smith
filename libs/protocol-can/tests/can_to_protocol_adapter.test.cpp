@@ -59,6 +59,7 @@ TEST_CASE("The CanToProtocolAdapter class", "[protocol-can][adapter]") {
     const auto stats = adapter.CaptureDecodeStats();
 
     REQUIRE(dispatcher.dispatch_call_count == 0);
+    REQUIRE(stats.dispatched_message_count == 0);
     REQUIRE(stats.unknown_identifier_count == 1);
     REQUIRE(stats.invalid_payload_count == 0);
     REQUIRE(stats.dropped_message_count == 0);
@@ -72,6 +73,7 @@ TEST_CASE("The CanToProtocolAdapter class", "[protocol-can][adapter]") {
     const auto stats = adapter.CaptureDecodeStats();
 
     REQUIRE(dispatcher.dispatch_call_count == 0);
+    REQUIRE(stats.dispatched_message_count == 0);
     REQUIRE(stats.unknown_identifier_count == 0);
     REQUIRE(stats.invalid_payload_count == 1);
     REQUIRE(stats.dropped_message_count == 0);
@@ -89,6 +91,7 @@ TEST_CASE("The CanToProtocolAdapter class", "[protocol-can][adapter]") {
     auto* command = std::get_if<midismith::protocol::Command>(&*dispatcher.last_message);
     REQUIRE(command != nullptr);
     REQUIRE(std::get_if<midismith::protocol::AdcStart>(command) != nullptr);
+    REQUIRE(stats.dispatched_message_count == 1);
     REQUIRE(stats.unknown_identifier_count == 0);
     REQUIRE(stats.invalid_payload_count == 0);
     REQUIRE(stats.dropped_message_count == 0);
@@ -102,6 +105,7 @@ TEST_CASE("The CanToProtocolAdapter class", "[protocol-can][adapter]") {
     const auto stats = adapter.CaptureDecodeStats();
 
     REQUIRE(dispatcher.dispatch_call_count == 1);
+    REQUIRE(stats.dispatched_message_count == 0);
     REQUIRE(stats.unknown_identifier_count == 0);
     REQUIRE(stats.invalid_payload_count == 0);
     REQUIRE(stats.dropped_message_count == 1);

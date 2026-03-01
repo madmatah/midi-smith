@@ -56,7 +56,7 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
                                      app::config::CAN_TASK_STACK_BYTES,
                                      app::config::CAN_TASK_PRIORITY);
 
-  return CanContext{transceiver, stats};
+  return CanContext{transceiver, stats, inbound_adapter};
 }
 
 }  // namespace midismith::adc_board::app::composition
