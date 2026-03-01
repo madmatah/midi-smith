@@ -5,6 +5,7 @@
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
+#include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/storage/adc_board_persistent_configuration.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
@@ -55,7 +56,9 @@ ConfigContext CreateConfigSubsystem() noexcept;
 
 AdcControlContext CreateAnalogSubsystem(
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
-    midismith::logging::LoggerRequirements& logger) noexcept;
+    midismith::logging::LoggerRequirements& logger,
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
+        message_sender) noexcept;
 AdcStateContext CreateAdcStateContext() noexcept;
 SensorsContext CreateSensorsContext() noexcept;
 

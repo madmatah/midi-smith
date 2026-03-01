@@ -40,7 +40,8 @@ void Application::create_tasks() noexcept {
       can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);
 
   midismith::adc_board::app::composition::AdcControlContext adc_control =
-      midismith::adc_board::app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger);
+      midismith::adc_board::app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger,
+                                                                    can_message_sender);
   midismith::adc_board::app::composition::AdcStateContext adc_state =
       midismith::adc_board::app::composition::CreateAdcStateContext();
   midismith::adc_board::app::composition::SensorsContext sensors =

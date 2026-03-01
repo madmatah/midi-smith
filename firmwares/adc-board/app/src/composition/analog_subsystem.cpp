@@ -1,13 +1,17 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <utility>
 
 #include "app/analog/queue_acquisition_control.hpp"
-#include "app/analog/sensors/logging_sensor_event_handler.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
+#include "app/messaging/adc_board_message_sender_requirements.hpp"
+#include "app/piano_sensing/logging_sensor_event_handler.hpp"
+#include "app/piano_sensing/remote_message_sensor_event_handler.hpp"
 #include "app/tasks/analog_acquisition_task.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
 #include "bsp/adc/adc_dma.hpp"
@@ -18,6 +22,7 @@
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/sensors/sensor_state.hpp"
 #include "os/queue.hpp"
+#include "piano-sensing/composite_sensor_event_handler.hpp"
 #include "sensor-linearization/lookup_table_generator.hpp"
 
 namespace midismith::adc_board::app::composition {
@@ -75,6 +80,12 @@ using LookupTable = midismith::sensor_linearization::SensorLookupTable<
     midismith::adc_board::app::config::kSensorLookupTableSize>;
 using SensorCalibration = midismith::sensor_linearization::SensorCalibration;
 using LinearizerConfiguration = Processor::LinearizerConfiguration;
+using LoggingSensorEventHandler =
+    midismith::adc_board::app::piano_sensing::LoggingSensorEventHandler;
+using RemoteMessageSensorEventHandler =
+    midismith::adc_board::app::piano_sensing::RemoteMessageSensorEventHandler;
+using CompositeSensorEventHandler = midismith::piano_sensing::CompositeSensorEventHandler<2>;
+constexpr std::size_t kSensorCount = midismith::adc_board::app::config::sensors::kSensorCount;
 
 std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
 LookupTablesA() noexcept {
@@ -141,22 +152,66 @@ void AttachSensorRttStreamCaptureToProcessors(
   }
 }
 
-std::array<midismith::adc_board::app::analog::sensors::LoggingSensorEventHandler,
-           midismith::adc_board::app::config::sensors::kSensorCount>&
-VelocityHandlers() noexcept {
-  static std::array<midismith::adc_board::app::analog::sensors::LoggingSensorEventHandler,
-                    midismith::adc_board::app::config::sensors::kSensorCount>
-      handlers{};
+template <std::size_t... kIndex>
+std::array<LoggingSensorEventHandler, kSensorCount> MakeLoggingSensorEventHandlers(
+    midismith::logging::LoggerRequirements& logger, std::index_sequence<kIndex...>) noexcept {
+  return {LoggingSensorEventHandler(
+      logger, midismith::adc_board::app::config::sensors::kSensorIds[kIndex])...};
+}
+
+std::array<LoggingSensorEventHandler, kSensorCount>& LoggingSensorEventHandlers(
+    midismith::logging::LoggerRequirements& logger) noexcept {
+  static auto handlers =
+      MakeLoggingSensorEventHandlers(logger, std::make_index_sequence<kSensorCount>{});
   return handlers;
 }
 
-void AttachSensorVelocityHandlersToProcessors(
+template <std::size_t... kIndex>
+std::array<RemoteMessageSensorEventHandler, kSensorCount> MakeRemoteMessageSensorEventHandlers(
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& message_sender,
+    std::index_sequence<kIndex...>) noexcept {
+  return {RemoteMessageSensorEventHandler(
+      message_sender, midismith::adc_board::app::config::sensors::kSensorIds[kIndex])...};
+}
+
+std::array<RemoteMessageSensorEventHandler, kSensorCount>& RemoteMessageSensorEventHandlers(
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
+        message_sender) noexcept {
+  static auto handlers = MakeRemoteMessageSensorEventHandlers(
+      message_sender, std::make_index_sequence<kSensorCount>{});
+  return handlers;
+}
+
+template <std::size_t... kIndex>
+std::array<CompositeSensorEventHandler, kSensorCount> MakeCompositeSensorEventHandlers(
+    std::array<LoggingSensorEventHandler, kSensorCount>& logging_handlers,
+    std::array<RemoteMessageSensorEventHandler, kSensorCount>& remote_message_handlers,
+    std::index_sequence<kIndex...>) noexcept {
+  return {CompositeSensorEventHandler(
+      std::array<std::reference_wrapper<midismith::piano_sensing::KeyActionRequirements>, 2>{
+          std::ref(static_cast<midismith::piano_sensing::KeyActionRequirements&>(
+              logging_handlers[kIndex])),
+          std::ref(static_cast<midismith::piano_sensing::KeyActionRequirements&>(
+              remote_message_handlers[kIndex]))})...};
+}
+
+std::array<CompositeSensorEventHandler, kSensorCount>& CompositeSensorEventHandlers(
+    midismith::logging::LoggerRequirements& logger,
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
+        message_sender) noexcept {
+  static auto handlers = MakeCompositeSensorEventHandlers(
+      LoggingSensorEventHandlers(logger), RemoteMessageSensorEventHandlers(message_sender),
+      std::make_index_sequence<kSensorCount>{});
+  return handlers;
+}
+
+void AttachSensorEventHandlersToProcessors(
     std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
-    midismith::logging::LoggerRequirements& logger) noexcept {
-  auto& handlers = VelocityHandlers();
+    midismith::logging::LoggerRequirements& logger,
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
+        message_sender) noexcept {
+  auto& handlers = CompositeSensorEventHandlers(logger, message_sender);
   for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
-    handlers[i].SetLogger(&logger);
-    handlers[i].SetSensorId(midismith::adc_board::app::config::sensors::kSensorIds[i]);
     processors[i].SetNoteOnKeyActionHandler(&handlers[i]);
     processors[i].SetNoteOffKeyActionHandler(&handlers[i]);
   }
@@ -216,7 +271,9 @@ bool RegenerateAnalogSensorLookupTables(
 
 AdcControlContext CreateAnalogSubsystem(
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
-    midismith::logging::LoggerRequirements& logger) noexcept {
+    midismith::logging::LoggerRequirements& logger,
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
+        message_sender) noexcept {
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount > 0u,
                 "Sensor count must be > 0");
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount == 22u,
@@ -234,7 +291,7 @@ AdcControlContext CreateAnalogSubsystem(
   ConfigureAnalogSensorProcessorsOnce();
   auto& processors = ProcessorsArray();
   AttachSensorRttStreamCaptureToProcessors(processors, capture);
-  AttachSensorVelocityHandlersToProcessors(processors, logger);
+  AttachSensorEventHandlersToProcessors(processors, logger, message_sender);
 
   auto& sensors = SensorsArray();
   static ProcessedSensorGroup analog_group(
