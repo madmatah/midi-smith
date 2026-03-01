@@ -6,86 +6,176 @@
 
 namespace {
 
-class StartStopCommandHandler final {
+class RecordingSensorEventHandler final {
  public:
-  void OnAdcStart(const midismith::protocol::AdcStart&) noexcept { ++start_calls; }
+  void OnSensorEvent(const midismith::protocol::SensorEvent&) noexcept {
+    ++calls;
+  }
+  int calls = 0;
+};
 
-  void OnAdcStop(const midismith::protocol::AdcStop&) noexcept { ++stop_calls; }
+class RecordingHeartbeatHandler final {
+ public:
+  void OnHeartbeat(const midismith::protocol::Heartbeat&) noexcept {
+    ++calls;
+  }
+  int calls = 0;
+};
 
+class RecordingAdcCommandHandler final {
+ public:
+  void OnAdcStart(const midismith::protocol::AdcStart&) noexcept {
+    ++start_calls;
+  }
+  void OnAdcStop(const midismith::protocol::AdcStop&) noexcept {
+    ++stop_calls;
+  }
   int start_calls = 0;
   int stop_calls = 0;
 };
 
-class StartOnlyCommandHandler final {
+class RecordingCalibCommandHandler final {
  public:
-  void OnAdcStart(const midismith::protocol::AdcStart&) noexcept { ++start_calls; }
+  void OnCalibStart(const midismith::protocol::CalibStart&) noexcept {
+    ++calls;
+  }
+  int calls = 0;
+};
 
-  int start_calls = 0;
+class RecordingDumpRequestHandler final {
+ public:
+  void OnDumpRequest(const midismith::protocol::DumpRequest&) noexcept {
+    ++calls;
+  }
+  int calls = 0;
 };
 
 }  // namespace
 
 TEST_CASE("The InboundMessageDispatcher class", "[protocol][dispatcher]") {
-  StartStopCommandHandler handler;
-  midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+  SECTION("The Dispatch() method") {
+    SECTION("When dispatching a SensorEvent") {
+      SECTION("Should notify the sensor event handler") {
+        RecordingSensorEventHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message = midismith::protocol::SensorEvent{};
 
-  SECTION("When dispatching an AdcStart command") {
-    const midismith::protocol::IncomingMessage message =
-        midismith::protocol::Command(midismith::protocol::AdcStart{});
+        const bool result = dispatcher.Dispatch(message);
 
-    const bool did_dispatch = dispatcher.Dispatch(message);
+        REQUIRE(result);
+        REQUIRE(handler.calls == 1);
+      }
+    }
 
-    REQUIRE(did_dispatch);
-    REQUIRE(handler.start_calls == 1);
-    REQUIRE(handler.stop_calls == 0);
-  }
+    SECTION("When dispatching a Heartbeat") {
+      SECTION("Should notify the heartbeat handler") {
+        RecordingHeartbeatHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message = midismith::protocol::Heartbeat{};
 
-  SECTION("When dispatching an AdcStop command") {
-    const midismith::protocol::IncomingMessage message =
-        midismith::protocol::Command(midismith::protocol::AdcStop{});
+        const bool result = dispatcher.Dispatch(message);
 
-    const bool did_dispatch = dispatcher.Dispatch(message);
+        REQUIRE(result);
+        REQUIRE(handler.calls == 1);
+      }
+    }
 
-    REQUIRE(did_dispatch);
-    REQUIRE(handler.start_calls == 0);
-    REQUIRE(handler.stop_calls == 1);
-  }
+    SECTION("When dispatching an AdcStart command") {
+      SECTION("Should notify the command handler") {
+        RecordingAdcCommandHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message =
+            midismith::protocol::Command(midismith::protocol::AdcStart{});
 
-  SECTION("When dispatching an unhandled command type") {
-    const midismith::protocol::IncomingMessage message =
-        midismith::protocol::Command(
-            midismith::protocol::CalibStart{.mode = midismith::protocol::CalibMode::kAuto});
+        const bool result = dispatcher.Dispatch(message);
 
-    const bool did_dispatch = dispatcher.Dispatch(message);
+        REQUIRE(result);
+        REQUIRE(handler.start_calls == 1);
+      }
+    }
 
-    REQUIRE_FALSE(did_dispatch);
-    REQUIRE(handler.start_calls == 0);
-    REQUIRE(handler.stop_calls == 0);
-  }
+    SECTION("When dispatching an AdcStop command") {
+      SECTION("Should notify the command handler") {
+        RecordingAdcCommandHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message =
+            midismith::protocol::Command(midismith::protocol::AdcStop{});
 
-  SECTION("When dispatching a std::monostate message") {
-    const midismith::protocol::IncomingMessage message = std::monostate{};
+        const bool result = dispatcher.Dispatch(message);
 
-    const bool did_dispatch = dispatcher.Dispatch(message);
+        REQUIRE(result);
+        REQUIRE(handler.stop_calls == 1);
+      }
+    }
 
-    REQUIRE_FALSE(did_dispatch);
-    REQUIRE(handler.start_calls == 0);
-    REQUIRE(handler.stop_calls == 0);
-  }
+    SECTION("When dispatching a CalibStart command") {
+      SECTION("Should notify the calibration handler") {
+        RecordingCalibCommandHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message =
+            midismith::protocol::Command(midismith::protocol::CalibStart{});
 
-  SECTION("When multiple handlers support the same message type") {
-    StartOnlyCommandHandler first_handler;
-    StartOnlyCommandHandler second_handler;
-    midismith::protocol::handlers::InboundMessageDispatcher multi_dispatcher(first_handler,
-                                                                             second_handler);
-    const midismith::protocol::IncomingMessage message =
-        midismith::protocol::Command(midismith::protocol::AdcStart{});
+        const bool result = dispatcher.Dispatch(message);
 
-    const bool did_dispatch = multi_dispatcher.Dispatch(message);
+        REQUIRE(result);
+        REQUIRE(handler.calls == 1);
+      }
+    }
 
-    REQUIRE(did_dispatch);
-    REQUIRE(first_handler.start_calls == 1);
-    REQUIRE(second_handler.start_calls == 1);
+    SECTION("When dispatching a DumpRequest command") {
+      SECTION("Should notify the dump request handler") {
+        RecordingDumpRequestHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message =
+            midismith::protocol::Command(midismith::protocol::DumpRequest{});
+
+        const bool result = dispatcher.Dispatch(message);
+
+        REQUIRE(result);
+        REQUIRE(handler.calls == 1);
+      }
+    }
+
+    SECTION("When multiple handlers are registered") {
+      SECTION("Should notify all handlers that support the message type") {
+        RecordingAdcCommandHandler first;
+        RecordingAdcCommandHandler second;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(first, second);
+        const midismith::protocol::IncomingMessage message =
+            midismith::protocol::Command(midismith::protocol::AdcStart{});
+
+        const bool result = dispatcher.Dispatch(message);
+
+        REQUIRE(result);
+        REQUIRE(first.start_calls == 1);
+        REQUIRE(second.start_calls == 1);
+      }
+    }
+
+    SECTION("When no handler supports the message type") {
+      SECTION("Should return false and not notify anyone") {
+        RecordingSensorEventHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message = midismith::protocol::Heartbeat{};
+
+        const bool result = dispatcher.Dispatch(message);
+
+        REQUIRE_FALSE(result);
+        REQUIRE(handler.calls == 0);
+      }
+    }
+
+    SECTION("When dispatching a std::monostate") {
+      SECTION("Should return false") {
+        RecordingSensorEventHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const midismith::protocol::IncomingMessage message = std::monostate{};
+
+        const bool result = dispatcher.Dispatch(message);
+
+        REQUIRE_FALSE(result);
+      }
+    }
   }
 }
 
