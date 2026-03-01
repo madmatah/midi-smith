@@ -9,6 +9,7 @@
 #include "bsp-types/can/can_bus_stats_provider.hpp"
 #include "bsp/memory_sections.hpp"
 #include "os/runtime_stats.hpp"
+#include "protocol-can/can_inbound_decode_stats_provider.hpp"
 #include "shell-cmd-config/config_command.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
 #include "shell-cmd-os-stats/status_command.hpp"
@@ -58,9 +59,11 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContex
     shell_task_ptr->RegisterCommand(sensor_rtt_cmd);
 
     static midismith::bsp::can::CanBusStatsProvider can_stats_provider(can.stats);
+    static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(
+        can.inbound_decode_stats);
     static midismith::stats::StatsProviderRequirements<midismith::stats::EmptyStatsRequest>*
-        can_stats_providers[] = {&can_stats_provider};
-    static midismith::shell_cmd_stats::GenericStatsCommand<midismith::stats::EmptyStatsRequest, 1u>
+        can_stats_providers[] = {&can_stats_provider, &can_inbound_stats_provider};
+    static midismith::shell_cmd_stats::GenericStatsCommand<midismith::stats::EmptyStatsRequest, 2u>
         can_stats_cmd("can_stats", "Show CAN bus statistics (TX/RX counts, errors, bus state)",
                       can_stats_providers);
     shell_task_ptr->RegisterCommand(can_stats_cmd);

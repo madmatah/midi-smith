@@ -7,4 +7,5 @@ midismith_add_lib(NAME protocol_can
     DEPENDS
         can-broker
         protocol
+        stats
 )
