@@ -1,6 +1,7 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_can_message_sender.hpp"
+#include "app/messaging/main_board_inbound_sensor_event_logging_handler.hpp"
 #include "bsp/can/can_bus_stats.hpp"
 #include "bsp/can/fdcan_transceiver.hpp"
 #include "can-broker/can_task.hpp"
@@ -8,15 +9,12 @@
 #include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
+#include "protocol-can/can_to_protocol_adapter.hpp"
+#include "protocol/handlers/inbound_message_dispatcher.hpp"
 
 namespace midismith::main_board::app::composition {
 
 namespace {
-
-class DiscardingCanFrameHandler final : public midismith::can_broker::CanFrameHandlerRequirements {
- public:
-  void Handle(const midismith::bsp::can::FdcanFrame&) noexcept override {}
-};
 
 void CanTaskEntry(void* ctx) noexcept {
   if (ctx != nullptr) {
@@ -33,8 +31,12 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) no
   static midismith::bsp::can::CanBusStats stats(reinterpret_cast<void*>(&hfdcan1));
   static midismith::bsp::can::FdcanTransceiver transceiver(reinterpret_cast<void*>(&hfdcan1),
                                                            receive_queue, stats);
-  static DiscardingCanFrameHandler discarding_handler;
-  static midismith::can_broker::CanTask can_task(receive_queue, discarding_handler);
+  static midismith::main_board::app::messaging::MainBoardInboundSensorEventLoggingHandler
+      inbound_logging_handler(logger);
+  static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
+      inbound_logging_handler);
+  static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
+  static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 
   constexpr midismith::bsp::can::FdcanFilterConfig kAcceptAllFilter = {
       .filter_index = 0,

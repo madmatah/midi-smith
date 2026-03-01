@@ -39,6 +39,7 @@ if(HOST_TESTS)
     target_sources(main_app_lib PRIVATE
         app/src/app/midi/async_task_midi_controller.cpp
         app/src/messaging/main_board_can_message_sender.cpp
+        app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
         app/src/shell/can_command.cpp
     )
     target_include_directories(main_app_lib PUBLIC
@@ -85,6 +86,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
     app/src/messaging/main_board_can_message_sender.cpp
+    app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
     app/src/shell/can_command.cpp
 )
 
