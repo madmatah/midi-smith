@@ -51,8 +51,11 @@ struct SensorRttTelemetryControlContext {
   midismith::adc_board::app::telemetry::SensorRttTelemetryControlRequirements& control;
 };
 
-CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
+CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
+                              midismith::adc_board::app::analog::AcquisitionControlRequirements&
+                                  acquisition_control) noexcept;
 ConfigContext CreateConfigSubsystem() noexcept;
+AdcControlContext CreateAdcControlContext() noexcept;
 
 AdcControlContext CreateAnalogSubsystem(
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,

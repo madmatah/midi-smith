@@ -245,6 +245,10 @@ void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group,
 
 }  // namespace
 
+AdcControlContext CreateAdcControlContext() noexcept {
+  return AdcControlContext{AdcControl()};
+}
+
 AdcStateContext CreateAdcStateContext() noexcept {
   midismith::adc_board::app::analog::AcquisitionStateRequirements& state = AdcControl();
   return AdcStateContext{state};
