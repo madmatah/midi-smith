@@ -9,6 +9,7 @@
 #include "app/version.hpp"
 #include "bsp/memory_sections.hpp"
 #include "os/runtime_stats.hpp"
+#include "shell-cmd-can-stats/can_stats_command.hpp"
 #include "shell-cmd-config/config_command.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
 #include "shell-cmd-os-stats/status_command.hpp"
@@ -16,7 +17,7 @@
 
 namespace midismith::adc_board::app::composition {
 
-void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
+void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept {
   static const midismith::shell::ShellConfig shell_config{"adc-board> "};
@@ -54,6 +55,9 @@ void CreateShellSubsystem(ConsoleContext& console, ConfigContext& config,
     static midismith::adc_board::app::shell::commands::SensorRttCommand sensor_rtt_cmd(
         sensors.registry, sensor_rtt.control);
     shell_task_ptr->RegisterCommand(sensor_rtt_cmd);
+
+    static midismith::shell_cmd_can_stats::CanStatsCommand can_stats_cmd(can.stats);
+    shell_task_ptr->RegisterCommand(can_stats_cmd);
   } else {
     shell_task_ptr =
         reinterpret_cast<midismith::adc_board::app::tasks::ShellTask*>(shell_task_storage);

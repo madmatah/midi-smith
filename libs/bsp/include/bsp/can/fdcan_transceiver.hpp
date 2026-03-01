@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
+#include "bsp/can/can_bus_stats.hpp"
 #include "os-types/queue_requirements.hpp"
 
 namespace midismith::bsp::can {
@@ -16,7 +17,8 @@ struct FdcanFilterConfig {
 class FdcanTransceiver final : public FdcanTransceiverRequirements {
  public:
   explicit FdcanTransceiver(void* hfdcan_handle,
-                            midismith::os::QueueRequirements<FdcanFrame>& receive_queue) noexcept;
+                            midismith::os::QueueRequirements<FdcanFrame>& receive_queue,
+                            CanBusStats& stats) noexcept;
 
   // Must be called before Start().
   bool ConfigureReceiveFilter(const FdcanFilterConfig& config) noexcept;
@@ -30,6 +32,7 @@ class FdcanTransceiver final : public FdcanTransceiverRequirements {
  private:
   void* hfdcan_handle_;
   midismith::os::QueueRequirements<FdcanFrame>& receive_queue_;
+  CanBusStats& stats_;
 };
 
 }  // namespace midismith::bsp::can

@@ -1,5 +1,6 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
+#include "bsp/can/can_bus_stats.hpp"
 #include "bsp/can/fdcan_transceiver.hpp"
 #include "can-broker/can_task.hpp"
 #include "fdcan.h"
@@ -28,8 +29,9 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) no
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
+  static midismith::bsp::can::CanBusStats stats(reinterpret_cast<void*>(&hfdcan1));
   static midismith::bsp::can::FdcanTransceiver transceiver(reinterpret_cast<void*>(&hfdcan1),
-                                                           receive_queue);
+                                                           receive_queue, stats);
   static DiscardingCanFrameHandler discarding_handler;
   static midismith::can_broker::CanTask can_task(receive_queue, discarding_handler);
 
@@ -50,7 +52,7 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger) no
                                      app::config::CAN_TASK_STACK_BYTES,
                                      app::config::CAN_TASK_PRIORITY);
 
-  return CanContext{transceiver};
+  return CanContext{transceiver, stats};
 }
 
 }  // namespace midismith::adc_board::app::composition

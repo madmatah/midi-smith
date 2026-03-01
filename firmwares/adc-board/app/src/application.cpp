@@ -49,8 +49,8 @@ void Application::create_tasks() noexcept {
   midismith::adc_board::app::composition::SensorRttTelemetryControlContext sensor_rtt =
       midismith::adc_board::app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state,
                                                                                 sensor_rtt_capture);
-  midismith::adc_board::app::composition::CreateShellSubsystem(console, config, adc_control,
-                                                               sensors, sensor_rtt);
+  midismith::adc_board::app::composition::CreateShellSubsystem(console, can_context, config,
+                                                               adc_control, sensors, sensor_rtt);
 }
 
 }  // namespace midismith::adc_board::app

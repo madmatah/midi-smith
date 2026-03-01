@@ -15,9 +15,10 @@ FDCAN_HandleTypeDef* HalHandle(void* handle) noexcept {
 
 }  // namespace
 
-FdcanTransceiver::FdcanTransceiver(
-    void* hfdcan_handle, midismith::os::QueueRequirements<FdcanFrame>& receive_queue) noexcept
-    : hfdcan_handle_(hfdcan_handle), receive_queue_(receive_queue) {
+FdcanTransceiver::FdcanTransceiver(void* hfdcan_handle,
+                                   midismith::os::QueueRequirements<FdcanFrame>& receive_queue,
+                                   CanBusStats& stats) noexcept
+    : hfdcan_handle_(hfdcan_handle), receive_queue_(receive_queue), stats_(stats) {
   __disable_irq();
   g_transceiver = this;
   __enable_irq();
@@ -53,8 +54,17 @@ bool FdcanTransceiver::Transmit(const FdcanFrame& frame) noexcept {
   tx_header.FDFormat = FDCAN_CLASSIC_CAN;
   tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
   tx_header.MessageMarker = 0;
-  return HAL_FDCAN_AddMessageToTxFifoQ(HalHandle(hfdcan_handle_), &tx_header, frame.data.data()) ==
-         HAL_OK;
+
+  const bool transmitted = HAL_FDCAN_AddMessageToTxFifoQ(HalHandle(hfdcan_handle_), &tx_header,
+                                                         frame.data.data()) == HAL_OK;
+
+  if (transmitted) {
+    stats_.IncrementTxSent();
+  } else {
+    stats_.IncrementTxFailed();
+  }
+
+  return transmitted;
 }
 
 void FdcanTransceiver::HandleRxFifo0MessagePending() noexcept {
@@ -70,7 +80,11 @@ void FdcanTransceiver::HandleRxFifo0MessagePending() noexcept {
     frame.identifier = rx_header.Identifier;
     frame.data_length_bytes = static_cast<std::uint8_t>(rx_header.DataLength);
 
-    (void) receive_queue_.SendFromIsr(frame);
+    stats_.IncrementRxReceived();
+
+    if (!receive_queue_.SendFromIsr(frame)) {
+      stats_.IncrementRxQueueOverflow();
+    }
   }
 }
 

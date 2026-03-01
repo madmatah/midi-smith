@@ -23,6 +23,7 @@ midismith_require_lib(config)
 midismith_require_lib(telemetry)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
+midismith_require_lib(shell-cmd-can-stats)
 midismith_require_lib(bsp-types)
 midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
@@ -155,6 +156,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     telemetry
     shell_cmd_version
     shell_cmd_os_stats
+    shell_cmd_can_stats
     can_broker
     protocol
     protocol_can

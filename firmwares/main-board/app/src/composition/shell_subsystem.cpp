@@ -5,6 +5,7 @@
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "os/runtime_stats.hpp"
+#include "shell-cmd-can-stats/can_stats_command.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
 #include "shell-cmd-os-stats/status_command.hpp"
 #include "shell-cmd-version/version_command.hpp"
@@ -45,6 +46,9 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept {
 
   static midismith::main_board::app::shell::CanCommand can_cmd(can.message_sender);
   shell_task_ptr->RegisterCommand(can_cmd);
+
+  static midismith::shell_cmd_can_stats::CanStatsCommand can_stats_cmd(can.stats);
+  shell_task_ptr->RegisterCommand(can_stats_cmd);
 
   (void) shell_task_ptr->start();
 }

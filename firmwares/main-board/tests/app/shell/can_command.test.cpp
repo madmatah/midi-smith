@@ -44,10 +44,16 @@ class RecordingMessageSender final
 
 class RecordingStream final : public midismith::io::WritableStreamRequirements {
  public:
-  void Write(char c) noexcept override { output_ += c; }
-  void Write(const char* str) noexcept override { output_ += str; }
+  void Write(char c) noexcept override {
+    output_ += c;
+  }
+  void Write(const char* str) noexcept override {
+    output_ += str;
+  }
 
-  [[nodiscard]] bool has_output() const noexcept { return !output_.empty(); }
+  [[nodiscard]] bool has_output() const noexcept {
+    return !output_.empty();
+  }
 
  private:
   std::string output_;
@@ -64,7 +70,9 @@ TEST_CASE("The CanCommand class") {
 
   SECTION("The Name() method") {
     SECTION("When called") {
-      SECTION("Should return \"can\"") { REQUIRE(command.Name() == "can"); }
+      SECTION("Should return \"can\"") {
+        REQUIRE(command.Name() == "can");
+      }
     }
   }
 
