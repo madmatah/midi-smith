@@ -1,3 +1,4 @@
+#include "app/can/can_filter_updater.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/adc_inbound_command_handler.hpp"
@@ -8,6 +9,7 @@
 #include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
+#include "protocol-can/can_filter_factory.hpp"
 #include "protocol-can/can_to_protocol_adapter.hpp"
 #include "protocol/handlers/inbound_message_dispatcher.hpp"
 
@@ -23,9 +25,11 @@ void CanTaskEntry(void* ctx) noexcept {
 
 }  // namespace
 
-CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
-                              midismith::adc_board::app::analog::AcquisitionControlRequirements&
-                                  acquisition_control) noexcept {
+CanContext CreateCanSubsystem(
+    midismith::logging::LoggerRequirements& logger,
+    midismith::adc_board::app::analog::AcquisitionControlRequirements& acquisition_control,
+    midismith::adc_board::app::storage::AdcBoardPersistentConfiguration&
+        persistent_config) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -38,19 +42,23 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
       inbound_command_handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
+  static midismith::adc_board::app::can::CanFilterUpdater can_filter_updater(transceiver);
 
-  constexpr midismith::bsp::can::FdcanFilterConfig kAcceptAllFilter = {
-      .filter_index = 0,
-      .id = 0x000,
-      .id_mask = 0x000,
-  };
+  const std::uint8_t initial_node_id = persistent_config.active_config().data.can_board_id;
+  const auto filter_set =
+      midismith::protocol_can::CanFilterFactory::MakeAdcFilters(initial_node_id);
 
-  if (!transceiver.ConfigureReceiveFilter(kAcceptAllFilter)) {
+  if (!transceiver.ConfigureReceiveFilters(filter_set.filters)) {
     logger.logf(midismith::logging::Level::Error, "FDCAN: filter configuration failed");
+  }
+  if (!transceiver.ConfigureGlobalRejectFilter()) {
+    logger.logf(midismith::logging::Level::Error, "FDCAN: global filter configuration failed");
   }
   if (!transceiver.Start()) {
     logger.logf(midismith::logging::Level::Error, "FDCAN: start failed");
   }
+
+  persistent_config.RegisterNodeIdObserver(can_filter_updater);
 
   (void) midismith::os::Task::create("CanTask", CanTaskEntry, &can_task,
                                      app::config::CAN_TASK_STACK_BYTES,

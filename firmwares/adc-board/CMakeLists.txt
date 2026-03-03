@@ -46,6 +46,7 @@ if(HOST_TESTS)
 
     add_library(adc_app_lib STATIC)
     target_sources(adc_app_lib PRIVATE
+        app/src/can/can_filter_updater.cpp
         app/src/storage/adc_board_persistent_configuration.cpp
         app/src/shell/commands/sensor_rtt_command.cpp
         app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
@@ -97,6 +98,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/application.cpp
     app/src/app_entry.cpp
     app/src/version.cpp
+    app/src/can/can_filter_updater.cpp
     app/src/composition/can_subsystem.cpp
     app/src/messaging/adc_board_can_message_sender.cpp
     app/src/messaging/adc_inbound_command_handler.cpp
