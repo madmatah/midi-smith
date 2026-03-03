@@ -93,7 +93,17 @@ bool AdcBoardPersistentConfiguration::UpdateBoardId(std::uint8_t board_id) noexc
   }
 
   ram_config_.data.can_board_id = board_id;
+
+  if (node_id_observer_ != nullptr) {
+    node_id_observer_->OnCanNodeIdChanged(board_id);
+  }
+
   return true;
+}
+
+void AdcBoardPersistentConfiguration::RegisterNodeIdObserver(
+    midismith::adc_board::app::can::CanNodeIdChangedObserverRequirements& observer) noexcept {
+  node_id_observer_ = &observer;
 }
 
 midismith::config::TransactionResult AdcBoardPersistentConfiguration::Commit() noexcept {

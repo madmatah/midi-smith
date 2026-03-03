@@ -24,15 +24,30 @@ FdcanTransceiver::FdcanTransceiver(void* hfdcan_handle,
   __enable_irq();
 }
 
-bool FdcanTransceiver::ConfigureReceiveFilter(const FdcanFilterConfig& config) noexcept {
-  FDCAN_FilterTypeDef filter = {};
-  filter.IdType = FDCAN_STANDARD_ID;
-  filter.FilterIndex = config.filter_index;
-  filter.FilterType = FDCAN_FILTER_MASK;
-  filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  filter.FilterID1 = config.id;
-  filter.FilterID2 = config.id_mask;
-  return HAL_FDCAN_ConfigFilter(HalHandle(hfdcan_handle_), &filter) == HAL_OK;
+bool FdcanTransceiver::Stop() noexcept {
+  return HAL_FDCAN_Stop(HalHandle(hfdcan_handle_)) == HAL_OK;
+}
+
+bool FdcanTransceiver::ConfigureReceiveFilters(
+    std::span<const FdcanFilterConfig> configs) noexcept {
+  for (const auto& config : configs) {
+    FDCAN_FilterTypeDef filter = {};
+    filter.IdType = FDCAN_STANDARD_ID;
+    filter.FilterIndex = config.filter_index;
+    filter.FilterType = FDCAN_FILTER_MASK;
+    filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+    filter.FilterID1 = config.id;
+    filter.FilterID2 = config.id_mask;
+    if (HAL_FDCAN_ConfigFilter(HalHandle(hfdcan_handle_), &filter) != HAL_OK) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool FdcanTransceiver::ConfigureGlobalRejectFilter() noexcept {
+  return HAL_FDCAN_ConfigGlobalFilter(HalHandle(hfdcan_handle_), FDCAN_REJECT, FDCAN_REJECT,
+                                      FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) == HAL_OK;
 }
 
 bool FdcanTransceiver::Start() noexcept {

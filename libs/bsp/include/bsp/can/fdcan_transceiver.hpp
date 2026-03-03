@@ -1,31 +1,26 @@
 #pragma once
 
-#include <cstdint>
-
+#include "bsp-types/can/fdcan_filter_config.hpp"
+#include "bsp-types/can/fdcan_transceiver_admin_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
 #include "bsp/can/can_bus_stats.hpp"
 #include "os-types/queue_requirements.hpp"
 
 namespace midismith::bsp::can {
 
-struct FdcanFilterConfig {
-  std::uint32_t filter_index;
-  std::uint32_t id;
-  std::uint32_t id_mask;
-};
-
-class FdcanTransceiver final : public FdcanTransceiverRequirements {
+class FdcanTransceiver final : public FdcanTransceiverRequirements,
+                               public FdcanTransceiverAdminRequirements {
  public:
   explicit FdcanTransceiver(void* hfdcan_handle,
                             midismith::os::QueueRequirements<FdcanFrame>& receive_queue,
                             CanBusStats& stats) noexcept;
 
-  // Must be called before Start().
-  bool ConfigureReceiveFilter(const FdcanFilterConfig& config) noexcept;
-
-  bool Start() noexcept;
-
   bool Transmit(const FdcanFrame& frame) noexcept override;
+
+  bool Stop() noexcept override;
+  bool ConfigureReceiveFilters(std::span<const FdcanFilterConfig> configs) noexcept override;
+  bool ConfigureGlobalRejectFilter() noexcept override;
+  bool Start() noexcept override;
 
   void HandleRxFifo0MessagePending() noexcept;
 

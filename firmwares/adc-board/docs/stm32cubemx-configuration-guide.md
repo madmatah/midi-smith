@@ -466,7 +466,7 @@ If you use them, repeat the configuration above with the same parameters (115200
 4. **Buffers** (temporary settings, adjust as needed):
    * **Tx Buffers Nbr**: 0
    * **Tx Fifo Queue Elmts Nbr**: 32
-   * **Std Filters Nbr**: 1
+   * **Std Filters Nbr**: 4
    * **Rx Fifo0 Elmts Nbr**: 32
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.

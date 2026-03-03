@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
+#include "app/can/can_node_id_changed_observer_requirements.hpp"
 #include "app/storage/storage_manager.hpp"
 #include "bsp/storage/flash_sector_storage_requirements.hpp"
 #include "config/config_validator.hpp"
@@ -28,11 +29,15 @@ class AdcBoardPersistentConfiguration : public midismith::config::TransactionalC
   bool UpdateBoardId(std::uint8_t board_id) noexcept;
   midismith::config::TransactionResult Commit() noexcept override;
 
+  void RegisterNodeIdObserver(
+      midismith::adc_board::app::can::CanNodeIdChangedObserverRequirements& observer) noexcept;
+
   const midismith::adc_board::domain::config::AdcBoardConfig& active_config() const noexcept;
 
  private:
   StorageManager<midismith::adc_board::domain::config::AdcBoardConfig> storage_manager_;
   midismith::adc_board::domain::config::AdcBoardConfig ram_config_;
+  midismith::adc_board::app::can::CanNodeIdChangedObserverRequirements* node_id_observer_ = nullptr;
 };
 
 }  // namespace midismith::adc_board::app::storage

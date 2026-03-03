@@ -32,11 +32,11 @@ void Application::create_tasks() noexcept {
   midismith::adc_board::app::composition::ConsoleContext console{console_stream};
   midismith::adc_board::app::composition::AdcControlContext adc_control =
       midismith::adc_board::app::composition::CreateAdcControlContext();
-  midismith::adc_board::app::composition::CanContext can_context =
-      midismith::adc_board::app::composition::CreateCanSubsystem(logger, adc_control.control);
-
   midismith::adc_board::app::composition::ConfigContext config =
       midismith::adc_board::app::composition::CreateConfigSubsystem();
+  midismith::adc_board::app::composition::CanContext can_context =
+      midismith::adc_board::app::composition::CreateCanSubsystem(logger, adc_control.control,
+                                                                 config.adc_board_config);
 
   static midismith::adc_board::app::messaging::AdcBoardCanMessageSender can_message_sender(
       can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);

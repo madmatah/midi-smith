@@ -10,6 +10,7 @@
 #include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
+#include "protocol-can/can_filter_factory.hpp"
 #include "protocol-can/can_to_protocol_adapter.hpp"
 #include "protocol/handlers/inbound_message_dispatcher.hpp"
 
@@ -42,14 +43,13 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 
-  constexpr midismith::bsp::can::FdcanFilterConfig kAcceptAllFilter = {
-      .filter_index = 0,
-      .id = 0x000,
-      .id_mask = 0x000,
-  };
+  const auto filter_set = midismith::protocol_can::CanFilterFactory::MakeMainFilters();
 
-  if (!transceiver.ConfigureReceiveFilter(kAcceptAllFilter)) {
+  if (!transceiver.ConfigureReceiveFilters(filter_set.filters)) {
     logger.logf(midismith::logging::Level::Error, "FDCAN: filter configuration failed");
+  }
+  if (!transceiver.ConfigureGlobalRejectFilter()) {
+    logger.logf(midismith::logging::Level::Error, "FDCAN: global filter configuration failed");
   }
   if (!transceiver.Start()) {
     logger.logf(midismith::logging::Level::Error, "FDCAN: start failed");

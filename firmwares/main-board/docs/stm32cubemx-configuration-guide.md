@@ -74,7 +74,7 @@ Adjust later according to required filters and buffer sizes.
 4.  Buffers (temporary values for testing; change as needed)
     * **Tx Buffers Nbr**: 0
     * **Tx Fifo Queue Elmts Nbr**: 32
-    * **Std Filters Nbr**: 1
+    * **Std Filters Nbr**: 4
     * **Rx Fifo0 Elmts Nbr**: 32
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
