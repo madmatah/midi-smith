@@ -9,11 +9,17 @@
 
 namespace midismith::protocol {
 
-using IncomingMessage = std::variant<std::monostate, SensorEvent, Command, Heartbeat>;
+struct IncomingMessage {
+  std::variant<UnicastTransportHeader, BroadcastTransportHeader> routing;
+  std::variant<SensorEvent, Command, Heartbeat> content;
+};
 
 class MessageParser {
  public:
-  static std::optional<IncomingMessage> Decode(const TransportHeader& header,
+  static std::optional<IncomingMessage> Decode(const UnicastTransportHeader& header,
+                                               std::span<const uint8_t> payload);
+
+  static std::optional<IncomingMessage> Decode(const BroadcastTransportHeader& header,
                                                std::span<const uint8_t> payload);
 };
 

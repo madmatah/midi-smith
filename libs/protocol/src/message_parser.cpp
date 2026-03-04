@@ -1,16 +1,20 @@
 #include "protocol/message_parser.hpp"
 
+#include <utility>
+
 #include "byte-codec/little_endian.hpp"
 
 namespace midismith::protocol {
 
 using byte_codec::ReadLittleEndian;
 
-std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& header,
-                                                     std::span<const uint8_t> payload) {
-  switch (header.category) {
+using MessageContent = std::variant<SensorEvent, Command, Heartbeat>;
+
+static std::optional<MessageContent> DecodeContent(MessageCategory category, MessageType type,
+                                                   std::span<const uint8_t> payload) {
+  switch (category) {
     case MessageCategory::kRealTime:
-      if (header.type == MessageType::kSensorEvent) {
+      if (type == MessageType::kSensorEvent) {
         if (payload.size() < 3) return std::nullopt;
 
         const auto type_byte = ReadLittleEndian<std::uint8_t>(payload, 0);
@@ -23,7 +27,7 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
       break;
 
     case MessageCategory::kControl:
-      if (header.type == MessageType::kCommand) {
+      if (type == MessageType::kCommand) {
         if (payload.empty()) return std::nullopt;
 
         const auto action = static_cast<CommandAction>(ReadLittleEndian<std::uint8_t>(payload, 0));
@@ -47,7 +51,7 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
       break;
 
     case MessageCategory::kSystem:
-      if (header.type == MessageType::kHeartbeat) {
+      if (type == MessageType::kHeartbeat) {
         if (payload.empty()) return std::nullopt;
 
         auto state_byte = ReadLittleEndian<std::uint8_t>(payload, 0);
@@ -63,6 +67,20 @@ std::optional<IncomingMessage> MessageParser::Decode(const TransportHeader& head
   }
 
   return std::nullopt;
+}
+
+std::optional<IncomingMessage> MessageParser::Decode(const UnicastTransportHeader& header,
+                                                     std::span<const uint8_t> payload) {
+  auto content = DecodeContent(header.category, header.type, payload);
+  if (!content.has_value()) return std::nullopt;
+  return IncomingMessage{.routing = header, .content = std::move(*content)};
+}
+
+std::optional<IncomingMessage> MessageParser::Decode(const BroadcastTransportHeader& header,
+                                                     std::span<const uint8_t> payload) {
+  auto content = DecodeContent(header.category, header.type, payload);
+  if (!content.has_value()) return std::nullopt;
+  return IncomingMessage{.routing = header, .content = std::move(*content)};
 }
 
 }  // namespace midismith::protocol

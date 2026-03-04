@@ -9,7 +9,7 @@ using namespace midismith::protocol;
 TEST_CASE("The AdcMessageBuilder class") {
   SECTION("The BuildNoteOn() method") {
     SECTION("When called for a specific ADC node") {
-      SECTION("Should produce a kRealTime header with that ADC node as source") {
+      SECTION("Should produce a UnicastTransportHeader with that ADC node as source") {
         AdcMessageBuilder builder(4);
         auto [header, msg] = builder.BuildNoteOn(60, 100);
 
@@ -25,18 +25,32 @@ TEST_CASE("The AdcMessageBuilder class") {
   }
 
   SECTION("The BuildHeartbeat() method") {
-    SECTION("Should carry the provided DeviceState") {
+    SECTION("Should produce a UnicastTransportHeader targeting the main board") {
       AdcMessageBuilder builder(2);
       auto [header, msg] = builder.BuildHeartbeat(DeviceState::kRunning);
 
       REQUIRE(header.category == MessageCategory::kSystem);
       REQUIRE(header.type == MessageType::kHeartbeat);
+      REQUIRE(header.source_node_id == 2);
+      REQUIRE(header.destination_node_id == kMainBoardNodeId);
       REQUIRE(msg.device_state == DeviceState::kRunning);
     }
   }
 }
 
 TEST_CASE("The MainBoardMessageBuilder class") {
+  SECTION("The BuildHeartbeat() method") {
+    SECTION("Should produce a BroadcastTransportHeader from the main board") {
+      MainBoardMessageBuilder builder;
+      auto [header, msg] = builder.BuildHeartbeat(DeviceState::kRunning);
+
+      REQUIRE(header.category == MessageCategory::kSystem);
+      REQUIRE(header.type == MessageType::kHeartbeat);
+      REQUIRE(header.source_node_id == kMainBoardNodeId);
+      REQUIRE(msg.device_state == DeviceState::kRunning);
+    }
+  }
+
   SECTION("The BuildStartCalibration() method") {
     SECTION("When called with kAuto mode") {
       SECTION("Should produce a kControl CalibStart command with kAuto mode") {

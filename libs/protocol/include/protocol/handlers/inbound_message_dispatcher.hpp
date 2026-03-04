@@ -10,14 +10,16 @@
 namespace midismith::protocol::handlers {
 
 template <typename T>
-concept SensorEventHandler = requires(T& handler, const protocol::SensorEvent& event) {
-  { handler.OnSensorEvent(event) } noexcept;
-};
+concept SensorEventHandler =
+    requires(T& handler, const protocol::SensorEvent& event, std::uint8_t source_node_id) {
+      { handler.OnSensorEvent(event, source_node_id) } noexcept;
+    };
 
 template <typename T>
-concept HeartbeatHandler = requires(T& handler, const protocol::Heartbeat& heartbeat) {
-  { handler.OnHeartbeat(heartbeat) } noexcept;
-};
+concept HeartbeatHandler =
+    requires(T& handler, const protocol::Heartbeat& heartbeat, std::uint8_t source_node_id) {
+      { handler.OnHeartbeat(heartbeat, source_node_id) } noexcept;
+    };
 
 template <typename T>
 concept AdcStartHandler = requires(T& handler, const protocol::AdcStart& command) {
@@ -35,9 +37,10 @@ concept CalibStartHandler = requires(T& handler, const protocol::CalibStart& com
 };
 
 template <typename T>
-concept DumpRequestHandler = requires(T& handler, const protocol::DumpRequest& command) {
-  { handler.OnDumpRequest(command) } noexcept;
-};
+concept DumpRequestHandler =
+    requires(T& handler, const protocol::DumpRequest& command, std::uint8_t source_node_id) {
+      { handler.OnDumpRequest(command, source_node_id) } noexcept;
+    };
 
 template <typename... THandlers>
 class InboundMessageDispatcher {
@@ -45,30 +48,66 @@ class InboundMessageDispatcher {
   explicit InboundMessageDispatcher(THandlers&... handlers) noexcept : handlers_(handlers...) {}
 
   [[nodiscard]] bool Dispatch(const protocol::IncomingMessage& message) noexcept {
+    const std::uint8_t sender = std::visit(
+        [](const auto& header) noexcept { return header.source_node_id; }, message.routing);
     return std::visit(
-        [this](const auto& typed_message) noexcept { return DispatchTypedMessage(typed_message); },
-        message);
+        [this, sender](const auto& content) noexcept {
+          return DispatchTypedMessage(sender, content);
+        },
+        message.content);
   }
 
  private:
   std::tuple<THandlers&...> handlers_;
 
-  [[nodiscard]] bool DispatchTypedMessage(const std::monostate&) const noexcept {
-    return false;
+  [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
+                                          const protocol::SensorEvent& event) noexcept {
+    return DispatchToAllHandlers(sender, event);
   }
 
-  [[nodiscard]] bool DispatchTypedMessage(const protocol::SensorEvent& event) noexcept {
-    return DispatchToAllHandlers(event);
+  [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
+                                          const protocol::Heartbeat& heartbeat) noexcept {
+    return DispatchToAllHandlers(sender, heartbeat);
   }
 
-  [[nodiscard]] bool DispatchTypedMessage(const protocol::Heartbeat& heartbeat) noexcept {
-    return DispatchToAllHandlers(heartbeat);
-  }
-
-  [[nodiscard]] bool DispatchTypedMessage(const protocol::Command& command) noexcept {
+  [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
+                                          const protocol::Command& command) noexcept {
     return std::visit(
-        [this](const auto& typed_command) noexcept { return DispatchToAllHandlers(typed_command); },
+        [this, sender](const auto& typed_command) noexcept {
+          return DispatchTypedCommand(sender, typed_command);
+        },
         command);
+  }
+
+  [[nodiscard]] bool DispatchTypedCommand(std::uint8_t /*sender*/,
+                                          const protocol::AdcStart& command) noexcept {
+    return DispatchToAllHandlers(command);
+  }
+
+  [[nodiscard]] bool DispatchTypedCommand(std::uint8_t /*sender*/,
+                                          const protocol::AdcStop& command) noexcept {
+    return DispatchToAllHandlers(command);
+  }
+
+  [[nodiscard]] bool DispatchTypedCommand(std::uint8_t /*sender*/,
+                                          const protocol::CalibStart& command) noexcept {
+    return DispatchToAllHandlers(command);
+  }
+
+  [[nodiscard]] bool DispatchTypedCommand(std::uint8_t sender,
+                                          const protocol::DumpRequest& command) noexcept {
+    return DispatchToAllHandlers(sender, command);
+  }
+
+  template <typename TMessage>
+  [[nodiscard]] bool DispatchToAllHandlers(std::uint8_t sender, const TMessage& message) noexcept {
+    bool did_dispatch = false;
+    std::apply(
+        [&message, sender, &did_dispatch](auto&... handlers) noexcept {
+          ((did_dispatch = TryDispatch(handlers, message, sender) || did_dispatch), ...);
+        },
+        handlers_);
+    return did_dispatch;
   }
 
   template <typename TMessage>
@@ -83,20 +122,20 @@ class InboundMessageDispatcher {
   }
 
   template <typename THandler>
-  [[nodiscard]] static bool TryDispatch(THandler& handler,
-                                        const protocol::SensorEvent& event) noexcept {
+  [[nodiscard]] static bool TryDispatch(THandler& handler, const protocol::SensorEvent& event,
+                                        std::uint8_t source_node_id) noexcept {
     if constexpr (SensorEventHandler<THandler>) {
-      handler.OnSensorEvent(event);
+      handler.OnSensorEvent(event, source_node_id);
       return true;
     }
     return false;
   }
 
   template <typename THandler>
-  [[nodiscard]] static bool TryDispatch(THandler& handler,
-                                        const protocol::Heartbeat& heartbeat) noexcept {
+  [[nodiscard]] static bool TryDispatch(THandler& handler, const protocol::Heartbeat& heartbeat,
+                                        std::uint8_t source_node_id) noexcept {
     if constexpr (HeartbeatHandler<THandler>) {
-      handler.OnHeartbeat(heartbeat);
+      handler.OnHeartbeat(heartbeat, source_node_id);
       return true;
     }
     return false;
@@ -133,10 +172,10 @@ class InboundMessageDispatcher {
   }
 
   template <typename THandler>
-  [[nodiscard]] static bool TryDispatch(THandler& handler,
-                                        const protocol::DumpRequest& command) noexcept {
+  [[nodiscard]] static bool TryDispatch(THandler& handler, const protocol::DumpRequest& command,
+                                        std::uint8_t source_node_id) noexcept {
     if constexpr (DumpRequestHandler<THandler>) {
-      handler.OnDumpRequest(command);
+      handler.OnDumpRequest(command, source_node_id);
       return true;
     }
     return false;
