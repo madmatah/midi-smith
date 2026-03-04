@@ -33,11 +33,38 @@ class RecordingTransceiver final : public midismith::bsp::can::FdcanTransceiverR
 
 using midismith::main_board::app::messaging::MainBoardCanMessageSender;
 using midismith::protocol::CalibMode;
+using midismith::protocol::DeviceState;
 using midismith::protocol::MainBoardMessageBuilder;
 
 TEST_CASE("The MainBoardCanMessageSender class") {
   RecordingTransceiver transceiver;
   MainBoardCanMessageSender sender(transceiver);
+
+  SECTION("The SendHeartbeat() method") {
+    SECTION("Should transmit a frame with the correct CAN identifier") {
+      sender.SendHeartbeat(DeviceState::kRunning);
+
+      const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+          MainBoardMessageBuilder().BuildHeartbeat(DeviceState::kRunning).first);
+      REQUIRE(transceiver.last_frame().has_value());
+      REQUIRE(transceiver.last_frame()->identifier == expected_id);
+    }
+
+    SECTION("Should transmit a frame with DLC = 1") {
+      sender.SendHeartbeat(DeviceState::kRunning);
+
+      REQUIRE(transceiver.last_frame().has_value());
+      REQUIRE(transceiver.last_frame()->data_length_bytes ==
+              midismith::protocol::Heartbeat::kSerializedSizeBytes);
+    }
+
+    SECTION("Should encode the device state as the single payload byte") {
+      sender.SendHeartbeat(DeviceState::kIdle);
+
+      REQUIRE(transceiver.last_frame().has_value());
+      REQUIRE(transceiver.last_frame()->data[0] == static_cast<std::uint8_t>(DeviceState::kIdle));
+    }
+  }
 
   SECTION("The SendStartAdc() method") {
     SECTION("When called with a target node id") {

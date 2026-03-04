@@ -43,6 +43,13 @@ class MainBoardMessageBuilder {
  public:
   explicit constexpr MainBoardMessageBuilder() = default;
 
+  [[nodiscard]] constexpr std::pair<TransportHeader, Heartbeat> BuildHeartbeat(
+      DeviceState device_state) const {
+    return {TransportHeader(MessageCategory::kSystem, MessageType::kHeartbeat, kMainBoardNodeId,
+                            kMainBoardNodeId),
+            Heartbeat{.device_state = device_state}};
+  }
+
   [[nodiscard]] constexpr std::pair<TransportHeader, Command> BuildStartAdc(
       std::uint8_t target_node_id) const {
     return {TransportHeader(MessageCategory::kControl, MessageType::kCommand, kMainBoardNodeId,

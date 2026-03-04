@@ -24,6 +24,11 @@ constexpr uint32_t CAN_RECEIVE_QUEUE_CAPACITY = 16;
 constexpr uint32_t CAN_TASK_STACK_BYTES = 1024;
 constexpr uint32_t CAN_TASK_PRIORITY = 2;
 
+// Supervisor
+constexpr uint32_t SUPERVISOR_TASK_STACK_BYTES = 512;
+constexpr uint32_t SUPERVISOR_TASK_PRIORITY = 1;
+constexpr uint32_t kHeartbeatPeriodMs = 500;
+
 // Shell
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 

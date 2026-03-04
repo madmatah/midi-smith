@@ -13,6 +13,21 @@ MainBoardCanMessageSender::MainBoardCanMessageSender(
     bsp::can::FdcanTransceiverRequirements& transceiver) noexcept
     : transceiver_(transceiver) {}
 
+bool MainBoardCanMessageSender::SendHeartbeat(protocol::DeviceState device_state) noexcept {
+  const auto [header, heartbeat] = protocol::MainBoardMessageBuilder().BuildHeartbeat(device_state);
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  const auto bytes_written = heartbeat.Serialize(std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
 bool MainBoardCanMessageSender::SendStartAdc(std::uint8_t target_node_id) noexcept {
   const auto [header, command] = protocol::MainBoardMessageBuilder().BuildStartAdc(target_node_id);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);

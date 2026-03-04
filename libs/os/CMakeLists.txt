@@ -9,5 +9,6 @@ midismith_add_infra_lib(NAME os
         src/task.cpp
         src/this_task.cpp
         src/runtime_stats.cpp
+        src/timer.cpp
     DEPENDS os-types
 )

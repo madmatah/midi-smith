@@ -44,6 +44,7 @@ if(HOST_TESTS)
         app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
         app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
         app/src/shell/can_command.cpp
+        app/src/supervisor/network_supervisor_task.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
@@ -76,6 +77,8 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/composition/can_subsystem.cpp
     app/src/composition/midi_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
+    app/src/supervisor/network_supervisor_task.cpp
+    app/src/composition/supervisor_subsystem.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
     bsp/src/stm32_octospi.cpp

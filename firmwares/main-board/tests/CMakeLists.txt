@@ -7,6 +7,7 @@ midismith_add_firmware_test(NAME main
         app/messaging/main_board_inbound_sensor_event_logging_handler.test.cpp
         app/messaging/main_board_inbound_sensor_event_midi_handler.test.cpp
         app/shell/can_command.test.cpp
+        app/supervisor/network_supervisor_task.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )

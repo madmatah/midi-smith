@@ -15,6 +15,10 @@ namespace {
 class RecordingMessageSender final
     : public midismith::main_board::app::messaging::MainBoardMessageSenderRequirements {
  public:
+  bool SendHeartbeat(midismith::protocol::DeviceState) noexcept override {
+    return true;
+  }
+
   bool SendStartAdc(std::uint8_t node_id) noexcept override {
     start_adc_node_id_ = node_id;
     return true;

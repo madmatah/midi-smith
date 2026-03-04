@@ -18,6 +18,7 @@ midismith_add_firmware_test(NAME adc
         app/can/can_filter_updater.test.cpp
         app/messaging/adc_board_can_message_sender.test.cpp
         app/messaging/adc_inbound_command_handler.test.cpp
+        app/supervisor/adc_supervisor_task.test.cpp
         app/piano_sensing/logging_sensor_event_handler.test.cpp
         app/piano_sensing/remote_message_sensor_event_handler.test.cpp
     LINK_LIBRARIES adc_domain adc_app_lib
