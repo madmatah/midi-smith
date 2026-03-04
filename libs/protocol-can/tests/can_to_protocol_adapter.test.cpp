@@ -88,7 +88,7 @@ TEST_CASE("The CanToProtocolAdapter class", "[protocol-can][adapter]") {
 
     REQUIRE(dispatcher.dispatch_call_count == 1);
     REQUIRE(dispatcher.last_message.has_value());
-    auto* command = std::get_if<midismith::protocol::Command>(&*dispatcher.last_message);
+    auto* command = std::get_if<midismith::protocol::Command>(&dispatcher.last_message->content);
     REQUIRE(command != nullptr);
     REQUIRE(std::get_if<midismith::protocol::AdcStart>(command) != nullptr);
     REQUIRE(stats.dispatched_message_count == 1);

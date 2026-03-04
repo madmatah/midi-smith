@@ -31,10 +31,10 @@ TEST_CASE("The CanIdentifierMapper class") {
       }
     }
 
-    SECTION("When the header category is kControl and destination is the main board") {
+    SECTION("When the header category is kControl broadcast") {
       SECTION("Should encode to exactly 0x100") {
-        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kControl,
-                                                                MessageType::kCommand, 0, 0);
+        auto header = BroadcastTransportHeader::Make(MessageCategory::kControl,
+                                                     MessageType::kCommand, kMainBoardNodeId);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x100);
       }
@@ -60,8 +60,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When the header category is kBulkData in DUMP direction") {
       SECTION("Should place the ADC source node ID in the 0x21x identifier range") {
-        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
-                                                                MessageType::kDataSegment, 4, 0);
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegment, 4, 0);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x214);
       }
@@ -69,8 +69,8 @@ TEST_CASE("The CanIdentifierMapper class") {
 
     SECTION("When the header category is kBulkData in LOAD direction") {
       SECTION("Should place the ADC destination node ID in the 0x21x identifier range") {
-        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
-                                                                MessageType::kDataSegment, 0, 6);
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegment, 0, 6);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x216);
       }
@@ -83,67 +83,96 @@ TEST_CASE("The CanIdentifierMapper class") {
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x712);
       }
+
+      SECTION("Main board heartbeat should encode to exactly 0x710") {
+        MainBoardMessageBuilder builder;
+        auto [header, heartbeat] = builder.BuildHeartbeat(DeviceState::kRunning);
+
+        REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x710);
+      }
     }
   }
 
   SECTION("The DecodeId() method") {
     SECTION("When given an identifier in the 0x01x range") {
-      SECTION("Should reconstruct a kRealTime kSensorEvent header with node ID as source") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kRealTime kSensorEvent") {
         auto result = CanIdentifierMapper::DecodeId(0x013);
 
         REQUIRE(result.has_value());
-        REQUIRE(result->category == MessageCategory::kRealTime);
-        REQUIRE(result->type == MessageType::kSensorEvent);
-        REQUIRE(result->source_node_id == 3);
-        REQUIRE(result->destination_node_id == 0);
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kRealTime);
+        REQUIRE(header->type == MessageType::kSensorEvent);
+        REQUIRE(header->source_node_id == 3);
+        REQUIRE(header->destination_node_id == kMainBoardNodeId);
       }
     }
 
     SECTION("When given exactly 0x100") {
-      SECTION("Should reconstruct a kControl kCommand broadcast header") {
+      SECTION("Should reconstruct a BroadcastTransportHeader for kControl kCommand") {
         auto result = CanIdentifierMapper::DecodeId(0x100);
 
         REQUIRE(result.has_value());
-        REQUIRE(result->category == MessageCategory::kControl);
-        REQUIRE(result->type == MessageType::kCommand);
-        REQUIRE(result->source_node_id == 0);
-        REQUIRE(result->destination_node_id == 0);
+        auto* header = std::get_if<BroadcastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kControl);
+        REQUIRE(header->type == MessageType::kCommand);
+        REQUIRE(header->source_node_id == kMainBoardNodeId);
       }
     }
 
     SECTION("When given an identifier in the 0x11x range") {
-      SECTION("Should reconstruct a kControl kCommand unicast header with node ID as destination") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kControl kCommand") {
         auto result = CanIdentifierMapper::DecodeId(0x115);
 
         REQUIRE(result.has_value());
-        REQUIRE(result->category == MessageCategory::kControl);
-        REQUIRE(result->type == MessageType::kCommand);
-        REQUIRE(result->source_node_id == 0);
-        REQUIRE(result->destination_node_id == 5);
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kControl);
+        REQUIRE(header->type == MessageType::kCommand);
+        REQUIRE(header->source_node_id == kMainBoardNodeId);
+        REQUIRE(header->destination_node_id == 5);
       }
     }
 
     SECTION("When given an identifier in the 0x21x range") {
-      SECTION("Should reconstruct a kBulkData kDataSegment header with node ID as source") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kBulkData kDataSegment") {
         auto result = CanIdentifierMapper::DecodeId(0x214);
 
         REQUIRE(result.has_value());
-        REQUIRE(result->category == MessageCategory::kBulkData);
-        REQUIRE(result->type == MessageType::kDataSegment);
-        REQUIRE(result->source_node_id == 4);
-        REQUIRE(result->destination_node_id == 0);
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kBulkData);
+        REQUIRE(header->type == MessageType::kDataSegment);
+        REQUIRE(header->source_node_id == 4);
+        REQUIRE(header->destination_node_id == kMainBoardNodeId);
       }
     }
 
-    SECTION("When given an identifier in the 0x71x range") {
-      SECTION("Should reconstruct a kSystem kHeartbeat header with node ID as source") {
+    SECTION("When given 0x710 (main board heartbeat)") {
+      SECTION("Should reconstruct a BroadcastTransportHeader for kSystem kHeartbeat") {
+        auto result = CanIdentifierMapper::DecodeId(0x710);
+
+        REQUIRE(result.has_value());
+        auto* header = std::get_if<BroadcastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kSystem);
+        REQUIRE(header->type == MessageType::kHeartbeat);
+        REQUIRE(header->source_node_id == kMainBoardNodeId);
+      }
+    }
+
+    SECTION("When given an identifier in the 0x71x range (ADC heartbeat)") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kSystem kHeartbeat") {
         auto result = CanIdentifierMapper::DecodeId(0x712);
 
         REQUIRE(result.has_value());
-        REQUIRE(result->category == MessageCategory::kSystem);
-        REQUIRE(result->type == MessageType::kHeartbeat);
-        REQUIRE(result->source_node_id == 2);
-        REQUIRE(result->destination_node_id == 0);
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kSystem);
+        REQUIRE(header->type == MessageType::kHeartbeat);
+        REQUIRE(header->source_node_id == 2);
+        REQUIRE(header->destination_node_id == kMainBoardNodeId);
       }
     }
 
@@ -182,19 +211,23 @@ TEST_CASE("The CanIdentifierMapper class") {
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
         REQUIRE(decoded.has_value());
-        REQUIRE(*decoded == header);
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
       }
     }
 
     SECTION("When encoding and then decoding a kControl broadcast header") {
       SECTION("Should recover the original header without loss") {
-        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kControl,
-                                                                MessageType::kCommand, 0, 0);
+        auto header = BroadcastTransportHeader::Make(MessageCategory::kControl,
+                                                     MessageType::kCommand, kMainBoardNodeId);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
         REQUIRE(decoded.has_value());
-        REQUIRE(*decoded == header);
+        auto* decoded_header = std::get_if<BroadcastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
       }
     }
 
@@ -206,23 +239,27 @@ TEST_CASE("The CanIdentifierMapper class") {
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
         REQUIRE(decoded.has_value());
-        REQUIRE(*decoded == header);
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
       }
     }
 
     SECTION("When encoding and then decoding a kBulkData DUMP header") {
       SECTION("Should recover the original header without loss") {
-        auto header = TransportHeader::ReconstructFromTransport(MessageCategory::kBulkData,
-                                                                MessageType::kDataSegment, 4, 0);
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegment, 4, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
         REQUIRE(decoded.has_value());
-        REQUIRE(*decoded == header);
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
       }
     }
 
-    SECTION("When encoding and then decoding a kSystem header") {
+    SECTION("When encoding and then decoding a kSystem ADC heartbeat header") {
       SECTION("Should recover the original header without loss") {
         AdcMessageBuilder builder(1);
         auto [header, hb] = builder.BuildHeartbeat(DeviceState::kIdle);
@@ -230,7 +267,23 @@ TEST_CASE("The CanIdentifierMapper class") {
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
         REQUIRE(decoded.has_value());
-        REQUIRE(*decoded == header);
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
+      }
+    }
+
+    SECTION("When encoding and then decoding a kSystem main board heartbeat header") {
+      SECTION("Should recover the original header without loss") {
+        MainBoardMessageBuilder builder;
+        auto [header, hb] = builder.BuildHeartbeat(DeviceState::kRunning);
+
+        auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
+
+        REQUIRE(decoded.has_value());
+        auto* decoded_header = std::get_if<BroadcastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
       }
     }
   }

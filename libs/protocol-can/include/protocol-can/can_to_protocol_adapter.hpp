@@ -30,8 +30,14 @@ class CanToProtocolAdapter final : public midismith::can_broker::CanFrameHandler
       payload_size_bytes = frame.data.size();
     }
 
-    const auto decoded_message = midismith::protocol::MessageParser::Decode(
-        *decoded_header, std::span<const std::uint8_t>(frame.data.data(), payload_size_bytes));
+    const std::span<const std::uint8_t> payload(frame.data.data(), payload_size_bytes);
+
+    const auto decoded_message = std::visit(
+        [&payload](const auto& header) noexcept {
+          return midismith::protocol::MessageParser::Decode(header, payload);
+        },
+        *decoded_header);
+
     if (!decoded_message.has_value()) {
       ++decode_stats_.invalid_payload_count;
       return;
