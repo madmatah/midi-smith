@@ -16,12 +16,13 @@ constexpr std::uint32_t kHeartbeatBaseId = 0x710u;
 
 }  // namespace
 
-CanFilterSet<4> CanFilterFactory::MakeAdcFilters(std::uint8_t node_id) noexcept {
-  return CanFilterSet<4>{{{
+CanFilterSet<5> CanFilterFactory::MakeAdcFilters(std::uint8_t node_id) noexcept {
+  return CanFilterSet<5>{{{
       {0u, kGlobalCommandId, kFullMask},
       {1u, kUnicastCommandBaseId + node_id, kFullMask},
       {2u, kCalibrationDataBaseId + node_id, kFullMask},
       {3u, kCalibrationAckBaseId + node_id, kFullMask},
+      {4u, kHeartbeatBaseId, kFullMask},
   }}};
 }
 

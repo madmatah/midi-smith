@@ -8,7 +8,7 @@ namespace midismith::protocol_can {
 
 class CanFilterFactory {
  public:
-  static CanFilterSet<4> MakeAdcFilters(std::uint8_t node_id) noexcept;
+  static CanFilterSet<5> MakeAdcFilters(std::uint8_t node_id) noexcept;
   static CanFilterSet<4> MakeMainFilters() noexcept;
 };
 

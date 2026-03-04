@@ -11,8 +11,8 @@ TEST_CASE("The CanFilterFactory class") {
     SECTION("When node_id is 1") {
       const auto filter_set = CanFilterFactory::MakeAdcFilters(1);
 
-      SECTION("Should return 4 filters") {
-        REQUIRE(filter_set.filters.size() == 4);
+      SECTION("Should return 5 filters") {
+        REQUIRE(filter_set.filters.size() == 5);
       }
 
       SECTION("Filter 0 should accept global commands (0x100, mask 0x7FF)") {
@@ -37,6 +37,12 @@ TEST_CASE("The CanFilterFactory class") {
         REQUIRE(filter_set.filters[3].filter_index == 3u);
         REQUIRE(filter_set.filters[3].id == 0x221u);
         REQUIRE(filter_set.filters[3].id_mask == 0x7FFu);
+      }
+
+      SECTION("Filter 4 should accept main-board heartbeat (0x710, mask 0x7FF)") {
+        REQUIRE(filter_set.filters[4].filter_index == 4u);
+        REQUIRE(filter_set.filters[4].id == 0x710u);
+        REQUIRE(filter_set.filters[4].id_mask == 0x7FFu);
       }
     }
 

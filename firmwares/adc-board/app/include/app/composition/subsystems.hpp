@@ -77,6 +77,9 @@ bool RegenerateAnalogSensorLookupTables(
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture) noexcept;
+void CreateSupervisorSubsystem(
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& sender,
+    midismith::adc_board::app::analog::AcquisitionStateRequirements& acquisition_state) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;
