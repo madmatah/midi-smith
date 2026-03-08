@@ -7,6 +7,7 @@ midismith_add_lib(NAME protocol
     SOURCES
         src/messages.cpp
         src/message_parser.cpp
+        src/peer_monitor.cpp
     DEPENDS
         byte-codec
 )

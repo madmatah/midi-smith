@@ -7,4 +7,6 @@ midismith_add_test(NAME protocol
         message_parser.test.cpp
         builders.test.cpp
         inbound_message_dispatcher.test.cpp
+        peer_monitor.test.cpp
+        peer_registry.test.cpp
 )

@@ -8,7 +8,9 @@
 
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "os-types/queue_requirements.hpp"
+#include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/messages.hpp"
+#include "protocol/peer_registry_observer_requirements.hpp"
 
 namespace {
 
@@ -75,6 +77,25 @@ class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
   std::queue<Event> pending_events_;
 };
 
+class NullPeerRegistryObserver final
+    : public midismith::protocol::PeerRegistryObserverRequirements {
+ public:
+  void OnPeerChanged(std::uint8_t, midismith::protocol::PeerStatus) noexcept override {}
+};
+
+class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {
+ public:
+  [[nodiscard]] std::uint32_t GetUptimeMs() const noexcept override {
+    return uptime_ms_;
+  }
+  void set_uptime_ms(std::uint32_t ms) noexcept {
+    uptime_ms_ = ms;
+  }
+
+ private:
+  std::uint32_t uptime_ms_ = 0;
+};
+
 }  // namespace
 
 using midismith::main_board::app::supervisor::NetworkSupervisorTask;
@@ -83,7 +104,11 @@ using midismith::protocol::DeviceState;
 TEST_CASE("NetworkSupervisorTask — heartbeat emission") {
   RecordingMessageSender sender;
   StubEventQueue queue;
-  NetworkSupervisorTask task(sender, queue);
+  NullPeerRegistryObserver peer_observer;
+  StubUptimeProvider uptime;
+
+  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+  NetworkSupervisorTask task(sender, queue, peer_observer, uptime, kPeerTimeoutMs);
 
   SECTION("Should always send kRunning") {
     queue.Push(NetworkSupervisorTask::HeartbeatTick{});
