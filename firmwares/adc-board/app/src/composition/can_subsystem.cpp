@@ -2,6 +2,7 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/adc_inbound_command_handler.hpp"
+#include "app/messaging/adc_inbound_heartbeat_handler.hpp"
 #include "bsp/can/can_bus_stats.hpp"
 #include "bsp/can/fdcan_transceiver.hpp"
 #include "can-broker/can_task.hpp"
@@ -28,8 +29,8 @@ void CanTaskEntry(void* ctx) noexcept {
 CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::adc_board::app::analog::AcquisitionControlRequirements& acquisition_control,
-    midismith::adc_board::app::storage::AdcBoardPersistentConfiguration&
-        persistent_config) noexcept {
+    midismith::adc_board::app::storage::AdcBoardPersistentConfiguration& persistent_config,
+    SupervisorContext& supervisor_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -38,8 +39,10 @@ CanContext CreateCanSubsystem(
                                                            receive_queue, stats);
   static midismith::adc_board::app::messaging::AdcInboundCommandHandler inbound_command_handler(
       acquisition_control);
+  static midismith::adc_board::app::messaging::AdcInboundHeartbeatHandler inbound_heartbeat_handler(
+      supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
-      inbound_command_handler);
+      inbound_command_handler, inbound_heartbeat_handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
   static midismith::adc_board::app::can::CanFilterUpdater can_filter_updater(transceiver);

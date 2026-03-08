@@ -28,6 +28,8 @@ constexpr uint32_t CAN_TASK_PRIORITY = 2;
 constexpr uint32_t SUPERVISOR_TASK_STACK_BYTES = 512;
 constexpr uint32_t SUPERVISOR_TASK_PRIORITY = 1;
 constexpr uint32_t kHeartbeatPeriodMs = 500;
+constexpr uint32_t kHeartbeatTimeoutMs = 1500;
+constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
 // Shell
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;

@@ -9,7 +9,9 @@
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "os-types/queue_requirements.hpp"
+#include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/messages.hpp"
+#include "protocol/peer_monitor_observer_requirements.hpp"
 
 namespace {
 
@@ -91,6 +93,24 @@ class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
   std::queue<Event> pending_events_;
 };
 
+class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObserverRequirements {
+ public:
+  void OnPeerChanged(midismith::protocol::PeerStatus) noexcept override {}
+};
+
+class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {
+ public:
+  [[nodiscard]] std::uint32_t GetUptimeMs() const noexcept override {
+    return uptime_ms_;
+  }
+  void set_uptime_ms(std::uint32_t ms) noexcept {
+    uptime_ms_ = ms;
+  }
+
+ private:
+  std::uint32_t uptime_ms_ = 0;
+};
+
 }  // namespace
 
 using midismith::adc_board::app::analog::AcquisitionState;
@@ -100,10 +120,14 @@ using midismith::protocol::DeviceState;
 TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
   RecordingMessageSender sender;
   StubEventQueue queue;
+  NullPeerMonitorObserver peer_observer;
+  StubUptimeProvider uptime;
+
+  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
 
   SECTION("Should send kIdle when acquisition is disabled") {
     StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
 
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
     task.Run();
@@ -113,7 +137,7 @@ TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
 
   SECTION("Should send kRunning when acquisition is enabled") {
     StubAcquisitionState acquisition_state(AcquisitionState::kEnabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
 
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
     task.Run();
@@ -123,7 +147,7 @@ TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
 
   SECTION("Should send one heartbeat per tick") {
     StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
 
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
@@ -135,7 +159,7 @@ TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
 
   SECTION("Should reflect state changes between ticks") {
     StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
 
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
     task.Run();

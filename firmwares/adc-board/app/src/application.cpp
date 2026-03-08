@@ -34,9 +34,11 @@ void Application::create_tasks() noexcept {
       midismith::adc_board::app::composition::CreateAdcControlContext();
   midismith::adc_board::app::composition::ConfigContext config =
       midismith::adc_board::app::composition::CreateConfigSubsystem();
+  midismith::adc_board::app::composition::SupervisorContext supervisor_ctx =
+      midismith::adc_board::app::composition::CreateSupervisorContext();
   midismith::adc_board::app::composition::CanContext can_context =
-      midismith::adc_board::app::composition::CreateCanSubsystem(logger, adc_control.control,
-                                                                 config.adc_board_config);
+      midismith::adc_board::app::composition::CreateCanSubsystem(
+          logger, adc_control.control, config.adc_board_config, supervisor_ctx);
 
   static midismith::adc_board::app::messaging::AdcBoardCanMessageSender can_message_sender(
       can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);
@@ -51,8 +53,8 @@ void Application::create_tasks() noexcept {
   midismith::adc_board::app::composition::SensorRttTelemetryControlContext sensor_rtt =
       midismith::adc_board::app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state,
                                                                                 sensor_rtt_capture);
-  midismith::adc_board::app::composition::CreateSupervisorSubsystem(can_message_sender,
-                                                                    adc_state.state);
+  midismith::adc_board::app::composition::CreateSupervisorSubsystem(
+      can_message_sender, adc_state.state, supervisor_ctx);
   midismith::adc_board::app::composition::CreateShellSubsystem(console, can_context, config,
                                                                adc_control, sensors, sensor_rtt);
 }

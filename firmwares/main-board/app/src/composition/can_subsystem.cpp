@@ -1,6 +1,7 @@
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_can_message_sender.hpp"
+#include "app/messaging/main_board_inbound_heartbeat_handler.hpp"
 #include "app/messaging/main_board_inbound_sensor_event_logging_handler.hpp"
 #include "app/messaging/main_board_inbound_sensor_event_midi_handler.hpp"
 #include "bsp/can/can_bus_stats.hpp"
@@ -27,7 +28,8 @@ void CanTaskEntry(void* ctx) noexcept {
 }  // namespace
 
 CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
-                              midismith::piano_controller::PianoRequirements& piano) noexcept {
+                              midismith::piano_controller::PianoRequirements& piano,
+                              SupervisorContext& supervisor_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -38,8 +40,10 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
       inbound_logging_handler(logger);
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventMidiHandler
       inbound_midi_handler(piano);
+  static midismith::main_board::app::messaging::MainBoardInboundHeartbeatHandler
+      inbound_heartbeat_handler(supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
-      inbound_logging_handler, inbound_midi_handler);
+      inbound_logging_handler, inbound_midi_handler, inbound_heartbeat_handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 
