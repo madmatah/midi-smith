@@ -30,7 +30,7 @@ class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequ
       return;
     }
     if (status.connectivity == midismith::protocol::PeerConnectivity::kHealthy) {
-      ControllerFor(node_id).OnReachable();
+      ControllerFor(node_id).OnPeerHealthy(status.device_state);
       if (sequence_started_ && !sequence_complete_ && node_id == next_peer_to_power_on_) {
         AdvanceSequenceToNextPeer(uptime_.GetUptimeMs());
       }
@@ -112,7 +112,7 @@ class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequ
       : power_switch_(power_switch),
         power_on_timeout_ms_(power_on_timeout_ms),
         uptime_(uptime),
-        board_controllers_{(static_cast<void>(Is), AdcBoardController{sender})...} {}
+        board_controllers_{AdcBoardController{sender, static_cast<std::uint8_t>(Is + 1)}...} {}
 
   [[nodiscard]] bool IsValidPeerId(std::uint8_t peer_id) const noexcept {
     return peer_id >= 1 && peer_id <= static_cast<std::uint8_t>(kBoardCount);

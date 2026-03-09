@@ -46,7 +46,7 @@ TEST_CASE("The Heartbeat struct") {
 
     SECTION("When the output buffer is empty") {
       SECTION("Should return false") {
-        Heartbeat hb{DeviceState::kIdle};
+        Heartbeat hb{DeviceState::kReady};
         std::array<std::uint8_t, 0> buffer{};
 
         REQUIRE_FALSE(hb.Serialize(buffer).has_value());

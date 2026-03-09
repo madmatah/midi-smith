@@ -20,22 +20,53 @@ void AdcBoardController::MarkUnresponsive() noexcept {
   }
 }
 
-void AdcBoardController::OnReachable() noexcept {
+void AdcBoardController::OnPeerHealthy(midismith::protocol::DeviceState device_state) noexcept {
   const auto current = state_.load(std::memory_order_relaxed);
-  if (current == AdcBoardState::kElectricallyOn || current == AdcBoardState::kUnresponsive) {
-    state_.store(AdcBoardState::kReachable, std::memory_order_relaxed);
+  const auto target = MapDeviceState(device_state);
+  const bool is_first_contact =
+      current == AdcBoardState::kElectricallyOn || current == AdcBoardState::kUnresponsive;
+
+  if (is_first_contact) {
+    state_.store(target, std::memory_order_relaxed);
     sender_.SendHeartbeat(midismith::protocol::DeviceState::kRunning);
+    if (target == AdcBoardState::kReady) {
+      sender_.SendStartAdc(peer_id_);
+    }
+    return;
+  }
+
+  if (!IsConnected(current)) {
+    return;
+  }
+
+  if (target != current) {
+    state_.store(target, std::memory_order_relaxed);
+    if (target == AdcBoardState::kReady && current != AdcBoardState::kReady) {
+      sender_.SendStartAdc(peer_id_);
+    }
   }
 }
 
 void AdcBoardController::OnLost() noexcept {
-  if (state_.load(std::memory_order_relaxed) == AdcBoardState::kReachable) {
+  if (IsConnected(state_.load(std::memory_order_relaxed))) {
     state_.store(AdcBoardState::kElectricallyOn, std::memory_order_relaxed);
   }
 }
 
 AdcBoardState AdcBoardController::state() const noexcept {
   return state_.load(std::memory_order_relaxed);
+}
+
+AdcBoardState AdcBoardController::MapDeviceState(
+    midismith::protocol::DeviceState device_state) const noexcept {
+  switch (device_state) {
+    case midismith::protocol::DeviceState::kRunning:
+      return AdcBoardState::kAcquiring;
+    case midismith::protocol::DeviceState::kReady:
+      return AdcBoardState::kReady;
+    default:
+      return AdcBoardState::kInitializing;
+  }
 }
 
 }  // namespace midismith::main_board::app::adc

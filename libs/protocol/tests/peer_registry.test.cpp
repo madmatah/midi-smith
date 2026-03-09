@@ -21,7 +21,7 @@ class RecordingPeerRegistryObserver final : public PeerRegistryObserverRequireme
 
   int notification_count_{0};
   std::uint8_t last_node_id_{0xFF};
-  PeerStatus last_status_{PeerConnectivity::kUnknown, DeviceState::kIdle};
+  PeerStatus last_status_{PeerConnectivity::kUnknown, DeviceState::kReady};
 };
 
 constexpr std::uint32_t kTimeoutMs = 1500;
@@ -45,7 +45,7 @@ TEST_CASE("The PeerRegistry class", "[protocol][peer_registry]") {
 
     SECTION("Different node_ids should use separate slots") {
       registry.OnHeartbeatReceived(1, DeviceState::kRunning, kTimestampMs);
-      registry.OnHeartbeatReceived(2, DeviceState::kIdle, kTimestampMs);
+      registry.OnHeartbeatReceived(2, DeviceState::kReady, kTimestampMs);
 
       REQUIRE(observer.notification_count_ == 2);
       REQUIRE(observer.last_node_id_ == 2);

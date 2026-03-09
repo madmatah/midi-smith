@@ -9,6 +9,7 @@ midismith_add_firmware_test(NAME main
         app/shell/can_command.test.cpp
         app/shell/adc_command.test.cpp
         app/supervisor/network_supervisor_task.test.cpp
+        app/adc/adc_board_state.test.cpp
         app/adc/adc_board_controller.test.cpp
         app/adc/adc_boards_controller.test.cpp
     LINK_LIBRARIES main_domain main_app_lib

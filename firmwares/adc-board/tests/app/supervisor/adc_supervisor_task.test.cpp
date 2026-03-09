@@ -21,7 +21,7 @@ using midismith::protocol::PeerConnectivity;
 TEST_CASE("The AdcSupervisorTask class") {
   SECTION("The Run() method") {
     SECTION("When the task starts with acquisition disabled") {
-      SECTION("Should emit one startup heartbeat with kIdle state") {
+      SECTION("Should emit one startup heartbeat with kInitializing state") {
         RecordingMessageSender sender;
         StubEventQueue queue;
         NullPeerMonitorObserver peer_observer;
@@ -34,12 +34,12 @@ TEST_CASE("The AdcSupervisorTask class") {
         task.Run();
 
         REQUIRE(sender.heartbeat_count() == 1);
-        REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
+        REQUIRE(sender.last_reported_state() == DeviceState::kInitializing);
       }
     }
 
     SECTION("When the task starts with acquisition enabled") {
-      SECTION("Should emit one startup heartbeat with kRunning state") {
+      SECTION("Should emit one startup heartbeat with kInitializing state") {
         RecordingMessageSender sender;
         StubEventQueue queue;
         NullPeerMonitorObserver peer_observer;
@@ -52,12 +52,12 @@ TEST_CASE("The AdcSupervisorTask class") {
         task.Run();
 
         REQUIRE(sender.heartbeat_count() == 1);
-        REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+        REQUIRE(sender.last_reported_state() == DeviceState::kInitializing);
       }
     }
 
     SECTION("When a HeartbeatTick event is received") {
-      SECTION("Should publish heartbeat according to current acquisition state") {
+      SECTION("Should publish heartbeat according to current state") {
         RecordingMessageSender sender;
         StubEventQueue queue;
         NullPeerMonitorObserver peer_observer;
@@ -67,9 +67,10 @@ TEST_CASE("The AdcSupervisorTask class") {
         AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
                                kPeerTimeoutMs);
 
+        queue.Push(AdcSupervisorTask::InitializationComplete{});
         queue.Push(AdcSupervisorTask::HeartbeatTick{});
         task.Run();
-        REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
+        REQUIRE(sender.last_reported_state() == DeviceState::kReady);
 
         acquisition_state.set_state(AcquisitionState::kEnabled);
         queue.Push(AdcSupervisorTask::HeartbeatTick{});
@@ -131,7 +132,7 @@ TEST_CASE("The AdcSupervisorTask class") {
                                kPeerTimeoutMs);
 
         uptime.set_uptime_ms(100);
-        queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kIdle});
+        queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kReady});
         task.Run();
         REQUIRE(peer_observer.statuses().size() == 1);
         REQUIRE(peer_observer.statuses().front().connectivity == PeerConnectivity::kHealthy);
@@ -142,7 +143,47 @@ TEST_CASE("The AdcSupervisorTask class") {
 
         REQUIRE(peer_observer.statuses().size() == 2);
         REQUIRE(peer_observer.statuses().back().connectivity == PeerConnectivity::kLost);
-        REQUIRE(peer_observer.statuses().back().device_state == DeviceState::kIdle);
+        REQUIRE(peer_observer.statuses().back().device_state == DeviceState::kReady);
+      }
+    }
+
+    SECTION("When an InitializationComplete event is received after boot") {
+      SECTION("Should report kReady via heartbeat") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
+
+        queue.Push(AdcSupervisorTask::InitializationComplete{});
+        task.Run();
+
+        // 1 startup heartbeat (kInitializing) + 1 immediate heartbeat on init complete (kReady)
+        REQUIRE(sender.heartbeat_count() == 2);
+        REQUIRE(sender.last_reported_state() == DeviceState::kReady);
+      }
+    }
+
+    SECTION("When acquisition is enabled after InitializationComplete") {
+      SECTION("Should report kRunning via heartbeat") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
+
+        queue.Push(AdcSupervisorTask::InitializationComplete{});
+        acquisition_state.set_state(AcquisitionState::kEnabled);
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        task.Run();
+
+        REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
       }
     }
   }

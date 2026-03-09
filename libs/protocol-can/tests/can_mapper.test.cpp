@@ -262,7 +262,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When encoding and then decoding a kSystem ADC heartbeat header") {
       SECTION("Should recover the original header without loss") {
         AdcMessageBuilder builder(1);
-        auto [header, hb] = builder.BuildHeartbeat(DeviceState::kIdle);
+        auto [header, hb] = builder.BuildHeartbeat(DeviceState::kReady);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 

@@ -26,8 +26,12 @@ std::string_view StateLabel(midismith::main_board::app::adc::AdcBoardState state
       return "on";
     case midismith::main_board::app::adc::AdcBoardState::kUnresponsive:
       return "unresponsive";
-    case midismith::main_board::app::adc::AdcBoardState::kReachable:
-      return "reachable";
+    case midismith::main_board::app::adc::AdcBoardState::kInitializing:
+      return "initializing";
+    case midismith::main_board::app::adc::AdcBoardState::kReady:
+      return "ready";
+    case midismith::main_board::app::adc::AdcBoardState::kAcquiring:
+      return "acquiring";
   }
   return "unknown";
 }

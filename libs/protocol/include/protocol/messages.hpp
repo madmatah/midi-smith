@@ -22,10 +22,11 @@ struct SensorEvent {
 };
 
 enum class DeviceState : std::uint8_t {
-  kIdle = 0x00,
-  kRunning = 0x01,
-  kCalibrating = 0x02,
-  kError = 0x03,
+  kInitializing = 0x00,
+  kReady = 0x01,
+  kRunning = 0x02,
+  kCalibrating = 0x03,
+  kError = 0x04,
 };
 
 struct Heartbeat {
