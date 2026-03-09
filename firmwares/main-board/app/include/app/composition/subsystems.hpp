@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/messaging/main_board_message_sender_requirements.hpp"
+#include "app/shell/adc_boards_control_requirements.hpp"
 #include "app/supervisor/network_supervisor_task.hpp"
 #include "bsp-types/can/can_bus_stats_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
@@ -31,14 +32,19 @@ struct SupervisorContext {
       midismith::main_board::app::supervisor::NetworkSupervisorTask::Event>& event_queue;
 };
 
+struct AdcBoardsContext {
+  midismith::main_board::app::shell::AdcBoardsControlRequirements& boards_control;
+};
+
 SupervisorContext CreateSupervisorContext() noexcept;
 CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
                               midismith::piano_controller::PianoRequirements& piano,
                               SupervisorContext& supervisor_ctx) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
-void CreateSupervisorSubsystem(
+AdcBoardsContext CreateSupervisorSubsystem(
     midismith::main_board::app::messaging::MainBoardMessageSenderRequirements& sender,
     SupervisorContext& ctx) noexcept;
-void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept;
+void CreateShellSubsystem(ConsoleContext& console, CanContext& can,
+                          AdcBoardsContext& boards) noexcept;
 
 }  // namespace midismith::main_board::app::composition

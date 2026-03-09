@@ -27,9 +27,9 @@ void Application::create_tasks() noexcept {
       rtt_logger, midi_context.piano, supervisor_ctx);
 
   midismith::main_board::app::composition::ConsoleContext console_ctx = {.stream = console_stream};
-  midismith::main_board::app::composition::CreateSupervisorSubsystem(can_ctx.message_sender,
-                                                                     supervisor_ctx);
-  midismith::main_board::app::composition::CreateShellSubsystem(console_ctx, can_ctx);
+  auto boards_ctx = midismith::main_board::app::composition::CreateSupervisorSubsystem(
+      can_ctx.message_sender, supervisor_ctx);
+  midismith::main_board::app::composition::CreateShellSubsystem(console_ctx, can_ctx, boards_ctx);
 }
 
 }  // namespace midismith::main_board::app

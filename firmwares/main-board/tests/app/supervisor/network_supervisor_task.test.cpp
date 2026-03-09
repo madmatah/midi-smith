@@ -7,10 +7,12 @@
 #include <queue>
 
 #include "app/messaging/main_board_message_sender_requirements.hpp"
+#include "domain/adc/adc_board_power_switch_requirements.hpp"
+#include "domain/adc/adc_board_state.hpp"
+#include "domain/adc/adc_boards_controller.hpp"
 #include "os-types/queue_requirements.hpp"
 #include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/messages.hpp"
-#include "protocol/peer_registry_observer_requirements.hpp"
 
 namespace {
 
@@ -77,10 +79,11 @@ class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
   std::queue<Event> pending_events_;
 };
 
-class NullPeerRegistryObserver final
-    : public midismith::protocol::PeerRegistryObserverRequirements {
+class NullAdcBoardPowerSwitch final
+    : public midismith::main_board::domain::adc::AdcBoardPowerSwitchRequirements {
  public:
-  void OnPeerChanged(std::uint8_t, midismith::protocol::PeerStatus) noexcept override {}
+  void PowerOn(std::uint8_t) noexcept override {}
+  void PowerOff(std::uint8_t) noexcept override {}
 };
 
 class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {
@@ -99,16 +102,19 @@ class StubUptimeProvider final : public midismith::os::UptimeProviderRequirement
 }  // namespace
 
 using midismith::main_board::app::supervisor::NetworkSupervisorTask;
+using midismith::main_board::domain::adc::AdcBoardsController;
+using midismith::main_board::domain::adc::AdcBoardState;
 using midismith::protocol::DeviceState;
 
 TEST_CASE("NetworkSupervisorTask — heartbeat emission") {
   RecordingMessageSender sender;
   StubEventQueue queue;
-  NullPeerRegistryObserver peer_observer;
+  NullAdcBoardPowerSwitch power_switch;
   StubUptimeProvider uptime;
+  AdcBoardsController<8> boards_controller(power_switch, 5000, uptime);
 
   static constexpr std::uint32_t kPeerTimeoutMs = 1500;
-  NetworkSupervisorTask task(sender, queue, peer_observer, uptime, kPeerTimeoutMs);
+  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, kPeerTimeoutMs);
 
   SECTION("Should always send kRunning") {
     queue.Push(NetworkSupervisorTask::HeartbeatTick{});
@@ -124,6 +130,58 @@ TEST_CASE("NetworkSupervisorTask — heartbeat emission") {
     task.Run();
 
     REQUIRE(sender.heartbeat_count() == 3);
+  }
+}
+
+TEST_CASE("NetworkSupervisorTask — PowerOnCommand dispatch") {
+  RecordingMessageSender sender;
+  StubEventQueue queue;
+  NullAdcBoardPowerSwitch power_switch;
+  StubUptimeProvider uptime;
+  AdcBoardsController<8> boards_controller(power_switch, 5000, uptime);
+
+  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+
+  SECTION("PowerOnCommand should set the board to kElectricallyOn") {
+    queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+    task.Run();
+
+    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+  }
+}
+
+TEST_CASE("NetworkSupervisorTask — PowerOffCommand dispatch") {
+  RecordingMessageSender sender;
+  StubEventQueue queue;
+  NullAdcBoardPowerSwitch power_switch;
+  StubUptimeProvider uptime;
+  AdcBoardsController<8> boards_controller(power_switch, 5000, uptime);
+
+  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+
+  SECTION("PowerOffCommand after PowerOnCommand should set the board back to kElectricallyOff") {
+    queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+    queue.Push(NetworkSupervisorTask::PowerOffCommand{.peer_id = 1});
+    task.Run();
+
+    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOff);
+  }
+}
+
+TEST_CASE("NetworkSupervisorTask — StartPowerSequenceCommand dispatch") {
+  RecordingMessageSender sender;
+  StubEventQueue queue;
+  NullAdcBoardPowerSwitch power_switch;
+  StubUptimeProvider uptime;
+  AdcBoardsController<8> boards_controller(power_switch, 5000, uptime);
+
+  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+
+  SECTION("StartPowerSequenceCommand should start the power-on sequence") {
+    queue.Push(NetworkSupervisorTask::StartPowerSequenceCommand{});
+    task.Run();
+
+    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
   }
 }
 

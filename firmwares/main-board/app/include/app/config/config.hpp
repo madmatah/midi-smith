@@ -16,4 +16,9 @@ constexpr uint32_t kHeartbeatPeriodMs = 500;
 constexpr uint32_t kHeartbeatTimeoutMs = 1500;
 constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
+// ADC board lifecycle
+constexpr bool kAutoStartPowerSequenceOnBoot = false;
+constexpr std::uint32_t kPowerOnTimeoutMs = 5000;
+constexpr std::size_t kMaxPeerCount = 8;
+
 }  // namespace midismith::main_board::app::config
