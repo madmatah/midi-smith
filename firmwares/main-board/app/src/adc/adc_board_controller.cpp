@@ -1,6 +1,8 @@
-#include "domain/adc/adc_board_controller.hpp"
+#include "app/adc/adc_board_controller.hpp"
 
-namespace midismith::main_board::domain::adc {
+#include "protocol/messages.hpp"
+
+namespace midismith::main_board::app::adc {
 
 void AdcBoardController::PowerOn() noexcept {
   if (state_.load(std::memory_order_relaxed) == AdcBoardState::kElectricallyOff) {
@@ -22,6 +24,7 @@ void AdcBoardController::OnReachable() noexcept {
   const auto current = state_.load(std::memory_order_relaxed);
   if (current == AdcBoardState::kElectricallyOn || current == AdcBoardState::kUnresponsive) {
     state_.store(AdcBoardState::kReachable, std::memory_order_relaxed);
+    sender_.SendHeartbeat(midismith::protocol::DeviceState::kRunning);
   }
 }
 
@@ -35,4 +38,4 @@ AdcBoardState AdcBoardController::state() const noexcept {
   return state_.load(std::memory_order_relaxed);
 }
 
-}  // namespace midismith::main_board::domain::adc
+}  // namespace midismith::main_board::app::adc

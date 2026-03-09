@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace midismith::main_board::domain::adc {
+namespace midismith::main_board::app::adc {
 
 enum class AdcBoardState : std::uint8_t {
   kElectricallyOff,
@@ -11,4 +11,4 @@ enum class AdcBoardState : std::uint8_t {
   kReachable,
 };
 
-}  // namespace midismith::main_board::domain::adc
+}  // namespace midismith::main_board::app::adc

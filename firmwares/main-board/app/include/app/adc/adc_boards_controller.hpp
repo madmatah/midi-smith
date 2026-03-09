@@ -2,23 +2,27 @@
 
 #include <array>
 #include <cstdint>
+#include <utility>
 
-#include "domain/adc/adc_board_controller.hpp"
-#include "domain/adc/adc_board_power_switch_requirements.hpp"
-#include "domain/adc/adc_board_state.hpp"
+#include "app/adc/adc_board_controller.hpp"
+#include "app/adc/adc_board_power_switch_requirements.hpp"
+#include "app/adc/adc_board_state.hpp"
+#include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/peer_registry_observer_requirements.hpp"
 #include "protocol/peer_status.hpp"
 
-namespace midismith::main_board::domain::adc {
+namespace midismith::main_board::app::adc {
 
 template <std::size_t kBoardCount>
 class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequirements {
  public:
-  AdcBoardsController(AdcBoardPowerSwitchRequirements& power_switch,
+  AdcBoardsController(messaging::MainBoardMessageSenderRequirements& sender,
+                      AdcBoardPowerSwitchRequirements& power_switch,
                       std::uint32_t power_on_timeout_ms,
                       midismith::os::UptimeProviderRequirements& uptime) noexcept
-      : power_switch_(power_switch), power_on_timeout_ms_(power_on_timeout_ms), uptime_(uptime) {}
+      : AdcBoardsController(sender, power_switch, power_on_timeout_ms, uptime,
+                            std::make_index_sequence<kBoardCount>{}) {}
 
   void OnPeerChanged(std::uint8_t node_id,
                      midismith::protocol::PeerStatus status) noexcept override {
@@ -99,6 +103,17 @@ class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequ
   std::uint8_t next_peer_to_power_on_{0};
   std::uint32_t power_on_timestamp_ms_{0};
 
+  template <std::size_t... Is>
+  AdcBoardsController(messaging::MainBoardMessageSenderRequirements& sender,
+                      AdcBoardPowerSwitchRequirements& power_switch,
+                      std::uint32_t power_on_timeout_ms,
+                      midismith::os::UptimeProviderRequirements& uptime,
+                      std::index_sequence<Is...>) noexcept
+      : power_switch_(power_switch),
+        power_on_timeout_ms_(power_on_timeout_ms),
+        uptime_(uptime),
+        board_controllers_{(static_cast<void>(Is), AdcBoardController{sender})...} {}
+
   [[nodiscard]] bool IsValidPeerId(std::uint8_t peer_id) const noexcept {
     return peer_id >= 1 && peer_id <= static_cast<std::uint8_t>(kBoardCount);
   }
@@ -130,4 +145,4 @@ class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequ
   }
 };
 
-}  // namespace midismith::main_board::domain::adc
+}  // namespace midismith::main_board::app::adc

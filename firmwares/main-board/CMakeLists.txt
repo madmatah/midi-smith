@@ -32,9 +32,6 @@ if(HOST_TESTS)
     enable_testing()
 
     add_library(main_domain INTERFACE)
-    target_include_directories(main_domain INTERFACE
-        domain/include
-    )
     target_link_libraries(main_domain INTERFACE piano_controller midi bsp os telemetry)
 
     add_library(main_app_lib STATIC)
@@ -46,7 +43,7 @@ if(HOST_TESTS)
         app/src/shell/can_command.cpp
         app/src/shell/adc_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
-        domain/src/adc/adc_board_controller.cpp
+        app/src/adc/adc_board_controller.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
@@ -97,7 +94,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
-    domain/src/adc/adc_board_controller.cpp
+    app/src/adc/adc_board_controller.cpp
 )
 
 # Add include paths
@@ -106,7 +103,6 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/include
     bsp/include
     bsp/include/bsp/usb_midi
-    domain/include
 )
 
 midismith_firmware_link_map(${MAIN_FIRMWARE_TARGET})

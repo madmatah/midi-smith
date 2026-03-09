@@ -1,16 +1,49 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/adc/adc_board_controller.hpp"
+#include "app/adc/adc_board_controller.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "domain/adc/adc_board_state.hpp"
+#include "app/adc/adc_board_state.hpp"
+#include "app/messaging/main_board_message_sender_requirements.hpp"
+#include "protocol/messages.hpp"
 
-using midismith::main_board::domain::adc::AdcBoardController;
-using midismith::main_board::domain::adc::AdcBoardState;
+namespace {
+
+class RecordingMessageSender final
+    : public midismith::main_board::app::messaging::MainBoardMessageSenderRequirements {
+ public:
+  bool SendHeartbeat(midismith::protocol::DeviceState /*state*/) noexcept override {
+    ++heartbeat_count_;
+    return true;
+  }
+  bool SendStartAdc(std::uint8_t /*target_node_id*/) noexcept override {
+    return true;
+  }
+  bool SendStopAdc(std::uint8_t /*target_node_id*/) noexcept override {
+    return true;
+  }
+  bool SendStartCalibration(std::uint8_t /*target_node_id*/,
+                            midismith::protocol::CalibMode /*mode*/) noexcept override {
+    return true;
+  }
+
+  [[nodiscard]] int heartbeat_count() const noexcept {
+    return heartbeat_count_;
+  }
+
+ private:
+  int heartbeat_count_{0};
+};
+
+}  // namespace
+
+using midismith::main_board::app::adc::AdcBoardController;
+using midismith::main_board::app::adc::AdcBoardState;
 
 TEST_CASE("AdcBoardController — initial state") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("Should start in kElectricallyOff") {
     REQUIRE(controller.state() == AdcBoardState::kElectricallyOff);
@@ -18,7 +51,8 @@ TEST_CASE("AdcBoardController — initial state") {
 }
 
 TEST_CASE("AdcBoardController — PowerOn()") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("When in kElectricallyOff") {
     SECTION("Should transition to kElectricallyOn") {
@@ -46,7 +80,8 @@ TEST_CASE("AdcBoardController — PowerOn()") {
 }
 
 TEST_CASE("AdcBoardController — PowerOff()") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("When in kElectricallyOn") {
     SECTION("Should transition to kElectricallyOff") {
@@ -76,7 +111,8 @@ TEST_CASE("AdcBoardController — PowerOff()") {
 }
 
 TEST_CASE("AdcBoardController — MarkUnresponsive()") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("When in kElectricallyOn") {
     SECTION("Should transition to kUnresponsive") {
@@ -104,22 +140,35 @@ TEST_CASE("AdcBoardController — MarkUnresponsive()") {
 }
 
 TEST_CASE("AdcBoardController — OnReachable()") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("When in kElectricallyOn") {
+    controller.PowerOn();
+
     SECTION("Should transition to kReachable") {
-      controller.PowerOn();
       controller.OnReachable();
       REQUIRE(controller.state() == AdcBoardState::kReachable);
+    }
+
+    SECTION("Should send a heartbeat") {
+      controller.OnReachable();
+      REQUIRE(sender.heartbeat_count() == 1);
     }
   }
 
   SECTION("When in kUnresponsive") {
+    controller.PowerOn();
+    controller.MarkUnresponsive();
+
     SECTION("Should transition to kReachable (recovery)") {
-      controller.PowerOn();
-      controller.MarkUnresponsive();
       controller.OnReachable();
       REQUIRE(controller.state() == AdcBoardState::kReachable);
+    }
+
+    SECTION("Should send a heartbeat on recovery") {
+      controller.OnReachable();
+      REQUIRE(sender.heartbeat_count() == 1);
     }
   }
 
@@ -128,20 +177,32 @@ TEST_CASE("AdcBoardController — OnReachable()") {
       controller.OnReachable();
       REQUIRE(controller.state() == AdcBoardState::kElectricallyOff);
     }
+
+    SECTION("Should not send a heartbeat") {
+      controller.OnReachable();
+      REQUIRE(sender.heartbeat_count() == 0);
+    }
   }
 
   SECTION("When already in kReachable") {
+    controller.PowerOn();
+    controller.OnReachable();
+
     SECTION("Should be idempotent") {
-      controller.PowerOn();
-      controller.OnReachable();
       controller.OnReachable();
       REQUIRE(controller.state() == AdcBoardState::kReachable);
+    }
+
+    SECTION("Should not send a second heartbeat") {
+      controller.OnReachable();
+      REQUIRE(sender.heartbeat_count() == 1);
     }
   }
 }
 
 TEST_CASE("AdcBoardController — OnLost()") {
-  AdcBoardController controller;
+  RecordingMessageSender sender;
+  AdcBoardController controller{sender};
 
   SECTION("When in kReachable") {
     SECTION("Should transition to kElectricallyOn") {

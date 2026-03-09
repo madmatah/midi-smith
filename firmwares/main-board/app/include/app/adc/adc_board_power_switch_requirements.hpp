@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace midismith::main_board::domain::adc {
+namespace midismith::main_board::app::adc {
 
 class AdcBoardPowerSwitchRequirements {
  public:
@@ -11,4 +11,4 @@ class AdcBoardPowerSwitchRequirements {
   virtual void PowerOff(std::uint8_t peer_id) noexcept = 0;
 };
 
-}  // namespace midismith::main_board::domain::adc
+}  // namespace midismith::main_board::app::adc
