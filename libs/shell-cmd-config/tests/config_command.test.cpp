@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -25,7 +26,7 @@ class StreamStub : public midismith::io::StreamRequirements {
     output_ += str;
   }
 
-  const std::string& GetOutput() const noexcept {
+  const std::string& output() const noexcept {
     return output_;
   }
 
@@ -43,6 +44,9 @@ class ConfigurationProviderMock final : public midismith::config::TransactionalC
     if (index == 0u) {
       return "can_board_id";
     }
+    if (index == 1u && expose_empty_second_key_) {
+      return {};
+    }
     if (index == 1u) {
       return "description";
     }
@@ -53,24 +57,30 @@ class ConfigurationProviderMock final : public midismith::config::TransactionalC
                                               std::size_t value_buffer_size,
                                               std::size_t& value_length) const noexcept override {
     if (key == "can_board_id") {
-      return CopyValue(can_board_id_value, value_buffer, value_buffer_size, value_length);
+      if (forced_get_status_.has_value()) {
+        return *forced_get_status_;
+      }
+      return CopyValue(can_board_id_value_, value_buffer, value_buffer_size, value_length);
     }
     if (key == "description") {
-      return CopyValue(description_value, value_buffer, value_buffer_size, value_length);
+      if (forced_get_status_.has_value()) {
+        return *forced_get_status_;
+      }
+      return CopyValue(description_value_, value_buffer, value_buffer_size, value_length);
     }
     return midismith::config::ConfigGetStatus::kUnknownKey;
   }
 
   midismith::config::ConfigSetStatus SetValue(std::string_view key,
                                               std::string_view value) noexcept override {
-    last_set_key = key;
-    last_set_value = value;
-    return set_status;
+    last_set_key_ = key;
+    last_set_value_ = value;
+    return set_status_;
   }
 
   midismith::config::TransactionResult Commit() noexcept override {
-    ++commit_calls;
-    return commit_result;
+    ++commit_calls_;
+    return commit_result_;
   }
 
   static midismith::config::ConfigGetStatus CopyValue(std::string_view value, char* value_buffer,
@@ -85,14 +95,16 @@ class ConfigurationProviderMock final : public midismith::config::TransactionalC
     return midismith::config::ConfigGetStatus::kOk;
   }
 
-  std::string_view can_board_id_value = "7";
-  std::string_view description_value = "short";
-  midismith::config::ConfigSetStatus set_status = midismith::config::ConfigSetStatus::kOk;
-  midismith::config::TransactionResult commit_result =
+  std::string_view can_board_id_value_ = "7";
+  std::string_view description_value_ = "short";
+  bool expose_empty_second_key_ = false;
+  std::optional<midismith::config::ConfigGetStatus> forced_get_status_;
+  midismith::config::ConfigSetStatus set_status_ = midismith::config::ConfigSetStatus::kOk;
+  midismith::config::TransactionResult commit_result_ =
       midismith::config::TransactionResult::kSuccess;
-  std::string_view last_set_key{};
-  std::string_view last_set_value{};
-  int commit_calls = 0;
+  std::string_view last_set_key_{};
+  std::string_view last_set_value_{};
+  int commit_calls_ = 0;
 };
 
 }  // namespace
@@ -102,9 +114,19 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
   midismith::shell_cmd_config::ConfigCommand command(provider);
   StreamStub stream;
 
-  SECTION("Name()") {
-    SECTION("Should return config") {
-      REQUIRE(command.Name() == "config");
+  SECTION("The Name() method") {
+    SECTION("When called") {
+      SECTION("Should return 'config'") {
+        REQUIRE(command.Name() == "config");
+      }
+    }
+  }
+
+  SECTION("The Help() method") {
+    SECTION("When called") {
+      SECTION("Should return the expected help string") {
+        REQUIRE(command.Help() == "Manage persistent configuration (getall/get/set/save)");
+      }
     }
   }
 
@@ -113,7 +135,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
       SECTION("Should print usage") {
         char* argv[] = {const_cast<char*>("config")};
         command.Run(1, argv, stream);
-        REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+        REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
       }
     }
 
@@ -122,7 +144,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
         SECTION("Should print all key values") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("getall")};
           command.Run(2, argv, stream);
-          REQUIRE(stream.GetOutput() == "can_board_id: 7\r\ndescription: short\r\n");
+          REQUIRE(stream.output() == "can_board_id: 7\r\ndescription: short\r\n");
         }
       }
 
@@ -131,22 +153,27 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("getall"),
                           const_cast<char*>("extra")};
           command.Run(3, argv, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
 
       SECTION("When a key is empty") {
-        SECTION("Should skip that key") {}
+        SECTION("Should skip that key") {
+          provider.expose_empty_second_key_ = true;
+          char* argv[] = {const_cast<char*>("config"), const_cast<char*>("getall")};
+          command.Run(2, argv, stream);
+          REQUIRE(stream.output() == "can_board_id: 7\r\n");
+        }
       }
 
       SECTION("When a value cannot be read") {
         SECTION("Should print an error") {
-          provider.description_value =
+          provider.description_value_ =
               "a value that is intentionally much larger than the local output buffer capacity "
               "used by the command";
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("getall")};
           command.Run(2, argv, stream);
-          REQUIRE(stream.GetOutput() == "can_board_id: 7\r\nerror: cannot read value\r\n");
+          REQUIRE(stream.output() == "can_board_id: 7\r\nerror: cannot read value\r\n");
         }
       }
     }
@@ -157,7 +184,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("get"),
                           const_cast<char*>("can_board_id")};
           command.Run(3, argv, stream);
-          REQUIRE(stream.GetOutput() == "can_board_id: 7\r\n");
+          REQUIRE(stream.output() == "can_board_id: 7\r\n");
         }
       }
 
@@ -166,19 +193,25 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("get"),
                           const_cast<char*>("unknown")};
           command.Run(3, argv, stream);
-          REQUIRE(stream.GetOutput() == "error: unknown key\r\n");
+          REQUIRE(stream.output() == "error: unknown key\r\n");
         }
       }
 
       SECTION("When state is unavailable") {
-        SECTION("Should print an error") {}
+        SECTION("Should print an error") {
+          provider.forced_get_status_ = midismith::config::ConfigGetStatus::kUnavailable;
+          char* argv[] = {const_cast<char*>("config"), const_cast<char*>("get"),
+                          const_cast<char*>("can_board_id")};
+          command.Run(3, argv, stream);
+          REQUIRE(stream.output() == "error: cannot read value\r\n");
+        }
       }
 
       SECTION("With wrong number of arguments") {
         SECTION("Should print usage") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("get")};
           command.Run(2, argv, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
     }
@@ -189,19 +222,19 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("set"),
                           const_cast<char*>("can_board_id"), const_cast<char*>("5")};
           command.Run(4, argv, stream);
-          REQUIRE(stream.GetOutput() == "ok\r\n");
-          REQUIRE(provider.last_set_key == "can_board_id");
-          REQUIRE(provider.last_set_value == "5");
+          REQUIRE(stream.output() == "ok\r\n");
+          REQUIRE(provider.last_set_key_ == "can_board_id");
+          REQUIRE(provider.last_set_value_ == "5");
         }
       }
 
       SECTION("With invalid value") {
         SECTION("Should print an error") {
-          provider.set_status = midismith::config::ConfigSetStatus::kInvalidValue;
+          provider.set_status_ = midismith::config::ConfigSetStatus::kInvalidValue;
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("set"),
                           const_cast<char*>("can_board_id"), const_cast<char*>("bad")};
           command.Run(4, argv, stream);
-          REQUIRE(stream.GetOutput() == "error: invalid value\r\n");
+          REQUIRE(stream.output() == "error: invalid value\r\n");
         }
       }
 
@@ -210,7 +243,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("set"),
                           const_cast<char*>("key")};
           command.Run(3, argv, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
     }
@@ -221,17 +254,17 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           SECTION("Should print ok") {
             char* argv[] = {const_cast<char*>("config"), const_cast<char*>("save")};
             command.Run(2, argv, stream);
-            REQUIRE(stream.GetOutput() == "ok\r\n");
-            REQUIRE(provider.commit_calls == 1);
+            REQUIRE(stream.output() == "ok\r\n");
+            REQUIRE(provider.commit_calls_ == 1);
           }
         }
 
         SECTION("When commit fails") {
           SECTION("Should print error") {
-            provider.commit_result = midismith::config::TransactionResult::kFailure;
+            provider.commit_result_ = midismith::config::TransactionResult::kFailure;
             char* argv[] = {const_cast<char*>("config"), const_cast<char*>("save")};
             command.Run(2, argv, stream);
-            REQUIRE(stream.GetOutput() == "error: save failed\r\n");
+            REQUIRE(stream.output() == "error: save failed\r\n");
           }
         }
       }
@@ -241,7 +274,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
           char* argv[] = {const_cast<char*>("config"), const_cast<char*>("save"),
                           const_cast<char*>("extra")};
           command.Run(3, argv, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
     }
@@ -250,15 +283,15 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
       SECTION("Should print usage") {
         char* argv[] = {const_cast<char*>("config"), const_cast<char*>("unknown")};
         command.Run(2, argv, stream);
-        REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+        REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
       }
     }
 
-    SECTION("Branch coverage for Arg() helper") {
+    SECTION("When argv content is invalid for operation parsing") {
       SECTION("When argv is nullptr") {
         SECTION("Should return empty string_view") {
           command.Run(2, nullptr, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
 
@@ -266,7 +299,7 @@ TEST_CASE("The ConfigCommand class", "[domain][shell][commands]") {
         SECTION("Should return empty string_view") {
           char* argv[] = {const_cast<char*>("config"), nullptr};
           command.Run(2, argv, stream);
-          REQUIRE(stream.GetOutput().find("usage: config getall") != std::string::npos);
+          REQUIRE(stream.output().find("usage: config getall") != std::string::npos);
         }
       }
     }

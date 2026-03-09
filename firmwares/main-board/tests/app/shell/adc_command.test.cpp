@@ -86,19 +86,27 @@ class RecordingStream final : public midismith::io::WritableStreamRequirements {
 
 using midismith::main_board::app::shell::AdcCommand;
 
-TEST_CASE("AdcCommand — Name()") {
-  RecordingBoardsControl control;
-  AdcCommand command(control);
-
-  SECTION("Should return \"adc\"") {
-    REQUIRE(command.Name() == "adc");
-  }
-}
-
-TEST_CASE("AdcCommand — Run()") {
+TEST_CASE("The AdcCommand class") {
   RecordingBoardsControl control;
   RecordingStream stream;
   AdcCommand command(control);
+
+  SECTION("The Name() method") {
+    SECTION("When called") {
+      SECTION("Should return 'adc'") {
+        REQUIRE(command.Name() == "adc");
+      }
+    }
+  }
+
+  SECTION("The Help() method") {
+    SECTION("When called") {
+      SECTION("Should return the expected help string") {
+        REQUIRE(command.Help() ==
+                "Manage ADC boards (adc <autostart|stop|poweron|poweroff|status> [id])");
+      }
+    }
+  }
 
   SECTION("When no subcommand is provided") {
     SECTION("Should print usage") {

@@ -3,185 +3,181 @@
 #include "app/supervisor/network_supervisor_task.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <optional>
-#include <queue>
 
-#include "app/adc/adc_board_power_switch_requirements.hpp"
 #include "app/adc/adc_board_state.hpp"
 #include "app/adc/adc_boards_controller.hpp"
-#include "app/messaging/main_board_message_sender_requirements.hpp"
-#include "os-types/queue_requirements.hpp"
-#include "os-types/uptime_provider_requirements.hpp"
+#include "network_supervisor_test_support.hpp"
 #include "protocol/messages.hpp"
-
-namespace {
-
-class RecordingMessageSender final
-    : public midismith::main_board::app::messaging::MainBoardMessageSenderRequirements {
- public:
-  bool SendHeartbeat(midismith::protocol::DeviceState device_state) noexcept override {
-    last_reported_state_ = device_state;
-    heartbeat_count_++;
-    return true;
-  }
-
-  bool SendStartAdc(std::uint8_t) noexcept override {
-    return true;
-  }
-  bool SendStopAdc(std::uint8_t) noexcept override {
-    return true;
-  }
-  bool SendStartCalibration(std::uint8_t, midismith::protocol::CalibMode) noexcept override {
-    return true;
-  }
-
-  [[nodiscard]] std::optional<midismith::protocol::DeviceState> last_reported_state()
-      const noexcept {
-    return last_reported_state_;
-  }
-  [[nodiscard]] std::uint32_t heartbeat_count() const noexcept {
-    return heartbeat_count_;
-  }
-
- private:
-  std::optional<midismith::protocol::DeviceState> last_reported_state_;
-  std::uint32_t heartbeat_count_ = 0;
-};
-
-using Event = midismith::main_board::app::supervisor::NetworkSupervisorTask::Event;
-
-class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
- public:
-  void Push(Event event) {
-    pending_events_.push(event);
-  }
-
-  bool Send(const Event& item, std::uint32_t) noexcept override {
-    pending_events_.push(item);
-    return true;
-  }
-
-  bool SendFromIsr(const Event& item) noexcept override {
-    pending_events_.push(item);
-    return true;
-  }
-
-  bool Receive(Event& item, std::uint32_t) noexcept override {
-    if (pending_events_.empty()) {
-      return false;
-    }
-    item = pending_events_.front();
-    pending_events_.pop();
-    return true;
-  }
-
- private:
-  std::queue<Event> pending_events_;
-};
-
-class NullAdcBoardPowerSwitch final
-    : public midismith::main_board::app::adc::AdcBoardPowerSwitchRequirements {
- public:
-  void PowerOn(std::uint8_t) noexcept override {}
-  void PowerOff(std::uint8_t) noexcept override {}
-};
-
-class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {
- public:
-  [[nodiscard]] std::uint32_t GetUptimeMs() const noexcept override {
-    return uptime_ms_;
-  }
-  void set_uptime_ms(std::uint32_t ms) noexcept {
-    uptime_ms_ = ms;
-  }
-
- private:
-  std::uint32_t uptime_ms_ = 0;
-};
-
-}  // namespace
 
 using midismith::main_board::app::adc::AdcBoardsController;
 using midismith::main_board::app::adc::AdcBoardState;
 using midismith::main_board::app::supervisor::NetworkSupervisorTask;
+using midismith::main_board::app::supervisor::test::NullAdcBoardPowerSwitch;
+using midismith::main_board::app::supervisor::test::RecordingMessageSender;
+using midismith::main_board::app::supervisor::test::StubEventQueue;
+using midismith::main_board::app::supervisor::test::StubUptimeProvider;
 using midismith::protocol::DeviceState;
 
-TEST_CASE("NetworkSupervisorTask — heartbeat emission") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullAdcBoardPowerSwitch power_switch;
-  StubUptimeProvider uptime;
-  AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+TEST_CASE("The NetworkSupervisorTask class") {
+  SECTION("The Run() method") {
+    SECTION("When a HeartbeatTick event is received") {
+      SECTION("Should send heartbeat with kRunning state") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, kPeerTimeoutMs);
 
-  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
-  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, kPeerTimeoutMs);
+        queue.Push(NetworkSupervisorTask::HeartbeatTick{});
+        task.Run();
 
-  SECTION("Should always send kRunning") {
-    queue.Push(NetworkSupervisorTask::HeartbeatTick{});
-    task.Run();
+        REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+      }
+    }
 
-    REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
-  }
+    SECTION("When multiple HeartbeatTick events are received") {
+      SECTION("Should send one heartbeat per tick") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, kPeerTimeoutMs);
 
-  SECTION("Should send one heartbeat per tick") {
-    queue.Push(NetworkSupervisorTask::HeartbeatTick{});
-    queue.Push(NetworkSupervisorTask::HeartbeatTick{});
-    queue.Push(NetworkSupervisorTask::HeartbeatTick{});
-    task.Run();
+        queue.Push(NetworkSupervisorTask::HeartbeatTick{});
+        queue.Push(NetworkSupervisorTask::HeartbeatTick{});
+        queue.Push(NetworkSupervisorTask::HeartbeatTick{});
+        task.Run();
 
-    REQUIRE(sender.heartbeat_count() == 3);
-  }
-}
+        REQUIRE(sender.heartbeat_count() == 3);
+      }
+    }
 
-TEST_CASE("NetworkSupervisorTask — PowerOnCommand dispatch") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullAdcBoardPowerSwitch power_switch;
-  StubUptimeProvider uptime;
-  AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+    SECTION("When a PowerOnCommand event is received") {
+      SECTION("Should set targeted board to kElectricallyOn") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
 
-  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+        queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+        task.Run();
 
-  SECTION("PowerOnCommand should set the board to kElectricallyOn") {
-    queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
-    task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+      }
+    }
 
-    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
-  }
-}
+    SECTION("When a PowerOffCommand event is received after power on") {
+      SECTION("Should set targeted board to kElectricallyOff") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
 
-TEST_CASE("NetworkSupervisorTask — PowerOffCommand dispatch") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullAdcBoardPowerSwitch power_switch;
-  StubUptimeProvider uptime;
-  AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+        queue.Push(NetworkSupervisorTask::PowerOffCommand{.peer_id = 1});
+        task.Run();
 
-  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOff);
+      }
+    }
 
-  SECTION("PowerOffCommand after PowerOnCommand should set the board back to kElectricallyOff") {
-    queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
-    queue.Push(NetworkSupervisorTask::PowerOffCommand{.peer_id = 1});
-    task.Run();
+    SECTION("When a StartPowerSequenceCommand event is received") {
+      SECTION("Should start startup sequence by powering on board 1") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
 
-    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOff);
-  }
-}
+        queue.Push(NetworkSupervisorTask::StartPowerSequenceCommand{});
+        task.Run();
 
-TEST_CASE("NetworkSupervisorTask — StartPowerSequenceCommand dispatch") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullAdcBoardPowerSwitch power_switch;
-  StubUptimeProvider uptime;
-  AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+      }
+    }
 
-  NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+    SECTION("When timeout check occurs during startup sequence with a silent board") {
+      SECTION("Should mark current board unresponsive and continue with next board") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 1500, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
 
-  SECTION("StartPowerSequenceCommand should start the power-on sequence") {
-    queue.Push(NetworkSupervisorTask::StartPowerSequenceCommand{});
-    task.Run();
+        uptime.set_uptime_ms(0);
+        queue.Push(NetworkSupervisorTask::StartPowerSequenceCommand{});
+        task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
 
-    REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+        uptime.set_uptime_ms(1501);
+        queue.Push(NetworkSupervisorTask::TimeoutCheckTick{});
+        task.Run();
+
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kUnresponsive);
+        REQUIRE(boards_controller.board_state(2) == AdcBoardState::kElectricallyOn);
+      }
+    }
+
+    SECTION("When heartbeat is received then peer times out then heartbeat is received again") {
+      SECTION("Should transition board state reachable then electrically on then reachable") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1000);
+
+        queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+        task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+
+        uptime.set_uptime_ms(100);
+        queue.Push(NetworkSupervisorTask::HeartbeatReceived{.node_id = 1,
+                                                            .device_state = DeviceState::kRunning});
+        task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kReachable);
+
+        uptime.set_uptime_ms(1201);
+        queue.Push(NetworkSupervisorTask::TimeoutCheckTick{});
+        task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOn);
+
+        uptime.set_uptime_ms(1300);
+        queue.Push(NetworkSupervisorTask::HeartbeatReceived{.node_id = 1,
+                                                            .device_state = DeviceState::kRunning});
+        task.Run();
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kReachable);
+      }
+    }
+
+    SECTION("When a StopAllCommand event is received") {
+      SECTION("Should power off all previously powered boards") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullAdcBoardPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        AdcBoardsController<8> boards_controller(sender, power_switch, 5000, uptime);
+        NetworkSupervisorTask task(sender, queue, boards_controller, uptime, 1500);
+
+        queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 1});
+        queue.Push(NetworkSupervisorTask::PowerOnCommand{.peer_id = 2});
+        queue.Push(NetworkSupervisorTask::StopAllCommand{});
+        task.Run();
+
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kElectricallyOff);
+        REQUIRE(boards_controller.board_state(2) == AdcBoardState::kElectricallyOff);
+      }
+    }
   }
 }
 

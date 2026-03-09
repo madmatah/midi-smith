@@ -26,7 +26,7 @@ class StreamStub : public midismith::io::StreamRequirements {
     output_ += str;
   }
 
-  const std::string& GetOutput() const noexcept {
+  const std::string& output() const noexcept {
     return output_;
   }
 
@@ -139,26 +139,26 @@ class EmptyProvider final
 
 TEST_CASE("The GenericStatsCommand class") {
   SECTION("The Name() method") {
-    SECTION("When initialized with 'status' name") {
-      SECTION("Should return 'status'") {
-        OkProvider provider;
-        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
-        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
-            "status", "Show status", providers);
+    SECTION("When initialized with 'status'") {
+      OkProvider provider;
+      midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
+      midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
+          "status", "Show status", providers);
 
+      SECTION("Should return 'status'") {
         REQUIRE(command.Name() == "status");
       }
     }
   }
 
   SECTION("The Help() method") {
-    SECTION("When initialized with 'Show status' help text") {
-      SECTION("Should return 'Show status'") {
-        OkProvider provider;
-        midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
-        midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
-            "status", "Show status", providers);
+    SECTION("When initialized with 'Show status'") {
+      OkProvider provider;
+      midismith::stats::StatsProviderRequirements<TestRequest>* providers[] = {&provider};
+      midismith::shell_cmd_stats::GenericStatsCommand<TestRequest, 1u, SuccessParser> command(
+          "status", "Show status", providers);
 
+      SECTION("Should return 'Show status'") {
         REQUIRE(command.Help() == "Show status");
       }
     }
@@ -181,7 +181,7 @@ TEST_CASE("The GenericStatsCommand class") {
         char* argv[] = {const_cast<char*>("status")};
         command.Run(1, argv, stream);
 
-        REQUIRE(stream.GetOutput() ==
+        REQUIRE(stream.output() ==
                 "[ok]\r\n"
                 "  count: 123\r\n"
                 "  active: true\r\n"
@@ -214,7 +214,7 @@ TEST_CASE("The GenericStatsCommand class") {
         char* argv[] = {const_cast<char*>("status"), const_cast<char*>("extra")};
         command.Run(2, argv, stream);
 
-        REQUIRE(stream.GetOutput() == "usage: status [value]\r\n");
+        REQUIRE(stream.output() == "usage: status [value]\r\n");
       }
     }
 
@@ -230,7 +230,7 @@ TEST_CASE("The GenericStatsCommand class") {
         char* argv[] = {const_cast<char*>("can_stats"), const_cast<char*>("extra")};
         command.Run(2, argv, stream);
 
-        REQUIRE(stream.GetOutput() == "usage: can_stats\r\n");
+        REQUIRE(stream.output() == "usage: can_stats\r\n");
       }
     }
   }

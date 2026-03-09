@@ -51,6 +51,7 @@ class RecordingStream final : public midismith::io::WritableStreamRequirements {
   void Write(char c) noexcept override {
     output_ += c;
   }
+
   void Write(const char* str) noexcept override {
     output_ += str;
   }
@@ -68,122 +69,173 @@ class RecordingStream final : public midismith::io::WritableStreamRequirements {
 using midismith::main_board::app::shell::CanCommand;
 
 TEST_CASE("The CanCommand class") {
-  RecordingMessageSender sender;
-  RecordingStream stream;
-  CanCommand command(sender);
-
   SECTION("The Name() method") {
     SECTION("When called") {
-      SECTION("Should return \"can\"") {
+      SECTION("Should return 'can'") {
+        RecordingMessageSender sender;
+        CanCommand command(sender);
+
         REQUIRE(command.Name() == "can");
       }
     }
   }
 
+  SECTION("The Help() method") {
+    SECTION("When called") {
+      SECTION("Should return the expected help string") {
+        RecordingMessageSender sender;
+        CanCommand command(sender);
+
+        REQUIRE(command.Help() == "Send CAN bus commands (can <adc_start|adc_stop> [target])");
+      }
+    }
+  }
+
   SECTION("The Run() method") {
-    SECTION("When the subcommand is adc_start") {
-      SECTION("When the target is a specific node id") {
-        SECTION("Should call SendStartAdc with that node id") {
-          char argv0[] = "can";
-          char argv1[] = "adc_start";
-          char argv2[] = "1";
-          char* argv[] = {argv0, argv1, argv2};
-          command.Run(3, argv, stream);
-          REQUIRE(sender.start_adc_node_id().has_value());
-          REQUIRE(*sender.start_adc_node_id() == 1);
-        }
-      }
+    SECTION("When subcommand is adc_start with specific node id") {
+      SECTION("Should send start command to that node") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_start";
+        char argv2[] = "1";
+        char* argv[] = {argv0, argv1, argv2};
 
-      SECTION("When the target is 'all'") {
-        SECTION("Should call SendStartAdc as a broadcast") {
-          char argv0[] = "can";
-          char argv1[] = "adc_start";
-          char argv2[] = "all";
-          char* argv[] = {argv0, argv1, argv2};
-          command.Run(3, argv, stream);
-          REQUIRE(sender.start_adc_node_id().has_value());
-          REQUIRE(*sender.start_adc_node_id() == 0);
-        }
-      }
+        command.Run(3, argv, stream);
 
-      SECTION("When no target is provided") {
-        SECTION("Should call SendStartAdc as a broadcast") {
-          char argv0[] = "can";
-          char argv1[] = "adc_start";
-          char* argv[] = {argv0, argv1};
-          command.Run(2, argv, stream);
-          REQUIRE(sender.start_adc_node_id().has_value());
-          REQUIRE(*sender.start_adc_node_id() == 0);
-        }
-      }
-
-      SECTION("When the target is '0'") {
-        SECTION("Should print usage and not send") {
-          char argv0[] = "can";
-          char argv1[] = "adc_start";
-          char argv2[] = "0";
-          char* argv[] = {argv0, argv1, argv2};
-          command.Run(3, argv, stream);
-          REQUIRE_FALSE(sender.start_adc_node_id().has_value());
-          REQUIRE(stream.has_output());
-        }
-      }
-
-      SECTION("When the target is invalid") {
-        SECTION("Should print usage and not send") {
-          char argv0[] = "can";
-          char argv1[] = "adc_start";
-          char argv2[] = "bad";
-          char* argv[] = {argv0, argv1, argv2};
-          command.Run(3, argv, stream);
-          REQUIRE_FALSE(sender.start_adc_node_id().has_value());
-          REQUIRE(stream.has_output());
-        }
+        REQUIRE(sender.start_adc_node_id().has_value());
+        REQUIRE(*sender.start_adc_node_id() == 1);
       }
     }
 
-    SECTION("When the subcommand is adc_stop") {
-      SECTION("When the target is a specific node id") {
-        SECTION("Should call SendStopAdc with that node id") {
-          char argv0[] = "can";
-          char argv1[] = "adc_stop";
-          char argv2[] = "3";
-          char* argv[] = {argv0, argv1, argv2};
-          command.Run(3, argv, stream);
-          REQUIRE(sender.stop_adc_node_id().has_value());
-          REQUIRE(*sender.stop_adc_node_id() == 3);
-        }
-      }
+    SECTION("When subcommand is adc_start with target all") {
+      SECTION("Should send broadcast start command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_start";
+        char argv2[] = "all";
+        char* argv[] = {argv0, argv1, argv2};
 
-      SECTION("When no target is provided") {
-        SECTION("Should call SendStopAdc as a broadcast") {
-          char argv0[] = "can";
-          char argv1[] = "adc_stop";
-          char* argv[] = {argv0, argv1};
-          command.Run(2, argv, stream);
-          REQUIRE(sender.stop_adc_node_id().has_value());
-          REQUIRE(*sender.stop_adc_node_id() == 0);
-        }
+        command.Run(3, argv, stream);
+
+        REQUIRE(sender.start_adc_node_id().has_value());
+        REQUIRE(*sender.start_adc_node_id() == 0);
+      }
+    }
+
+    SECTION("When subcommand is adc_start without target") {
+      SECTION("Should send broadcast start command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_start";
+        char* argv[] = {argv0, argv1};
+
+        command.Run(2, argv, stream);
+
+        REQUIRE(sender.start_adc_node_id().has_value());
+        REQUIRE(*sender.start_adc_node_id() == 0);
+      }
+    }
+
+    SECTION("When subcommand is adc_start with invalid target") {
+      SECTION("Should print usage and not send command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_start";
+        char argv2[] = "bad";
+        char* argv[] = {argv0, argv1, argv2};
+
+        command.Run(3, argv, stream);
+
+        REQUIRE_FALSE(sender.start_adc_node_id().has_value());
+        REQUIRE(stream.has_output());
+      }
+    }
+
+    SECTION("When subcommand is adc_start with target 0") {
+      SECTION("Should print usage and not send command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_start";
+        char argv2[] = "0";
+        char* argv[] = {argv0, argv1, argv2};
+
+        command.Run(3, argv, stream);
+
+        REQUIRE_FALSE(sender.start_adc_node_id().has_value());
+        REQUIRE(stream.has_output());
+      }
+    }
+
+    SECTION("When subcommand is adc_stop with specific node id") {
+      SECTION("Should send stop command to that node") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_stop";
+        char argv2[] = "3";
+        char* argv[] = {argv0, argv1, argv2};
+
+        command.Run(3, argv, stream);
+
+        REQUIRE(sender.stop_adc_node_id().has_value());
+        REQUIRE(*sender.stop_adc_node_id() == 3);
+      }
+    }
+
+    SECTION("When subcommand is adc_stop without target") {
+      SECTION("Should send broadcast stop command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
+        char argv0[] = "can";
+        char argv1[] = "adc_stop";
+        char* argv[] = {argv0, argv1};
+
+        command.Run(2, argv, stream);
+
+        REQUIRE(sender.stop_adc_node_id().has_value());
+        REQUIRE(*sender.stop_adc_node_id() == 0);
       }
     }
 
     SECTION("When no subcommand is provided") {
-      SECTION("Should print usage and not send any command") {
+      SECTION("Should print usage and not send command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
         char argv0[] = "can";
         char* argv[] = {argv0};
+
         command.Run(1, argv, stream);
+
         REQUIRE_FALSE(sender.start_adc_node_id().has_value());
         REQUIRE_FALSE(sender.stop_adc_node_id().has_value());
         REQUIRE(stream.has_output());
       }
     }
 
-    SECTION("When the subcommand is unknown") {
-      SECTION("Should print usage and not send any command") {
+    SECTION("When subcommand is unknown") {
+      SECTION("Should print usage and not send command") {
+        RecordingMessageSender sender;
+        RecordingStream stream;
+        CanCommand command(sender);
         char argv0[] = "can";
         char argv1[] = "invalid";
         char* argv[] = {argv0, argv1};
+
         command.Run(2, argv, stream);
+
         REQUIRE_FALSE(sender.start_adc_node_id().has_value());
         REQUIRE_FALSE(sender.stop_adc_node_id().has_value());
         REQUIRE(stream.has_output());

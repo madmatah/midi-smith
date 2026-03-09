@@ -3,208 +3,148 @@
 #include "app/supervisor/adc_supervisor_task.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <optional>
-#include <queue>
 
-#include "app/analog/acquisition_state_requirements.hpp"
-#include "app/messaging/adc_board_message_sender_requirements.hpp"
-#include "os-types/queue_requirements.hpp"
-#include "os-types/uptime_provider_requirements.hpp"
+#include "adc_supervisor_test_support.hpp"
 #include "protocol/messages.hpp"
-#include "protocol/peer_monitor_observer_requirements.hpp"
-
-namespace {
-
-class RecordingMessageSender final
-    : public midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements {
- public:
-  bool SendNoteOn(std::uint8_t, std::uint8_t) noexcept override {
-    return true;
-  }
-  bool SendNoteOff(std::uint8_t, std::uint8_t) noexcept override {
-    return true;
-  }
-
-  bool SendHeartbeat(midismith::protocol::DeviceState device_state) noexcept override {
-    last_reported_state_ = device_state;
-    heartbeat_count_++;
-    return true;
-  }
-
-  [[nodiscard]] std::optional<midismith::protocol::DeviceState> last_reported_state()
-      const noexcept {
-    return last_reported_state_;
-  }
-  [[nodiscard]] std::uint32_t heartbeat_count() const noexcept {
-    return heartbeat_count_;
-  }
-
- private:
-  std::optional<midismith::protocol::DeviceState> last_reported_state_;
-  std::uint32_t heartbeat_count_ = 0;
-};
-
-class StubAcquisitionState final
-    : public midismith::adc_board::app::analog::AcquisitionStateRequirements {
- public:
-  explicit StubAcquisitionState(midismith::adc_board::app::analog::AcquisitionState state) noexcept
-      : state_(state) {}
-
-  midismith::adc_board::app::analog::AcquisitionState GetState() const noexcept override {
-    return state_;
-  }
-
-  void set_state(midismith::adc_board::app::analog::AcquisitionState state) noexcept {
-    state_ = state;
-  }
-
- private:
-  midismith::adc_board::app::analog::AcquisitionState state_;
-};
-
-using Event = midismith::adc_board::app::supervisor::AdcSupervisorTask::Event;
-
-class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
- public:
-  void Push(Event event) {
-    pending_events_.push(event);
-  }
-
-  bool Send(const Event& item, std::uint32_t) noexcept override {
-    pending_events_.push(item);
-    return true;
-  }
-
-  bool SendFromIsr(const Event& item) noexcept override {
-    pending_events_.push(item);
-    return true;
-  }
-
-  bool Receive(Event& item, std::uint32_t) noexcept override {
-    if (pending_events_.empty()) {
-      return false;
-    }
-    item = pending_events_.front();
-    pending_events_.pop();
-    return true;
-  }
-
- private:
-  std::queue<Event> pending_events_;
-};
-
-class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObserverRequirements {
- public:
-  void OnPeerChanged(midismith::protocol::PeerStatus) noexcept override {}
-};
-
-class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {
- public:
-  [[nodiscard]] std::uint32_t GetUptimeMs() const noexcept override {
-    return uptime_ms_;
-  }
-  void set_uptime_ms(std::uint32_t ms) noexcept {
-    uptime_ms_ = ms;
-  }
-
- private:
-  std::uint32_t uptime_ms_ = 0;
-};
-
-}  // namespace
 
 using midismith::adc_board::app::analog::AcquisitionState;
 using midismith::adc_board::app::supervisor::AdcSupervisorTask;
+using midismith::adc_board::app::supervisor::test::NullPeerMonitorObserver;
+using midismith::adc_board::app::supervisor::test::RecordingMessageSender;
+using midismith::adc_board::app::supervisor::test::RecordingPeerMonitorObserver;
+using midismith::adc_board::app::supervisor::test::StubAcquisitionState;
+using midismith::adc_board::app::supervisor::test::StubEventQueue;
+using midismith::adc_board::app::supervisor::test::StubUptimeProvider;
 using midismith::protocol::DeviceState;
+using midismith::protocol::PeerConnectivity;
 
-TEST_CASE("AdcSupervisorTask — startup heartbeat") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullPeerMonitorObserver peer_observer;
-  StubUptimeProvider uptime;
+TEST_CASE("The AdcSupervisorTask class") {
+  SECTION("The Run() method") {
+    SECTION("When the task starts with acquisition disabled") {
+      SECTION("Should emit one startup heartbeat with kIdle state") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        task.Run();
 
-  SECTION("Should send one heartbeat immediately before entering the event loop") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+        REQUIRE(sender.heartbeat_count() == 1);
+        REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
+      }
+    }
 
-    task.Run();
+    SECTION("When the task starts with acquisition enabled") {
+      SECTION("Should emit one startup heartbeat with kRunning state") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kEnabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-    REQUIRE(sender.heartbeat_count() == 1);
-  }
+        task.Run();
 
-  SECTION("Should report kIdle on startup when acquisition is disabled") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+        REQUIRE(sender.heartbeat_count() == 1);
+        REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+      }
+    }
 
-    task.Run();
+    SECTION("When a HeartbeatTick event is received") {
+      SECTION("Should publish heartbeat according to current acquisition state") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-    REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
-  }
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        task.Run();
+        REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
 
-  SECTION("Should report kRunning on startup when acquisition is enabled") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kEnabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+        acquisition_state.set_state(AcquisitionState::kEnabled);
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        task.Run();
+        REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+      }
+    }
 
-    task.Run();
+    SECTION("When multiple HeartbeatTick events are received") {
+      SECTION("Should emit one heartbeat per tick in addition to startup heartbeat") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        NullPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-    REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
-  }
-}
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        queue.Push(AdcSupervisorTask::HeartbeatTick{});
+        task.Run();
 
-TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
-  RecordingMessageSender sender;
-  StubEventQueue queue;
-  NullPeerMonitorObserver peer_observer;
-  StubUptimeProvider uptime;
+        REQUIRE(sender.heartbeat_count() == 4);
+      }
+    }
 
-  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+    SECTION("When a HeartbeatReceived event is received") {
+      SECTION("Should notify peer observer with kHealthy connectivity") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        RecordingPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-  SECTION("Should send kIdle when acquisition is disabled") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+        uptime.set_uptime_ms(100);
+        queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kRunning});
+        task.Run();
 
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    task.Run();
+        REQUIRE(peer_observer.statuses().size() == 1);
+        REQUIRE(peer_observer.statuses().front().connectivity == PeerConnectivity::kHealthy);
+        REQUIRE(peer_observer.statuses().front().device_state == DeviceState::kRunning);
+      }
+    }
 
-    REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
-  }
+    SECTION("When timeout is checked after a previously received heartbeat") {
+      SECTION("Should notify peer observer with kLost connectivity") {
+        RecordingMessageSender sender;
+        StubEventQueue queue;
+        RecordingPeerMonitorObserver peer_observer;
+        StubUptimeProvider uptime;
+        StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+        static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+        AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime,
+                               kPeerTimeoutMs);
 
-  SECTION("Should send kRunning when acquisition is enabled") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kEnabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+        uptime.set_uptime_ms(100);
+        queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kIdle});
+        task.Run();
+        REQUIRE(peer_observer.statuses().size() == 1);
+        REQUIRE(peer_observer.statuses().front().connectivity == PeerConnectivity::kHealthy);
 
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    task.Run();
+        uptime.set_uptime_ms(1701);
+        queue.Push(AdcSupervisorTask::TimeoutCheckTick{});
+        task.Run();
 
-    REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
-  }
-
-  SECTION("Should send one heartbeat per tick") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
-
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    task.Run();
-
-    REQUIRE(sender.heartbeat_count() == 4);  // 1 startup + 3 ticks
-  }
-
-  SECTION("Should reflect state changes between ticks") {
-    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
-    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
-
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    task.Run();
-    REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
-
-    acquisition_state.set_state(AcquisitionState::kEnabled);
-    queue.Push(AdcSupervisorTask::HeartbeatTick{});
-    task.Run();
-    REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+        REQUIRE(peer_observer.statuses().size() == 2);
+        REQUIRE(peer_observer.statuses().back().connectivity == PeerConnectivity::kLost);
+        REQUIRE(peer_observer.statuses().back().device_state == DeviceState::kIdle);
+      }
+    }
   }
 }
 
