@@ -39,7 +39,7 @@ class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObs
 }  // namespace
 
 SupervisorContext CreateSupervisorContext() noexcept {
-  static midismith::os::Queue<Event, 4> event_queue;
+  static midismith::os::Queue<Event, 16> event_queue;
   return SupervisorContext{event_queue};
 }
 

@@ -1,6 +1,7 @@
 #include <new>
 
 #include "app/composition/subsystems.hpp"
+#include "app/shell/adc_command.hpp"
 #include "app/shell/can_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
@@ -15,7 +16,8 @@
 
 namespace midismith::main_board::app::composition {
 
-void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept {
+void CreateShellSubsystem(ConsoleContext& console, CanContext& can,
+                          AdcBoardsContext& boards) noexcept {
   static midismith::shell::ShellConfig shell_config = {.prompt = "main-board> "};
 
   alignas(midismith::main_board::app::tasks::ShellTask) static std::uint8_t
@@ -49,6 +51,9 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can) noexcept {
 
   static midismith::main_board::app::shell::CanCommand can_cmd(can.message_sender);
   shell_task_ptr->RegisterCommand(can_cmd);
+
+  static midismith::main_board::app::shell::AdcCommand adc_cmd(boards.boards_control);
+  shell_task_ptr->RegisterCommand(adc_cmd);
 
   static midismith::bsp::can::CanBusStatsProvider can_stats_provider(can.stats);
   static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(
