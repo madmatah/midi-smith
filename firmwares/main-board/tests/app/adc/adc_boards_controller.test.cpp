@@ -1,21 +1,52 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/adc/adc_boards_controller.hpp"
+#include "app/adc/adc_boards_controller.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <optional>
 #include <vector>
 
-#include "domain/adc/adc_board_power_switch_requirements.hpp"
-#include "domain/adc/adc_board_state.hpp"
+#include "app/adc/adc_board_power_switch_requirements.hpp"
+#include "app/adc/adc_board_state.hpp"
+#include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "os-types/uptime_provider_requirements.hpp"
+#include "protocol/messages.hpp"
 #include "protocol/peer_status.hpp"
 
 namespace {
 
+class RecordingMessageSender final
+    : public midismith::main_board::app::messaging::MainBoardMessageSenderRequirements {
+ public:
+  bool SendHeartbeat(midismith::protocol::DeviceState /*state*/) noexcept override {
+    ++heartbeat_count_;
+    return true;
+  }
+  bool SendStartAdc(std::uint8_t /*target_node_id*/) noexcept override {
+    return true;
+  }
+  bool SendStopAdc(std::uint8_t /*target_node_id*/) noexcept override {
+    return true;
+  }
+  bool SendStartCalibration(std::uint8_t /*target_node_id*/,
+                            midismith::protocol::CalibMode /*mode*/) noexcept override {
+    return true;
+  }
+
+  [[nodiscard]] int heartbeat_count() const noexcept {
+    return heartbeat_count_;
+  }
+  void reset_heartbeat_count() noexcept {
+    heartbeat_count_ = 0;
+  }
+
+ private:
+  int heartbeat_count_{0};
+};
+
 class RecordingPowerSwitch final
-    : public midismith::main_board::domain::adc::AdcBoardPowerSwitchRequirements {
+    : public midismith::main_board::app::adc::AdcBoardPowerSwitchRequirements {
  public:
   void PowerOn(std::uint8_t peer_id) noexcept override {
     power_on_calls_.push_back(peer_id);
@@ -58,8 +89,8 @@ class StubUptimeProvider final : public midismith::os::UptimeProviderRequirement
 constexpr std::uint32_t kPowerOnTimeoutMs = 1000;
 constexpr std::size_t kBoardCount = 3;
 
-using Controller = midismith::main_board::domain::adc::AdcBoardsController<kBoardCount>;
-using AdcBoardState = midismith::main_board::domain::adc::AdcBoardState;
+using Controller = midismith::main_board::app::adc::AdcBoardsController<kBoardCount>;
+using AdcBoardState = midismith::main_board::app::adc::AdcBoardState;
 using PeerStatus = midismith::protocol::PeerStatus;
 using PeerConnectivity = midismith::protocol::PeerConnectivity;
 
@@ -74,9 +105,10 @@ PeerStatus LostStatus() noexcept {
 }  // namespace
 
 TEST_CASE("AdcBoardsController — initial state") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   SECTION("All boards should start in kElectricallyOff") {
     for (std::uint8_t id = 1; id <= kBoardCount; ++id) {
@@ -94,9 +126,10 @@ TEST_CASE("AdcBoardsController — initial state") {
 }
 
 TEST_CASE("AdcBoardsController — PowerOn() / PowerOff()") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   SECTION("PowerOn() should set board to kElectricallyOn and call power switch") {
     controller.PowerOn(1);
@@ -127,9 +160,10 @@ TEST_CASE("AdcBoardsController — PowerOn() / PowerOff()") {
 }
 
 TEST_CASE("AdcBoardsController — OnPeerChanged()") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   SECTION("kHealthy when board is kElectricallyOn should set it to kReachable") {
     controller.PowerOn(1);
@@ -137,11 +171,27 @@ TEST_CASE("AdcBoardsController — OnPeerChanged()") {
     REQUIRE(controller.board_state(1) == AdcBoardState::kReachable);
   }
 
+  SECTION("kHealthy should send an immediate heartbeat") {
+    controller.PowerOn(1);
+    controller.OnPeerChanged(1, HealthyStatus());
+    REQUIRE(sender.heartbeat_count() == 1);
+  }
+
   SECTION("kLost when board is kReachable should revert to kElectricallyOn") {
     controller.PowerOn(1);
     controller.OnPeerChanged(1, HealthyStatus());
     controller.OnPeerChanged(1, LostStatus());
     REQUIRE(controller.board_state(1) == AdcBoardState::kElectricallyOn);
+  }
+
+  SECTION("heartbeat is sent again when board reconnects after being lost") {
+    controller.PowerOn(1);
+    controller.OnPeerChanged(1, HealthyStatus());
+    controller.OnPeerChanged(1, LostStatus());
+    sender.reset_heartbeat_count();
+
+    controller.OnPeerChanged(1, HealthyStatus());
+    REQUIRE(sender.heartbeat_count() == 1);
   }
 
   SECTION("OnPeerChanged with invalid peer_id 0 should not crash") {
@@ -154,9 +204,10 @@ TEST_CASE("AdcBoardsController — OnPeerChanged()") {
 }
 
 TEST_CASE("AdcBoardsController — StartPowerSequence()") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   SECTION("Should power on board 1 and call power switch") {
     controller.StartPowerSequence();
@@ -173,9 +224,10 @@ TEST_CASE("AdcBoardsController — StartPowerSequence()") {
 }
 
 TEST_CASE("AdcBoardsController — CheckSequenceTimeout() before StartPowerSequence()") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   SECTION("Should be a no-op") {
     uptime.set_uptime_ms(kPowerOnTimeoutMs + 1);
@@ -185,9 +237,10 @@ TEST_CASE("AdcBoardsController — CheckSequenceTimeout() before StartPowerSeque
 }
 
 TEST_CASE("AdcBoardsController — sequence advances on timeout") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   uptime.set_uptime_ms(0);
   controller.StartPowerSequence();
@@ -215,9 +268,10 @@ TEST_CASE("AdcBoardsController — sequence advances on timeout") {
 }
 
 TEST_CASE("AdcBoardsController — sequence completes after all boards") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   uptime.set_uptime_ms(0);
   controller.StartPowerSequence();
@@ -237,9 +291,10 @@ TEST_CASE("AdcBoardsController — sequence completes after all boards") {
 }
 
 TEST_CASE("AdcBoardsController — StopAll()") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   uptime.set_uptime_ms(0);
   controller.StartPowerSequence();
@@ -266,12 +321,22 @@ TEST_CASE("AdcBoardsController — StopAll()") {
     REQUIRE(power_switch.power_on_count() == power_on_count_before + 1);
     REQUIRE(controller.board_state(1) == AdcBoardState::kElectricallyOn);
   }
+
+  SECTION("After StopAll and restart, heartbeat is sent when board reconnects") {
+    controller.StopAll();
+    controller.StartPowerSequence();
+    sender.reset_heartbeat_count();
+
+    controller.OnPeerChanged(1, HealthyStatus());
+    REQUIRE(sender.heartbeat_count() == 1);
+  }
 }
 
 TEST_CASE("AdcBoardsController — kUnresponsive board can recover to kReachable") {
+  RecordingMessageSender sender;
   RecordingPowerSwitch power_switch;
   StubUptimeProvider uptime;
-  Controller controller(power_switch, kPowerOnTimeoutMs, uptime);
+  Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
 
   uptime.set_uptime_ms(0);
   controller.StartPowerSequence();
@@ -283,6 +348,11 @@ TEST_CASE("AdcBoardsController — kUnresponsive board can recover to kReachable
   SECTION("A late heartbeat from board 1 should move it to kReachable") {
     controller.OnPeerChanged(1, HealthyStatus());
     REQUIRE(controller.board_state(1) == AdcBoardState::kReachable);
+  }
+
+  SECTION("A late heartbeat from board 1 should send a heartbeat") {
+    controller.OnPeerChanged(1, HealthyStatus());
+    REQUIRE(sender.heartbeat_count() >= 1);
   }
 }
 

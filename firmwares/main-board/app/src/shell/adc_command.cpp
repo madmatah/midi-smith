@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 
-#include "domain/adc/adc_board_state.hpp"
+#include "app/adc/adc_board_state.hpp"
 
 namespace midismith::main_board::app::shell {
 
@@ -18,15 +18,15 @@ constexpr std::string_view kUsage =
     "  poweroff <id> Power off a specific ADC board (id: 1-8)\r\n"
     "  status       Show power state of all ADC boards\r\n";
 
-std::string_view StateLabel(midismith::main_board::domain::adc::AdcBoardState state) noexcept {
+std::string_view StateLabel(midismith::main_board::app::adc::AdcBoardState state) noexcept {
   switch (state) {
-    case midismith::main_board::domain::adc::AdcBoardState::kElectricallyOff:
+    case midismith::main_board::app::adc::AdcBoardState::kElectricallyOff:
       return "off";
-    case midismith::main_board::domain::adc::AdcBoardState::kElectricallyOn:
+    case midismith::main_board::app::adc::AdcBoardState::kElectricallyOn:
       return "on";
-    case midismith::main_board::domain::adc::AdcBoardState::kUnresponsive:
+    case midismith::main_board::app::adc::AdcBoardState::kUnresponsive:
       return "unresponsive";
-    case midismith::main_board::domain::adc::AdcBoardState::kReachable:
+    case midismith::main_board::app::adc::AdcBoardState::kReachable:
       return "reachable";
   }
   return "unknown";

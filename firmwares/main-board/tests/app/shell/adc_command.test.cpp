@@ -6,13 +6,13 @@
 #include <optional>
 #include <string>
 
+#include "app/adc/adc_board_state.hpp"
 #include "app/shell/adc_boards_control_requirements.hpp"
-#include "domain/adc/adc_board_state.hpp"
 #include "io/stream_requirements.hpp"
 
 namespace {
 
-using AdcBoardState = midismith::main_board::domain::adc::AdcBoardState;
+using AdcBoardState = midismith::main_board::app::adc::AdcBoardState;
 
 class RecordingBoardsControl final
     : public midismith::main_board::app::shell::AdcBoardsControlRequirements {

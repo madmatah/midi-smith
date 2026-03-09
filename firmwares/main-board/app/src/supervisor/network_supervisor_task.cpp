@@ -26,6 +26,8 @@ void NetworkSupervisorTask::Run() noexcept {
             boards_controller_.PowerOff(event_variant.peer_id);
           } else if constexpr (std::is_same_v<T, StartPowerSequenceCommand>) {
             boards_controller_.StartPowerSequence();
+          } else if constexpr (std::is_same_v<T, StopAllCommand>) {
+            boards_controller_.StopAll();
           }
         },
         event);
