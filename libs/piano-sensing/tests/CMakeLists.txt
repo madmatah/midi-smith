@@ -10,4 +10,5 @@ midismith_add_test(NAME piano_sensing
         velocity/logarithmic_velocity_mapper.test.cpp
         velocity/exponential_velocity_mapper.test.cpp
         velocity/goebl_logarithmic_velocity_mapper.test.cpp
+    USE_FAKEIT
 )

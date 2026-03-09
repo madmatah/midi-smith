@@ -2,29 +2,20 @@
 
 #include "piano-sensing/composite_sensor_event_handler.hpp"
 
+#include <fakeit.hpp>
+
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <functional>
 
 namespace {
 
-class RecordingKeyActionHandler final : public midismith::piano_sensing::KeyActionRequirements {
- public:
-  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
-    ++note_on_calls;
-    last_note_on_velocity = velocity;
-  }
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
+using fakeit::Fake;
 
-  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
-    ++note_off_calls;
-    last_note_off_velocity = release_velocity;
-  }
-
-  int note_on_calls = 0;
-  int note_off_calls = 0;
-  midismith::midi::Velocity last_note_on_velocity = 0u;
-  midismith::midi::Velocity last_note_off_velocity = 0u;
-};
+#define fakeit_Method(mock, method) Method(mock, method)
 
 }  // namespace
 
@@ -32,22 +23,21 @@ TEST_CASE("The CompositeSensorEventHandler class") {
   SECTION("The OnNoteOn method") {
     SECTION("When two handlers are registered") {
       SECTION("Should dispatch the event to both handlers") {
-        RecordingKeyActionHandler first_handler;
-        RecordingKeyActionHandler second_handler;
+        Mock<midismith::piano_sensing::KeyActionRequirements> first_mock;
+        Mock<midismith::piano_sensing::KeyActionRequirements> second_mock;
+
+        Fake(fakeit_Method(first_mock, OnNoteOn));
+        Fake(fakeit_Method(second_mock, OnNoteOn));
+
         midismith::piano_sensing::CompositeSensorEventHandler<2> composite(
             std::array<std::reference_wrapper<midismith::piano_sensing::KeyActionRequirements>, 2>{
-                std::ref(
-                    static_cast<midismith::piano_sensing::KeyActionRequirements&>(first_handler)),
-                std::ref(static_cast<midismith::piano_sensing::KeyActionRequirements&>(
-                    second_handler))});
+                std::ref(first_mock.get()), std::ref(second_mock.get())});
 
-        composite.OnNoteOn(static_cast<midismith::midi::Velocity>(91u));
+        const auto velocity = static_cast<midismith::midi::Velocity>(91u);
+        composite.OnNoteOn(velocity);
 
-        REQUIRE(first_handler.note_on_calls == 1);
-        REQUIRE(second_handler.note_on_calls == 1);
-        REQUIRE(first_handler.last_note_on_velocity == static_cast<midismith::midi::Velocity>(91u));
-        REQUIRE(second_handler.last_note_on_velocity ==
-                static_cast<midismith::midi::Velocity>(91u));
+        Verify(fakeit_Method(first_mock, OnNoteOn).Using(velocity)).Once();
+        Verify(fakeit_Method(second_mock, OnNoteOn).Using(velocity)).Once();
       }
     }
   }
@@ -55,23 +45,21 @@ TEST_CASE("The CompositeSensorEventHandler class") {
   SECTION("The OnNoteOff method") {
     SECTION("When two handlers are registered") {
       SECTION("Should dispatch the event to both handlers") {
-        RecordingKeyActionHandler first_handler;
-        RecordingKeyActionHandler second_handler;
+        Mock<midismith::piano_sensing::KeyActionRequirements> first_mock;
+        Mock<midismith::piano_sensing::KeyActionRequirements> second_mock;
+
+        Fake(fakeit_Method(first_mock, OnNoteOff));
+        Fake(fakeit_Method(second_mock, OnNoteOff));
+
         midismith::piano_sensing::CompositeSensorEventHandler<2> composite(
             std::array<std::reference_wrapper<midismith::piano_sensing::KeyActionRequirements>, 2>{
-                std::ref(
-                    static_cast<midismith::piano_sensing::KeyActionRequirements&>(first_handler)),
-                std::ref(static_cast<midismith::piano_sensing::KeyActionRequirements&>(
-                    second_handler))});
+                std::ref(first_mock.get()), std::ref(second_mock.get())});
 
-        composite.OnNoteOff(static_cast<midismith::midi::Velocity>(44u));
+        const auto velocity = static_cast<midismith::midi::Velocity>(44u);
+        composite.OnNoteOff(velocity);
 
-        REQUIRE(first_handler.note_off_calls == 1);
-        REQUIRE(second_handler.note_off_calls == 1);
-        REQUIRE(first_handler.last_note_off_velocity ==
-                static_cast<midismith::midi::Velocity>(44u));
-        REQUIRE(second_handler.last_note_off_velocity ==
-                static_cast<midismith::midi::Velocity>(44u));
+        Verify(fakeit_Method(first_mock, OnNoteOff).Using(velocity)).Once();
+        Verify(fakeit_Method(second_mock, OnNoteOff).Using(velocity)).Once();
       }
     }
   }
