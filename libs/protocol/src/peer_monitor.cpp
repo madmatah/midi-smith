@@ -7,7 +7,7 @@ PeerMonitor::PeerMonitor(std::uint32_t timeout_ms,
     : timeout_ms_(timeout_ms),
       observer_(observer),
       connectivity_(PeerConnectivity::kUnknown),
-      last_device_state_(DeviceState::kIdle),
+      last_device_state_(DeviceState::kInitializing),
       last_heartbeat_timestamp_ms_(0) {}
 
 void PeerMonitor::OnHeartbeatReceived(DeviceState state, std::uint32_t timestamp_ms) noexcept {

@@ -10,6 +10,7 @@
 #include "app/adc/adc_board_state.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "os-types/uptime_provider_requirements.hpp"
+#include "protocol/messages.hpp"
 #include "protocol/peer_status.hpp"
 
 namespace {
@@ -22,7 +23,8 @@ class RecordingMessageSender final
     return true;
   }
 
-  bool SendStartAdc(std::uint8_t) noexcept override {
+  bool SendStartAdc(std::uint8_t target_node_id) noexcept override {
+    start_adc_calls_.push_back(target_node_id);
     return true;
   }
 
@@ -42,8 +44,13 @@ class RecordingMessageSender final
     heartbeat_count_ = 0;
   }
 
+  [[nodiscard]] const std::vector<std::uint8_t>& start_adc_calls() const noexcept {
+    return start_adc_calls_;
+  }
+
  private:
   int heartbeat_count_ = 0;
+  std::vector<std::uint8_t> start_adc_calls_;
 };
 
 class RecordingPowerSwitch final
@@ -95,11 +102,12 @@ constexpr std::size_t kMaxBoardCount = 8;
 using Controller = midismith::main_board::app::adc::AdcBoardsController<kBoardCount>;
 using ControllerMax = midismith::main_board::app::adc::AdcBoardsController<kMaxBoardCount>;
 using AdcBoardState = midismith::main_board::app::adc::AdcBoardState;
+using DeviceState = midismith::protocol::DeviceState;
 using PeerStatus = midismith::protocol::PeerStatus;
 using PeerConnectivity = midismith::protocol::PeerConnectivity;
 
-PeerStatus HealthyStatus() noexcept {
-  return PeerStatus{.connectivity = PeerConnectivity::kHealthy};
+PeerStatus HealthyStatus(DeviceState device_state = DeviceState::kInitializing) noexcept {
+  return PeerStatus{.connectivity = PeerConnectivity::kHealthy, .device_state = device_state};
 }
 
 PeerStatus LostStatus() noexcept {
@@ -200,8 +208,8 @@ TEST_CASE("The AdcBoardsController class") {
   }
 
   SECTION("The OnPeerChanged() method") {
-    SECTION("When a healthy status is received for an electrically on board") {
-      SECTION("Should mark the board reachable and emit a heartbeat") {
+    SECTION("When a healthy peer reports kInitializing") {
+      SECTION("Should mark the board kInitializing and emit a heartbeat") {
         RecordingMessageSender sender;
         RecordingPowerSwitch power_switch;
         StubUptimeProvider uptime;
@@ -210,12 +218,42 @@ TEST_CASE("The AdcBoardsController class") {
         controller.PowerOn(1);
         controller.OnPeerChanged(1, HealthyStatus());
 
-        REQUIRE(controller.board_state(1) == AdcBoardState::kReachable);
+        REQUIRE(controller.board_state(1) == AdcBoardState::kInitializing);
         REQUIRE(sender.heartbeat_count() == 1);
       }
     }
 
-    SECTION("When a lost status is received for a reachable board") {
+    SECTION("When a healthy peer reports kReady") {
+      SECTION("Should mark the board kReady and send StartAdc") {
+        RecordingMessageSender sender;
+        RecordingPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
+
+        controller.PowerOn(1);
+        controller.OnPeerChanged(1, HealthyStatus(DeviceState::kReady));
+
+        REQUIRE(controller.board_state(1) == AdcBoardState::kReady);
+        REQUIRE(sender.start_adc_calls().size() == 1);
+        REQUIRE(sender.start_adc_calls().at(0) == 1);
+      }
+    }
+
+    SECTION("When a healthy peer reports kRunning") {
+      SECTION("Should mark the board kAcquiring") {
+        RecordingMessageSender sender;
+        RecordingPowerSwitch power_switch;
+        StubUptimeProvider uptime;
+        Controller controller(sender, power_switch, kPowerOnTimeoutMs, uptime);
+
+        controller.PowerOn(1);
+        controller.OnPeerChanged(1, HealthyStatus(DeviceState::kRunning));
+
+        REQUIRE(controller.board_state(1) == AdcBoardState::kAcquiring);
+      }
+    }
+
+    SECTION("When a lost status is received for a connected board") {
       SECTION("Should mark the board electrically on") {
         RecordingMessageSender sender;
         RecordingPowerSwitch power_switch;
@@ -399,7 +437,7 @@ TEST_CASE("The AdcBoardsController class") {
 
   SECTION("The peer recovery behavior") {
     SECTION("When a previously unresponsive board sends a late heartbeat") {
-      SECTION("Should move board state to kReachable and emit heartbeat") {
+      SECTION("Should move board state to kInitializing and emit heartbeat") {
         RecordingMessageSender sender;
         RecordingPowerSwitch power_switch;
         StubUptimeProvider uptime;
@@ -413,7 +451,7 @@ TEST_CASE("The AdcBoardsController class") {
 
         controller.OnPeerChanged(1, HealthyStatus());
 
-        REQUIRE(controller.board_state(1) == AdcBoardState::kReachable);
+        REQUIRE(controller.board_state(1) == AdcBoardState::kInitializing);
         REQUIRE(sender.heartbeat_count() == 1);
       }
     }

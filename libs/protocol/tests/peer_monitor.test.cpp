@@ -20,7 +20,7 @@ class RecordingPeerMonitorObserver final : public PeerMonitorObserverRequirement
   }
 
   int notification_count_{0};
-  PeerStatus last_status_{PeerConnectivity::kUnknown, DeviceState::kIdle};
+  PeerStatus last_status_{PeerConnectivity::kUnknown, DeviceState::kReady};
 };
 
 constexpr std::uint32_t kTimeoutMs = 1500;
@@ -63,10 +63,10 @@ TEST_CASE("The PeerMonitor class", "[protocol][peer_monitor]") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
       const int count_after_first = observer.notification_count_;
 
-      monitor.OnHeartbeatReceived(DeviceState::kIdle, kTimestampMs + 500);
+      monitor.OnHeartbeatReceived(DeviceState::kReady, kTimestampMs + 500);
 
       REQUIRE(observer.notification_count_ == count_after_first + 1);
-      REQUIRE(observer.last_status_.device_state == DeviceState::kIdle);
+      REQUIRE(observer.last_status_.device_state == DeviceState::kReady);
     }
   }
 

@@ -129,7 +129,7 @@ TEST_CASE("The NetworkSupervisorTask class") {
     }
 
     SECTION("When heartbeat is received then peer times out then heartbeat is received again") {
-      SECTION("Should transition board state reachable then electrically on then reachable") {
+      SECTION("Should transition board state acquiring then electrically on then acquiring") {
         RecordingMessageSender sender;
         StubEventQueue queue;
         NullAdcBoardPowerSwitch power_switch;
@@ -145,7 +145,7 @@ TEST_CASE("The NetworkSupervisorTask class") {
         queue.Push(NetworkSupervisorTask::HeartbeatReceived{.node_id = 1,
                                                             .device_state = DeviceState::kRunning});
         task.Run();
-        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kReachable);
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kAcquiring);
 
         uptime.set_uptime_ms(1201);
         queue.Push(NetworkSupervisorTask::TimeoutCheckTick{});
@@ -156,7 +156,7 @@ TEST_CASE("The NetworkSupervisorTask class") {
         queue.Push(NetworkSupervisorTask::HeartbeatReceived{.node_id = 1,
                                                             .device_state = DeviceState::kRunning});
         task.Run();
-        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kReachable);
+        REQUIRE(boards_controller.board_state(1) == AdcBoardState::kAcquiring);
       }
     }
 

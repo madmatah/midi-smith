@@ -17,6 +17,9 @@ void AdcSupervisorTask::Run() noexcept {
             peer_monitor_.OnHeartbeatReceived(event_variant.device_state, clock_.GetUptimeMs());
           } else if constexpr (std::is_same_v<T, TimeoutCheckTick>) {
             peer_monitor_.CheckTimeout(clock_.GetUptimeMs());
+          } else if constexpr (std::is_same_v<T, InitializationComplete>) {
+            initialization_complete_ = true;
+            sender_.SendHeartbeat(CurrentDeviceState());
           }
         },
         event);
@@ -24,10 +27,13 @@ void AdcSupervisorTask::Run() noexcept {
 }
 
 protocol::DeviceState AdcSupervisorTask::CurrentDeviceState() const noexcept {
+  if (!initialization_complete_) {
+    return protocol::DeviceState::kInitializing;
+  }
   if (acquisition_state_.GetState() == analog::AcquisitionState::kEnabled) {
     return protocol::DeviceState::kRunning;
   }
-  return protocol::DeviceState::kIdle;
+  return protocol::DeviceState::kReady;
 }
 
 }  // namespace midismith::adc_board::app::supervisor

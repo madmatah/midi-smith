@@ -20,7 +20,9 @@ class AdcSupervisorTask {
     midismith::protocol::DeviceState device_state;
   };
   struct TimeoutCheckTick {};
-  using Event = std::variant<HeartbeatTick, HeartbeatReceived, TimeoutCheckTick>;
+  struct InitializationComplete {};
+  using Event =
+      std::variant<HeartbeatTick, HeartbeatReceived, TimeoutCheckTick, InitializationComplete>;
 
   AdcSupervisorTask(messaging::AdcBoardMessageSenderRequirements& sender,
                     analog::AcquisitionStateRequirements& acquisition_state,
@@ -44,6 +46,7 @@ class AdcSupervisorTask {
   midismith::os::QueueRequirements<Event>& event_queue_;
   midismith::protocol::PeerMonitor peer_monitor_;
   midismith::os::UptimeProviderRequirements& clock_;
+  bool initialization_complete_{false};
 };
 
 }  // namespace midismith::adc_board::app::supervisor
