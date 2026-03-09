@@ -117,6 +117,42 @@ using midismith::adc_board::app::analog::AcquisitionState;
 using midismith::adc_board::app::supervisor::AdcSupervisorTask;
 using midismith::protocol::DeviceState;
 
+TEST_CASE("AdcSupervisorTask — startup heartbeat") {
+  RecordingMessageSender sender;
+  StubEventQueue queue;
+  NullPeerMonitorObserver peer_observer;
+  StubUptimeProvider uptime;
+
+  static constexpr std::uint32_t kPeerTimeoutMs = 1500;
+
+  SECTION("Should send one heartbeat immediately before entering the event loop") {
+    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+
+    task.Run();
+
+    REQUIRE(sender.heartbeat_count() == 1);
+  }
+
+  SECTION("Should report kIdle on startup when acquisition is disabled") {
+    StubAcquisitionState acquisition_state(AcquisitionState::kDisabled);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+
+    task.Run();
+
+    REQUIRE(sender.last_reported_state() == DeviceState::kIdle);
+  }
+
+  SECTION("Should report kRunning on startup when acquisition is enabled") {
+    StubAcquisitionState acquisition_state(AcquisitionState::kEnabled);
+    AdcSupervisorTask task(sender, acquisition_state, queue, peer_observer, uptime, kPeerTimeoutMs);
+
+    task.Run();
+
+    REQUIRE(sender.last_reported_state() == DeviceState::kRunning);
+  }
+}
+
 TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
   RecordingMessageSender sender;
   StubEventQueue queue;
@@ -154,7 +190,7 @@ TEST_CASE("AdcSupervisorTask — heartbeat state mapping") {
     queue.Push(AdcSupervisorTask::HeartbeatTick{});
     task.Run();
 
-    REQUIRE(sender.heartbeat_count() == 3);
+    REQUIRE(sender.heartbeat_count() == 4);  // 1 startup + 3 ticks
   }
 
   SECTION("Should reflect state changes between ticks") {

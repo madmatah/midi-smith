@@ -6,6 +6,7 @@ namespace midismith::adc_board::app::supervisor {
 
 void AdcSupervisorTask::Run() noexcept {
   Event event;
+  sender_.SendHeartbeat(CurrentDeviceState());
   while (event_queue_.Receive(event, os::kWaitForever)) {
     std::visit(
         [this](auto&& event_variant) {
