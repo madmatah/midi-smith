@@ -24,7 +24,7 @@ class StreamStub : public midismith::io::StreamRequirements {
     output_ += str;
   }
 
-  const std::string& GetOutput() const noexcept {
+  const std::string& output() const noexcept {
     return output_;
   }
 
@@ -37,9 +37,9 @@ class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
   bool CaptureStatusSnapshot(
       std::uint32_t window_ms,
       midismith::os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
-    requested_window_ms = window_ms;
-    status_snapshot = snapshot;
-    return capture_status_ok;
+    requested_window_ms_ = window_ms;
+    status_snapshot = snapshot_;
+    return capture_status_ok_;
   }
 
   bool CaptureTaskSnapshotRows(std::uint32_t, midismith::os::RuntimeTaskSnapshotRow*, std::size_t,
@@ -47,9 +47,9 @@ class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
     return false;
   }
 
-  bool capture_status_ok = true;
-  std::uint32_t requested_window_ms = 0u;
-  midismith::os::RuntimeStatusSnapshot snapshot{};
+  bool capture_status_ok_ = true;
+  std::uint32_t requested_window_ms_ = 0u;
+  midismith::os::RuntimeStatusSnapshot snapshot_{};
 };
 
 }  // namespace
@@ -59,8 +59,20 @@ TEST_CASE("The StatusCommand class", "[libs][shell-cmd-os-stats]") {
   midismith::shell_cmd_os_stats::StatusCommand command(runtime_stats);
   StreamStub stream;
 
-  SECTION("The Name() method should return 'status'") {
-    REQUIRE(command.Name() == "status");
+  SECTION("The Name() method") {
+    SECTION("When called") {
+      SECTION("Should return 'status'") {
+        REQUIRE(command.Name() == "status");
+      }
+    }
+  }
+
+  SECTION("The Help() method") {
+    SECTION("When called") {
+      SECTION("Should return the expected help string") {
+        REQUIRE(command.Help() == "Show system status (CPU/heap/uptime)");
+      }
+    }
   }
 
   SECTION("The Run() method") {
@@ -68,38 +80,38 @@ TEST_CASE("The StatusCommand class", "[libs][shell-cmd-os-stats]") {
       char* argv[] = {const_cast<char*>("status"), const_cast<char*>("250"),
                       const_cast<char*>("extra")};
       command.Run(3, argv, stream);
-      REQUIRE(stream.GetOutput() == "usage: status [window_ms]\r\n");
+      REQUIRE(stream.output() == "usage: status [window_ms]\r\n");
     }
 
     SECTION("When called with an invalid window argument, should display usage") {
       char* argv[] = {const_cast<char*>("status"), const_cast<char*>("abc")};
       command.Run(2, argv, stream);
-      REQUIRE(stream.GetOutput() == "usage: status [window_ms]\r\n");
+      REQUIRE(stream.output() == "usage: status [window_ms]\r\n");
     }
 
     SECTION("When provider capture fails, should display an error") {
-      runtime_stats.capture_status_ok = false;
+      runtime_stats.capture_status_ok_ = false;
       char* argv[] = {const_cast<char*>("status")};
       command.Run(1, argv, stream);
-      REQUIRE(stream.GetOutput() ==
+      REQUIRE(stream.output() ==
               "[os]\r\n"
               "  error: unavailable\r\n");
     }
 
     SECTION("When provider capture succeeds, should display status values") {
-      runtime_stats.snapshot.cpu_load_permille = 456u;
-      runtime_stats.snapshot.window_ms = 300u;
-      runtime_stats.snapshot.task_count = 8u;
-      runtime_stats.snapshot.heap_free_bytes = 12000u;
-      runtime_stats.snapshot.heap_min_bytes = 9000u;
-      runtime_stats.snapshot.uptime_ms = 123456u;
-      runtime_stats.snapshot.truncated = true;
+      runtime_stats.snapshot_.cpu_load_permille = 456u;
+      runtime_stats.snapshot_.window_ms = 300u;
+      runtime_stats.snapshot_.task_count = 8u;
+      runtime_stats.snapshot_.heap_free_bytes = 12000u;
+      runtime_stats.snapshot_.heap_min_bytes = 9000u;
+      runtime_stats.snapshot_.uptime_ms = 123456u;
+      runtime_stats.snapshot_.truncated = true;
 
       char* argv[] = {const_cast<char*>("status"), const_cast<char*>("300")};
       command.Run(2, argv, stream);
 
-      REQUIRE(runtime_stats.requested_window_ms == 300u);
-      REQUIRE(stream.GetOutput() ==
+      REQUIRE(runtime_stats.requested_window_ms_ == 300u);
+      REQUIRE(stream.output() ==
               "[os]\r\n"
               "  cpu_load: 45.6%\r\n"
               "  window_ms: 300\r\n"

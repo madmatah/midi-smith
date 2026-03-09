@@ -14,36 +14,46 @@ class StreamStub : public midismith::io::StreamRequirements {
     return midismith::io::ReadResult::kNoData;
   }
   void Write(char c) noexcept override {
-    _output += c;
+    output_ += c;
   }
   void Write(const char* str) noexcept override {
-    _output += str;
+    output_ += str;
   }
-  const std::string& GetOutput() const {
-    return _output;
+  const std::string& output() const {
+    return output_;
   }
 
  private:
-  std::string _output;
+  std::string output_;
 };
 
 }  // namespace
 
 TEST_CASE("The VersionCommand class", "[shell][commands]") {
   StreamStub stream;
-  midismith::shell_cmd_version::VersionCommand version_cmd("1.2.3", "Debug", "2026-01-28");
+  midismith::shell_cmd_version::VersionCommand version_command("1.2.3", "Debug", "2026-01-28");
 
   SECTION("The Name() method") {
-    SECTION("Should return 'version'") {
-      REQUIRE(version_cmd.Name() == "version");
+    SECTION("When called") {
+      SECTION("Should return 'version'") {
+        REQUIRE(version_command.Name() == "version");
+      }
+    }
+  }
+
+  SECTION("The Help() method") {
+    SECTION("When called") {
+      SECTION("Should return the expected help string") {
+        REQUIRE(version_command.Help() == "Show firmware version information");
+      }
     }
   }
 
   SECTION("The Run() method") {
     SECTION("Should output all version information correctly") {
-      version_cmd.Run(1, nullptr, stream);
+      version_command.Run(1, nullptr, stream);
 
-      const std::string& output = stream.GetOutput();
+      const std::string& output = stream.output();
       REQUIRE(output.find("Firmware Version: 1.2.3") != std::string::npos);
       REQUIRE(output.find("Build Type: Debug") != std::string::npos);
       REQUIRE(output.find("Commit Date: 2026-01-28") != std::string::npos);
