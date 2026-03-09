@@ -4,22 +4,16 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <fakeit.hpp>
+
 namespace {
 
-class RecordingKeyActionHandler final : public midismith::piano_sensing::KeyActionRequirements {
- public:
-  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
-    ++note_on_calls;
-    last_velocity = velocity;
-  }
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
+using fakeit::Fake;
 
-  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
-    (void) release_velocity;
-  }
-
-  int note_on_calls = 0;
-  midismith::midi::Velocity last_velocity = 0u;
-};
+#define fakeit_Method(mock, method) Method(mock, method)
 
 class RecordingVelocityMapper final
     : public midismith::piano_sensing::velocity::VelocityMapperRequirements {
@@ -62,8 +56,10 @@ TEST_CASE("The MidiVelocityEngine class") {
       SECTION("Should emit NoteOn and update SensorState") {
         TestContext ctx{};
         DefaultEngine engine{};
-        RecordingKeyActionHandler handler{};
-        engine.SetKeyActionHandler(&handler);
+        Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+        Fake(fakeit_Method(handler_mock, OnNoteOn));
+
+        engine.SetKeyActionHandler(&handler_mock.get());
 
         ctx.sensor.last_hammer_speed_m_per_s = -1.0f;
 
@@ -72,8 +68,8 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        REQUIRE(handler.note_on_calls == 1);
-        REQUIRE(handler.last_velocity == static_cast<midismith::midi::Velocity>(64u));
+        Verify(fakeit_Method(handler_mock, OnNoteOn).Using(static_cast<midismith::midi::Velocity>(64u)))
+            .Once();
         REQUIRE(ctx.sensor.last_midi_velocity == static_cast<std::uint8_t>(64u));
         REQUIRE(ctx.sensor.is_note_on == true);
       }
@@ -83,8 +79,10 @@ TEST_CASE("The MidiVelocityEngine class") {
       SECTION("Should not emit NoteOn") {
         TestContext ctx{};
         DefaultEngine engine{};
-        RecordingKeyActionHandler handler{};
-        engine.SetKeyActionHandler(&handler);
+        Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+        Fake(fakeit_Method(handler_mock, OnNoteOn));
+
+        engine.SetKeyActionHandler(&handler_mock.get());
 
         ctx.sensor.last_hammer_speed_m_per_s = -1.0f;
 
@@ -95,7 +93,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         ctx.sensor.last_hammer_speed_m_per_s = +0.5f;
         engine.Execute(0.31f, ctx);
 
-        REQUIRE(handler.note_on_calls == 0);
+        Verify(fakeit_Method(handler_mock, OnNoteOn)).Never();
         REQUIRE(ctx.sensor.is_note_on == false);
       }
     }
@@ -104,8 +102,10 @@ TEST_CASE("The MidiVelocityEngine class") {
       SECTION("Should allow a second strike without a NoteOff") {
         TestContext ctx{};
         DefaultEngine engine{};
-        RecordingKeyActionHandler handler{};
-        engine.SetKeyActionHandler(&handler);
+        Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+        Fake(fakeit_Method(handler_mock, OnNoteOn));
+
+        engine.SetKeyActionHandler(&handler_mock.get());
 
         ctx.sensor.last_hammer_speed_m_per_s = -1.0f;
 
@@ -114,7 +114,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        REQUIRE(handler.note_on_calls == 1);
+        Verify(fakeit_Method(handler_mock, OnNoteOn)).Once();
         REQUIRE(ctx.sensor.is_note_on == true);
 
         ctx.sensor.last_hammer_speed_m_per_s = +0.5f;
@@ -124,7 +124,7 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        REQUIRE(handler.note_on_calls == 2);
+        Verify(fakeit_Method(handler_mock, OnNoteOn)).Exactly(2);
         REQUIRE(ctx.sensor.is_note_on == true);
         REQUIRE(ctx.sensor.last_midi_velocity == static_cast<std::uint8_t>(64u));
       }
@@ -134,8 +134,10 @@ TEST_CASE("The MidiVelocityEngine class") {
       SECTION("Should use the custom mapper output to emit NoteOn") {
         TestContext ctx{};
         CustomMapperEngine engine{};
-        RecordingKeyActionHandler handler{};
-        engine.SetKeyActionHandler(&handler);
+        Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+        Fake(fakeit_Method(handler_mock, OnNoteOn));
+
+        engine.SetKeyActionHandler(&handler_mock.get());
         RecordingVelocityMapper::Reset();
 
         ctx.sensor.last_hammer_speed_m_per_s = -1.0f;
@@ -144,8 +146,8 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        REQUIRE(handler.note_on_calls == 1);
-        REQUIRE(handler.last_velocity == static_cast<midismith::midi::Velocity>(23u));
+        Verify(fakeit_Method(handler_mock, OnNoteOn).Using(static_cast<midismith::midi::Velocity>(23u)))
+            .Once();
         REQUIRE(RecordingVelocityMapper::map_calls == 1);
         REQUIRE(RecordingVelocityMapper::last_speed_m_per_s == 1.0f);
       }

@@ -5,22 +5,16 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
+#include <fakeit.hpp>
+
 namespace {
 
-class RecordingKeyActionHandler final : public midismith::piano_sensing::KeyActionRequirements {
- public:
-  void OnNoteOn(midismith::midi::Velocity velocity) noexcept override {
-    (void) velocity;
-  }
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
+using fakeit::Fake;
 
-  void OnNoteOff(midismith::midi::Velocity release_velocity) noexcept override {
-    ++note_off_calls;
-    last_release_velocity = release_velocity;
-  }
-
-  int note_off_calls = 0;
-  midismith::midi::Velocity last_release_velocity = 0u;
-};
+#define fakeit_Method(mock, method) Method(mock, method)
 
 class RecordingVelocityMapper final
     : public midismith::piano_sensing::velocity::VelocityMapperRequirements {
@@ -64,8 +58,10 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
         SECTION("Should latch current speed if positive") {
           TestContext ctx{};
           CustomMapperStage stage{};
-          RecordingKeyActionHandler handler{};
-          stage.SetKeyActionHandler(&handler);
+          Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+          Fake(fakeit_Method(handler_mock, OnNoteOff));
+
+          stage.SetKeyActionHandler(&handler_mock.get());
           RecordingVelocityMapper::Reset();
 
           ctx.sensor.is_note_on = true;
@@ -77,7 +73,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
           ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
           stage.Execute(0.0f, ctx);
 
-          REQUIRE(handler.note_off_calls == 1);
+          Verify(fakeit_Method(handler_mock, OnNoteOff)).Once();
           REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                        WithinAbs(0.5f, 0.0001f));
         }
@@ -87,8 +83,9 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
         SECTION("Should not latch speed") {
           TestContext ctx{};
           CustomMapperStage stage{};
-          RecordingKeyActionHandler handler{};
-          stage.SetKeyActionHandler(&handler);
+          Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+          Fake(fakeit_Method(handler_mock, OnNoteOff));
+          stage.SetKeyActionHandler(&handler_mock.get());
           RecordingVelocityMapper::Reset();
 
           ctx.sensor.is_note_on = false;
@@ -104,7 +101,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
           ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
           stage.Execute(0.0f, ctx);
 
-          REQUIRE(handler.note_off_calls == 1);
+          Verify(fakeit_Method(handler_mock, OnNoteOff)).Once();
           REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                        WithinAbs(0.0f, 0.0001f));
         }
@@ -116,8 +113,9 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
         SECTION("Should not update latched speed") {
           TestContext ctx{};
           CustomMapperStage stage{};
-          RecordingKeyActionHandler handler{};
-          stage.SetKeyActionHandler(&handler);
+          Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+          Fake(fakeit_Method(handler_mock, OnNoteOff));
+          stage.SetKeyActionHandler(&handler_mock.get());
           RecordingVelocityMapper::Reset();
 
           ctx.sensor.is_note_on = true;
@@ -133,7 +131,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
           ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
           stage.Execute(0.0f, ctx);
 
-          REQUIRE(handler.note_off_calls == 1);
+          Verify(fakeit_Method(handler_mock, OnNoteOff)).Once();
           REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                        WithinAbs(0.33f, 0.0001f));
         }
@@ -143,8 +141,9 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
         SECTION("Should emit NoteOff and clear is_note_on") {
           TestContext ctx{};
           CustomMapperStage stage{};
-          RecordingKeyActionHandler handler{};
-          stage.SetKeyActionHandler(&handler);
+          Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+          Fake(fakeit_Method(handler_mock, OnNoteOff));
+          stage.SetKeyActionHandler(&handler_mock.get());
           RecordingVelocityMapper::Reset();
 
           ctx.sensor.is_note_on = true;
@@ -155,7 +154,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
           ctx.sensor.last_shank_position_smoothed_norm = 0.51f;
           stage.Execute(0.0f, ctx);
 
-          REQUIRE(handler.note_off_calls == 1);
+          Verify(fakeit_Method(handler_mock, OnNoteOff)).Once();
           REQUIRE(ctx.sensor.is_note_on == false);
         }
       }
@@ -165,8 +164,9 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
       SECTION("Should reset latched speed") {
         TestContext ctx{};
         CustomMapperStage stage{};
-        RecordingKeyActionHandler handler{};
-        stage.SetKeyActionHandler(&handler);
+        Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+        Fake(fakeit_Method(handler_mock, OnNoteOff));
+        stage.SetKeyActionHandler(&handler_mock.get());
         RecordingVelocityMapper::Reset();
 
         ctx.sensor.is_note_on = false;
@@ -182,7 +182,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
         ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
         stage.Execute(0.0f, ctx);
 
-        REQUIRE(handler.note_off_calls == 1);
+        Verify(fakeit_Method(handler_mock, OnNoteOff)).Once();
         REQUIRE_THAT(RecordingVelocityMapper::last_shank_falling_speed_m_per_s,
                      WithinAbs(0.0f, 0.0001f));
       }
@@ -212,8 +212,10 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
     SECTION("Should clear internal state") {
       TestContext ctx{};
       CustomMapperStage stage{};
-      RecordingKeyActionHandler handler{};
-      stage.SetKeyActionHandler(&handler);
+      Mock<midismith::piano_sensing::KeyActionRequirements> handler_mock;
+      Fake(fakeit_Method(handler_mock, OnNoteOff));
+
+      stage.SetKeyActionHandler(&handler_mock.get());
       RecordingVelocityMapper::Reset();
 
       ctx.sensor.is_note_on = true;
@@ -226,7 +228,7 @@ TEST_CASE("The NoteReleaseDetectorStage class", "[piano-sensing]") {
       ctx.sensor.last_shank_position_smoothed_norm = 0.60f;
       stage.Execute(0.0f, ctx);
 
-      REQUIRE(handler.note_off_calls == 0);
+      Verify(fakeit_Method(handler_mock, OnNoteOff)).Never();
     }
   }
 }

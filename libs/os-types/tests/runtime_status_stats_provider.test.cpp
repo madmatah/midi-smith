@@ -1,6 +1,7 @@
 #if defined(UNIT_TESTS)
 #include "os-types/runtime_status_stats_provider.hpp"
 
+#include <fakeit.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <string_view>
@@ -11,77 +12,19 @@
 
 namespace {
 
-class RuntimeStatsMock final : public midismith::os::RuntimeStatsRequirements {
- public:
-  bool CaptureStatusSnapshot(
-      std::uint32_t window_ms,
-      midismith::os::RuntimeStatusSnapshot& status_snapshot) noexcept override {
-    requested_window_ms = window_ms;
-    status_snapshot = snapshot;
-    return capture_status_ok;
-  }
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
+using fakeit::Fake;
 
-  bool CaptureTaskSnapshotRows(std::uint32_t, midismith::os::RuntimeTaskSnapshotRow*, std::size_t,
-                               std::size_t&, bool&) noexcept override {
-    return false;
-  }
-
-  bool capture_status_ok = true;
-  std::uint32_t requested_window_ms = 0u;
-  midismith::os::RuntimeStatusSnapshot snapshot{};
-};
-
-class VisitorRecorder final : public midismith::stats::StatsVisitorRequirements {
- public:
-  void OnMetric(std::string_view metric_name, std::uint32_t value) noexcept override {
-    if (metric_name == "window_ms") {
-      window_ms = value;
-    } else if (metric_name == "task_count") {
-      task_count = value;
-    } else if (metric_name == "heap_free_bytes") {
-      heap_free_bytes = value;
-    } else if (metric_name == "heap_min_bytes") {
-      heap_min_bytes = value;
-    }
-  }
-
-  void OnMetric(std::string_view, std::int32_t) noexcept override {}
-
-  void OnMetric(std::string_view metric_name, std::uint64_t value) noexcept override {
-    if (metric_name == "uptime_ms") {
-      uptime_ms = value;
-    }
-  }
-
-  void OnMetric(std::string_view, std::int64_t) noexcept override {}
-
-  void OnMetric(std::string_view metric_name, bool value) noexcept override {
-    if (metric_name == "truncated") {
-      truncated = value;
-    }
-  }
-
-  void OnMetric(std::string_view metric_name, std::string_view value_text) noexcept override {
-    if (metric_name == "cpu_load") {
-      cpu_load_text = value_text;
-    }
-  }
-
-  std::uint32_t window_ms = 0u;
-  std::uint32_t task_count = 0u;
-  std::uint32_t heap_free_bytes = 0u;
-  std::uint32_t heap_min_bytes = 0u;
-  std::uint64_t uptime_ms = 0u;
-  bool truncated = false;
-  std::string_view cpu_load_text{};
-};
+#define fakeit_Method(mock, method) Method(mock, method)
 
 }  // namespace
 
 TEST_CASE("The RuntimeStatusStatsProvider class", "[libs][os-types]") {
-  RuntimeStatsMock runtime_stats;
-  midismith::os::RuntimeStatusStatsProvider provider(runtime_stats);
-  VisitorRecorder visitor;
+  Mock<midismith::os::RuntimeStatsRequirements> runtime_stats_mock;
+  midismith::os::RuntimeStatusStatsProvider provider(runtime_stats_mock.get());
+  Mock<midismith::stats::StatsVisitorRequirements> visitor_mock;
   midismith::os::OsStatusRequest request{.window_ms = 300u};
 
   SECTION("Category should be os") {
@@ -89,32 +32,48 @@ TEST_CASE("The RuntimeStatusStatsProvider class", "[libs][os-types]") {
   }
 
   SECTION("ProvideStats should return unavailable when snapshot capture fails") {
-    runtime_stats.capture_status_ok = false;
-    const auto status = provider.ProvideStats(request, visitor);
+    When(fakeit_Method(runtime_stats_mock, CaptureStatusSnapshot)).Return(false);
+
+    const auto status = provider.ProvideStats(request, visitor_mock.get());
     REQUIRE(status == midismith::stats::StatsPublishStatus::kUnavailable);
-    REQUIRE(runtime_stats.requested_window_ms == 300u);
+    Verify(fakeit_Method(runtime_stats_mock, CaptureStatusSnapshot).Using(300u, fakeit::_)).Once();
   }
 
   SECTION("ProvideStats should publish status metrics when capture succeeds") {
-    runtime_stats.snapshot.cpu_load_permille = 456u;
-    runtime_stats.snapshot.window_ms = 300u;
-    runtime_stats.snapshot.task_count = 7u;
-    runtime_stats.snapshot.heap_free_bytes = 11000u;
-    runtime_stats.snapshot.heap_min_bytes = 9000u;
-    runtime_stats.snapshot.uptime_ms = 12345u;
-    runtime_stats.snapshot.truncated = true;
+    midismith::os::RuntimeStatusSnapshot snapshot{};
+    snapshot.cpu_load_permille = 456u;
+    snapshot.window_ms = 300u;
+    snapshot.task_count = 7u;
+    snapshot.heap_free_bytes = 11000u;
+    snapshot.heap_min_bytes = 9000u;
+    snapshot.uptime_ms = 12345u;
+    snapshot.truncated = true;
 
-    const auto status = provider.ProvideStats(request, visitor);
+    When(fakeit_Method(runtime_stats_mock, CaptureStatusSnapshot))
+        .Do([&](std::uint32_t, midismith::os::RuntimeStatusSnapshot& out) {
+          out = snapshot;
+          return true;
+        });
+
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)));
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::int32_t)));
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint64_t)));
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::int64_t)));
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)));
+    Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)));
+
+    const auto status = provider.ProvideStats(request, visitor_mock.get());
 
     REQUIRE(status == midismith::stats::StatsPublishStatus::kOk);
-    REQUIRE(runtime_stats.requested_window_ms == 300u);
-    REQUIRE(visitor.cpu_load_text == "45.6%");
-    REQUIRE(visitor.window_ms == 300u);
-    REQUIRE(visitor.task_count == 7u);
-    REQUIRE(visitor.heap_free_bytes == 11000u);
-    REQUIRE(visitor.heap_min_bytes == 9000u);
-    REQUIRE(visitor.uptime_ms == 12345u);
-    REQUIRE(visitor.truncated);
+    Verify(fakeit_Method(runtime_stats_mock, CaptureStatusSnapshot).Using(300u, fakeit::_)).Once();
+    
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)).Using("cpu_load", "45.6%")).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("window_ms", 300u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("task_count", 7u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("heap_free_bytes", 11000u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("heap_min_bytes", 9000u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint64_t)).Using("uptime_ms", 12345u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)).Using("truncated", true)).Once();
   }
 }
 #endif

@@ -6,4 +6,5 @@ midismith_add_test(NAME protocol_can
         can_inbound_decode_stats_provider.test.cpp
         can_mapper.test.cpp
         can_to_protocol_adapter.test.cpp
+    USE_FAKEIT
 )
