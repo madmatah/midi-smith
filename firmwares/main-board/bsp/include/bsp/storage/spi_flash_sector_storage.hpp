@@ -1,15 +1,21 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 
 #include "bsp-types/storage/flash_sector_storage_requirements.hpp"
 
-namespace midismith::adc_board::bsp::flash {
+namespace midismith::main_board::bsp {
+class Stm32SpiFlash;
+}
 
-class InternalStorage : public midismith::bsp::storage::FlashSectorStorageRequirements {
+namespace midismith::main_board::bsp::storage {
+
+class SpiFlashSectorStorage : public midismith::bsp::storage::FlashSectorStorageRequirements {
  public:
-  static constexpr std::size_t kFlashWordSizeBytes = 32;
+  static constexpr std::size_t kSectorSizeBytes = 4096;
+
+  SpiFlashSectorStorage(midismith::main_board::bsp::Stm32SpiFlash& flash,
+                        std::size_t sector_index) noexcept;
 
   std::size_t SectorSizeBytes() const noexcept override;
   midismith::bsp::storage::StorageOperationResult Read(
@@ -21,7 +27,8 @@ class InternalStorage : public midismith::bsp::storage::FlashSectorStorageRequir
                                                         std::size_t length_bytes) noexcept override;
 
  private:
-  const void* BaseAddress() const noexcept;
+  midismith::main_board::bsp::Stm32SpiFlash& flash_;
+  std::uint32_t sector_base_address_;
 };
 
-}  // namespace midismith::adc_board::bsp::flash
+}  // namespace midismith::main_board::bsp::storage

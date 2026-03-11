@@ -8,7 +8,6 @@ midismith_add_firmware_test(NAME adc
         domain/sensors/sensor_member_reader.test.cpp
         domain/sensors/sensor_state.test.cpp
         domain/config/adc_board_config.test.cpp
-        app/storage/storage_manager.test.cpp
         app/storage/adc_board_persistent_configuration.test.cpp
         app/analog/adc_rank_mapped_frame_decoder.test.cpp
         app/analog/acquisition_sequencer.test.cpp

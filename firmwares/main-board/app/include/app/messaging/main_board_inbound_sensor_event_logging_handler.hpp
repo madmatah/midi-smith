@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "logging/logger_requirements.hpp"
 #include "protocol/messages.hpp"
 
@@ -11,7 +13,8 @@ class MainBoardInboundSensorEventLoggingHandler final {
       midismith::logging::LoggerRequirements& logger) noexcept
       : logger_(logger) {}
 
-  void OnSensorEvent(const midismith::protocol::SensorEvent& event) noexcept;
+  void OnSensorEvent(const midismith::protocol::SensorEvent& event,
+                     std::uint8_t source_node_id) noexcept;
 
  private:
   midismith::logging::LoggerRequirements& logger_;

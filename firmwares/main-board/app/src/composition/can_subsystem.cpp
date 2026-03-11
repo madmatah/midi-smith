@@ -27,9 +27,11 @@ void CanTaskEntry(void* ctx) noexcept {
 
 }  // namespace
 
-CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
-                              midismith::piano_controller::PianoRequirements& piano,
-                              SupervisorContext& supervisor_ctx) noexcept {
+CanContext CreateCanSubsystem(
+    midismith::logging::LoggerRequirements& logger,
+    midismith::piano_controller::PianoRequirements& piano,
+    const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
+    SupervisorContext& supervisor_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -39,7 +41,7 @@ CanContext CreateCanSubsystem(midismith::logging::LoggerRequirements& logger,
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventLoggingHandler
       inbound_logging_handler(logger);
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventMidiHandler
-      inbound_midi_handler(piano);
+      inbound_midi_handler(piano, keymap_lookup);
   static midismith::main_board::app::messaging::MainBoardInboundHeartbeatHandler
       inbound_heartbeat_handler(supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
