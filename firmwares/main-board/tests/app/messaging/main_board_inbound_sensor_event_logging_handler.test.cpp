@@ -37,10 +37,10 @@ TEST_CASE("The MainBoardInboundSensorEventLoggingHandler class", "[main-board][a
         .velocity = 101u,
     };
 
-    handler.OnSensorEvent(event);
+    handler.OnSensorEvent(event, 2u);
 
     REQUIRE(logger.last_level == midismith::logging::Level::Info);
-    REQUIRE(logger.last_message == "noteon:9:101\n");
+    REQUIRE(logger.last_message == "noteon:2:9:101\n");
   }
 
   SECTION("When the sensor event is kNoteOff") {
@@ -50,10 +50,10 @@ TEST_CASE("The MainBoardInboundSensorEventLoggingHandler class", "[main-board][a
         .velocity = 67u,
     };
 
-    handler.OnSensorEvent(event);
+    handler.OnSensorEvent(event, 2u);
 
     REQUIRE(logger.last_level == midismith::logging::Level::Info);
-    REQUIRE(logger.last_message == "noteoff:4:67\n");
+    REQUIRE(logger.last_message == "noteoff:2:4:67\n");
   }
 }
 

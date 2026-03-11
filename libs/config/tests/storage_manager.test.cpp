@@ -1,6 +1,6 @@
 #if defined(UNIT_TESTS)
 
-#include "app/storage/storage_manager.hpp"
+#include "config/storage_manager.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
@@ -36,18 +36,20 @@ TestConfig CreateTestConfig(std::uint8_t value,
 
 class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorageRequirements {
  public:
-  static constexpr std::size_t kSectorSize = 128 * 1024;
+  static constexpr std::size_t kSectorSize = 4096;
 
-  FlashStorageStub() noexcept {
-    std::memset(storage_, 0xFF, sizeof(storage_));
-  }
+  FlashStorageStub() noexcept { std::memset(storage_, 0xFF, sizeof(storage_)); }
 
-  const void* BaseAddress() const noexcept override {
-    return storage_;
-  }
+  std::size_t SectorSizeBytes() const noexcept override { return kSectorSize; }
 
-  std::size_t SectorSizeBytes() const noexcept override {
-    return kSectorSize;
+  midismith::bsp::storage::StorageOperationResult Read(
+      std::size_t offset_bytes, std::uint8_t* buffer,
+      std::size_t length_bytes) const noexcept override {
+    if (offset_bytes + length_bytes > kSectorSize) {
+      return midismith::bsp::storage::StorageOperationResult::kError;
+    }
+    std::memcpy(buffer, storage_ + offset_bytes, length_bytes);
+    return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
   midismith::bsp::storage::StorageOperationResult EraseSector() noexcept override {
@@ -60,10 +62,10 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
-  midismith::bsp::storage::StorageOperationResult ProgramFlashWords(
+  midismith::bsp::storage::StorageOperationResult Write(
       std::size_t offset_bytes, const std::uint8_t* data,
       std::size_t length_bytes) noexcept override {
-    if (program_should_fail) {
+    if (write_should_fail) {
       return midismith::bsp::storage::StorageOperationResult::kError;
     }
     if (offset_bytes + length_bytes > kSectorSize) {
@@ -71,7 +73,7 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     }
 
     std::memcpy(storage_ + offset_bytes, data, length_bytes);
-    ++program_count;
+    ++write_count;
     return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
@@ -79,10 +81,12 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     std::memcpy(storage_, &config, sizeof(config));
   }
 
+  const std::uint8_t* storage() const noexcept { return storage_; }
+
   bool erase_should_fail = false;
-  bool program_should_fail = false;
+  bool write_should_fail = false;
   int erase_count = 0;
-  int program_count = 0;
+  int write_count = 0;
 
  private:
   alignas(32) std::uint8_t storage_[kSectorSize]{};
@@ -93,8 +97,7 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
 TEST_CASE("The StorageManager class") {
   auto default_config = CreateDefaultTestConfig();
   FlashStorageStub flash;
-  midismith::adc_board::app::storage::StorageManager<TestConfig> storage_manager(flash,
-                                                                                 default_config);
+  midismith::config::StorageManager<TestConfig> storage_manager(flash, default_config);
 
   SECTION("The Load method") {
     SECTION("When flash is virgin") {
@@ -173,7 +176,7 @@ TEST_CASE("The StorageManager class") {
 
       REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
       REQUIRE(flash.erase_count == 0);
-      REQUIRE(flash.program_count == 0);
+      REQUIRE(flash.write_count == 0);
     }
 
     SECTION("When data is changed") {
@@ -183,7 +186,7 @@ TEST_CASE("The StorageManager class") {
 
       REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
-      REQUIRE(flash.program_count == 1);
+      REQUIRE(flash.write_count == 1);
     }
 
     SECTION("When erase fails") {
@@ -193,12 +196,12 @@ TEST_CASE("The StorageManager class") {
       auto result = storage_manager.Save(config);
 
       REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kError);
-      REQUIRE(flash.program_count == 0);
+      REQUIRE(flash.write_count == 0);
     }
 
-    SECTION("When program fails") {
+    SECTION("When write fails") {
       auto config = CreateTestConfig(77);
-      flash.program_should_fail = true;
+      flash.write_should_fail = true;
 
       auto result = storage_manager.Save(config);
 
@@ -214,7 +217,7 @@ TEST_CASE("The StorageManager class") {
       REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
 
       TestConfig saved{};
-      std::memcpy(&saved, flash.BaseAddress(), sizeof(saved));
+      std::memcpy(&saved, flash.storage(), sizeof(saved));
       REQUIRE(midismith::config::ConfigValidator<TestConfig>::Validate(saved) ==
               midismith::config::ConfigStatus::kValid);
       REQUIRE(saved.data.value == 88);

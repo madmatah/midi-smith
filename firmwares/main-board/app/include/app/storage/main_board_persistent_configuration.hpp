@@ -3,18 +3,17 @@
 #include <cstddef>
 #include <string_view>
 
-#include "app/can/can_node_id_changed_observer_requirements.hpp"
 #include "bsp-types/storage/flash_sector_storage_requirements.hpp"
 #include "config/config_validator.hpp"
 #include "config/storage_manager.hpp"
 #include "config/transactional_config_dictionary.hpp"
-#include "domain/config/adc_board_config.hpp"
+#include "domain/config/main_board_config.hpp"
 
-namespace midismith::adc_board::app::storage {
+namespace midismith::main_board::app::storage {
 
-class AdcBoardPersistentConfiguration : public midismith::config::TransactionalConfigDictionary {
+class MainBoardPersistentConfiguration : public midismith::config::TransactionalConfigDictionary {
  public:
-  explicit AdcBoardPersistentConfiguration(
+  explicit MainBoardPersistentConfiguration(
       midismith::bsp::storage::FlashSectorStorageRequirements& flash_storage) noexcept;
 
   std::size_t KeyCount() const noexcept override;
@@ -26,19 +25,17 @@ class AdcBoardPersistentConfiguration : public midismith::config::TransactionalC
                                               std::string_view value) noexcept override;
 
   midismith::config::ConfigStatus Load() noexcept;
-  bool UpdateBoardId(std::uint8_t board_id) noexcept;
   midismith::config::TransactionResult Commit() noexcept override;
 
-  void RegisterNodeIdObserver(
-      midismith::adc_board::app::can::CanNodeIdChangedObserverRequirements& observer) noexcept;
+  bool AddKeymapEntry(const midismith::main_board::domain::config::KeymapEntry& entry) noexcept;
+  void ClearKeymap() noexcept;
 
-  const midismith::adc_board::domain::config::AdcBoardConfig& active_config() const noexcept;
+  const midismith::main_board::domain::config::MainBoardConfig& active_config() const noexcept;
 
  private:
-  midismith::config::StorageManager<midismith::adc_board::domain::config::AdcBoardConfig>
+  midismith::config::StorageManager<midismith::main_board::domain::config::MainBoardConfig>
       storage_manager_;
-  midismith::adc_board::domain::config::AdcBoardConfig ram_config_;
-  midismith::adc_board::app::can::CanNodeIdChangedObserverRequirements* node_id_observer_ = nullptr;
+  midismith::main_board::domain::config::MainBoardConfig ram_config_;
 };
 
-}  // namespace midismith::adc_board::app::storage
+}  // namespace midismith::main_board::app::storage

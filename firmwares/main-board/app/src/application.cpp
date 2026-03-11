@@ -21,10 +21,12 @@ void Application::create_tasks() noexcept {
       console_stream(huart1);
   (void) console_stream.StartRxDma();
 
+  auto config_ctx = midismith::main_board::app::composition::CreateConfigSubsystem();
+
   auto midi_context = midismith::main_board::app::composition::CreateMidiSubsystem(rtt_logger);
   auto supervisor_ctx = midismith::main_board::app::composition::CreateSupervisorContext();
   auto can_ctx = midismith::main_board::app::composition::CreateCanSubsystem(
-      rtt_logger, midi_context.piano, supervisor_ctx);
+      rtt_logger, midi_context.piano, config_ctx.keymap_lookup, supervisor_ctx);
 
   midismith::main_board::app::composition::ConsoleContext console_ctx = {.stream = console_stream};
   auto boards_ctx = midismith::main_board::app::composition::CreateSupervisorSubsystem(

@@ -18,12 +18,18 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     std::memset(storage_, 0xFF, sizeof(storage_));
   }
 
-  const void* BaseAddress() const noexcept override {
-    return storage_;
-  }
-
   std::size_t SectorSizeBytes() const noexcept override {
     return kSectorSize;
+  }
+
+  midismith::bsp::storage::StorageOperationResult Read(
+      std::size_t offset_bytes, std::uint8_t* buffer,
+      std::size_t length_bytes) const noexcept override {
+    if (offset_bytes + length_bytes > kSectorSize) {
+      return midismith::bsp::storage::StorageOperationResult::kError;
+    }
+    std::memcpy(buffer, storage_ + offset_bytes, length_bytes);
+    return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
   midismith::bsp::storage::StorageOperationResult EraseSector() noexcept override {
@@ -36,10 +42,10 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
-  midismith::bsp::storage::StorageOperationResult ProgramFlashWords(
+  midismith::bsp::storage::StorageOperationResult Write(
       std::size_t offset_bytes, const std::uint8_t* data,
       std::size_t length_bytes) noexcept override {
-    if (program_should_fail) {
+    if (write_should_fail) {
       return midismith::bsp::storage::StorageOperationResult::kError;
     }
     if (offset_bytes + length_bytes > kSectorSize) {
@@ -47,7 +53,7 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     }
 
     std::memcpy(storage_ + offset_bytes, data, length_bytes);
-    ++program_count;
+    ++write_count;
     return midismith::bsp::storage::StorageOperationResult::kSuccess;
   }
 
@@ -56,9 +62,9 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
   }
 
   bool erase_should_fail = false;
-  bool program_should_fail = false;
+  bool write_should_fail = false;
   int erase_count = 0;
-  int program_count = 0;
+  int write_count = 0;
 
  private:
   alignas(32) std::uint8_t storage_[kSectorSize]{};
@@ -143,7 +149,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
       auto result = persistent_config.Commit();
       REQUIRE(result == midismith::config::TransactionResult::kSuccess);
       REQUIRE(flash.erase_count == 1);
-      REQUIRE(flash.program_count == 1);
+      REQUIRE(flash.write_count == 1);
 
       midismith::adc_board::app::storage::AdcBoardPersistentConfiguration reloaded(flash);
       auto load_status = reloaded.Load();
@@ -161,7 +167,7 @@ TEST_CASE("The AdcBoardPersistentConfiguration class") {
 
     SECTION("When program fails") {
       persistent_config.Load();
-      flash.program_should_fail = true;
+      flash.write_should_fail = true;
 
       auto result = persistent_config.Commit();
       REQUIRE(result == midismith::config::TransactionResult::kFailure);

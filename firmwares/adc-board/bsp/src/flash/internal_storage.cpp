@@ -1,6 +1,7 @@
 #include "bsp/flash/internal_storage.hpp"
 
 #include <cstdint>
+#include <cstring>
 
 #include "stm32h7xx_hal.h"
 
@@ -54,6 +55,24 @@ std::size_t InternalStorage::SectorSizeBytes() const noexcept {
   return kSectorSizeBytes;
 }
 
+StorageOperationResult InternalStorage::Read(std::size_t offset_bytes, std::uint8_t* buffer,
+                                             std::size_t length_bytes) const noexcept {
+  const void* base_address = BaseAddress();
+  if (!HasExpectedBaseAddress(base_address)) {
+    return StorageOperationResult::kError;
+  }
+  if (buffer == nullptr || length_bytes == 0) {
+    return StorageOperationResult::kError;
+  }
+  if (offset_bytes + length_bytes > kSectorSizeBytes) {
+    return StorageOperationResult::kError;
+  }
+
+  const auto* source = static_cast<const std::uint8_t*>(base_address) + offset_bytes;
+  std::memcpy(buffer, source, length_bytes);
+  return StorageOperationResult::kSuccess;
+}
+
 StorageOperationResult InternalStorage::EraseSector() noexcept {
   const void* base_address = BaseAddress();
   if (!HasExpectedBaseAddress(base_address)) {
@@ -82,9 +101,8 @@ StorageOperationResult InternalStorage::EraseSector() noexcept {
   return StorageOperationResult::kSuccess;
 }
 
-StorageOperationResult InternalStorage::ProgramFlashWords(std::size_t offset_bytes,
-                                                          const std::uint8_t* data,
-                                                          std::size_t length_bytes) noexcept {
+StorageOperationResult InternalStorage::Write(std::size_t offset_bytes, const std::uint8_t* data,
+                                              std::size_t length_bytes) noexcept {
   const void* base_address_ptr = BaseAddress();
   if (!HasExpectedBaseAddress(base_address_ptr)) {
     return StorageOperationResult::kError;

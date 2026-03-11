@@ -4,5 +4,6 @@ midismith_add_test(NAME config
     SOURCES
         crc32.test.cpp
         config_validator.test.cpp
+        storage_manager.test.cpp
         transactional_config_dictionary.test.cpp
 )

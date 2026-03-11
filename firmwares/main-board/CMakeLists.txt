@@ -27,12 +27,17 @@ midismith_require_lib(bsp-types)
 midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
+midismith_require_lib(config)
 
 if(HOST_TESTS)
     enable_testing()
 
-    add_library(main_domain INTERFACE)
-    target_link_libraries(main_domain INTERFACE piano_controller midi bsp os telemetry)
+    add_library(main_domain STATIC
+        domain/src/main_board_config.cpp
+        domain/src/keymap_lookup.cpp
+    )
+    target_include_directories(main_domain PUBLIC domain/include)
+    target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -44,11 +49,12 @@ if(HOST_TESTS)
         app/src/shell/adc_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
+        app/src/storage/main_board_persistent_configuration.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -76,12 +82,14 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/composition/can_subsystem.cpp
     app/src/composition/midi_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
+    app/src/composition/config_subsystem.cpp
     app/src/supervisor/network_supervisor_task.cpp
     app/src/composition/supervisor_subsystem.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
     bsp/src/stm32_octospi.cpp
     bsp/src/stm32_spi_flash.cpp
+    bsp/src/storage/spi_flash_sector_storage.cpp
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
     bsp/src/usb_midi/usbd_midi.c
@@ -95,6 +103,9 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
     app/src/adc/adc_board_controller.cpp
+    app/src/storage/main_board_persistent_configuration.cpp
+    domain/src/main_board_config.cpp
+    domain/src/keymap_lookup.cpp
 )
 
 # Add include paths
@@ -103,6 +114,7 @@ target_include_directories(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/include
     bsp/include
     bsp/include/bsp/usb_midi
+    domain/include
 )
 
 midismith_firmware_link_map(${MAIN_FIRMWARE_TARGET})
@@ -124,6 +136,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     can_broker
     protocol
     protocol_can
+    config
 
     # Add user defined libraries
 )
