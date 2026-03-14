@@ -12,16 +12,9 @@ PeerMonitor::PeerMonitor(std::uint32_t timeout_ms,
 
 void PeerMonitor::OnHeartbeatReceived(DeviceState state, std::uint32_t timestamp_ms) noexcept {
   last_heartbeat_timestamp_ms_ = timestamp_ms;
-
-  const bool was_healthy = (connectivity_ == PeerConnectivity::kHealthy);
-  const bool device_state_changed = (state != last_device_state_);
-
   last_device_state_ = state;
   connectivity_ = PeerConnectivity::kHealthy;
-
-  if (!was_healthy || device_state_changed) {
-    observer_.OnPeerChanged(status());
-  }
+  observer_.OnPeerHeartbeat(state);
 }
 
 void PeerMonitor::CheckTimeout(std::uint32_t current_time_ms) noexcept {
@@ -30,7 +23,7 @@ void PeerMonitor::CheckTimeout(std::uint32_t current_time_ms) noexcept {
   }
   if ((current_time_ms - last_heartbeat_timestamp_ms_) > timeout_ms_) {
     connectivity_ = PeerConnectivity::kLost;
-    observer_.OnPeerChanged(status());
+    observer_.OnPeerLost();
   }
 }
 

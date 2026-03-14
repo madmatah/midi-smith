@@ -1,13 +1,14 @@
 #pragma once
 
-#include "protocol/peer_status.hpp"
+#include "protocol/messages.hpp"
 
 namespace midismith::protocol {
 
 class PeerMonitorObserverRequirements {
  public:
   virtual ~PeerMonitorObserverRequirements() = default;
-  virtual void OnPeerChanged(PeerStatus status) noexcept = 0;
+  virtual void OnPeerHeartbeat(DeviceState device_state) noexcept = 0;
+  virtual void OnPeerLost() noexcept = 0;
 };
 
 }  // namespace midismith::protocol

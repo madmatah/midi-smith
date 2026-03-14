@@ -16,7 +16,6 @@ using midismith::adc_board::app::supervisor::test::StubAcquisitionState;
 using midismith::adc_board::app::supervisor::test::StubEventQueue;
 using midismith::adc_board::app::supervisor::test::StubUptimeProvider;
 using midismith::protocol::DeviceState;
-using midismith::protocol::PeerConnectivity;
 
 TEST_CASE("The AdcSupervisorTask class") {
   SECTION("The Run() method") {
@@ -114,9 +113,8 @@ TEST_CASE("The AdcSupervisorTask class") {
         queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kRunning});
         task.Run();
 
-        REQUIRE(peer_observer.statuses().size() == 1);
-        REQUIRE(peer_observer.statuses().front().connectivity == PeerConnectivity::kHealthy);
-        REQUIRE(peer_observer.statuses().front().device_state == DeviceState::kRunning);
+        REQUIRE(peer_observer.heartbeat_states().size() == 1);
+        REQUIRE(peer_observer.heartbeat_states().front() == DeviceState::kRunning);
       }
     }
 
@@ -134,16 +132,15 @@ TEST_CASE("The AdcSupervisorTask class") {
         uptime.set_uptime_ms(100);
         queue.Push(AdcSupervisorTask::HeartbeatReceived{.device_state = DeviceState::kReady});
         task.Run();
-        REQUIRE(peer_observer.statuses().size() == 1);
-        REQUIRE(peer_observer.statuses().front().connectivity == PeerConnectivity::kHealthy);
+        REQUIRE(peer_observer.heartbeat_states().size() == 1);
+        REQUIRE(peer_observer.heartbeat_states().front() == DeviceState::kReady);
 
         uptime.set_uptime_ms(1701);
         queue.Push(AdcSupervisorTask::TimeoutCheckTick{});
         task.Run();
 
-        REQUIRE(peer_observer.statuses().size() == 2);
-        REQUIRE(peer_observer.statuses().back().connectivity == PeerConnectivity::kLost);
-        REQUIRE(peer_observer.statuses().back().device_state == DeviceState::kReady);
+        REQUIRE(peer_observer.heartbeat_states().size() == 1);
+        REQUIRE(peer_observer.lost_count() == 1);
       }
     }
 
