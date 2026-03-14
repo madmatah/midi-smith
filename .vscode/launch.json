@@ -6,6 +6,10 @@
       "type": "cortex-debug",
       "request": "launch",
       "servertype": "openocd",
+      "openOCDPreConfigLaunchCommands": [
+        "if {[info exists env(MIDISMITH_STLINK_SERIAL_ADC)]} { adapter serial $env(MIDISMITH_STLINK_SERIAL_ADC) }",
+        "if {\"${config:midismith.stlinkSerialAdc}\" != \"\"} { adapter serial \"${config:midismith.stlinkSerialAdc}\" }"
+      ],
       "configFiles": [
         "interface/stlink.cfg",
         "target/stm32h7x.cfg",
@@ -44,6 +48,10 @@
       "type": "cortex-debug",
       "request": "launch",
       "servertype": "openocd",
+      "openOCDPreConfigLaunchCommands": [
+        "if {[info exists env(MIDISMITH_STLINK_SERIAL_MAIN)]} { adapter serial $env(MIDISMITH_STLINK_SERIAL_MAIN) }",
+        "if {\"${config:midismith.stlinkSerialMain}\" != \"\"} { adapter serial \"${config:midismith.stlinkSerialMain}\" }"
+      ],
       "configFiles": [
         "interface/stlink.cfg",
         "target/stm32h7x.cfg",
