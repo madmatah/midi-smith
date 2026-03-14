@@ -1,4 +1,4 @@
-#include "domain/config/keymap_lookup.hpp"
+#include "domain/keymap/keymap_lookup.hpp"
 
 namespace midismith::main_board::domain::config {
 

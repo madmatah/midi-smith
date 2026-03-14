@@ -1,12 +1,13 @@
 #pragma once
 
+#include "app/keymap/keymap_setup_coordinator.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/shell/adc_boards_control_requirements.hpp"
 #include "app/storage/main_board_persistent_configuration.hpp"
 #include "app/supervisor/network_supervisor_task.hpp"
 #include "bsp-types/can/can_bus_stats_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
-#include "domain/config/keymap_lookup_requirements.hpp"
+#include "domain/keymap/keymap_lookup_requirements.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
 #include "piano-controller/piano_requirements.hpp"
@@ -17,6 +18,7 @@ namespace midismith::main_board::app::composition {
 struct ConfigContext {
   const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup;
   midismith::main_board::app::storage::MainBoardPersistentConfiguration& persistent_config;
+  midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator;
 };
 
 struct CanContext {
@@ -49,12 +51,14 @@ CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::piano_controller::PianoRequirements& piano,
     const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
     SupervisorContext& supervisor_ctx) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 AdcBoardsContext CreateSupervisorSubsystem(
     midismith::main_board::app::messaging::MainBoardMessageSenderRequirements& sender,
     SupervisorContext& ctx) noexcept;
-void CreateShellSubsystem(ConsoleContext& console, CanContext& can,
-                          AdcBoardsContext& boards) noexcept;
+void CreateShellSubsystem(
+    ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator) noexcept;
 
 }  // namespace midismith::main_board::app::composition

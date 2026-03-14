@@ -2,6 +2,7 @@
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_can_message_sender.hpp"
 #include "app/messaging/main_board_inbound_heartbeat_handler.hpp"
+#include "app/messaging/main_board_inbound_keymap_capture_handler.hpp"
 #include "app/messaging/main_board_inbound_sensor_event_logging_handler.hpp"
 #include "app/messaging/main_board_inbound_sensor_event_midi_handler.hpp"
 #include "bsp/can/can_bus_stats.hpp"
@@ -31,6 +32,7 @@ CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::piano_controller::PianoRequirements& piano,
     const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
     SupervisorContext& supervisor_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
@@ -40,12 +42,15 @@ CanContext CreateCanSubsystem(
                                                            receive_queue, stats);
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventLoggingHandler
       inbound_logging_handler(logger);
+  static midismith::main_board::app::messaging::MainBoardInboundKeymapCaptureHandler
+      inbound_keymap_capture_handler(keymap_setup_coordinator);
   static midismith::main_board::app::messaging::MainBoardInboundSensorEventMidiHandler
       inbound_midi_handler(piano, keymap_lookup);
   static midismith::main_board::app::messaging::MainBoardInboundHeartbeatHandler
       inbound_heartbeat_handler(supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
-      inbound_logging_handler, inbound_midi_handler, inbound_heartbeat_handler);
+      inbound_logging_handler, inbound_keymap_capture_handler, inbound_midi_handler,
+      inbound_heartbeat_handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "domain/config/keymap_lookup_requirements.hpp"
+#include "domain/keymap/keymap_lookup_requirements.hpp"
 #include "piano-controller/piano_requirements.hpp"
 #include "protocol/messages.hpp"
 

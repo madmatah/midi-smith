@@ -1,7 +1,7 @@
 #pragma once
 
-#include "domain/config/keymap_lookup_requirements.hpp"
 #include "domain/config/main_board_config.hpp"
+#include "domain/keymap/keymap_lookup_requirements.hpp"
 
 namespace midismith::main_board::domain::config {
 

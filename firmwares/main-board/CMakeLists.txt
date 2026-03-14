@@ -34,7 +34,8 @@ if(HOST_TESTS)
 
     add_library(main_domain STATIC
         domain/src/main_board_config.cpp
-        domain/src/keymap_lookup.cpp
+        domain/src/keymap/keymap_lookup.cpp
+        domain/src/keymap/keymap_setup_session.cpp
     )
     target_include_directories(main_domain PUBLIC domain/include)
     target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry)
@@ -47,14 +48,17 @@ if(HOST_TESTS)
         app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
         app/src/shell/can_command.cpp
         app/src/shell/adc_command.cpp
+        app/src/shell/keymap_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
         app/src/storage/main_board_persistent_configuration.cpp
+        app/src/keymap/keymap_setup_coordinator.cpp
+        app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -79,6 +83,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app_entry.cpp
     app/src/version.cpp
     app/src/tasks/shell_task.cpp
+    app/src/tasks/config_storage_task.cpp
     app/src/composition/can_subsystem.cpp
     app/src/composition/midi_subsystem.cpp
     app/src/composition/shell_subsystem.cpp
@@ -102,10 +107,14 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
+    app/src/shell/keymap_command.cpp
     app/src/adc/adc_board_controller.cpp
     app/src/storage/main_board_persistent_configuration.cpp
+    app/src/keymap/keymap_setup_coordinator.cpp
+    app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
     domain/src/main_board_config.cpp
-    domain/src/keymap_lookup.cpp
+    domain/src/keymap/keymap_lookup.cpp
+    domain/src/keymap/keymap_setup_session.cpp
 )
 
 # Add include paths

@@ -3,6 +3,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_infra_lib.cmake)
 midismith_add_infra_lib(NAME os
     SOURCES
         src/binary_semaphore.cpp
+        src/mutex.cpp
         src/clock.cpp
         src/memory.cpp
         src/os_uptime_provider.cpp

@@ -3,6 +3,7 @@
 #include "app/composition/subsystems.hpp"
 #include "app/shell/adc_command.hpp"
 #include "app/shell/can_command.hpp"
+#include "app/shell/keymap_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "bsp-types/can/can_bus_stats_provider.hpp"
@@ -16,8 +17,9 @@
 
 namespace midismith::main_board::app::composition {
 
-void CreateShellSubsystem(ConsoleContext& console, CanContext& can,
-                          AdcBoardsContext& boards) noexcept {
+void CreateShellSubsystem(
+    ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator) noexcept {
   static midismith::shell::ShellConfig shell_config = {.prompt = "main-board> "};
 
   alignas(midismith::main_board::app::tasks::ShellTask) static std::uint8_t
@@ -54,6 +56,9 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can,
 
   static midismith::main_board::app::shell::AdcCommand adc_cmd(boards.boards_control);
   shell_task_ptr->RegisterCommand(adc_cmd);
+
+  static midismith::main_board::app::shell::KeymapCommand keymap_cmd(keymap_setup_coordinator);
+  shell_task_ptr->RegisterCommand(keymap_cmd);
 
   static midismith::bsp::can::CanBusStatsProvider can_stats_provider(can.stats);
   static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(
