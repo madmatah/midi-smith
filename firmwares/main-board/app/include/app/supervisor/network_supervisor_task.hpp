@@ -10,6 +10,7 @@
 #include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/messages.hpp"
 #include "protocol/peer_registry.hpp"
+#include "protocol/peer_status_provider_requirements.hpp"
 
 namespace midismith::main_board::app::supervisor {
 
@@ -45,6 +46,11 @@ class NetworkSupervisorTask {
         clock_(clock) {}
 
   void Run() noexcept;
+
+  [[nodiscard]] midismith::protocol::PeerStatusProviderRequirements&
+  peer_status_provider() noexcept {
+    return peer_registry_;
+  }
 
  private:
   messaging::MainBoardMessageSenderRequirements& sender_;

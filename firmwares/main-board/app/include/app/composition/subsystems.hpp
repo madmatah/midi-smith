@@ -12,6 +12,7 @@
 #include "logging/logger_requirements.hpp"
 #include "piano-controller/piano_requirements.hpp"
 #include "protocol-can/can_inbound_decode_stats_requirements.hpp"
+#include "protocol/peer_status_provider_requirements.hpp"
 
 namespace midismith::main_board::app::composition {
 
@@ -43,6 +44,7 @@ struct SupervisorContext {
 
 struct AdcBoardsContext {
   midismith::main_board::app::shell::AdcBoardsControlRequirements& boards_control;
+  midismith::protocol::PeerStatusProviderRequirements& peer_status;
 };
 
 ConfigContext CreateConfigSubsystem() noexcept;

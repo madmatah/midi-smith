@@ -3,12 +3,15 @@
 #include "protocol/peer_registry.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <vector>
 
 namespace {
 
 using midismith::protocol::DeviceState;
 using midismith::protocol::PeerConnectivity;
 using midismith::protocol::PeerRegistryObserverRequirements;
+using midismith::protocol::PeerStatus;
+using midismith::protocol::PeerStatusVisitorRequirements;
 
 class RecordingPeerRegistryObserver final : public PeerRegistryObserverRequirements {
  public:
@@ -28,6 +31,20 @@ class RecordingPeerRegistryObserver final : public PeerRegistryObserverRequireme
   std::uint8_t last_node_id_{0xFF};
   std::uint8_t last_lost_node_id_{0xFF};
   DeviceState last_device_state_{DeviceState::kInitializing};
+};
+
+struct RecordedPeer {
+  std::uint8_t node_id;
+  PeerStatus status;
+};
+
+class RecordingPeerStatusVisitor final : public PeerStatusVisitorRequirements {
+ public:
+  void OnPeer(std::uint8_t node_id, PeerStatus status) noexcept override {
+    peers_.push_back({node_id, status});
+  }
+
+  std::vector<RecordedPeer> peers_;
 };
 
 constexpr std::uint32_t kTimeoutMs = 1500;
@@ -107,6 +124,51 @@ TEST_CASE("The PeerRegistry class", "[protocol][peer_registry]") {
       registry.CheckTimeout(kTimestampMs + kTimeoutMs + 1);
 
       REQUIRE(observer.lost_count_ == 2);
+    }
+  }
+
+  SECTION("ForEachActivePeer()") {
+    SECTION("Should visit no peers when registry is empty") {
+      RecordingPeerStatusVisitor visitor;
+
+      registry.ForEachActivePeer(visitor);
+
+      REQUIRE(visitor.peers_.empty());
+    }
+
+    SECTION("Should visit one healthy peer after receiving a heartbeat") {
+      registry.OnHeartbeatReceived(3, DeviceState::kReady, kTimestampMs);
+      RecordingPeerStatusVisitor visitor;
+
+      registry.ForEachActivePeer(visitor);
+
+      REQUIRE(visitor.peers_.size() == 1);
+      REQUIRE(visitor.peers_[0].node_id == 3);
+      REQUIRE(visitor.peers_[0].status.connectivity == PeerConnectivity::kHealthy);
+      REQUIRE(visitor.peers_[0].status.device_state == DeviceState::kReady);
+    }
+
+    SECTION("Should visit a lost peer after timeout") {
+      registry.OnHeartbeatReceived(5, DeviceState::kRunning, kTimestampMs);
+      registry.CheckTimeout(kTimestampMs + kTimeoutMs + 1);
+      RecordingPeerStatusVisitor visitor;
+
+      registry.ForEachActivePeer(visitor);
+
+      REQUIRE(visitor.peers_.size() == 1);
+      REQUIRE(visitor.peers_[0].node_id == 5);
+      REQUIRE(visitor.peers_[0].status.connectivity == PeerConnectivity::kLost);
+    }
+
+    SECTION("Should visit all active peers with their correct node_ids") {
+      registry.OnHeartbeatReceived(1, DeviceState::kReady, kTimestampMs);
+      registry.OnHeartbeatReceived(2, DeviceState::kRunning, kTimestampMs);
+      registry.OnHeartbeatReceived(3, DeviceState::kInitializing, kTimestampMs);
+      RecordingPeerStatusVisitor visitor;
+
+      registry.ForEachActivePeer(visitor);
+
+      REQUIRE(visitor.peers_.size() == 3);
     }
   }
 }
