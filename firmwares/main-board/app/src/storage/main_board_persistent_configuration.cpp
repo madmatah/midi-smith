@@ -118,7 +118,10 @@ bool MainBoardPersistentConfiguration::AddKeymapEntry(
   return true;
 }
 
-void MainBoardPersistentConfiguration::ClearKeymap() noexcept {
+void MainBoardPersistentConfiguration::ResetKeymap(std::uint8_t key_count,
+                                                   std::uint8_t start_note) noexcept {
+  ram_config_.data.key_count = key_count;
+  ram_config_.data.start_note = start_note;
   ram_config_.data.entry_count = 0;
 }
 

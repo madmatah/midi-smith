@@ -280,14 +280,15 @@ TEST_CASE("The MainBoardPersistentConfiguration class") {
     }
   }
 
-  SECTION("The ClearKeymap method") {
+  SECTION("The ResetKeymap method") {
     persistent_config.Load();
     persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60});
-    persistent_config.AddKeymapEntry({.board_id = 2, .sensor_id = 5, .midi_note = 72});
 
-    persistent_config.ClearKeymap();
+    persistent_config.ResetKeymap(88u, 21u);
 
-    REQUIRE(persistent_config.active_config().data.entry_count == 0);
+    REQUIRE(persistent_config.active_config().data.key_count == 88u);
+    REQUIRE(persistent_config.active_config().data.start_note == 21u);
+    REQUIRE(persistent_config.active_config().data.entry_count == 0u);
   }
 }
 

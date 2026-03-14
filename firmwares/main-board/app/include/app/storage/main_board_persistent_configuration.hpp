@@ -28,7 +28,7 @@ class MainBoardPersistentConfiguration : public midismith::config::Transactional
   midismith::config::TransactionResult Commit() noexcept override;
 
   bool AddKeymapEntry(const midismith::main_board::domain::config::KeymapEntry& entry) noexcept;
-  void ClearKeymap() noexcept;
+  void ResetKeymap(std::uint8_t key_count, std::uint8_t start_note) noexcept;
 
   const midismith::main_board::domain::config::MainBoardConfig& active_config() const noexcept;
 

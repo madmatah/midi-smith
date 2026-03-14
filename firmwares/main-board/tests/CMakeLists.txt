@@ -7,14 +7,18 @@ midismith_add_firmware_test(NAME main
         app/messaging/main_board_can_message_sender.test.cpp
         app/messaging/main_board_inbound_sensor_event_logging_handler.test.cpp
         app/messaging/main_board_inbound_sensor_event_midi_handler.test.cpp
+        app/messaging/main_board_inbound_keymap_capture_handler.test.cpp
         app/shell/can_command.test.cpp
         app/shell/adc_command.test.cpp
+        app/shell/keymap_command.test.cpp
         app/supervisor/network_supervisor_task.test.cpp
         app/adc/adc_board_state.test.cpp
         app/adc/adc_board_controller.test.cpp
         app/adc/adc_boards_controller.test.cpp
         app/storage/main_board_persistent_configuration.test.cpp
-        domain/config/keymap_lookup.test.cpp
+        app/keymap/keymap_setup_coordinator.test.cpp
+        domain/keymap/keymap_lookup.test.cpp
+        domain/keymap/keymap_setup_session.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )

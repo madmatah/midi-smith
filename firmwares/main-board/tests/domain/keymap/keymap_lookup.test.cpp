@@ -1,6 +1,6 @@
 #if defined(UNIT_TESTS)
 
-#include "domain/config/keymap_lookup.hpp"
+#include "domain/keymap/keymap_lookup.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
