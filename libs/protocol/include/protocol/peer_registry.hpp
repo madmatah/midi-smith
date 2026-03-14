@@ -7,11 +7,12 @@
 #include "protocol/messages.hpp"
 #include "protocol/peer_monitor.hpp"
 #include "protocol/peer_registry_observer_requirements.hpp"
+#include "protocol/peer_status_provider_requirements.hpp"
 
 namespace midismith::protocol {
 
 template <std::size_t kMaxPeers>
-class PeerRegistry {
+class PeerRegistry : public PeerStatusProviderRequirements {
  public:
   PeerRegistry(std::uint32_t timeout_ms, PeerRegistryObserverRequirements& observer) noexcept
       : timeout_ms_(timeout_ms), observer_(observer) {}
@@ -28,6 +29,14 @@ class PeerRegistry {
     for (auto& slot : slots_) {
       if (slot.active) {
         slot.monitor->CheckTimeout(current_time_ms);
+      }
+    }
+  }
+
+  void ForEachActivePeer(PeerStatusVisitorRequirements& visitor) const noexcept override {
+    for (const auto& slot : slots_) {
+      if (slot.active && slot.monitor.has_value()) {
+        visitor.OnPeer(slot.node_id, slot.monitor->status());
       }
     }
   }
