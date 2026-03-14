@@ -37,9 +37,15 @@ class PeerRegistry {
    public:
     SlotAdapter() noexcept = default;
 
-    void OnPeerChanged(PeerStatus status) noexcept override {
+    void OnPeerHeartbeat(DeviceState device_state) noexcept override {
       if (registry_observer_ != nullptr) {
-        registry_observer_->OnPeerChanged(node_id_, status);
+        registry_observer_->OnPeerHeartbeat(node_id_, device_state);
+      }
+    }
+
+    void OnPeerLost() noexcept override {
+      if (registry_observer_ != nullptr) {
+        registry_observer_->OnPeerLost(node_id_);
       }
     }
 

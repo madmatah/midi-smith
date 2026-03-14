@@ -33,7 +33,8 @@ void OnTimeoutCheckTick(void* context) noexcept {
 
 class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObserverRequirements {
  public:
-  void OnPeerChanged(midismith::protocol::PeerStatus /*status*/) noexcept override {}
+  void OnPeerHeartbeat(midismith::protocol::DeviceState /*device_state*/) noexcept override {}
+  void OnPeerLost() noexcept override {}
 };
 
 }  // namespace
