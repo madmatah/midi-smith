@@ -12,7 +12,6 @@
 #include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/messages.hpp"
 #include "protocol/peer_monitor_observer_requirements.hpp"
-#include "protocol/peer_status.hpp"
 
 namespace midismith::adc_board::app::supervisor::test {
 
@@ -95,22 +94,33 @@ class StubEventQueue final : public midismith::os::QueueRequirements<Event> {
 
 class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObserverRequirements {
  public:
-  void OnPeerChanged(midismith::protocol::PeerStatus) noexcept override {}
+  void OnPeerHeartbeat(midismith::protocol::DeviceState /*device_state*/) noexcept override {}
+  void OnPeerLost() noexcept override {}
 };
 
 class RecordingPeerMonitorObserver final
     : public midismith::protocol::PeerMonitorObserverRequirements {
  public:
-  void OnPeerChanged(midismith::protocol::PeerStatus status) noexcept override {
-    statuses_.push_back(status);
+  void OnPeerHeartbeat(midismith::protocol::DeviceState device_state) noexcept override {
+    heartbeat_states_.push_back(device_state);
   }
 
-  [[nodiscard]] const std::vector<midismith::protocol::PeerStatus>& statuses() const noexcept {
-    return statuses_;
+  void OnPeerLost() noexcept override {
+    ++lost_count_;
+  }
+
+  [[nodiscard]] const std::vector<midismith::protocol::DeviceState>& heartbeat_states()
+      const noexcept {
+    return heartbeat_states_;
+  }
+
+  [[nodiscard]] std::size_t lost_count() const noexcept {
+    return lost_count_;
   }
 
  private:
-  std::vector<midismith::protocol::PeerStatus> statuses_;
+  std::vector<midismith::protocol::DeviceState> heartbeat_states_;
+  std::size_t lost_count_ = 0;
 };
 
 class StubUptimeProvider final : public midismith::os::UptimeProviderRequirements {

@@ -10,17 +10,19 @@ using midismith::protocol::DeviceState;
 using midismith::protocol::PeerConnectivity;
 using midismith::protocol::PeerMonitor;
 using midismith::protocol::PeerMonitorObserverRequirements;
-using midismith::protocol::PeerStatus;
 
 class RecordingPeerMonitorObserver final : public PeerMonitorObserverRequirements {
  public:
-  void OnPeerChanged(PeerStatus status) noexcept override {
-    ++notification_count_;
-    last_status_ = status;
+  void OnPeerHeartbeat(DeviceState device_state) noexcept override {
+    ++heartbeat_count_;
+    last_device_state_ = device_state;
   }
 
-  int notification_count_{0};
-  PeerStatus last_status_{PeerConnectivity::kUnknown, DeviceState::kReady};
+  void OnPeerLost() noexcept override { ++lost_count_; }
+
+  int heartbeat_count_{0};
+  int lost_count_{0};
+  DeviceState last_device_state_{DeviceState::kInitializing};
 };
 
 constexpr std::uint32_t kTimeoutMs = 1500;
@@ -35,7 +37,8 @@ TEST_CASE("The PeerMonitor class", "[protocol][peer_monitor]") {
   SECTION("Initial state") {
     SECTION("Should be kUnknown with no notification") {
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kUnknown);
-      REQUIRE(observer.notification_count_ == 0);
+      REQUIRE(observer.heartbeat_count_ == 0);
+      REQUIRE(observer.lost_count_ == 0);
     }
   }
 
@@ -45,57 +48,56 @@ TEST_CASE("The PeerMonitor class", "[protocol][peer_monitor]") {
 
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kHealthy);
       REQUIRE(monitor.status().device_state == DeviceState::kRunning);
-      REQUIRE(observer.notification_count_ == 1);
-      REQUIRE(observer.last_status_.connectivity == PeerConnectivity::kHealthy);
-      REQUIRE(observer.last_status_.device_state == DeviceState::kRunning);
+      REQUIRE(observer.heartbeat_count_ == 1);
+      REQUIRE(observer.last_device_state_ == DeviceState::kRunning);
     }
 
-    SECTION("Subsequent heartbeat with same DeviceState should not notify") {
+    SECTION("Subsequent heartbeat with same DeviceState should still notify") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
-      const int count_after_first = observer.notification_count_;
+      const int count_after_first = observer.heartbeat_count_;
 
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs + 500);
 
-      REQUIRE(observer.notification_count_ == count_after_first);
+      REQUIRE(observer.heartbeat_count_ == count_after_first + 1);
     }
 
     SECTION("Subsequent heartbeat with different DeviceState should notify") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
-      const int count_after_first = observer.notification_count_;
+      const int count_after_first = observer.heartbeat_count_;
 
       monitor.OnHeartbeatReceived(DeviceState::kReady, kTimestampMs + 500);
 
-      REQUIRE(observer.notification_count_ == count_after_first + 1);
-      REQUIRE(observer.last_status_.device_state == DeviceState::kReady);
+      REQUIRE(observer.heartbeat_count_ == count_after_first + 1);
+      REQUIRE(observer.last_device_state_ == DeviceState::kReady);
     }
   }
 
   SECTION("CheckTimeout()") {
     SECTION("Below timeout threshold should not notify") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
-      const int count_after_heartbeat = observer.notification_count_;
+      const int heartbeats_after_first = observer.heartbeat_count_;
 
       monitor.CheckTimeout(kTimestampMs + kTimeoutMs - 1);
 
-      REQUIRE(observer.notification_count_ == count_after_heartbeat);
+      REQUIRE(observer.heartbeat_count_ == heartbeats_after_first);
+      REQUIRE(observer.lost_count_ == 0);
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kHealthy);
     }
 
     SECTION("At or above timeout threshold from kHealthy should transition to kLost and notify") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
-      const int count_after_heartbeat = observer.notification_count_;
 
       monitor.CheckTimeout(kTimestampMs + kTimeoutMs + 1);
 
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kLost);
-      REQUIRE(observer.notification_count_ == count_after_heartbeat + 1);
-      REQUIRE(observer.last_status_.connectivity == PeerConnectivity::kLost);
+      REQUIRE(observer.lost_count_ == 1);
     }
 
     SECTION("From kUnknown should not notify even if long time elapsed") {
       monitor.CheckTimeout(kTimestampMs + kTimeoutMs + 1);
 
-      REQUIRE(observer.notification_count_ == 0);
+      REQUIRE(observer.heartbeat_count_ == 0);
+      REQUIRE(observer.lost_count_ == 0);
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kUnknown);
     }
   }
@@ -104,13 +106,12 @@ TEST_CASE("The PeerMonitor class", "[protocol][peer_monitor]") {
     SECTION("Heartbeat after kLost should transition to kHealthy and notify") {
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs);
       monitor.CheckTimeout(kTimestampMs + kTimeoutMs + 1);
-      const int count_after_lost = observer.notification_count_;
+      const int heartbeats_after_lost = observer.heartbeat_count_;
 
       monitor.OnHeartbeatReceived(DeviceState::kRunning, kTimestampMs + kTimeoutMs + 100);
 
       REQUIRE(monitor.status().connectivity == PeerConnectivity::kHealthy);
-      REQUIRE(observer.notification_count_ == count_after_lost + 1);
-      REQUIRE(observer.last_status_.connectivity == PeerConnectivity::kHealthy);
+      REQUIRE(observer.heartbeat_count_ == heartbeats_after_lost + 1);
     }
   }
 }
