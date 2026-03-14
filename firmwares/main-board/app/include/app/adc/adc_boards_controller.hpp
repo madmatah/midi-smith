@@ -10,7 +10,6 @@
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "os-types/uptime_provider_requirements.hpp"
 #include "protocol/peer_registry_observer_requirements.hpp"
-#include "protocol/peer_status.hpp"
 
 namespace midismith::main_board::app::adc {
 
@@ -24,19 +23,22 @@ class AdcBoardsController : public midismith::protocol::PeerRegistryObserverRequ
       : AdcBoardsController(sender, power_switch, power_on_timeout_ms, uptime,
                             std::make_index_sequence<kBoardCount>{}) {}
 
-  void OnPeerChanged(std::uint8_t node_id,
-                     midismith::protocol::PeerStatus status) noexcept override {
+  void OnPeerHeartbeat(std::uint8_t node_id,
+                       midismith::protocol::DeviceState device_state) noexcept override {
     if (!IsValidPeerId(node_id)) {
       return;
     }
-    if (status.connectivity == midismith::protocol::PeerConnectivity::kHealthy) {
-      ControllerFor(node_id).OnPeerHealthy(status.device_state);
-      if (sequence_started_ && !sequence_complete_ && node_id == next_peer_to_power_on_) {
-        AdvanceSequenceToNextPeer(uptime_.GetUptimeMs());
-      }
-    } else if (status.connectivity == midismith::protocol::PeerConnectivity::kLost) {
-      ControllerFor(node_id).OnLost();
+    ControllerFor(node_id).OnPeerHealthy(device_state);
+    if (sequence_started_ && !sequence_complete_ && node_id == next_peer_to_power_on_) {
+      AdvanceSequenceToNextPeer(uptime_.GetUptimeMs());
     }
+  }
+
+  void OnPeerLost(std::uint8_t node_id) noexcept override {
+    if (!IsValidPeerId(node_id)) {
+      return;
+    }
+    ControllerFor(node_id).OnLost();
   }
 
   void StopAll() noexcept {

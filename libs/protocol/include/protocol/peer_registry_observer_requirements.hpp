@@ -2,14 +2,15 @@
 
 #include <cstdint>
 
-#include "protocol/peer_status.hpp"
+#include "protocol/messages.hpp"
 
 namespace midismith::protocol {
 
 class PeerRegistryObserverRequirements {
  public:
   virtual ~PeerRegistryObserverRequirements() = default;
-  virtual void OnPeerChanged(std::uint8_t node_id, PeerStatus status) noexcept = 0;
+  virtual void OnPeerHeartbeat(std::uint8_t node_id, DeviceState device_state) noexcept = 0;
+  virtual void OnPeerLost(std::uint8_t node_id) noexcept = 0;
 };
 
 }  // namespace midismith::protocol

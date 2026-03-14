@@ -11,9 +11,7 @@
 #include "protocol-can/can_inbound_decode_stats_provider.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
 #include "shell-cmd-os-stats/status_command.hpp"
-#include "shell-cmd-stats/generic_stats_command.hpp"
 #include "shell-cmd-version/version_command.hpp"
-#include "stats/empty_stats_request.hpp"
 
 namespace midismith::main_board::app::composition {
 
@@ -51,7 +49,11 @@ void CreateShellSubsystem(
   static midismith::shell_cmd_os_stats::PsCommand ps_cmd(runtime_stats, task_rows);
   shell_task_ptr->RegisterCommand(ps_cmd);
 
-  static midismith::main_board::app::shell::CanCommand can_cmd(can.message_sender);
+  static midismith::bsp::can::CanBusStatsProvider can_bus_stats_provider(can.stats);
+  static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(
+      can.inbound_decode_stats);
+  static midismith::main_board::app::shell::CanCommand can_cmd(
+      can.message_sender, can_bus_stats_provider, can_inbound_stats_provider, boards.peer_status);
   shell_task_ptr->RegisterCommand(can_cmd);
 
   static midismith::main_board::app::shell::AdcCommand adc_cmd(boards.boards_control);
@@ -59,16 +61,6 @@ void CreateShellSubsystem(
 
   static midismith::main_board::app::shell::KeymapCommand keymap_cmd(keymap_setup_coordinator);
   shell_task_ptr->RegisterCommand(keymap_cmd);
-
-  static midismith::bsp::can::CanBusStatsProvider can_stats_provider(can.stats);
-  static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(
-      can.inbound_decode_stats);
-  static midismith::stats::StatsProviderRequirements<midismith::stats::EmptyStatsRequest>*
-      can_stats_providers[] = {&can_stats_provider, &can_inbound_stats_provider};
-  static midismith::shell_cmd_stats::GenericStatsCommand<midismith::stats::EmptyStatsRequest, 2u>
-      can_stats_cmd("can_stats", "Show CAN bus statistics (TX/RX counts, errors, bus state)",
-                    can_stats_providers);
-  shell_task_ptr->RegisterCommand(can_stats_cmd);
 
   (void) shell_task_ptr->start();
 }

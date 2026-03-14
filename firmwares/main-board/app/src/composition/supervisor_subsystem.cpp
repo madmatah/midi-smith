@@ -100,7 +100,7 @@ AdcBoardsContext CreateSupervisorSubsystem(messaging::MainBoardMessageSenderRequ
   heartbeat_timer.Start(app::config::kHeartbeatPeriodMs);
   timeout_check_timer.Start(app::config::kTimeoutCheckPeriodMs);
 
-  return AdcBoardsContext{proxy};
+  return AdcBoardsContext{proxy, supervisor_task.peer_status_provider()};
 }
 
 }  // namespace midismith::main_board::app::composition
