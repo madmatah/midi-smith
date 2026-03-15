@@ -34,7 +34,7 @@ midismith::bsp::can::FdcanFrame BuildStartAdcFrame(std::uint8_t target_node_id) 
       midismith::protocol::MainBoardMessageBuilder().BuildStartAdc(target_node_id);
   frame.identifier = midismith::protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, midismith::bsp::can::kClassicCanMaxDataBytes> payload_buffer{};
+  std::array<std::uint8_t, midismith::bsp::can::kCanFdMaxDataBytes> payload_buffer{};
   const auto payload_size_bytes =
       midismith::protocol::Serialize(command, std::span(payload_buffer));
   if (payload_size_bytes.has_value()) {

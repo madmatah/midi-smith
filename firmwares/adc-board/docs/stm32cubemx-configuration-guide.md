@@ -456,7 +456,7 @@ If you use them, repeat the configuration above with the same parameters (115200
 **[`Connectivity` > `FDCAN1`]**
 
 1. **Mode**: `Normal`.
-2. **Frame Format**: `Classic mode` (to match other boards on the network).
+2. **Frame Format**: `FD mode without Bitrate switching` (required for 64-byte CalibrationDataSegment frames; all boards on the network use the same setting).
 3. **Timings (for 500 kbit/s with FDCAN clock at 80MHz)**:
    * **Nominal Prescaler**: `10`.
    * **Nominal Time Seg1**: `12`.
@@ -466,8 +466,12 @@ If you use them, repeat the configuration above with the same parameters (115200
 4. **Buffers** (temporary settings, adjust as needed):
    * **Tx Buffers Nbr**: 0
    * **Tx Fifo Queue Elmts Nbr**: 32
+   * **Tx Elmt Size**: `64 bytes data field`
    * **Std Filters Nbr**: 5
    * **Rx Fifo0 Elmts Nbr**: 32
+   * **Rx Fifo0 Elmt Size**: `64 bytes data field`
+
+   *All existing messages (< 8 bytes) are unaffected — the DLC field encodes the actual payload length per frame.*
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
 

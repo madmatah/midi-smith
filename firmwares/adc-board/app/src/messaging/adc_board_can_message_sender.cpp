@@ -18,7 +18,7 @@ bool AdcBoardCanMessageSender::SendNoteOn(std::uint8_t sensor_id, std::uint8_t v
       protocol::AdcMessageBuilder(board_id_).BuildNoteOn(sensor_id, velocity);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = event.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
@@ -34,7 +34,7 @@ bool AdcBoardCanMessageSender::SendNoteOff(std::uint8_t sensor_id, std::uint8_t 
       protocol::AdcMessageBuilder(board_id_).BuildNoteOff(sensor_id, velocity);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = event.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
@@ -50,7 +50,7 @@ bool AdcBoardCanMessageSender::SendHeartbeat(protocol::DeviceState device_state)
       protocol::AdcMessageBuilder(board_id_).BuildHeartbeat(device_state);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = heartbeat.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 

@@ -13,6 +13,12 @@ enum class MessageCategory : std::uint8_t {
   kSystem = 3
 };
 
-enum class MessageType : std::uint8_t { kSensorEvent = 0, kCommand, kDataSegment, kHeartbeat };
+enum class MessageType : std::uint8_t {
+  kSensorEvent = 0,
+  kCommand,
+  kDataSegment,
+  kHeartbeat,
+  kDataSegmentAck,
+};
 
 }  // namespace midismith::protocol

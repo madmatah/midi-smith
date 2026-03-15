@@ -12,18 +12,15 @@ using midismith::protocol::MessageCategory;
 using midismith::protocol::MessageType;
 using midismith::protocol::IncomingMessage;
 
-IncomingMessage MakeUnicastMessage(std::variant<midismith::protocol::SensorEvent,
-                                               midismith::protocol::Command,
-                                               midismith::protocol::Heartbeat> content,
-                                   std::uint8_t source_node_id = 1) {
+using MessageContent = decltype(IncomingMessage::content);
+
+IncomingMessage MakeUnicastMessage(MessageContent content, std::uint8_t source_node_id = 1) {
   return {.routing = UnicastTransportHeader::Make(MessageCategory::kRealTime,
                                                   MessageType::kSensorEvent, source_node_id, 0),
           .content = std::move(content)};
 }
 
-IncomingMessage MakeBroadcastMessage(std::variant<midismith::protocol::SensorEvent,
-                                                  midismith::protocol::Command,
-                                                  midismith::protocol::Heartbeat> content) {
+IncomingMessage MakeBroadcastMessage(MessageContent content) {
   return {.routing = BroadcastTransportHeader::Make(MessageCategory::kSystem,
                                                     MessageType::kHeartbeat, 0),
           .content = std::move(content)};

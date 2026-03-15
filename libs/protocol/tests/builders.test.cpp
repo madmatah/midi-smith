@@ -2,11 +2,30 @@
 
 #include "protocol/builders.hpp"
 
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 
 using namespace midismith::protocol;
 
 TEST_CASE("The AdcMessageBuilder class") {
+  SECTION("The BuildCalibrationDataSegment() method") {
+    SECTION("Should produce a kBulkData/kDataSegment header targeting the main board") {
+      AdcMessageBuilder builder(3);
+      std::array<std::uint8_t, CalibrationDataSegment::kPayloadSizeBytes> payload{};
+      payload[0] = 0xAB;
+
+      auto [header, segment] = builder.BuildCalibrationDataSegment(1, 8, payload);
+
+      REQUIRE(header.category == MessageCategory::kBulkData);
+      REQUIRE(header.type == MessageType::kDataSegment);
+      REQUIRE(header.source_node_id == 3);
+      REQUIRE(header.destination_node_id == kMainBoardNodeId);
+      REQUIRE(segment.seq_index == 1);
+      REQUIRE(segment.total_packets == 8);
+      REQUIRE(segment.payload[0] == 0xAB);
+    }
+  }
+
   SECTION("The BuildNoteOn() method") {
     SECTION("When called for a specific ADC node") {
       SECTION("Should produce a UnicastTransportHeader with that ADC node as source") {
@@ -101,6 +120,20 @@ TEST_CASE("The MainBoardMessageBuilder class") {
       REQUIRE(header.source_node_id == kMainBoardNodeId);
       REQUIRE(header.destination_node_id == 7);
       REQUIRE(std::get_if<AdcStop>(&cmd) != nullptr);
+    }
+  }
+
+  SECTION("The BuildDataSegmentAck() method") {
+    SECTION("Should produce a kBulkData/kDataSegmentAck header targeting the given node") {
+      MainBoardMessageBuilder builder;
+      auto [header, ack] = builder.BuildDataSegmentAck(2, 5, DataSegmentAckStatus::kFlashBusy);
+
+      REQUIRE(header.category == MessageCategory::kBulkData);
+      REQUIRE(header.type == MessageType::kDataSegmentAck);
+      REQUIRE(header.source_node_id == kMainBoardNodeId);
+      REQUIRE(header.destination_node_id == 2);
+      REQUIRE(ack.ack_index == 5);
+      REQUIRE(ack.status == DataSegmentAckStatus::kFlashBusy);
     }
   }
 }
