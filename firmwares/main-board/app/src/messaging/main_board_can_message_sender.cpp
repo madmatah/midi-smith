@@ -17,7 +17,7 @@ bool MainBoardCanMessageSender::SendHeartbeat(protocol::DeviceState device_state
   const auto [header, heartbeat] = protocol::MainBoardMessageBuilder().BuildHeartbeat(device_state);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = heartbeat.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
@@ -32,7 +32,7 @@ bool MainBoardCanMessageSender::SendStartAdc(std::uint8_t target_node_id) noexce
   const auto [header, command] = protocol::MainBoardMessageBuilder().BuildStartAdc(target_node_id);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = protocol::Serialize(command, std::span(buffer));
   if (!bytes_written) return false;
 
@@ -47,7 +47,7 @@ bool MainBoardCanMessageSender::SendStopAdc(std::uint8_t target_node_id) noexcep
   const auto [header, command] = protocol::MainBoardMessageBuilder().BuildStopAdc(target_node_id);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = protocol::Serialize(command, std::span(buffer));
   if (!bytes_written) return false;
 
@@ -64,7 +64,7 @@ bool MainBoardCanMessageSender::SendStartCalibration(std::uint8_t target_node_id
       protocol::MainBoardMessageBuilder().BuildStartCalibration(target_node_id, mode);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = protocol::Serialize(command, std::span(buffer));
   if (!bytes_written) return false;
 
