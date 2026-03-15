@@ -20,7 +20,7 @@ jobs:
       image: ghcr.io/${{ github.repository }}/ci:latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
@@ -49,7 +49,7 @@ jobs:
             package_dir: firmwares/main-board
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure (${{ matrix.preset }})
         run: cmake --preset ${{ matrix.preset }}
@@ -58,7 +58,7 @@ jobs:
         run: cmake --build --preset ${{ matrix.preset }}
 
       - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: firmware-${{ matrix.name }}-release
           if-no-files-found: error
@@ -85,7 +85,7 @@ jobs:
             package_dir: firmwares/main-board
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: pr
 
@@ -104,7 +104,7 @@ jobs:
           echo "## 🔍 Bloaty Size Analysis — ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout Base
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.base_ref }}
           path: base
@@ -130,13 +130,13 @@ jobs:
       image: ghcr.io/${{ github.repository }}/ci:latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Cache CMake FetchContent (_deps)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/Host-Debug/_deps
           key: ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-cmake-deps-host-${{ hashFiles('CMakePresets.json', '**/CMakeLists.txt') }}
