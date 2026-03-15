@@ -64,7 +64,7 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 Adjust later according to required filters and buffer sizes.
 
 1.  **Mode** : `Normal`.
-2.  **Frame Format** : `Classic mode` (to match the ADC boards).
+2.  **Frame Format** : `FD mode without Bitrate switching` (required for 64-byte CalibrationDataSegment frames; all boards on the network use the same setting).
 3.  **Timings (500 kbit/s with FDCAN clock at 80 MHz)** :
     * **Nominal Prescaler** : `10`.
     * **Nominal Time Seg1** : `13`.
@@ -74,8 +74,12 @@ Adjust later according to required filters and buffer sizes.
 4.  Buffers (temporary values for testing; change as needed)
     * **Tx Buffers Nbr**: 0
     * **Tx Fifo Queue Elmts Nbr**: 32
+    * **Tx Elmt Size**: `64 bytes data field`
     * **Std Filters Nbr**: 4
     * **Rx Fifo0 Elmts Nbr**: 32
+    * **Rx Fifo0 Elmt Size**: `64 bytes data field`
+
+    *All existing messages (< 8 bytes) are unaffected — the DLC field encodes the actual payload length.*
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
 

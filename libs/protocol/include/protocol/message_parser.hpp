@@ -11,7 +11,7 @@ namespace midismith::protocol {
 
 struct IncomingMessage {
   std::variant<UnicastTransportHeader, BroadcastTransportHeader> routing;
-  std::variant<SensorEvent, Command, Heartbeat> content;
+  std::variant<SensorEvent, Command, Heartbeat, CalibrationDataSegment, DataSegmentAck> content;
 };
 
 class MessageParser {

@@ -8,7 +8,8 @@ namespace midismith::protocol {
 
 using byte_codec::ReadLittleEndian;
 
-using MessageContent = std::variant<SensorEvent, Command, Heartbeat>;
+using MessageContent =
+    std::variant<SensorEvent, Command, Heartbeat, CalibrationDataSegment, DataSegmentAck>;
 
 static std::optional<MessageContent> DecodeContent(MessageCategory category, MessageType type,
                                                    std::span<const uint8_t> payload) {
@@ -62,6 +63,14 @@ static std::optional<MessageContent> DecodeContent(MessageCategory category, Mes
       break;
 
     case MessageCategory::kBulkData:
+      if (type == MessageType::kDataSegment) {
+        return CalibrationDataSegment::Deserialize(payload);
+      }
+      if (type == MessageType::kDataSegmentAck) {
+        return DataSegmentAck::Deserialize(payload);
+      }
+      break;
+
     default:
       break;
   }
