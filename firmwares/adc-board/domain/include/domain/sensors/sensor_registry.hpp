@@ -27,6 +27,13 @@ class SensorRegistry {
     return &sensors_[static_cast<std::size_t>(id - 1u)];
   }
 
+  const SensorState* FindById(std::uint8_t id) const noexcept {
+    if (sensors_ == nullptr || id == 0 || id > sensor_count_) {
+      return nullptr;
+    }
+    return &sensors_[static_cast<std::size_t>(id - 1u)];
+  }
+
  private:
   SensorState* sensors_ = nullptr;
   std::size_t sensor_count_ = 0;
