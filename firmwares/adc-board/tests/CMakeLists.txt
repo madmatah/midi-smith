@@ -7,6 +7,8 @@ midismith_add_firmware_test(NAME adc
         domain/sensors/capture_sensor_state.test.cpp
         domain/sensors/sensor_member_reader.test.cpp
         domain/sensors/sensor_state.test.cpp
+        domain/sensors/calibration_state_utils.test.cpp
+        domain/calibration/calibration_data_collector.test.cpp
         domain/config/adc_board_config.test.cpp
         app/storage/adc_board_persistent_configuration.test.cpp
         app/analog/adc_rank_mapped_frame_decoder.test.cpp
@@ -20,6 +22,7 @@ midismith_add_firmware_test(NAME adc
         app/supervisor/adc_supervisor_task.test.cpp
         app/piano_sensing/logging_sensor_event_handler.test.cpp
         app/piano_sensing/remote_message_sensor_event_handler.test.cpp
+        app/analog/signal_processing/calibration_workflow_stages.test.cpp
     LINK_LIBRARIES adc_domain adc_app_lib
     USE_FAKEIT
 )

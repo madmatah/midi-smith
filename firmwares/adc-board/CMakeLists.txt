@@ -42,7 +42,7 @@ if(HOST_TESTS)
     target_include_directories(adc_domain PUBLIC
         domain/include
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing bsp io os shell shell_cmd_config config telemetry shell_cmd_version)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing sensor_linearization bsp io os shell shell_cmd_config config telemetry shell_cmd_version)
 
     add_library(adc_app_lib STATIC)
     target_sources(adc_app_lib PRIVATE
