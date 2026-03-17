@@ -36,11 +36,11 @@ TEST_CASE("The Heartbeat struct") {
   SECTION("The Serialize() method") {
     SECTION("When the output buffer has at least 1 byte") {
       SECTION("Should write the device state byte") {
-        Heartbeat hb{DeviceState::kCalibrating};
+        Heartbeat hb{DeviceState::kRunning};
         std::array<std::uint8_t, 1> buffer{};
 
         REQUIRE(hb.Serialize(buffer) == 1u);
-        REQUIRE(buffer[0] == static_cast<std::uint8_t>(DeviceState::kCalibrating));
+        REQUIRE(buffer[0] == static_cast<std::uint8_t>(DeviceState::kRunning));
       }
     }
 

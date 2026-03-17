@@ -53,6 +53,7 @@ if(HOST_TESTS)
         app/src/messaging/adc_board_can_message_sender.cpp
         app/src/messaging/adc_inbound_command_handler.cpp
         app/src/supervisor/adc_supervisor_task.cpp
+        app/src/calibration/calibration_task.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
         app/include
@@ -113,6 +114,8 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/tasks/shell_task.cpp
     app/src/tasks/analog_acquisition_task.cpp
     app/src/tasks/sensor_rtt_telemetry_task.cpp
+    app/src/calibration/calibration_task.cpp
+    app/src/composition/calibration_subsystem.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     domain/src/config/adc_board_config.cpp
     bsp/src/board.cpp
