@@ -26,6 +26,18 @@ class QueueAcquisitionControl final : public AcquisitionControlRequirements {
     return queue_.Send(AcquisitionCommand::kDisable, midismith::os::kNoWait);
   }
 
+  bool RequestCalibrationStart() noexcept override {
+    return queue_.Send(AcquisitionCommand::kCalibrationStart, midismith::os::kNoWait);
+  }
+
+  bool RequestRestPhaseComplete() noexcept override {
+    return queue_.Send(AcquisitionCommand::kRestPhaseComplete, midismith::os::kNoWait);
+  }
+
+  bool RequestCalibrationDataCollection() noexcept override {
+    return queue_.Send(AcquisitionCommand::kCollectCalibrationData, midismith::os::kNoWait);
+  }
+
   AcquisitionState GetState() const noexcept override {
     return state_;
   }

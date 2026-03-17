@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
+#include "os-types/timer_requirements.hpp"
+
 namespace midismith::os {
 
-class Timer {
+class Timer : public TimerRequirements {
  public:
   using Callback = void (*)(void* ctx) noexcept;
 
@@ -14,8 +16,8 @@ class Timer {
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
 
-  bool Start(std::uint32_t period_ms) noexcept;
-  bool Stop() noexcept;
+  bool Start(std::uint32_t period_ms) noexcept override;
+  bool Stop() noexcept override;
 
  private:
   void* id_;

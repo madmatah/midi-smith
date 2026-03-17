@@ -11,8 +11,10 @@
 #include "bsp/adc/adc_dma.hpp"
 #include "bsp/gpio_requirements.hpp"
 #include "bsp/time/timestamp_counter_requirements.hpp"
+#include "domain/calibration/calibration_data_collector.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "os/queue.hpp"
+#include "os/queue_requirements.hpp"
 
 namespace midismith::adc_board::app::analog {
 class AcquisitionSequencer;
@@ -33,13 +35,19 @@ class AnalogAcquisitionTask {
   using AnalogAcquisitionState = midismith::adc_board::app::analog::AcquisitionState;
   using GpioRequirements = midismith::bsp::GpioRequirements;
   using TimestampCounterRequirements = midismith::bsp::time::TimestampCounterRequirements;
+  using CalibrationDataCollector =
+      midismith::adc_board::domain::calibration::CalibrationDataCollector<
+          midismith::adc_board::app::config::sensors::kSensorCount>;
+  using CalibrationArray = CalibrationDataCollector::CalibrationArray;
+  using SensorRegistry = midismith::adc_board::domain::sensors::SensorRegistry;
 
-  AnalogAcquisitionTask(midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
-                        midismith::os::Queue<AcquisitionCommand, 4>& control_queue,
-                        GpioRequirements& tia_shutdown, AdcDma& adc_dma,
-                        TimestampCounterRequirements& timestamp_counter,
-                        volatile AnalogAcquisitionState& state,
-                        ProcessedSensorGroup& analog_group) noexcept;
+  AnalogAcquisitionTask(
+      midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
+      midismith::os::Queue<AcquisitionCommand, 4>& control_queue, GpioRequirements& tia_shutdown,
+      AdcDma& adc_dma, TimestampCounterRequirements& timestamp_counter,
+      volatile AnalogAcquisitionState& state, ProcessedSensorGroup& analog_group,
+      midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue,
+      SensorRegistry& sensor_registry) noexcept;
 
   bool start() noexcept;
 
@@ -51,7 +59,10 @@ class AnalogAcquisitionTask {
   void EnterDisabledState() noexcept;
   void HandleDisabledState(AcquisitionSequencer& sequencer) noexcept;
   void HandleEnabledState() noexcept;
-  bool TryHandleDisableRequestWhileEnabled() noexcept;
+  bool TryHandleCommandsWhileEnabled() noexcept;
+  void HandleCalibrationStart() noexcept;
+  void HandleRestPhaseComplete() noexcept;
+  void HandleCollectCalibrationData() noexcept;
   void ProcessFrame(const AdcFrameDescriptor& desc) noexcept;
   void ProcessAdc1Frame(const AdcFrameDescriptor& desc) noexcept;
   void ProcessAdc2Frame(const AdcFrameDescriptor& desc) noexcept;
@@ -64,6 +75,8 @@ class AnalogAcquisitionTask {
   TimestampCounterRequirements& timestamp_counter_;
   volatile AnalogAcquisitionState& state_;
   ProcessedSensorGroup& analog_group_;
+  midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue_;
+  CalibrationDataCollector collector_;
 
   AdcRankMappedFrameDecoder decoder_{};
 

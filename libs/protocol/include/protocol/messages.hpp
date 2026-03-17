@@ -26,8 +26,7 @@ enum class DeviceState : std::uint8_t {
   kInitializing = 0x00,
   kReady = 0x01,
   kRunning = 0x02,
-  kCalibrating = 0x03,
-  kError = 0x04,
+  kError = 0x03,
 };
 
 struct Heartbeat {

@@ -23,6 +23,7 @@ midismith_add_firmware_test(NAME adc
         app/piano_sensing/logging_sensor_event_handler.test.cpp
         app/piano_sensing/remote_message_sensor_event_handler.test.cpp
         app/analog/signal_processing/calibration_workflow_stages.test.cpp
+        app/calibration/calibration_task_test.cpp
     LINK_LIBRARIES adc_domain adc_app_lib
     USE_FAKEIT
 )

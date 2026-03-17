@@ -39,4 +39,15 @@ constexpr uint32_t RTT_TELEMETRY_SENSOR_CHANNEL = 1;
 constexpr uint32_t RTT_TELEMETRY_SENSOR_BUFFER_SIZE = 8192;
 constexpr uint32_t RTT_TELEMETRY_FREQUENCY_HZ = 5000;
 
+// Calibration
+constexpr uint32_t CALIBRATION_TASK_STACK_BYTES = 512;
+constexpr uint32_t CALIBRATION_TASK_PRIORITY = 1;
+constexpr uint32_t kCalibrationRestDurationMs = 2000;
+constexpr uint32_t kCalibrationAckTimeoutMs = 100;
+constexpr uint32_t kCalibrationMaxRetries = 3;
+// Max time the CAN task blocks waiting for the analog task to collect calibration data.
+// The analog task responds between DMA interrupts (~1ms); 50ms gives ample margin
+// without starving other CAN traffic meaningfully.
+constexpr uint32_t kCalibrationDumpResultTimeoutMs = 50;
+
 }  // namespace midismith::adc_board::app::config

@@ -26,6 +26,14 @@ class RecordingMessageSender final
     return send_note_off_result;
   }
 
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
+    return true;
+  }
+
   bool SendHeartbeat(midismith::protocol::DeviceState) noexcept override {
     ++send_heartbeat_calls;
     return true;

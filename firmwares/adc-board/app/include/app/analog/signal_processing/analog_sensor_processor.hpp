@@ -35,6 +35,10 @@ class AnalogSensorProcessor {
     WorkflowControlSurface::SetNoteOffKeyActionHandler(workflow_, handler);
   }
 
+  void ResetCalibrationFilters() noexcept {
+    WorkflowControlSurface::ResetCalibrationFilters(workflow_);
+  }
+
  private:
   using Workflow = workflow::ProcessorWorkflow;
   using WorkflowControlSurface = workflow::ControlSurface;
