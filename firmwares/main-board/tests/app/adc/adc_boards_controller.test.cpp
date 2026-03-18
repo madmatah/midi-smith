@@ -35,6 +35,11 @@ class RecordingMessageSender final
     return true;
   }
 
+  bool SendCalibrationAck(std::uint8_t, std::uint8_t,
+                          midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+
   [[nodiscard]] int heartbeat_count() const noexcept {
     return heartbeat_count_;
   }

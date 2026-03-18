@@ -15,6 +15,8 @@ class MainBoardCanMessageSender final : public MainBoardMessageSenderRequirement
   bool SendStopAdc(std::uint8_t target_node_id) noexcept override;
   bool SendStartCalibration(std::uint8_t target_node_id,
                             protocol::CalibMode mode) noexcept override;
+  bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
+                          protocol::DataSegmentAckStatus status) noexcept override;
 
  private:
   bsp::can::FdcanTransceiverRequirements& transceiver_;

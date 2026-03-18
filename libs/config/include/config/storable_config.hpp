@@ -12,7 +12,7 @@ inline constexpr std::size_t kConfigCrcSizeBytes = sizeof(std::uint32_t);
 
 template <typename T, std::uint32_t Magic, std::uint16_t Version,
           std::size_t ConfigSizeBytes = kDefaultConfigSizeBytes>
-struct alignas(32) [[gnu::packed]] StorableConfig {
+struct alignas(32) StorableConfig {
   static_assert(std::is_trivially_copyable_v<T>, "Storable config data must be trivially copyable");
   static_assert(std::is_standard_layout_v<T>, "Storable config data must use standard layout");
   static_assert(ConfigSizeBytes >= kConfigHeaderSizeBytes + sizeof(T) + kConfigCrcSizeBytes,
