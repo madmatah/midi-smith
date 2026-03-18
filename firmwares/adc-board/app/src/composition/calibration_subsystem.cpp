@@ -76,8 +76,8 @@ void LaunchCalibrationTask(
   static bool constructed = false;
   CalibrationTask* task_ptr = nullptr;
   if (!constructed) {
-    task_ptr =
-        new (task_storage) CalibrationTask(sender, calibration_context.calibration_event_queue, AckTimer());
+    task_ptr = new (task_storage)
+        CalibrationTask(sender, calibration_context.calibration_event_queue, AckTimer());
     constructed = true;
   } else {
     task_ptr = reinterpret_cast<CalibrationTask*>(task_storage);

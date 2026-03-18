@@ -19,6 +19,7 @@ midismith_add_firmware_test(NAME main
         app/keymap/keymap_setup_coordinator.test.cpp
         domain/keymap/keymap_lookup.test.cpp
         domain/keymap/keymap_setup_session.test.cpp
+        domain/calibration/calibration_session.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )
