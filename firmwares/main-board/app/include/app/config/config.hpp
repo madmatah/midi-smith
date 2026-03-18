@@ -21,6 +21,9 @@ constexpr uint32_t kHeartbeatPeriodMs = 500;
 constexpr uint32_t kHeartbeatTimeoutMs = 1500;
 constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
+// Calibration
+constexpr std::uint32_t kCalibrationReceiveTimeoutMs = 500;
+
 // ADC board lifecycle
 constexpr bool kAutoStartPowerSequenceOnBoot = false;
 constexpr std::uint32_t kPowerOnTimeoutMs = 5000;

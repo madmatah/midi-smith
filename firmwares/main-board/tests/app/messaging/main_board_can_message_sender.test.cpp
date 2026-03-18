@@ -24,6 +24,7 @@ using fakeit::When;
 
 using midismith::main_board::app::messaging::MainBoardCanMessageSender;
 using midismith::protocol::CalibMode;
+using midismith::protocol::DataSegmentAckStatus;
 using midismith::protocol::DeviceState;
 using midismith::protocol::MainBoardMessageBuilder;
 
@@ -149,6 +150,26 @@ TEST_CASE("The MainBoardCanMessageSender class") {
         Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
         REQUIRE(captured_frame.data[1] == static_cast<std::uint8_t>(CalibMode::kManual));
       }
+    }
+  }
+
+  SECTION("The SendCalibrationAck() method") {
+    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+        MainBoardMessageBuilder().BuildDataSegmentAck(3, 5, DataSegmentAckStatus::kOk).first);
+
+    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+
+    sender.SendCalibrationAck(3, 5, DataSegmentAckStatus::kOk);
+
+    SECTION("Should transmit a frame with the correct CAN identifier") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.identifier == expected_id);
+    }
+
+    SECTION("Should transmit a frame with DLC = 2") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.data_length_bytes ==
+              midismith::protocol::DataSegmentAck::kSerializedSizeBytes);
     }
   }
 }

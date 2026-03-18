@@ -33,6 +33,11 @@ class RecordingMessageSender final : public messaging::MainBoardMessageSenderReq
     return true;
   }
 
+  bool SendCalibrationAck(std::uint8_t, std::uint8_t,
+                          midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+
   [[nodiscard]] std::optional<midismith::protocol::DeviceState> last_reported_state()
       const noexcept {
     return last_reported_state_;

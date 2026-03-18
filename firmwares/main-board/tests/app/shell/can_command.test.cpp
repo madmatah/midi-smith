@@ -38,6 +38,11 @@ class RecordingMessageSender final
     return true;
   }
 
+  bool SendCalibrationAck(std::uint8_t, std::uint8_t,
+                          midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+
   [[nodiscard]] const std::optional<std::uint8_t>& start_adc_node_id() const noexcept {
     return start_adc_node_id_;
   }
