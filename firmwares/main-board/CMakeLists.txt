@@ -52,6 +52,7 @@ if(HOST_TESTS)
         app/src/shell/can_command.cpp
         app/src/shell/adc_command.cpp
         app/src/shell/keymap_command.cpp
+        app/src/shell/calibration_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
         app/src/storage/main_board_persistent_configuration.cpp
@@ -113,6 +114,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
     app/src/shell/keymap_command.cpp
+    app/src/shell/calibration_command.cpp
     app/src/adc/adc_board_controller.cpp
     app/src/storage/main_board_persistent_configuration.cpp
     app/src/keymap/keymap_setup_coordinator.cpp
