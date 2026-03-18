@@ -39,8 +39,8 @@ CanContext CreateCanSubsystem(
   static midismith::bsp::can::FdcanTransceiver transceiver(reinterpret_cast<void*>(&hfdcan1),
                                                            receive_queue, stats);
   static midismith::adc_board::app::messaging::AdcInboundCommandHandler inbound_command_handler(
-      acquisition_control, calibration_context.rest_phase_timer, calibration_context.calibration_event_queue,
-      calibration_context.calibration_result_queue);
+      acquisition_control, calibration_context.rest_phase_timer,
+      calibration_context.calibration_event_queue, calibration_context.calibration_result_queue);
   static midismith::adc_board::app::messaging::AdcInboundHeartbeatHandler inbound_heartbeat_handler(
       supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(

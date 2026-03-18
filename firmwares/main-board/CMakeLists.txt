@@ -28,6 +28,7 @@ midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
 midismith_require_lib(config)
+midismith_require_lib(sensor-linearization)
 
 if(HOST_TESTS)
     enable_testing()
@@ -36,9 +37,11 @@ if(HOST_TESTS)
         domain/src/main_board_config.cpp
         domain/src/keymap/keymap_lookup.cpp
         domain/src/keymap/keymap_setup_session.cpp
+        domain/src/calibration/calibration_session.cpp
     )
     target_include_directories(main_domain PUBLIC domain/include)
-    target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry)
+    target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry
+                                             sensor_linearization)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -115,6 +118,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     domain/src/main_board_config.cpp
     domain/src/keymap/keymap_lookup.cpp
     domain/src/keymap/keymap_setup_session.cpp
+    domain/src/calibration/calibration_session.cpp
 )
 
 # Add include paths
@@ -146,6 +150,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     protocol
     protocol_can
     config
+    sensor_linearization
 
     # Add user defined libraries
 )

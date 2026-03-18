@@ -84,8 +84,7 @@ CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::adc_board::app::analog::AcquisitionControlRequirements& acquisition_control,
     midismith::adc_board::app::storage::AdcBoardPersistentConfiguration& persistent_config,
-    SupervisorContext& supervisor_ctx,
-    CalibrationContext& calibration_context) noexcept;
+    SupervisorContext& supervisor_ctx, CalibrationContext& calibration_context) noexcept;
 ConfigContext CreateConfigSubsystem() noexcept;
 AdcControlContext CreateAdcControlContext() noexcept;
 
