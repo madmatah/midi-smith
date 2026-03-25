@@ -7,7 +7,7 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 ## 1. Pin Labels
 **[`Pinout View` window]**
 
-### CAN Communication (VP230 Module)
+### CAN Communication (TJA1042T)
 - **PB8** : `FDCAN1_RX`
 - **PB9** : `FDCAN1_TX`
 - **PB5** : `FDCAN_STANDBY` (GPIO OUT)
@@ -21,14 +21,16 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 - **PE13**: `LCD_WR_RS` (GPIO)
 - **PE12**: `LCD_SCL` (SPI4_SCK)
 - **PE11**: `LCD_CS` (GPIO)
-- **PE10**: `LCD_LED` (TIM)
+- **PE10**: `LCD_LED` (GPIO)
 - **NRST**: `LCD_RESET` (RST)
 
 ### System & Debug
 - **PA13** : `SWDIO` (Debug)
 - **PA14** : `SWCLK` (Debug)
-- **PA9**  : `USART1_TX` (Console)
-- **PA10** : `USART1_RX` (Console)
+- **PA3** : `USART2_RX` (Console)
+- **PA2** : `USART2_TX` (Console)
+
+### User LED
 - **PE3**  : `USER_LED` (GPIO_Output)
 
 ### External Storage (SPI Flash (U8) & QSPI (U7))
@@ -44,9 +46,9 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 - **PB4** : `SPI1_MISO` (SPI1_MISO)
 - **PD6** : `FLASH_CS`   (GPIO_Output)
 
-## USART2 :
-- **PA3** : `USART2_RX`
-- **PA2** : `USART2_TX`
+## USART1 :
+- **PA9**  : `USART1_TX` (Console)
+- **PA10** : `USART1_RX` (Console)
 
 ## MIDI
 - **PB10** : `MIDI_OUT` (USART3_TX)
@@ -142,11 +144,6 @@ Device Descriptor tab:
 3.  **Clock Tree Tab** :
     * **SPI4 Clock Mux** : Choose `PLL2Q`
 
-The display can be configured in two ways:
-
-- Option A: If PE10 = GPIO_Output, the display is either fully on or off.
-- Option B: If PE10 = TIM2_CH1, brightness can be reduced using PWM.
-
 ---
 
 ## 6. Console Configuration (USART1)
@@ -175,7 +172,29 @@ The display can be configured in two ways:
 - Enable interrupts for the **DMA streams** associated with `USART1_RX` and `USART1_TX`.
 - Set the UART/DMA priority to **5** (or lower) and keep **ADC/FDCAN at a higher priority**.
 
-
+**[`Connectivity` > `USART2`]**
+1.  **Mode** : `Asynchronous`.
+2.  **Parameters** :
+    *   **Baud Rate** : `115200 Bits/s`.
+    *   **Word Length** : `8 Bits`.
+    *   **Parity** : `None`.
+    *   **Stop Bits** : `1`.
+3. **DMA Settings**:
+   1. Click `Add` and add **two requests**:
+      - `USART2_RX` (Peripheral-to-Memory)
+      - `USART2_TX` (Memory-to-Peripheral)
+   2. For **USART2_RX**:
+      - **Mode**: `Circular`
+      - **Data Width (Memory)**: `Byte`
+      - **Data Width (Peripheral)**: `Byte`
+   3. For **USART2_TX**:
+      - **Mode**: `Normal`
+      - **Data Width (Memory)**: `Byte`
+      - **Data Width (Peripheral)**: `Byte`
+4.  **NVIC Settings** :
+- Enable `USART2 global interrupt`.
+- Enable interrupts for the **DMA streams** associated with `USART2_RX` and `USART2_TX`.
+- Set the UART/DMA priority to **5** (or lower) and keep **ADC/FDCAN at a higher priority**.
 
 ---
 
@@ -183,7 +202,7 @@ The display can be configured in two ways:
 The H7B0 has only **128 KB** of internal Flash.
 The WeAct board has two external Flash chips (W25Q64JV) used to separate graphical assets from system storage.
 
-### A. QSPI Flash (Graphical Assets - U7)
+### A. QSPI Flash (Not used yet - U7)
 **[`Connectivity` > `OCTOSPI1`]**
 
 **1. Mode (top section):**
@@ -201,7 +220,7 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 - **Chip Select High Time** : `2 cycles` (safe deselect between accesses).
 - **Memory-Mapped Mode** : Enabled from BSP code (address `0x90000000`).
 
-### B. SPI Flash (Settings & Logs)
+### B. SPI Flash (Persistent Config)
 **[`Connectivity` > `SPI1`]**
 1. **Mode** : `Full-Duplex Master`.
 3. **Data Size**: 8 Bits
@@ -219,32 +238,7 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 3.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
 4.  **USER_LED (PE3)** : Output Level `High` (off by default on this board).
 5. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
-
-If the display is configured with Option A:
-
-5. **LCD_BLK (PE10)** : Output Level Low (display off by default).
-
----
-
-## 9. Display Timers (Option B)
-
-**[`Timers` > `TIM2`]**
-
-1. In the Mode panel:
-
-- Clock Source : Internal Clock.
-- Channel 1 : PWM Generation CH1.
-
-2. In Configuration > Parameter Settings tab:
-
-Under Counter Settings:
-
-- Prescaler (16 bits value) : 280 - 1
-- Counter Period (AutoReload Register - 32 bits value) : 100 - 1
-
-Under PWM Generation Channel 1:
-
-- Pulse (32 bits value) : 80 (controls duty cycle / brightness).
+6. **LCD_BLK (PE10)** : Output Level Low (display off by default).
 
 ---
 
