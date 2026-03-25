@@ -10,17 +10,19 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 ### CAN Communication (VP230 Module)
 - **PB8** : `FDCAN1_RX`
 - **PB9** : `FDCAN1_TX`
+- **PB5** : `FDCAN_STANDBY` (GPIO OUT)
 
 ### USB MIDI (Native Interface)
 - **PA11** : `USB_OTG_FS_DM`
 - **PA12** : `USB_OTG_FS_DP`
 
-### IPS Display (SPI2 + Control)
-- **PB10** : `LCD_SCK` (SPI2_SCK)
-- **PB15** : `LCD_SDA` (SPI2_MOSI)
-- **PB1** : `LCD_RES` (GPIO_Output)
-- **PE4** : `LCD_DC`  (GPIO_Output)
-- **PA0** : `LCD_BLK` (Option A: GPIO_Output | Option B: TIM2_CH1)
+### LCD Display (SPI4 + Control)
+- **PE14**: `LCD_SDA` (SPI4_MOSI)
+- **PE13**: `LCD_WR_RS` (GPIO)
+- **PE12**: `LCD_SCL` (SPI4_SCK)
+- **PE11**: `LCD_CS` (GPIO)
+- **PE10**: `LCD_LED` (TIM)
+- **NRST**: `LCD_RESET` (RST)
 
 ### System & Debug
 - **PA13** : `SWDIO` (Debug)
@@ -41,6 +43,30 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 - **PD7** : `SPI1_MOSI` (SPI1_MOSI)
 - **PB4** : `SPI1_MISO` (SPI1_MISO)
 - **PD6** : `FLASH_CS`   (GPIO_Output)
+
+## USART2 :
+- **PA3** : `USART2_RX`
+- **PA2** : `USART2_TX`
+
+## MIDI
+- **PB10** : `MIDI_OUT` (USART3_TX)
+- **PB11** : `MIDI_IN` (USART3_RX)
+
+## Load switch relays :
+- **PE7** : `LOAD_2` (GPIO_Output)
+- **PE8** : `LOAD_1` (GPIO_Output)
+- **PE9** : `LOAD_4` (GPIO_Output)
+- **PB0** : `LOAD_3` (GPIO_Output)
+- **PB1** : `LOAD_5` (GPIO_Output)
+- **PB12** : `LOAD_6` (GPIO_Output)
+- **PB13** : `LOAD_7` (GPIO_Output)
+- **PB14** : `LOAD_8` (GPIO_Output)
+
+## Rotary encoder 
+- **PA5** : `TIM2_CH1`
+- **PA1** : `TIM2_CH2`
+- **PB15** : `GPIO` (GPIO_Input)
+
 
 ---
 
@@ -103,23 +129,23 @@ Device Descriptor tab:
 
 ---
 
-## 5. Display Configuration (SPI2)
-**[`Connectivity` > `SPI2`]**
+## 5. Display Configuration (SPI4)
+**[`Connectivity` > `SPI4`]**
 
 1.  **Mode** : `Transmit Only Master` (display does not respond).
 2.  **Parameters** :
     * **Data Size** : `8 Bits`.
     * **First Bit** : `MSB First`.
-    * **Baud Rate** : Set the prescaler for **20 to 50 Mbit/s** (ST7789 is very fast).
-    * **Clock Polarity (CPOL)** : `High (1)`.
-    * **Clock Phase (CPHA)** : `2 Edge (1)`.
+    * **Baud Rate** : Set the prescaler for **<= 15 Mbit/s**
+    * **Clock Polarity (CPOL)** : `Low (0)`.
+    * **Clock Phase (CPHA)** : `1 Edge (0)`.
 3.  **Clock Tree Tab** :
-    * **SPI2 Clock Mux** : Choose `PLL1Q`
+    * **SPI4 Clock Mux** : Choose `PLL2Q`
 
 The display can be configured in two ways:
 
-- Option A: If PA0 = GPIO_Output, the display is either fully on or off.
-- Option B: If PA0 = TIM2_CH1, brightness can be reduced using PWM.
+- Option A: If PE10 = GPIO_Output, the display is either fully on or off.
+- Option B: If PE10 = TIM2_CH1, brightness can be reduced using PWM.
 
 ---
 
@@ -148,6 +174,8 @@ The display can be configured in two ways:
 - Enable `USART1 global interrupt`.
 - Enable interrupts for the **DMA streams** associated with `USART1_RX` and `USART1_TX`.
 - Set the UART/DMA priority to **5** (or lower) and keep **ADC/FDCAN at a higher priority**.
+
+
 
 ---
 
@@ -186,16 +214,17 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 
 ## 8. GPIO Initialization
 **[`System Core` > `GPIO`]**
-
-1.  **LCD_RES (PB1)** : Output Level `High`.
-2.  **LCD_DC (PE4)** : Output Level `Low`.
+1. **LCD_WR_RS (PE13)** : Output level `Low`
+2. **LCD_CS (PE11)** : Output level `High` (disabled by default)
 3.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
 4.  **USER_LED (PE3)** : Output Level `High` (off by default on this board).
+5. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
 
 If the display is configured with Option A:
 
-4.  **LCD_BLK (PA0)** : Output Level `High` (turns display on immediately).
+5. **LCD_BLK (PE10)** : Output Level Low (display off by default).
 
+---
 
 ## 9. Display Timers (Option B)
 
