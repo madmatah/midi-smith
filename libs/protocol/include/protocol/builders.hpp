@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <utility>
 
@@ -33,6 +34,16 @@ class AdcMessageBuilder {
     return {UnicastTransportHeader(MessageCategory::kSystem, MessageType::kHeartbeat, node_id_,
                                    kMainBoardNodeId),
             Heartbeat{.device_state = device_state}};
+  }
+
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, CalibrationDataSegment>
+  BuildCalibrationDataSegment(
+      std::uint8_t seq_index, std::uint8_t total_packets,
+      std::array<std::uint8_t, CalibrationDataSegment::kPayloadSizeBytes> payload) const {
+    return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegment, node_id_,
+                                   kMainBoardNodeId),
+            CalibrationDataSegment{
+                .seq_index = seq_index, .total_packets = total_packets, .payload = payload}};
   }
 
  private:
@@ -69,6 +80,20 @@ class MainBoardMessageBuilder {
     return {UnicastTransportHeader(MessageCategory::kControl, MessageType::kCommand,
                                    kMainBoardNodeId, target_node_id),
             Command(CalibStart{.mode = mode})};
+  }
+
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, Command> BuildDumpRequest(
+      std::uint8_t target_node_id) const {
+    return {UnicastTransportHeader(MessageCategory::kControl, MessageType::kCommand,
+                                   kMainBoardNodeId, target_node_id),
+            Command(DumpRequest{})};
+  }
+
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, DataSegmentAck> BuildDataSegmentAck(
+      std::uint8_t target_node_id, std::uint8_t ack_index, DataSegmentAckStatus status) const {
+    return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegmentAck,
+                                   kMainBoardNodeId, target_node_id),
+            DataSegmentAck{.ack_index = ack_index, .status = status}};
   }
 };
 

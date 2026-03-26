@@ -36,15 +36,24 @@ void Application::create_tasks() noexcept {
       midismith::adc_board::app::composition::CreateConfigSubsystem();
   midismith::adc_board::app::composition::SupervisorContext supervisor_ctx =
       midismith::adc_board::app::composition::CreateSupervisorContext();
+
+  midismith::adc_board::app::composition::CalibrationContext calibration_context =
+      midismith::adc_board::app::composition::CreateCalibrationContext(adc_control.control);
+
   midismith::adc_board::app::composition::CanContext can_context =
       midismith::adc_board::app::composition::CreateCanSubsystem(
-          logger, adc_control.control, config.adc_board_config, supervisor_ctx);
+          logger, adc_control.control, config.adc_board_config, supervisor_ctx,
+          calibration_context);
 
   static midismith::adc_board::app::messaging::AdcBoardCanMessageSender can_message_sender(
       can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);
 
-  (void) midismith::adc_board::app::composition::CreateAnalogSubsystem(sensor_rtt_capture, logger,
-                                                                       can_message_sender);
+  midismith::adc_board::app::composition::LaunchCalibrationTask(can_message_sender,
+                                                                calibration_context);
+
+  (void) midismith::adc_board::app::composition::CreateAnalogSubsystem(
+      sensor_rtt_capture, logger, can_message_sender, calibration_context);
+
   midismith::adc_board::app::composition::AdcStateContext adc_state =
       midismith::adc_board::app::composition::CreateAdcStateContext();
   midismith::adc_board::app::composition::SensorsContext sensors =

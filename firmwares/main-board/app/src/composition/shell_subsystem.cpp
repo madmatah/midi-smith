@@ -17,7 +17,8 @@ namespace midismith::main_board::app::composition {
 
 void CreateShellSubsystem(
     ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
-    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator) noexcept {
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
+    CalibrationContext& calibration_ctx) noexcept {
   static midismith::shell::ShellConfig shell_config = {.prompt = "main-board> "};
 
   alignas(midismith::main_board::app::tasks::ShellTask) static std::uint8_t
@@ -61,6 +62,8 @@ void CreateShellSubsystem(
 
   static midismith::main_board::app::shell::KeymapCommand keymap_cmd(keymap_setup_coordinator);
   shell_task_ptr->RegisterCommand(keymap_cmd);
+
+  shell_task_ptr->RegisterCommand(calibration_ctx.command);
 
   (void) shell_task_ptr->start();
 }

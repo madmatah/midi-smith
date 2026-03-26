@@ -31,6 +31,13 @@ class ProcessedSensorGroup {
     return sensor_count_;
   }
 
+  template <typename Fn>
+  void ForEachEntry(Fn fn) noexcept {
+    for (std::size_t i = 0; i < sensor_count_; ++i) {
+      fn(sensors_[i], processors_[i]);
+    }
+  }
+
   void UpdateAt(std::size_t index, std::uint16_t raw_value,
                 std::uint32_t timestamp_ticks) noexcept {
     assert(index < sensor_count_);

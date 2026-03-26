@@ -217,8 +217,11 @@ void AttachSensorEventHandlersToProcessors(
   }
 }
 
-void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group,
-                                midismith::logging::LoggerRequirements& logger) noexcept {
+void StartAnalogAcquisitionTask(
+    ProcessedSensorGroup& analog_group, midismith::logging::LoggerRequirements& logger,
+    midismith::os::QueueRequirements<
+        midismith::adc_board::app::tasks::AnalogAcquisitionTask::CalibrationArray>&
+        calibration_result_queue) noexcept {
   static midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
       adc_frame_queue;
   static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue, logger);
@@ -233,7 +236,8 @@ void StartAnalogAcquisitionTask(ProcessedSensorGroup& analog_group,
     analog_task_ptr =
         new (analog_task_storage) midismith::adc_board::app::tasks::AnalogAcquisitionTask(
             adc_frame_queue, AdcControlQueue(), midismith::adc_board::bsp::pins::TiaShutdown(),
-            adc_dma, timestamp_counter, AdcState(), analog_group);
+            adc_dma, timestamp_counter, AdcState(), analog_group, calibration_result_queue,
+            SensorsRegistry());
     analog_constructed = true;
   } else {
     analog_task_ptr = reinterpret_cast<midismith::adc_board::app::tasks::AnalogAcquisitionTask*>(
@@ -276,8 +280,8 @@ bool RegenerateAnalogSensorLookupTables(
 AdcControlContext CreateAnalogSubsystem(
     midismith::adc_board::app::telemetry::SensorRttStreamCapture& capture,
     midismith::logging::LoggerRequirements& logger,
-    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements&
-        message_sender) noexcept {
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& message_sender,
+    CalibrationContext& calibration_context) noexcept {
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount > 0u,
                 "Sensor count must be > 0");
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount == 22u,
@@ -301,7 +305,7 @@ AdcControlContext CreateAnalogSubsystem(
   static ProcessedSensorGroup analog_group(
       sensors.data(), processors.data(), midismith::adc_board::app::config::sensors::kSensorCount);
 
-  StartAnalogAcquisitionTask(analog_group, logger);
+  StartAnalogAcquisitionTask(analog_group, logger, calibration_context.calibration_result_queue);
   return AdcControlContext{AdcControl()};
 }
 

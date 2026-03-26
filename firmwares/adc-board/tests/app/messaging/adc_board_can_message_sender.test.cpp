@@ -150,10 +150,10 @@ TEST_CASE("AdcBoardCanMessageSender — SendHeartbeat") {
   SECTION("Should encode the device state as the single payload byte") {
     When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
 
-    sender.SendHeartbeat(DeviceState::kCalibrating);
+    sender.SendHeartbeat(DeviceState::kRunning);
 
     Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(DeviceState::kCalibrating));
+    REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(DeviceState::kRunning));
   }
 }
 

@@ -45,8 +45,6 @@ constexpr std::string_view DeviceStateLabel(midismith::protocol::DeviceState sta
       return "ready";
     case midismith::protocol::DeviceState::kRunning:
       return "running";
-    case midismith::protocol::DeviceState::kCalibrating:
-      return "calibrating";
     case midismith::protocol::DeviceState::kError:
       return "error";
     default:

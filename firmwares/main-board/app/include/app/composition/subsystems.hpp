@@ -1,8 +1,10 @@
 #pragma once
 
 #include "app/keymap/keymap_setup_coordinator.hpp"
+#include "app/messaging/main_board_inbound_calibration_handler.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/shell/adc_boards_control_requirements.hpp"
+#include "app/shell/calibration_coordinator_requirements.hpp"
 #include "app/storage/main_board_persistent_configuration.hpp"
 #include "app/supervisor/network_supervisor_task.hpp"
 #include "bsp-types/can/can_bus_stats_requirements.hpp"
@@ -13,6 +15,7 @@
 #include "piano-controller/piano_requirements.hpp"
 #include "protocol-can/can_inbound_decode_stats_requirements.hpp"
 #include "protocol/peer_status_provider_requirements.hpp"
+#include "shell/command_requirements.hpp"
 
 namespace midismith::main_board::app::composition {
 
@@ -47,20 +50,34 @@ struct AdcBoardsContext {
   midismith::protocol::PeerStatusProviderRequirements& peer_status;
 };
 
+struct CalibrationInboundContext {
+  midismith::main_board::app::messaging::MainBoardInboundCalibrationHandler& handler;
+};
+
+struct CalibrationContext {
+  midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator;
+  midismith::shell::CommandRequirements& command;
+};
+
 ConfigContext CreateConfigSubsystem() noexcept;
 SupervisorContext CreateSupervisorContext() noexcept;
+CalibrationInboundContext CreateCalibrationInboundContext() noexcept;
 CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::piano_controller::PianoRequirements& piano,
     const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
     midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
-    SupervisorContext& supervisor_ctx) noexcept;
+    SupervisorContext& supervisor_ctx, CalibrationInboundContext& calibration_inbound_ctx) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 AdcBoardsContext CreateSupervisorSubsystem(
     midismith::main_board::app::messaging::MainBoardMessageSenderRequirements& sender,
     SupervisorContext& ctx) noexcept;
+CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, CanContext& can_ctx,
+                                              const AdcBoardsContext& boards_ctx,
+                                              CalibrationInboundContext& inbound_ctx) noexcept;
 void CreateShellSubsystem(
     ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
-    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator) noexcept;
+    midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
+    CalibrationContext& calibration_ctx) noexcept;
 
 }  // namespace midismith::main_board::app::composition

@@ -42,6 +42,18 @@ concept DumpRequestHandler =
       { handler.OnDumpRequest(command, source_node_id) } noexcept;
     };
 
+template <typename T>
+concept CalibrationDataSegmentHandler = requires(
+    T& handler, const protocol::CalibrationDataSegment& segment, std::uint8_t source_node_id) {
+  { handler.OnCalibrationDataSegment(segment, source_node_id) } noexcept;
+};
+
+template <typename T>
+concept DataSegmentAckHandler =
+    requires(T& handler, const protocol::DataSegmentAck& ack, std::uint8_t source_node_id) {
+      { handler.OnDataSegmentAck(ack, source_node_id) } noexcept;
+    };
+
 template <typename... THandlers>
 class InboundMessageDispatcher {
  public:
@@ -68,6 +80,16 @@ class InboundMessageDispatcher {
   [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
                                           const protocol::Heartbeat& heartbeat) noexcept {
     return DispatchToAllHandlers(sender, heartbeat);
+  }
+
+  [[nodiscard]] bool DispatchTypedMessage(
+      std::uint8_t sender, const protocol::CalibrationDataSegment& segment) noexcept {
+    return DispatchToAllHandlers(sender, segment);
+  }
+
+  [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
+                                          const protocol::DataSegmentAck& ack) noexcept {
+    return DispatchToAllHandlers(sender, ack);
   }
 
   [[nodiscard]] bool DispatchTypedMessage(std::uint8_t sender,
@@ -176,6 +198,27 @@ class InboundMessageDispatcher {
                                         std::uint8_t source_node_id) noexcept {
     if constexpr (DumpRequestHandler<THandler>) {
       handler.OnDumpRequest(command, source_node_id);
+      return true;
+    }
+    return false;
+  }
+
+  template <typename THandler>
+  [[nodiscard]] static bool TryDispatch(THandler& handler,
+                                        const protocol::CalibrationDataSegment& segment,
+                                        std::uint8_t source_node_id) noexcept {
+    if constexpr (CalibrationDataSegmentHandler<THandler>) {
+      handler.OnCalibrationDataSegment(segment, source_node_id);
+      return true;
+    }
+    return false;
+  }
+
+  template <typename THandler>
+  [[nodiscard]] static bool TryDispatch(THandler& handler, const protocol::DataSegmentAck& ack,
+                                        std::uint8_t source_node_id) noexcept {
+    if constexpr (DataSegmentAckHandler<THandler>) {
+      handler.OnDataSegmentAck(ack, source_node_id);
       return true;
     }
     return false;

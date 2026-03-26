@@ -15,6 +15,10 @@ class AdcBoardCanMessageSender final : public AdcBoardMessageSenderRequirements 
   bool SendNoteOn(std::uint8_t sensor_id, std::uint8_t velocity) noexcept override;
   bool SendNoteOff(std::uint8_t sensor_id, std::uint8_t velocity) noexcept override;
   bool SendHeartbeat(protocol::DeviceState device_state) noexcept override;
+  bool SendCalibrationDataSegment(
+      std::uint8_t seq_index, std::uint8_t total_packets,
+      const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
+          payload) noexcept override;
 
  private:
   bsp::can::FdcanTransceiverRequirements& transceiver_;

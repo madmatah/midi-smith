@@ -18,7 +18,7 @@ bool AdcBoardCanMessageSender::SendNoteOn(std::uint8_t sensor_id, std::uint8_t v
       protocol::AdcMessageBuilder(board_id_).BuildNoteOn(sensor_id, velocity);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = event.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
@@ -34,7 +34,7 @@ bool AdcBoardCanMessageSender::SendNoteOff(std::uint8_t sensor_id, std::uint8_t 
       protocol::AdcMessageBuilder(board_id_).BuildNoteOff(sensor_id, velocity);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = event.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
@@ -50,8 +50,27 @@ bool AdcBoardCanMessageSender::SendHeartbeat(protocol::DeviceState device_state)
       protocol::AdcMessageBuilder(board_id_).BuildHeartbeat(device_state);
   const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
 
-  std::array<std::uint8_t, bsp::can::kClassicCanMaxDataBytes> buffer{};
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = heartbeat.Serialize(std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
+bool AdcBoardCanMessageSender::SendCalibrationDataSegment(
+    std::uint8_t seq_index, std::uint8_t total_packets,
+    const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
+        payload) noexcept {
+  const auto [header, segment] = protocol::AdcMessageBuilder(board_id_).BuildCalibrationDataSegment(
+      seq_index, total_packets, payload);
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
+  const auto bytes_written = segment.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
   return transceiver_.Transmit(bsp::can::FdcanFrame{

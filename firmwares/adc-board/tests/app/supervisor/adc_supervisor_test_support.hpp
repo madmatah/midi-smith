@@ -25,6 +25,14 @@ class RecordingMessageSender final : public messaging::AdcBoardMessageSenderRequ
     return true;
   }
 
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
+    return true;
+  }
+
   bool SendHeartbeat(midismith::protocol::DeviceState device_state) noexcept override {
     last_reported_state_ = device_state;
     heartbeat_count_++;

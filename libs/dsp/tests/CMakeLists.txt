@@ -12,6 +12,8 @@ midismith_add_test(NAME dsp
         filters/constant_filter.test.cpp
         filters/ema_filter.test.cpp
         filters/identity_filter.test.cpp
+        filters/max_filter.test.cpp
+        filters/min_filter.test.cpp
         filters/sg5_smoother.test.cpp
         filters/simple_moving_average.test.cpp
         logic/and.test.cpp

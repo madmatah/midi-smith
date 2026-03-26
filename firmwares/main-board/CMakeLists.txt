@@ -28,6 +28,7 @@ midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
 midismith_require_lib(config)
+midismith_require_lib(sensor-linearization)
 
 if(HOST_TESTS)
     enable_testing()
@@ -36,9 +37,11 @@ if(HOST_TESTS)
         domain/src/main_board_config.cpp
         domain/src/keymap/keymap_lookup.cpp
         domain/src/keymap/keymap_setup_session.cpp
+        domain/src/calibration/calibration_session.cpp
     )
     target_include_directories(main_domain PUBLIC domain/include)
-    target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry)
+    target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry
+                                             sensor_linearization)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -49,11 +52,15 @@ if(HOST_TESTS)
         app/src/shell/can_command.cpp
         app/src/shell/adc_command.cpp
         app/src/shell/keymap_command.cpp
+        app/src/shell/calibration_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
         app/src/storage/main_board_persistent_configuration.cpp
         app/src/keymap/keymap_setup_coordinator.cpp
         app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
+        app/src/calibration/calibration_bulk_data_receiver.cpp
+        app/src/calibration/calibration_coordinator.cpp
+        app/src/storage/calibration_persistent_store.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
@@ -108,13 +115,19 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
     app/src/shell/keymap_command.cpp
+    app/src/shell/calibration_command.cpp
     app/src/adc/adc_board_controller.cpp
     app/src/storage/main_board_persistent_configuration.cpp
     app/src/keymap/keymap_setup_coordinator.cpp
     app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
+    app/src/calibration/calibration_bulk_data_receiver.cpp
+    app/src/calibration/calibration_coordinator.cpp
+    app/src/storage/calibration_persistent_store.cpp
+    app/src/composition/calibration_subsystem.cpp
     domain/src/main_board_config.cpp
     domain/src/keymap/keymap_lookup.cpp
     domain/src/keymap/keymap_setup_session.cpp
+    domain/src/calibration/calibration_session.cpp
 )
 
 # Add include paths
@@ -146,6 +159,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     protocol
     protocol_can
     config
+    sensor_linearization
 
     # Add user defined libraries
 )

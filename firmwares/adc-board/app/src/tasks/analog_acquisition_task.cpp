@@ -6,6 +6,7 @@
 #include "app/analog/acquisition_sequencer.hpp"
 #include "app/analog/delay_requirements.hpp"
 #include "app/config/config.hpp"
+#include "domain/sensors/calibration_state_utils.hpp"
 #include "os/queue_requirements.hpp"
 #include "os/task.hpp"
 
@@ -75,18 +76,6 @@ class TimestampCounterDelay final : public midismith::adc_board::app::analog::De
   midismith::bsp::time::TimestampCounterRequirements& timestamp_counter_;
 };
 
-bool ReceiveLatestCommand(
-    midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& queue,
-    midismith::adc_board::app::analog::AcquisitionCommand& cmd) noexcept {
-  bool did_receive = false;
-  midismith::adc_board::app::analog::AcquisitionCommand tmp{};
-  while (queue.Receive(tmp, midismith::os::kNoWait)) {
-    cmd = tmp;
-    did_receive = true;
-  }
-  return did_receive;
-}
-
 }  // namespace
 
 AnalogAcquisitionTask::AnalogAcquisitionTask(
@@ -95,14 +84,18 @@ AnalogAcquisitionTask::AnalogAcquisitionTask(
     midismith::bsp::GpioRequirements& tia_shutdown, midismith::adc_board::bsp::adc::AdcDma& adc_dma,
     midismith::bsp::time::TimestampCounterRequirements& timestamp_counter,
     volatile midismith::adc_board::app::analog::AcquisitionState& state,
-    ProcessedSensorGroup& analog_group) noexcept
+    ProcessedSensorGroup& analog_group,
+    midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue,
+    midismith::adc_board::domain::sensors::SensorRegistry& sensor_registry) noexcept
     : queue_(queue),
       control_queue_(control_queue),
       tia_shutdown_(tia_shutdown),
       adc_dma_(adc_dma),
       timestamp_counter_(timestamp_counter),
       state_(state),
-      analog_group_(analog_group) {}
+      analog_group_(analog_group),
+      calibration_result_queue_(calibration_result_queue),
+      collector_(sensor_registry) {}
 
 void AnalogAcquisitionTask::entry(void* ctx) noexcept {
   if (ctx == nullptr) {
@@ -164,16 +157,45 @@ void AnalogAcquisitionTask::HandleDisabledState(
   }
 }
 
-bool AnalogAcquisitionTask::TryHandleDisableRequestWhileEnabled() noexcept {
+bool AnalogAcquisitionTask::TryHandleCommandsWhileEnabled() noexcept {
   midismith::adc_board::app::analog::AcquisitionCommand cmd{};
-  if (!ReceiveLatestCommand(control_queue_, cmd)) {
-    return false;
+  while (control_queue_.Receive(cmd, midismith::os::kNoWait)) {
+    switch (cmd) {
+      case midismith::adc_board::app::analog::AcquisitionCommand::kDisable:
+        EnterDisabledState();
+        return true;
+      case midismith::adc_board::app::analog::AcquisitionCommand::kCalibrationStart:
+        HandleCalibrationStart();
+        break;
+      case midismith::adc_board::app::analog::AcquisitionCommand::kRestPhaseComplete:
+        HandleRestPhaseComplete();
+        break;
+      case midismith::adc_board::app::analog::AcquisitionCommand::kCollectCalibrationData:
+        HandleCollectCalibrationData();
+        break;
+      default:
+        break;
+    }
   }
-  if (cmd != midismith::adc_board::app::analog::AcquisitionCommand::kDisable) {
-    return false;
-  }
-  EnterDisabledState();
-  return true;
+  return false;
+}
+
+void AnalogAcquisitionTask::HandleCalibrationStart() noexcept {
+  analog_group_.ForEachEntry(
+      [](midismith::adc_board::domain::sensors::SensorState& state, Processor& processor) noexcept {
+        midismith::adc_board::domain::sensors::ResetCalibrationState(state);
+        processor.ResetCalibrationFilters();
+        state.is_calibration_rest_phase = true;
+      });
+}
+
+void AnalogAcquisitionTask::HandleRestPhaseComplete() noexcept {
+  analog_group_.ForEachEntry([](midismith::adc_board::domain::sensors::SensorState& state,
+                                Processor&) noexcept { state.is_calibration_rest_phase = false; });
+}
+
+void AnalogAcquisitionTask::HandleCollectCalibrationData() noexcept {
+  calibration_result_queue_.Send(collector_.CollectCalibrationData(), midismith::os::kNoWait);
 }
 
 void AnalogAcquisitionTask::ProcessAdc1Frame(
@@ -252,7 +274,7 @@ void AnalogAcquisitionTask::ProcessFrame(
 }
 
 void AnalogAcquisitionTask::HandleEnabledState() noexcept {
-  if (TryHandleDisableRequestWhileEnabled()) {
+  if (TryHandleCommandsWhileEnabled()) {
     return;
   }
 

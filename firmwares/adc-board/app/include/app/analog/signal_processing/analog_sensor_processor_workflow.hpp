@@ -16,6 +16,8 @@
 #include "dsp/engine/workflow.hpp"
 #include "dsp/filters/constant_filter.hpp"
 #include "dsp/filters/identity_filter.hpp"
+#include "dsp/filters/max_filter.hpp"
+#include "dsp/filters/min_filter.hpp"
 #include "dsp/filters/simple_moving_average.hpp"
 #include "dsp/logic/and.hpp"
 #include "dsp/logic/gate_open.hpp"
@@ -46,6 +48,9 @@ template <float kValue>
 using ConstantFilter = midismith::dsp::filters::ConstantFilter<kValue>;
 template <float kScale>
 using LinearScaler = midismith::dsp::converters::LinearScaler<kScale>;
+using MaxFilter = midismith::dsp::filters::MaxFilter;
+using MinFilter = midismith::dsp::filters::MinFilter;
+using IdentityFilter = midismith::dsp::filters::IdentityFilter;
 template <std::uint32_t kWindowSize>
 using SimpleMovingAverage = midismith::dsp::filters::SimpleMovingAverage<kWindowSize>;
 template <std::uint32_t kWindowSize>
@@ -66,6 +71,23 @@ using GoeblLogarithmicVelocityMapper =
 template <float kMaximumSpeedMPerS, float kShapeFactor>
 using LogarithmicVelocityMapper =
     midismith::piano_sensing::velocity::LogarithmicVelocityMapper<kMaximumSpeedMPerS, kShapeFactor>;
+
+// =============================================================================
+// Calibration Stages
+// =============================================================================
+
+using IsCalibrationRestPhaseReader = SensorMemberReader<&SensorState::is_calibration_rest_phase>;
+using IsCalibrationRestPhase = IsTrue<IsCalibrationRestPhaseReader{}>;
+
+using CalibrationRestInner =
+    Switch<IsCalibrationRestPhase,
+           StageWorkflow<MaxFilter, CaptureState<&SensorState::calibration_rest_peak_current_ma>>,
+           IdentityFilter>;
+using CalibrationStrikeInner =
+    StageWorkflow<MinFilter, CaptureState<&SensorState::calibration_strike_min_current_ma>>;
+
+using CalibrationRestTap = Tap<CalibrationRestInner>;
+using CalibrationStrikeTap = Tap<CalibrationStrikeInner>;
 
 // =============================================================================
 // Preprocessing Trunk
@@ -194,6 +216,8 @@ using Workflow = StageWorkflow<
     CaptureState<&SensorState::last_filtered_adc_value>,
     TiaCurrentConverter,
     CaptureState<&SensorState::last_current_ma>,
+    CalibrationRestTap,
+    CalibrationStrikeTap,
     LinearizerStage,
     CaptureState<&SensorState::last_shank_position_norm>,
     PhysicalVelocityPipelineTap,
@@ -210,6 +234,10 @@ using LinearizerConfiguration = typename LinearizerStage::Configuration;
 using KeyActionHandler = midismith::piano_sensing::KeyActionRequirements;
 
 struct StageAccess {
+  static constexpr std::size_t kCalibrationRestStageIndex =
+      Workflow::template StageIndexOf<CalibrationRestTap>;
+  static constexpr std::size_t kCalibrationStrikeStageIndex =
+      Workflow::template StageIndexOf<CalibrationStrikeTap>;
   static constexpr std::size_t kLinearizerStageIndex =
       Workflow::template StageIndexOf<LinearizerStage>;
   static constexpr std::size_t kTelemetryTapStageIndex =
@@ -218,6 +246,14 @@ struct StageAccess {
       Workflow::template StageIndexOf<NoteOnTapStage>;
   static constexpr std::size_t kNoteOffTapStageIndex =
       Workflow::template StageIndexOf<NoteOffTapStage>;
+
+  static CalibrationRestTap& CalibrationRest(Workflow& workflow) noexcept {
+    return workflow.template Stage<kCalibrationRestStageIndex>();
+  }
+
+  static CalibrationStrikeTap& CalibrationStrike(Workflow& workflow) noexcept {
+    return workflow.template Stage<kCalibrationStrikeStageIndex>();
+  }
 
   static LinearizerStage& Linearizer(Workflow& workflow) noexcept {
     return workflow.template Stage<kLinearizerStageIndex>();
@@ -237,6 +273,11 @@ struct StageAccess {
 };
 
 struct ControlSurface {
+  static void ResetCalibrationFilters(ProcessorWorkflow& workflow) noexcept {
+    StageAccess::CalibrationRest(workflow).Reset();
+    StageAccess::CalibrationStrike(workflow).Reset();
+  }
+
   static void SetLinearizerConfiguration(ProcessorWorkflow& workflow,
                                          const LinearizerConfiguration* configuration) noexcept {
     StageAccess::Linearizer(workflow).ApplyConfiguration(configuration);

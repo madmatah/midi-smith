@@ -274,13 +274,76 @@ TEST_CASE("The MessageParser class", "[protocol]") {
     }
 
     SECTION("When given a BulkData message") {
-      SECTION("Should return nullopt") {
-        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kCommand, 1, 0);
+      SECTION("With an unsupported type") {
+        SECTION("Should return nullopt") {
+          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                    MessageType::kCommand, 1, 0);
 
-        auto result = MessageParser::Decode(header, {});
+          auto result = MessageParser::Decode(header, {});
 
-        REQUIRE_FALSE(result.has_value());
+          REQUIRE_FALSE(result.has_value());
+        }
+      }
+
+      SECTION("With a kDataSegment type and valid payload") {
+        SECTION("Should return CalibrationDataSegment with correct fields") {
+          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                    MessageType::kDataSegment, 1, 0);
+          std::array<std::uint8_t, CalibrationDataSegment::kSerializedSizeBytes> payload{};
+          payload[0] = 2;
+          payload[1] = 8;
+          payload[2] = 0x42;
+
+          auto result = MessageParser::Decode(header, payload);
+
+          REQUIRE(result.has_value());
+          auto* segment = std::get_if<CalibrationDataSegment>(&result->content);
+          REQUIRE(segment != nullptr);
+          REQUIRE(segment->seq_index == 2);
+          REQUIRE(segment->total_packets == 8);
+          REQUIRE(segment->payload[0] == 0x42);
+        }
+      }
+
+      SECTION("With a kDataSegment type and undersized payload") {
+        SECTION("Should return nullopt") {
+          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                    MessageType::kDataSegment, 1, 0);
+          std::array<std::uint8_t, 1> payload{};
+
+          auto result = MessageParser::Decode(header, payload);
+
+          REQUIRE_FALSE(result.has_value());
+        }
+      }
+
+      SECTION("With a kDataSegmentAck type and valid payload") {
+        SECTION("Should return DataSegmentAck with correct fields") {
+          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                    MessageType::kDataSegmentAck, 0, 1);
+          std::array<std::uint8_t, 2> payload = {
+              5, static_cast<std::uint8_t>(DataSegmentAckStatus::kCrcError)};
+
+          auto result = MessageParser::Decode(header, payload);
+
+          REQUIRE(result.has_value());
+          auto* ack = std::get_if<DataSegmentAck>(&result->content);
+          REQUIRE(ack != nullptr);
+          REQUIRE(ack->ack_index == 5);
+          REQUIRE(ack->status == DataSegmentAckStatus::kCrcError);
+        }
+      }
+
+      SECTION("With a kDataSegmentAck type and invalid status") {
+        SECTION("Should return nullopt") {
+          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                    MessageType::kDataSegmentAck, 0, 1);
+          std::array<std::uint8_t, 2> payload = {0, 0xFF};
+
+          auto result = MessageParser::Decode(header, payload);
+
+          REQUIRE_FALSE(result.has_value());
+        }
       }
     }
 
