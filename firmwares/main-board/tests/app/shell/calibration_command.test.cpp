@@ -107,7 +107,8 @@ using midismith::main_board::app::shell::CalibrationCommand;
 TEST_CASE("The CalibrationCommand class") {
   CalibrationCoordinatorStub coordinator;
   RecordingStream stream;
-  CalibrationCommand command(coordinator);
+  CalibrationCommand command;
+  command.SetCoordinator(coordinator);
 
   SECTION("The Name() method") {
     SECTION("When called") {

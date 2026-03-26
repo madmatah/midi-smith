@@ -48,11 +48,12 @@ void CalibrationSession::OnSensorEvent(std::uint8_t board_id, std::uint8_t senso
   sensor_struck_[board_id - 1][sensor_id] = true;
 }
 
-void CalibrationSession::FinishStrikePhase() noexcept {
+void CalibrationSession::FinishStrikePhase(std::uint8_t connected_boards_mask) noexcept {
   if (state_ != CalibrationState::kMeasuringStrikes) {
     return;
   }
   BuildAwaitedBoardsMask();
+  awaited_boards_bitmask_ &= connected_boards_mask;
   resolved_boards_bitmask_ = 0u;
   state_ = CalibrationState::kCollectingData;
   observer_.OnCollectingDataStarted();

@@ -15,6 +15,7 @@ class MainBoardMessageSenderRequirements {
   virtual bool SendStopAdc(std::uint8_t target_node_id) noexcept = 0;
   virtual bool SendStartCalibration(std::uint8_t target_node_id,
                                     protocol::CalibMode mode) noexcept = 0;
+  virtual bool SendDumpRequest(std::uint8_t target_node_id) noexcept = 0;
   virtual bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
                                   protocol::DataSegmentAckStatus status) noexcept = 0;
 };

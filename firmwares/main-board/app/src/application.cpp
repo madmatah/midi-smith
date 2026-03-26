@@ -25,15 +25,19 @@ void Application::create_tasks() noexcept {
 
   auto midi_context = midismith::main_board::app::composition::CreateMidiSubsystem(rtt_logger);
   auto supervisor_ctx = midismith::main_board::app::composition::CreateSupervisorContext();
+  auto calib_inbound_ctx =
+      midismith::main_board::app::composition::CreateCalibrationInboundContext();
   auto can_ctx = midismith::main_board::app::composition::CreateCanSubsystem(
       rtt_logger, midi_context.piano, config_ctx.keymap_lookup, config_ctx.keymap_setup_coordinator,
-      supervisor_ctx);
+      supervisor_ctx, calib_inbound_ctx);
 
   midismith::main_board::app::composition::ConsoleContext console_ctx = {.stream = console_stream};
   auto boards_ctx = midismith::main_board::app::composition::CreateSupervisorSubsystem(
       can_ctx.message_sender, supervisor_ctx);
+  auto calib_ctx = midismith::main_board::app::composition::CreateCalibrationSubsystem(
+      config_ctx, can_ctx, boards_ctx, calib_inbound_ctx);
   midismith::main_board::app::composition::CreateShellSubsystem(
-      console_ctx, can_ctx, boards_ctx, config_ctx.keymap_setup_coordinator);
+      console_ctx, can_ctx, boards_ctx, config_ctx.keymap_setup_coordinator, calib_ctx);
 }
 
 }  // namespace midismith::main_board::app

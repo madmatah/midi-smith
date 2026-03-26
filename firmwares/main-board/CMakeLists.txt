@@ -59,6 +59,7 @@ if(HOST_TESTS)
         app/src/keymap/keymap_setup_coordinator.cpp
         app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
         app/src/calibration/calibration_bulk_data_receiver.cpp
+        app/src/calibration/calibration_coordinator.cpp
         app/src/storage/calibration_persistent_store.cpp
     )
     target_include_directories(main_app_lib PUBLIC
@@ -120,7 +121,9 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/keymap/keymap_setup_coordinator.cpp
     app/src/messaging/main_board_inbound_keymap_capture_handler.cpp
     app/src/calibration/calibration_bulk_data_receiver.cpp
+    app/src/calibration/calibration_coordinator.cpp
     app/src/storage/calibration_persistent_store.cpp
+    app/src/composition/calibration_subsystem.cpp
     domain/src/main_board_config.cpp
     domain/src/keymap/keymap_lookup.cpp
     domain/src/keymap/keymap_setup_session.cpp

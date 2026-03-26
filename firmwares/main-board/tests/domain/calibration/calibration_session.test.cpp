@@ -85,9 +85,11 @@ void AdvanceToMeasuringStrikes(CalibrationSession& session) {
   session.OnRestPhaseComplete();
 }
 
+constexpr std::uint8_t kAllBoardsConnected = 0xFF;
+
 void AdvanceToCollectingData(CalibrationSession& session) {
   AdvanceToMeasuringStrikes(session);
-  session.FinishStrikePhase();
+  session.FinishStrikePhase(kAllBoardsConnected);
 }
 
 }  // namespace
@@ -192,17 +194,32 @@ TEST_CASE("CalibrationSession", "[main-board][domain][calibration]") {
 
   SECTION("FinishStrikePhase transitions to kCollectingData") {
     AdvanceToMeasuringStrikes(session);
-    session.FinishStrikePhase();
+    session.FinishStrikePhase(kAllBoardsConnected);
 
     REQUIRE(session.state() == CalibrationState::kCollectingData);
     REQUIRE(observer.collecting_data_started_count == 1);
   }
 
   SECTION("FinishStrikePhase is a no-op when not in kMeasuringStrikes") {
-    session.FinishStrikePhase();
+    session.FinishStrikePhase(kAllBoardsConnected);
 
     REQUIRE(session.state() == CalibrationState::kIdle);
     REQUIRE(observer.collecting_data_started_count == 0);
+  }
+
+  SECTION("FinishStrikePhase excludes disconnected boards from awaited mask") {
+    AdvanceToMeasuringStrikes(session);
+    const std::uint8_t only_board_1_connected = 0x01;
+    session.FinishStrikePhase(only_board_1_connected);
+
+    REQUIRE(session.state() == CalibrationState::kCollectingData);
+
+    const auto valid_data = MakeValidCalibrationArray(0.1f, 0.5f);
+    session.OnBoardDataReceived(1, valid_data);
+
+    REQUIRE(session.state() == CalibrationState::kConfirmingPartialData);
+    REQUIRE(observer.missing_key_count == 1);
+    REQUIRE(observer.missing_keys[0] == static_cast<std::uint8_t>(60 - 21));
   }
 
   SECTION("Full successful calibration flow") {
@@ -349,7 +366,7 @@ TEST_CASE("CalibrationSession", "[main-board][domain][calibration]") {
 
     empty_session.StartSession();
     empty_session.OnRestPhaseComplete();
-    empty_session.FinishStrikePhase();
+    empty_session.FinishStrikePhase(kAllBoardsConnected);
 
     REQUIRE(empty_session.state() == CalibrationState::kSaving);
     REQUIRE(observer.missing_key_count == 0);

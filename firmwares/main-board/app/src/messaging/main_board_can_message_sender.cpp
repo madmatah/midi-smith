@@ -75,6 +75,22 @@ bool MainBoardCanMessageSender::SendStartCalibration(std::uint8_t target_node_id
   });
 }
 
+bool MainBoardCanMessageSender::SendDumpRequest(std::uint8_t target_node_id) noexcept {
+  const auto [header, command] =
+      protocol::MainBoardMessageBuilder().BuildDumpRequest(target_node_id);
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
+  const auto bytes_written = protocol::Serialize(command, std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
 bool MainBoardCanMessageSender::SendCalibrationAck(std::uint8_t target_node_id,
                                                    std::uint8_t ack_index,
                                                    protocol::DataSegmentAckStatus status) noexcept {
