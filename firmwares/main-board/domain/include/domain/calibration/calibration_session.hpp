@@ -41,7 +41,7 @@ class CalibrationSession {
   void StartSession() noexcept;
   void OnRestPhaseComplete() noexcept;
   void OnSensorEvent(std::uint8_t board_id, std::uint8_t sensor_id) noexcept;
-  void FinishStrikePhase() noexcept;
+  void FinishStrikePhase(std::uint8_t connected_boards_mask) noexcept;
   void OnBoardDataReceived(std::uint8_t board_id, const SensorCalibrationArray& data) noexcept;
   void OnBoardTimeout(std::uint8_t board_id) noexcept;
   void ConfirmSavePartial() noexcept;

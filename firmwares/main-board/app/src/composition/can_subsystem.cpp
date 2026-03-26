@@ -28,12 +28,19 @@ void CanTaskEntry(void* ctx) noexcept {
 
 }  // namespace
 
+CalibrationInboundContext CreateCalibrationInboundContext() noexcept {
+  static midismith::main_board::app::messaging::MainBoardInboundCalibrationHandler
+      calibration_handler;
+  return CalibrationInboundContext{calibration_handler};
+}
+
 CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::piano_controller::PianoRequirements& piano,
     const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
     midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
-    SupervisorContext& supervisor_ctx) noexcept {
+    SupervisorContext& supervisor_ctx,
+    CalibrationInboundContext& calibration_inbound_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -50,7 +57,7 @@ CanContext CreateCanSubsystem(
       inbound_heartbeat_handler(supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
       inbound_logging_handler, inbound_keymap_capture_handler, inbound_midi_handler,
-      inbound_heartbeat_handler);
+      inbound_heartbeat_handler, calibration_inbound_ctx.handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
 

@@ -153,6 +153,26 @@ TEST_CASE("The MainBoardCanMessageSender class") {
     }
   }
 
+  SECTION("The SendDumpRequest() method") {
+    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+        MainBoardMessageBuilder().BuildDumpRequest(4).first);
+
+    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+
+    sender.SendDumpRequest(4);
+
+    SECTION("Should transmit a frame with the correct CAN identifier") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.identifier == expected_id);
+    }
+
+    SECTION("Should transmit a frame with DLC = 1") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.data_length_bytes ==
+              midismith::protocol::DumpRequest::kSerializedSizeBytes);
+    }
+  }
+
   SECTION("The SendCalibrationAck() method") {
     const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
         MainBoardMessageBuilder().BuildDataSegmentAck(3, 5, DataSegmentAckStatus::kOk).first);

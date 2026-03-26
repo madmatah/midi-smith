@@ -82,6 +82,13 @@ class MainBoardMessageBuilder {
             Command(CalibStart{.mode = mode})};
   }
 
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, Command> BuildDumpRequest(
+      std::uint8_t target_node_id) const {
+    return {UnicastTransportHeader(MessageCategory::kControl, MessageType::kCommand,
+                                   kMainBoardNodeId, target_node_id),
+            Command(DumpRequest{})};
+  }
+
   [[nodiscard]] constexpr std::pair<UnicastTransportHeader, DataSegmentAck> BuildDataSegmentAck(
       std::uint8_t target_node_id, std::uint8_t ack_index, DataSegmentAckStatus status) const {
     return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegmentAck,

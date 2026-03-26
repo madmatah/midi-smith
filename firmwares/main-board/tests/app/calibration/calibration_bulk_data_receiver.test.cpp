@@ -56,6 +56,9 @@ class RecordingMessageSender final
   bool SendStartCalibration(std::uint8_t, midismith::protocol::CalibMode) noexcept override {
     return true;
   }
+  bool SendDumpRequest(std::uint8_t) noexcept override {
+    return true;
+  }
 
   bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
                           DataSegmentAckStatus status) noexcept override {

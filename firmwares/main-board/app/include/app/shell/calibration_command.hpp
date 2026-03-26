@@ -14,7 +14,9 @@ class CalibrationCommand final
     : public midismith::shell::CommandRequirements,
       public midismith::main_board::domain::calibration::CalibrationSessionObserverRequirements {
  public:
-  explicit CalibrationCommand(CalibrationCoordinatorRequirements& coordinator) noexcept;
+  CalibrationCommand() noexcept = default;
+
+  void SetCoordinator(CalibrationCoordinatorRequirements& coordinator) noexcept;
 
   std::string_view Name() const noexcept override {
     return "calibration";
@@ -32,7 +34,7 @@ class CalibrationCommand final
   void OnAborted() noexcept override;
 
  private:
-  CalibrationCoordinatorRequirements& coordinator_;
+  CalibrationCoordinatorRequirements* coordinator_ = nullptr;
   midismith::io::WritableStreamRequirements* output_stream_ = nullptr;
 
   void RunStart(midismith::io::WritableStreamRequirements& out) noexcept;

@@ -22,6 +22,8 @@ midismith_add_firmware_test(NAME main
         domain/keymap/keymap_setup_session.test.cpp
         domain/calibration/calibration_session.test.cpp
         app/calibration/calibration_bulk_data_receiver.test.cpp
+        app/calibration/sensor_calibration_validator.test.cpp
+        app/calibration/calibration_coordinator.test.cpp
         app/storage/calibration_persistent_store.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT

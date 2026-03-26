@@ -43,12 +43,18 @@ constexpr std::string_view StateLabel(CalibrationState state) noexcept {
 
 }  // namespace
 
-CalibrationCommand::CalibrationCommand(CalibrationCoordinatorRequirements& coordinator) noexcept
-    : coordinator_(coordinator) {}
+void CalibrationCommand::SetCoordinator(CalibrationCoordinatorRequirements& coordinator) noexcept {
+  coordinator_ = &coordinator;
+}
 
 void CalibrationCommand::Run(int argc, char** argv,
                              midismith::io::WritableStreamRequirements& out) noexcept {
   output_stream_ = &out;
+
+  if (coordinator_ == nullptr) {
+    out.Write("error: calibration subsystem not initialized\r\n");
+    return;
+  }
 
   if (argc < 2) {
     PrintUsage(out);
@@ -73,33 +79,33 @@ void CalibrationCommand::Run(int argc, char** argv,
 }
 
 void CalibrationCommand::RunStart(midismith::io::WritableStreamRequirements& out) noexcept {
-  const CalibrationState current_state = coordinator_.state();
+  const CalibrationState current_state = coordinator_->state();
   if (current_state != CalibrationState::kIdle) {
     out.Write("error: calibration already in progress (state: ");
     out.Write(StateLabel(current_state));
     out.Write(")\r\n");
     return;
   }
-  coordinator_.StartCalibration();
+  coordinator_->StartCalibration();
 }
 
 void CalibrationCommand::RunFinish(midismith::io::WritableStreamRequirements& out) noexcept {
-  const CalibrationState current_state = coordinator_.state();
+  const CalibrationState current_state = coordinator_->state();
   if (current_state != CalibrationState::kMeasuringStrikes) {
     out.Write("error: 'finish' is only valid during the strike phase (state: ");
     out.Write(StateLabel(current_state));
     out.Write(")\r\n");
     return;
   }
-  coordinator_.FinishStrikePhase();
+  coordinator_->FinishStrikePhase();
 }
 
 void CalibrationCommand::RunStatus(midismith::io::WritableStreamRequirements& out) noexcept {
   out.Write("State: ");
-  out.Write(StateLabel(coordinator_.state()));
+  out.Write(StateLabel(coordinator_->state()));
   out.Write("\r\n");
 
-  const auto progress = coordinator_.GetStrikeProgress();
+  const auto progress = coordinator_->GetStrikeProgress();
   midismith::io::WriteUint8(out, progress.struck_count);
   out.Write(" / ");
   midismith::io::WriteUint8(out, progress.total_count);
@@ -107,18 +113,18 @@ void CalibrationCommand::RunStatus(midismith::io::WritableStreamRequirements& ou
 }
 
 void CalibrationCommand::RunConfirm(midismith::io::WritableStreamRequirements& out) noexcept {
-  const CalibrationState current_state = coordinator_.state();
+  const CalibrationState current_state = coordinator_->state();
   if (current_state != CalibrationState::kConfirmingPartialData) {
     out.Write("error: 'confirm' is only valid when partial data confirmation is pending (state: ");
     out.Write(StateLabel(current_state));
     out.Write(")\r\n");
     return;
   }
-  coordinator_.ConfirmSavePartial();
+  coordinator_->ConfirmSavePartial();
 }
 
 void CalibrationCommand::RunAbort(midismith::io::WritableStreamRequirements& out) noexcept {
-  const CalibrationState current_state = coordinator_.state();
+  const CalibrationState current_state = coordinator_->state();
   if (current_state == CalibrationState::kIdle || current_state == CalibrationState::kDone ||
       current_state == CalibrationState::kAborted) {
     out.Write("error: no active calibration session to abort (state: ");
@@ -126,7 +132,7 @@ void CalibrationCommand::RunAbort(midismith::io::WritableStreamRequirements& out
     out.Write(")\r\n");
     return;
   }
-  coordinator_.Abort();
+  coordinator_->Abort();
 }
 
 void CalibrationCommand::PrintUsage(midismith::io::WritableStreamRequirements& out) const noexcept {
