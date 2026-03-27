@@ -22,6 +22,11 @@ constexpr uint32_t kHeartbeatTimeoutMs = 1500;
 constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
 // Calibration
+constexpr std::uint32_t CALIBRATION_SERVER_TASK_STACK_BYTES = 512;
+constexpr std::uint32_t CALIBRATION_SERVER_TASK_PRIORITY = 1;
+constexpr std::uint32_t kCalibrationServerEventQueueCapacity = 16;
+constexpr std::uint32_t kCalibrationServerAckTimeoutMs = 100;
+constexpr std::uint32_t kCalibrationServerMaxRetries = 3;
 constexpr std::uint32_t kCalibrationReceiveTimeoutMs = 500;
 constexpr float kMaxValidStrikeCurrentMa = 1.138f;
 constexpr std::uint32_t kCalibrationRestDurationMs = 2000;
