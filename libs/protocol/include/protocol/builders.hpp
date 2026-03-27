@@ -46,6 +46,20 @@ class AdcMessageBuilder {
                 .seq_index = seq_index, .total_packets = total_packets, .payload = payload}};
   }
 
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, Command> BuildCalibrationLoadRequest()
+      const {
+    return {UnicastTransportHeader(MessageCategory::kControl, MessageType::kCommand, node_id_,
+                                   kMainBoardNodeId),
+            Command(CalibrationLoadRequest{})};
+  }
+
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, DataSegmentAck> BuildDataSegmentAck(
+      std::uint8_t ack_index, DataSegmentAckStatus status) const {
+    return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegmentAck,
+                                   node_id_, kMainBoardNodeId),
+            DataSegmentAck{.ack_index = ack_index, .status = status}};
+  }
+
  private:
   std::uint8_t node_id_;
 };
@@ -94,6 +108,16 @@ class MainBoardMessageBuilder {
     return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegmentAck,
                                    kMainBoardNodeId, target_node_id),
             DataSegmentAck{.ack_index = ack_index, .status = status}};
+  }
+
+  [[nodiscard]] constexpr std::pair<UnicastTransportHeader, CalibrationDataSegment>
+  BuildCalibrationDataSegment(
+      std::uint8_t target_node_id, std::uint8_t seq_index, std::uint8_t total_packets,
+      std::array<std::uint8_t, CalibrationDataSegment::kPayloadSizeBytes> payload) const {
+    return {UnicastTransportHeader(MessageCategory::kBulkData, MessageType::kDataSegment,
+                                   kMainBoardNodeId, target_node_id),
+            CalibrationDataSegment{
+                .seq_index = seq_index, .total_packets = total_packets, .payload = payload}};
   }
 };
 

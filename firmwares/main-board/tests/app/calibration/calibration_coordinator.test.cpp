@@ -2,6 +2,7 @@
 
 #include "app/calibration/calibration_coordinator.hpp"
 
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <cstring>
@@ -105,6 +106,14 @@ class RecordingMessageSender final
   }
   bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
                           DataSegmentAckStatus status) noexcept override {
+    return true;
+  }
+
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
     return true;
   }
 

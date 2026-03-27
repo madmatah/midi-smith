@@ -109,4 +109,23 @@ bool MainBoardCanMessageSender::SendCalibrationAck(std::uint8_t target_node_id,
   });
 }
 
+bool MainBoardCanMessageSender::SendCalibrationDataSegment(
+    std::uint8_t target_node_id, std::uint8_t seq_index, std::uint8_t total_packets,
+    const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
+        payload) noexcept {
+  const auto [header, segment] = protocol::MainBoardMessageBuilder().BuildCalibrationDataSegment(
+      target_node_id, seq_index, total_packets, payload);
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
+  const auto bytes_written = segment.Serialize(std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
 }  // namespace midismith::main_board::app::messaging

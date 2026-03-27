@@ -74,8 +74,8 @@ TEST_CASE("The CanFilterFactory class") {
   SECTION("The MakeMainFilters() method") {
     const auto filter_set = CanFilterFactory::MakeMainFilters();
 
-    SECTION("Should return 4 filters") {
-      REQUIRE(filter_set.filters.size() == 4);
+    SECTION("Should return 5 filters") {
+      REQUIRE(filter_set.filters.size() == 5);
     }
 
     SECTION("Filter 0 should accept real-time events (0x010, mask 0x7F0)") {
@@ -100,6 +100,12 @@ TEST_CASE("The CanFilterFactory class") {
       REQUIRE(filter_set.filters[3].filter_index == 3u);
       REQUIRE(filter_set.filters[3].id == 0x710u);
       REQUIRE(filter_set.filters[3].id_mask == 0x7F0u);
+    }
+
+    SECTION("Filter 4 should accept requests from any ADC (0x120, mask 0x7F0)") {
+      REQUIRE(filter_set.filters[4].filter_index == 4u);
+      REQUIRE(filter_set.filters[4].id == 0x120u);
+      REQUIRE(filter_set.filters[4].id_mask == 0x7F0u);
     }
   }
 }

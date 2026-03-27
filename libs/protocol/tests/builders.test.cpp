@@ -8,6 +8,35 @@
 using namespace midismith::protocol;
 
 TEST_CASE("The AdcMessageBuilder class") {
+  SECTION("The BuildCalibrationLoadRequest() method") {
+    SECTION("Should produce a kControl/kCommand header targeting the main board") {
+      AdcMessageBuilder builder(3);
+
+      auto [header, command] = builder.BuildCalibrationLoadRequest();
+
+      REQUIRE(header.category == MessageCategory::kControl);
+      REQUIRE(header.type == MessageType::kCommand);
+      REQUIRE(header.source_node_id == 3);
+      REQUIRE(header.destination_node_id == kMainBoardNodeId);
+      REQUIRE(std::get_if<CalibrationLoadRequest>(&command) != nullptr);
+    }
+  }
+
+  SECTION("The BuildDataSegmentAck() method") {
+    SECTION("Should produce a kBulkData/kDataSegmentAck header targeting the main board") {
+      AdcMessageBuilder builder(6);
+
+      auto [header, ack] = builder.BuildDataSegmentAck(4, DataSegmentAckStatus::kCrcError);
+
+      REQUIRE(header.category == MessageCategory::kBulkData);
+      REQUIRE(header.type == MessageType::kDataSegmentAck);
+      REQUIRE(header.source_node_id == 6);
+      REQUIRE(header.destination_node_id == kMainBoardNodeId);
+      REQUIRE(ack.ack_index == 4);
+      REQUIRE(ack.status == DataSegmentAckStatus::kCrcError);
+    }
+  }
+
   SECTION("The BuildCalibrationDataSegment() method") {
     SECTION("Should produce a kBulkData/kDataSegment header targeting the main board") {
       AdcMessageBuilder builder(3);
@@ -134,6 +163,24 @@ TEST_CASE("The MainBoardMessageBuilder class") {
       REQUIRE(header.destination_node_id == 2);
       REQUIRE(ack.ack_index == 5);
       REQUIRE(ack.status == DataSegmentAckStatus::kFlashBusy);
+    }
+  }
+
+  SECTION("The BuildCalibrationDataSegment() method") {
+    SECTION("Should produce a kBulkData/kDataSegment header targeting the given node") {
+      MainBoardMessageBuilder builder;
+      std::array<std::uint8_t, CalibrationDataSegment::kPayloadSizeBytes> payload{};
+      payload[0] = 0xEE;
+
+      auto [header, segment] = builder.BuildCalibrationDataSegment(4, 2, 8, payload);
+
+      REQUIRE(header.category == MessageCategory::kBulkData);
+      REQUIRE(header.type == MessageType::kDataSegment);
+      REQUIRE(header.source_node_id == kMainBoardNodeId);
+      REQUIRE(header.destination_node_id == 4);
+      REQUIRE(segment.seq_index == 2);
+      REQUIRE(segment.total_packets == 8);
+      REQUIRE(segment.payload[0] == 0xEE);
     }
   }
 }

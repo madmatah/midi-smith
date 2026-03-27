@@ -58,6 +58,15 @@ TEST_CASE("The CanIdentifierMapper class") {
       }
     }
 
+    SECTION("When the header category is kControl with ADC source and main-board destination") {
+      SECTION("Should place the ADC source node ID in the 0x12x identifier range") {
+        AdcMessageBuilder builder(6);
+        auto [header, cmd] = builder.BuildCalibrationLoadRequest();
+
+        REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x126);
+      }
+    }
+
     SECTION("When the header category is kBulkData in DUMP direction") {
       SECTION("Should place the ADC source node ID in the 0x21x identifier range") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
@@ -73,6 +82,24 @@ TEST_CASE("The CanIdentifierMapper class") {
                                                   MessageType::kDataSegment, 0, 6);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x216);
+      }
+    }
+
+    SECTION("When the header category is kBulkData ACK in DUMP direction") {
+      SECTION("Should place the ADC source node ID in the 0x22x identifier range") {
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegmentAck, 3, 0);
+
+        REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x223);
+      }
+    }
+
+    SECTION("When the header category is kBulkData ACK in LOAD direction") {
+      SECTION("Should place the ADC destination node ID in the 0x22x identifier range") {
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegmentAck, 0, 8);
+
+        REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x228);
       }
     }
 
@@ -135,6 +162,20 @@ TEST_CASE("The CanIdentifierMapper class") {
       }
     }
 
+    SECTION("When given an identifier in the 0x12x range") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kControl kCommand") {
+        auto result = CanIdentifierMapper::DecodeId(0x126);
+
+        REQUIRE(result.has_value());
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kControl);
+        REQUIRE(header->type == MessageType::kCommand);
+        REQUIRE(header->source_node_id == 6);
+        REQUIRE(header->destination_node_id == kMainBoardNodeId);
+      }
+    }
+
     SECTION("When given an identifier in the 0x21x range") {
       SECTION("Should reconstruct a UnicastTransportHeader for kBulkData kDataSegment") {
         auto result = CanIdentifierMapper::DecodeId(0x214);
@@ -145,6 +186,20 @@ TEST_CASE("The CanIdentifierMapper class") {
         REQUIRE(header->category == MessageCategory::kBulkData);
         REQUIRE(header->type == MessageType::kDataSegment);
         REQUIRE(header->source_node_id == 4);
+        REQUIRE(header->destination_node_id == kMainBoardNodeId);
+      }
+    }
+
+    SECTION("When given an identifier in the 0x22x range") {
+      SECTION("Should reconstruct a UnicastTransportHeader for kBulkData kDataSegmentAck") {
+        auto result = CanIdentifierMapper::DecodeId(0x223);
+
+        REQUIRE(result.has_value());
+        auto* header = std::get_if<UnicastTransportHeader>(&*result);
+        REQUIRE(header != nullptr);
+        REQUIRE(header->category == MessageCategory::kBulkData);
+        REQUIRE(header->type == MessageType::kDataSegmentAck);
+        REQUIRE(header->source_node_id == 3);
         REQUIRE(header->destination_node_id == kMainBoardNodeId);
       }
     }
@@ -188,7 +243,6 @@ TEST_CASE("The CanIdentifierMapper class") {
       SECTION("Should return nullopt") {
         REQUIRE_FALSE(CanIdentifierMapper::DecodeId(0x000).has_value());
         REQUIRE_FALSE(CanIdentifierMapper::DecodeId(0x020).has_value());
-        REQUIRE_FALSE(CanIdentifierMapper::DecodeId(0x220).has_value());
         REQUIRE_FALSE(CanIdentifierMapper::DecodeId(0x300).has_value());
         REQUIRE_FALSE(CanIdentifierMapper::DecodeId(0x7FF).has_value());
       }
@@ -245,10 +299,38 @@ TEST_CASE("The CanIdentifierMapper class") {
       }
     }
 
+    SECTION("When encoding and then decoding a kControl uplink request header") {
+      SECTION("Should recover the original header without loss") {
+        AdcMessageBuilder builder(6);
+        auto [header, cmd] = builder.BuildCalibrationLoadRequest();
+
+        auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
+
+        REQUIRE(decoded.has_value());
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
+      }
+    }
+
     SECTION("When encoding and then decoding a kBulkData DUMP header") {
       SECTION("Should recover the original header without loss") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
                                                   MessageType::kDataSegment, 4, 0);
+
+        auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
+
+        REQUIRE(decoded.has_value());
+        auto* decoded_header = std::get_if<UnicastTransportHeader>(&*decoded);
+        REQUIRE(decoded_header != nullptr);
+        REQUIRE(*decoded_header == header);
+      }
+    }
+
+    SECTION("When encoding and then decoding a kBulkData ACK DUMP header") {
+      SECTION("Should recover the original header without loss") {
+        auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
+                                                  MessageType::kDataSegmentAck, 4, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 

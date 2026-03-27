@@ -43,6 +43,12 @@ concept DumpRequestHandler =
     };
 
 template <typename T>
+concept CalibrationLoadRequestHandler = requires(
+    T& handler, const protocol::CalibrationLoadRequest& command, std::uint8_t source_node_id) {
+  { handler.OnCalibrationLoadRequest(command, source_node_id) } noexcept;
+};
+
+template <typename T>
 concept CalibrationDataSegmentHandler = requires(
     T& handler, const protocol::CalibrationDataSegment& segment, std::uint8_t source_node_id) {
   { handler.OnCalibrationDataSegment(segment, source_node_id) } noexcept;
@@ -118,6 +124,11 @@ class InboundMessageDispatcher {
 
   [[nodiscard]] bool DispatchTypedCommand(std::uint8_t sender,
                                           const protocol::DumpRequest& command) noexcept {
+    return DispatchToAllHandlers(sender, command);
+  }
+
+  [[nodiscard]] bool DispatchTypedCommand(
+      std::uint8_t sender, const protocol::CalibrationLoadRequest& command) noexcept {
     return DispatchToAllHandlers(sender, command);
   }
 
@@ -198,6 +209,17 @@ class InboundMessageDispatcher {
                                         std::uint8_t source_node_id) noexcept {
     if constexpr (DumpRequestHandler<THandler>) {
       handler.OnDumpRequest(command, source_node_id);
+      return true;
+    }
+    return false;
+  }
+
+  template <typename THandler>
+  [[nodiscard]] static bool TryDispatch(THandler& handler,
+                                        const protocol::CalibrationLoadRequest& command,
+                                        std::uint8_t source_node_id) noexcept {
+    if constexpr (CalibrationLoadRequestHandler<THandler>) {
+      handler.OnCalibrationLoadRequest(command, source_node_id);
       return true;
     }
     return false;

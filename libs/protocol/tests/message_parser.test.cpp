@@ -177,6 +177,22 @@ TEST_CASE("The MessageParser class", "[protocol]") {
           }
         }
 
+        SECTION("And a CalibrationLoadRequest action") {
+          SECTION("Should return CalibrationLoadRequest") {
+            auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
+                                                      MessageType::kCommand, 2, 0);
+            std::array<std::uint8_t, 1> payload = {
+                static_cast<std::uint8_t>(CommandAction::kCalibrationLoadRequest)};
+
+            auto result = MessageParser::Decode(header, payload);
+
+            REQUIRE(result.has_value());
+            auto* cmd = std::get_if<Command>(&result->content);
+            REQUIRE(cmd != nullptr);
+            REQUIRE(std::get_if<CalibrationLoadRequest>(cmd) != nullptr);
+          }
+        }
+
         SECTION("And an unknown action") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,

@@ -61,6 +61,22 @@ bool AdcBoardCanMessageSender::SendHeartbeat(protocol::DeviceState device_state)
   });
 }
 
+bool AdcBoardCanMessageSender::SendCalibrationLoadRequest() noexcept {
+  const auto [header, command] =
+      protocol::AdcMessageBuilder(board_id_).BuildCalibrationLoadRequest();
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
+  const auto bytes_written = protocol::Serialize(command, std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
 bool AdcBoardCanMessageSender::SendCalibrationDataSegment(
     std::uint8_t seq_index, std::uint8_t total_packets,
     const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
@@ -71,6 +87,23 @@ bool AdcBoardCanMessageSender::SendCalibrationDataSegment(
 
   std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
   const auto bytes_written = segment.Serialize(std::span(buffer));
+  if (!bytes_written) return false;
+
+  return transceiver_.Transmit(bsp::can::FdcanFrame{
+      .identifier = can_id,
+      .data_length_bytes = *bytes_written,
+      .data = buffer,
+  });
+}
+
+bool AdcBoardCanMessageSender::SendDataSegmentAck(std::uint8_t ack_index,
+                                                  protocol::DataSegmentAckStatus status) noexcept {
+  const auto [header, ack] =
+      protocol::AdcMessageBuilder(board_id_).BuildDataSegmentAck(ack_index, status);
+  const auto can_id = protocol_can::CanIdentifierMapper::EncodeId(header);
+
+  std::array<std::uint8_t, bsp::can::kCanFdMaxDataBytes> buffer{};
+  const auto bytes_written = ack.Serialize(std::span(buffer));
   if (!bytes_written) return false;
 
   return transceiver_.Transmit(bsp::can::FdcanFrame{

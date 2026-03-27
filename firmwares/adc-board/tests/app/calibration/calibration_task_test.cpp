@@ -51,6 +51,15 @@ class RecordingMessageSender final
     return true;
   }
 
+  bool SendCalibrationLoadRequest() noexcept override {
+    return true;
+  }
+
+  bool SendDataSegmentAck(std::uint8_t,
+                          midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+
   [[nodiscard]] const std::vector<SegmentCall>& segment_calls() const noexcept {
     return segment_calls_;
   }

@@ -71,6 +71,17 @@ class RecordingDumpRequestHandler final {
   std::uint8_t last_source_node_id = 0xFF;
 };
 
+class RecordingCalibrationLoadRequestHandler final {
+ public:
+  void OnCalibrationLoadRequest(const midismith::protocol::CalibrationLoadRequest&,
+                                std::uint8_t source_node_id) noexcept {
+    ++calls;
+    last_source_node_id = source_node_id;
+  }
+  int calls = 0;
+  std::uint8_t last_source_node_id = 0xFF;
+};
+
 }  // namespace
 
 TEST_CASE("The InboundMessageDispatcher class", "[protocol][dispatcher]") {
@@ -170,6 +181,21 @@ TEST_CASE("The InboundMessageDispatcher class", "[protocol][dispatcher]") {
         REQUIRE(result);
         REQUIRE(handler.calls == 1);
         REQUIRE(handler.last_source_node_id == 2);
+      }
+    }
+
+    SECTION("When dispatching a CalibrationLoadRequest command") {
+      SECTION("Should notify the handler with the correct source_node_id") {
+        RecordingCalibrationLoadRequestHandler handler;
+        midismith::protocol::handlers::InboundMessageDispatcher dispatcher(handler);
+        const auto message = MakeUnicastMessage(
+            midismith::protocol::Command(midismith::protocol::CalibrationLoadRequest{}), 7);
+
+        const bool result = dispatcher.Dispatch(message);
+
+        REQUIRE(result);
+        REQUIRE(handler.calls == 1);
+        REQUIRE(handler.last_source_node_id == 7);
       }
     }
 

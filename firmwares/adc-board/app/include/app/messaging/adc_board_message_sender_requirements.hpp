@@ -14,10 +14,13 @@ class AdcBoardMessageSenderRequirements {
   virtual bool SendNoteOn(std::uint8_t sensor_id, std::uint8_t velocity) noexcept = 0;
   virtual bool SendNoteOff(std::uint8_t sensor_id, std::uint8_t velocity) noexcept = 0;
   virtual bool SendHeartbeat(protocol::DeviceState device_state) noexcept = 0;
+  virtual bool SendCalibrationLoadRequest() noexcept = 0;
   virtual bool SendCalibrationDataSegment(
       std::uint8_t seq_index, std::uint8_t total_packets,
       const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
           payload) noexcept = 0;
+  virtual bool SendDataSegmentAck(std::uint8_t ack_index,
+                                  protocol::DataSegmentAckStatus status) noexcept = 0;
 };
 
 }  // namespace midismith::adc_board::app::messaging

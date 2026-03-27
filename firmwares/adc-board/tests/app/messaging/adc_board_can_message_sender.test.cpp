@@ -20,168 +20,187 @@ using fakeit::When;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
+class RecordingFdcanTransceiverStub final
+    : public midismith::bsp::can::FdcanTransceiverRequirements {
+ public:
+  bool Transmit(const midismith::bsp::can::FdcanFrame& frame) noexcept override {
+    ++transmit_call_count;
+    last_frame = frame;
+    return true;
+  }
+
+  std::uint32_t transmit_call_count = 0;
+  midismith::bsp::can::FdcanFrame last_frame{};
+};
+
 }  // namespace
 
 using midismith::adc_board::app::messaging::AdcBoardCanMessageSender;
 using midismith::protocol::AdcMessageBuilder;
+using midismith::protocol::DataSegmentAckStatus;
 using midismith::protocol::DeviceState;
 using midismith::protocol::SensorEventType;
 
-TEST_CASE("AdcBoardCanMessageSender — SendNoteOn") {
-  Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
-  std::uint8_t board_id = 2;
-  AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
-  midismith::bsp::can::FdcanFrame captured_frame{};
+TEST_CASE("The AdcBoardCanMessageSender class") {
+  SECTION("The SendNoteOn() method") {
+    SECTION("When called with a valid sensor id and velocity") {
+      SECTION("Should transmit with the expected CAN identifier and payload") {
+        Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
+        std::uint8_t board_id = 2;
+        AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
+        midismith::bsp::can::FdcanFrame captured_frame{};
+        const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+            AdcMessageBuilder(board_id).BuildNoteOn(42, 100).first);
 
-  auto capture_frame = [&](const midismith::bsp::can::FdcanFrame& f) {
-    captured_frame = f;
-    return true;
-  };
+        When(fakeit_Method(transceiver_mock, Transmit))
+            .AlwaysDo([&](const midismith::bsp::can::FdcanFrame& frame) {
+              captured_frame = frame;
+              return true;
+            });
 
-  SECTION("Should transmit a frame with the correct CAN identifier") {
-    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
-        AdcMessageBuilder(board_id).BuildNoteOn(10, 80).first);
+        sender.SendNoteOn(42, 100);
 
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
-
-    sender.SendNoteOn(10, 80);
-
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.identifier == expected_id);
+        Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
+        REQUIRE(captured_frame.identifier == expected_id);
+        REQUIRE(captured_frame.data_length_bytes == 3);
+        REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(SensorEventType::kNoteOn));
+        REQUIRE(captured_frame.data[1] == 42);
+        REQUIRE(captured_frame.data[2] == 100);
+      }
+    }
   }
 
-  SECTION("Should transmit a frame with DLC = 3") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+  SECTION("The SendNoteOff() method") {
+    SECTION("When called with a valid sensor id and velocity") {
+      SECTION("Should transmit with the expected CAN identifier and payload") {
+        Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
+        std::uint8_t board_id = 2;
+        AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
+        midismith::bsp::can::FdcanFrame captured_frame{};
+        const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+            AdcMessageBuilder(board_id).BuildNoteOff(42, 64).first);
 
-    sender.SendNoteOn(10, 80);
+        When(fakeit_Method(transceiver_mock, Transmit))
+            .AlwaysDo([&](const midismith::bsp::can::FdcanFrame& frame) {
+              captured_frame = frame;
+              return true;
+            });
 
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data_length_bytes == 3);
+        sender.SendNoteOff(42, 64);
+
+        Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
+        REQUIRE(captured_frame.identifier == expected_id);
+        REQUIRE(captured_frame.data_length_bytes == 3);
+        REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(SensorEventType::kNoteOff));
+        REQUIRE(captured_frame.data[1] == 42);
+        REQUIRE(captured_frame.data[2] == 64);
+      }
+    }
   }
 
-  SECTION("Should encode the payload as type, sensor_id, velocity") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+  SECTION("The SendHeartbeat() method") {
+    SECTION("When called with a running device state") {
+      SECTION("Should transmit with the expected CAN identifier and payload") {
+        Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
+        std::uint8_t board_id = 2;
+        AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
+        midismith::bsp::can::FdcanFrame captured_frame{};
+        const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+            AdcMessageBuilder(board_id).BuildHeartbeat(DeviceState::kRunning).first);
 
-    sender.SendNoteOn(42, 100);
+        When(fakeit_Method(transceiver_mock, Transmit))
+            .Do([&](const midismith::bsp::can::FdcanFrame& frame) {
+              captured_frame = frame;
+              return true;
+            });
 
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(SensorEventType::kNoteOn));
-    REQUIRE(captured_frame.data[1] == 42);
-    REQUIRE(captured_frame.data[2] == 100);
-  }
-}
+        sender.SendHeartbeat(DeviceState::kRunning);
 
-TEST_CASE("AdcBoardCanMessageSender — SendNoteOff") {
-  Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
-  std::uint8_t board_id = 2;
-  AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
-  midismith::bsp::can::FdcanFrame captured_frame{};
-
-  auto capture_frame = [&](const midismith::bsp::can::FdcanFrame& f) {
-    captured_frame = f;
-    return true;
-  };
-
-  SECTION("Should transmit a frame with the correct CAN identifier") {
-    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
-        AdcMessageBuilder(board_id).BuildNoteOff(10, 64).first);
-
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
-
-    sender.SendNoteOff(10, 64);
-
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.identifier == expected_id);
+        Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
+        REQUIRE(captured_frame.identifier == expected_id);
+        REQUIRE(captured_frame.data_length_bytes == 1);
+        REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(DeviceState::kRunning));
+      }
+    }
   }
 
-  SECTION("Should transmit a frame with DLC = 3") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+  SECTION("The SendCalibrationLoadRequest() method") {
+    SECTION("When called by an ADC node") {
+      SECTION("Should transmit a command frame with action code 0x05") {
+        Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
+        std::uint8_t board_id = 2;
+        AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
+        midismith::bsp::can::FdcanFrame captured_frame{};
+        const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+            AdcMessageBuilder(board_id).BuildCalibrationLoadRequest().first);
 
-    sender.SendNoteOff(10, 64);
+        When(fakeit_Method(transceiver_mock, Transmit))
+            .Do([&](const midismith::bsp::can::FdcanFrame& frame) {
+              captured_frame = frame;
+              return true;
+            });
 
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data_length_bytes == 3);
+        sender.SendCalibrationLoadRequest();
+
+        Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
+        REQUIRE(captured_frame.identifier == expected_id);
+        REQUIRE(captured_frame.data_length_bytes == 1);
+        REQUIRE(
+            captured_frame.data[0] ==
+            static_cast<std::uint8_t>(midismith::protocol::CommandAction::kCalibrationLoadRequest));
+      }
+    }
   }
 
-  SECTION("Should encode the payload as type, sensor_id, velocity") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+  SECTION("The SendDataSegmentAck() method") {
+    SECTION("When called with an ack index and status") {
+      SECTION("Should transmit with the expected CAN identifier and ack payload") {
+        Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
+        std::uint8_t board_id = 4;
+        AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
+        midismith::bsp::can::FdcanFrame captured_frame{};
+        const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+            AdcMessageBuilder(board_id)
+                .BuildDataSegmentAck(6, DataSegmentAckStatus::kCrcError)
+                .first);
 
-    sender.SendNoteOff(42, 64);
+        When(fakeit_Method(transceiver_mock, Transmit))
+            .Do([&](const midismith::bsp::can::FdcanFrame& frame) {
+              captured_frame = frame;
+              return true;
+            });
 
-    Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
-    REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(SensorEventType::kNoteOff));
-    REQUIRE(captured_frame.data[1] == 42);
-    REQUIRE(captured_frame.data[2] == 64);
-  }
-}
+        sender.SendDataSegmentAck(6, DataSegmentAckStatus::kCrcError);
 
-TEST_CASE("AdcBoardCanMessageSender — SendHeartbeat") {
-  Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
-  std::uint8_t board_id = 2;
-  AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
-  midismith::bsp::can::FdcanFrame captured_frame{};
-
-  auto capture_frame = [&](const midismith::bsp::can::FdcanFrame& f) {
-    captured_frame = f;
-    return true;
-  };
-
-  SECTION("Should transmit a frame with the correct CAN identifier") {
-    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
-        AdcMessageBuilder(board_id).BuildHeartbeat(DeviceState::kRunning).first);
-
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
-
-    sender.SendHeartbeat(DeviceState::kRunning);
-
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.identifier == expected_id);
+        Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
+        REQUIRE(captured_frame.identifier == expected_id);
+        REQUIRE(captured_frame.data_length_bytes == 2);
+        REQUIRE(captured_frame.data[0] == 6);
+        REQUIRE(captured_frame.data[1] ==
+                static_cast<std::uint8_t>(DataSegmentAckStatus::kCrcError));
+      }
+    }
   }
 
-  SECTION("Should transmit a frame with DLC = 1") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+  SECTION("The dynamic board_id behavior") {
+    SECTION("When the referenced board_id changes after construction") {
+      SECTION("Should use the updated board_id in subsequent CAN identifiers") {
+        RecordingFdcanTransceiverStub transceiver_stub;
+        std::uint8_t board_id = 1;
+        AdcBoardCanMessageSender sender(transceiver_stub, board_id);
 
-    sender.SendHeartbeat(DeviceState::kRunning);
+        sender.SendNoteOn(5, 80);
+        board_id = 5;
+        sender.SendNoteOn(5, 80);
 
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data_length_bytes == 1);
-  }
+        const auto expected_identifier_after_change =
+            midismith::protocol_can::CanIdentifierMapper::EncodeId(
+                AdcMessageBuilder(5).BuildNoteOn(5, 80).first);
 
-  SECTION("Should encode the device state as the single payload byte") {
-    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
-
-    sender.SendHeartbeat(DeviceState::kRunning);
-
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Once();
-    REQUIRE(captured_frame.data[0] == static_cast<std::uint8_t>(DeviceState::kRunning));
-  }
-}
-
-TEST_CASE("AdcBoardCanMessageSender — dynamic board_id") {
-  Mock<midismith::bsp::can::FdcanTransceiverRequirements> transceiver_mock;
-  std::uint8_t board_id = 1;
-  AdcBoardCanMessageSender sender(transceiver_mock.get(), board_id);
-  midismith::bsp::can::FdcanFrame captured_frame{};
-
-  auto capture_frame = [&](const midismith::bsp::can::FdcanFrame& f) {
-    captured_frame = f;
-    return true;
-  };
-
-  SECTION("Should reflect the updated board_id in the CAN identifier after a change") {
-    When(fakeit_Method(transceiver_mock, Transmit)).AlwaysDo(capture_frame);
-
-    sender.SendNoteOn(5, 80);
-
-    board_id = 5;
-    sender.SendNoteOn(5, 80);
-
-    const auto id_after = midismith::protocol_can::CanIdentifierMapper::EncodeId(
-        AdcMessageBuilder(5).BuildNoteOn(5, 80).first);
-
-    // Verify it was called twice with different identifiers
-    Verify(fakeit_Method(transceiver_mock, Transmit)).Exactly(2);
-    REQUIRE(captured_frame.identifier == id_after);
+        REQUIRE(transceiver_stub.transmit_call_count == 2);
+        REQUIRE(transceiver_stub.last_frame.identifier == expected_identifier_after_change);
+      }
+    }
   }
 }
 

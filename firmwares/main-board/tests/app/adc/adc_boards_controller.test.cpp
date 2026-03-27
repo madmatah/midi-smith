@@ -2,6 +2,7 @@
 
 #include "app/adc/adc_boards_controller.hpp"
 
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <vector>
@@ -39,6 +40,13 @@ class RecordingMessageSender final
   }
   bool SendCalibrationAck(std::uint8_t, std::uint8_t,
                           midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
     return true;
   }
 
