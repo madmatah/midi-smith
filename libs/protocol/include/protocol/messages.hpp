@@ -43,6 +43,7 @@ enum class CommandAction : std::uint8_t {
   kAdcStop = 0x02,
   kCalibStart = 0x03,
   kDumpRequest = 0x04,
+  kCalibrationLoadRequest = 0x05,
 };
 
 enum class CalibMode : std::uint8_t { kAuto = 0x00, kManual = 0x01 };
@@ -68,7 +69,12 @@ struct DumpRequest {
   constexpr bool operator==(const DumpRequest&) const = default;
 };
 
-using Command = std::variant<AdcStart, AdcStop, CalibStart, DumpRequest>;
+struct CalibrationLoadRequest {
+  static constexpr std::uint8_t kSerializedSizeBytes = 1;
+  constexpr bool operator==(const CalibrationLoadRequest&) const = default;
+};
+
+using Command = std::variant<AdcStart, AdcStop, CalibStart, DumpRequest, CalibrationLoadRequest>;
 
 std::optional<std::uint8_t> Serialize(const Command& command, std::span<uint8_t> out_buffer);
 

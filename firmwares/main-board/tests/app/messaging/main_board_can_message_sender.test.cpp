@@ -192,6 +192,38 @@ TEST_CASE("The MainBoardCanMessageSender class") {
               midismith::protocol::DataSegmentAck::kSerializedSizeBytes);
     }
   }
+
+  SECTION("The SendCalibrationDataSegment() method") {
+    std::array<std::uint8_t, midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>
+        payload{};
+    payload[0] = 0x42;
+    payload[47] = 0x24;
+    const auto expected_id = midismith::protocol_can::CanIdentifierMapper::EncodeId(
+        MainBoardMessageBuilder().BuildCalibrationDataSegment(3, 1, 8, payload).first);
+
+    When(fakeit_Method(transceiver_mock, Transmit)).Do(capture_frame);
+
+    sender.SendCalibrationDataSegment(3, 1, 8, payload);
+
+    SECTION("Should transmit a frame with the correct CAN identifier") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.identifier == expected_id);
+    }
+
+    SECTION("Should transmit a frame with DLC = 50") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.data_length_bytes ==
+              midismith::protocol::CalibrationDataSegment::kSerializedSizeBytes);
+    }
+
+    SECTION("Should encode seq, total and payload bytes") {
+      Verify(fakeit_Method(transceiver_mock, Transmit)).AtLeastOnce();
+      REQUIRE(captured_frame.data[0] == 1);
+      REQUIRE(captured_frame.data[1] == 8);
+      REQUIRE(captured_frame.data[2] == 0x42);
+      REQUIRE(captured_frame.data[49] == 0x24);
+    }
+  }
 }
 
 #endif

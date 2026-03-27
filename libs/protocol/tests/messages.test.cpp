@@ -108,6 +108,14 @@ TEST_CASE("The Command variant — Serialize()") {
     REQUIRE(Serialize(cmd, buffer) == 1u);
     REQUIRE(buffer[0] == 0x04);
   }
+
+  SECTION("CalibrationLoadRequest serializes to a single byte 0x05") {
+    Command cmd = CalibrationLoadRequest{};
+    std::array<std::uint8_t, 1> buffer{};
+
+    REQUIRE(Serialize(cmd, buffer) == 1u);
+    REQUIRE(buffer[0] == 0x05);
+  }
 }
 
 TEST_CASE("The CalibrationDataSegment struct") {

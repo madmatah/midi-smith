@@ -63,6 +63,14 @@ class RecordingMessageSender final
     return true;
   }
 
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
+    return true;
+  }
+
   [[nodiscard]] const std::vector<AckCall>& ack_calls() const noexcept {
     return ack_calls_;
   }

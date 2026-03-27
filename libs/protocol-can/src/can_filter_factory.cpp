@@ -9,6 +9,7 @@ constexpr std::uint32_t kRangeMask = 0x7F0u;
 
 constexpr std::uint32_t kGlobalCommandId = 0x100u;
 constexpr std::uint32_t kUnicastCommandBaseId = 0x110u;
+constexpr std::uint32_t kAdcToMainRequestBaseId = 0x120u;
 constexpr std::uint32_t kCalibrationDataBaseId = 0x210u;
 constexpr std::uint32_t kCalibrationAckBaseId = 0x220u;
 constexpr std::uint32_t kRealTimeEventBaseId = 0x010u;
@@ -26,12 +27,13 @@ CanFilterSet<5> CanFilterFactory::MakeAdcFilters(std::uint8_t node_id) noexcept 
   }}};
 }
 
-CanFilterSet<4> CanFilterFactory::MakeMainFilters() noexcept {
-  return CanFilterSet<4>{{{
+CanFilterSet<5> CanFilterFactory::MakeMainFilters() noexcept {
+  return CanFilterSet<5>{{{
       {0u, kRealTimeEventBaseId, kRangeMask},
       {1u, kCalibrationDataBaseId, kRangeMask},
       {2u, kCalibrationAckBaseId, kRangeMask},
       {3u, kHeartbeatBaseId, kRangeMask},
+      {4u, kAdcToMainRequestBaseId, kRangeMask},
   }}};
 }
 

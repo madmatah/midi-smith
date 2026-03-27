@@ -51,6 +51,11 @@ std::optional<std::uint8_t> Serialize(const Command& command, std::span<uint8_t>
           WriteLittleEndian<std::uint8_t>(out_buffer, 0,
                                           static_cast<std::uint8_t>(CommandAction::kDumpRequest));
           return T::kSerializedSizeBytes;
+        } else if constexpr (std::is_same_v<T, CalibrationLoadRequest>) {
+          if (out_buffer.size() < T::kSerializedSizeBytes) return std::nullopt;
+          WriteLittleEndian<std::uint8_t>(
+              out_buffer, 0, static_cast<std::uint8_t>(CommandAction::kCalibrationLoadRequest));
+          return T::kSerializedSizeBytes;
         } else {
           static_assert(!sizeof(T), "Unhandled Command variant type in Serialize");
         }

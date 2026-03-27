@@ -18,6 +18,10 @@ class MainBoardCanMessageSender final : public MainBoardMessageSenderRequirement
   bool SendDumpRequest(std::uint8_t target_node_id) noexcept override;
   bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
                           protocol::DataSegmentAckStatus status) noexcept override;
+  bool SendCalibrationDataSegment(
+      std::uint8_t target_node_id, std::uint8_t seq_index, std::uint8_t total_packets,
+      const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
+          payload) noexcept override;
 
  private:
   bsp::can::FdcanTransceiverRequirements& transceiver_;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <queue>
@@ -37,6 +38,14 @@ class RecordingMessageSender final : public messaging::MainBoardMessageSenderReq
   }
   bool SendCalibrationAck(std::uint8_t, std::uint8_t,
                           midismith::protocol::DataSegmentAckStatus) noexcept override {
+    return true;
+  }
+
+  bool SendCalibrationDataSegment(
+      std::uint8_t, std::uint8_t, std::uint8_t,
+      const std::array<std::uint8_t,
+                       midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>&) noexcept
+      override {
     return true;
   }
 

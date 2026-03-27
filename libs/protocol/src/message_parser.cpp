@@ -45,6 +45,8 @@ static std::optional<MessageContent> DecodeContent(MessageCategory category, Mes
           }
           case CommandAction::kDumpRequest:
             return Command(DumpRequest{});
+          case CommandAction::kCalibrationLoadRequest:
+            return Command(CalibrationLoadRequest{});
           default:
             return std::nullopt;
         }

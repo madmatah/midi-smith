@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #include "protocol/messages.hpp"
@@ -18,6 +19,10 @@ class MainBoardMessageSenderRequirements {
   virtual bool SendDumpRequest(std::uint8_t target_node_id) noexcept = 0;
   virtual bool SendCalibrationAck(std::uint8_t target_node_id, std::uint8_t ack_index,
                                   protocol::DataSegmentAckStatus status) noexcept = 0;
+  virtual bool SendCalibrationDataSegment(
+      std::uint8_t target_node_id, std::uint8_t seq_index, std::uint8_t total_packets,
+      const std::array<std::uint8_t, protocol::CalibrationDataSegment::kPayloadSizeBytes>&
+          payload) noexcept = 0;
 };
 
 }  // namespace midismith::main_board::app::messaging

@@ -31,7 +31,9 @@ class CanIdentifierMapper {
   static constexpr std::uint8_t kRealTimeSensorEventFunctionCode = 0x01;
   static constexpr std::uint8_t kControlBroadcastFunctionCode = 0x10;
   static constexpr std::uint8_t kControlUnicastFunctionCode = 0x11;
+  static constexpr std::uint8_t kAdcToMainRequestFunctionCode = 0x12;
   static constexpr std::uint8_t kBulkDataSegmentFunctionCode = 0x21;
+  static constexpr std::uint8_t kBulkDataSegmentAckFunctionCode = 0x22;
   static constexpr std::uint8_t kSystemHeartbeatFunctionCode = 0x71;
 
   static constexpr std::uint8_t kMainBoardNodeId = protocol::kMainBoardNodeId;
@@ -54,14 +56,20 @@ constexpr std::uint16_t CanIdentifierMapper::EncodeId(
   }
 
   if (header.category == MessageCategory::kControl) {
-    return AssembleCanId(kControlUnicastFunctionCode, header.destination_node_id);
+    if (header.source_node_id == kMainBoardNodeId) {
+      return AssembleCanId(kControlUnicastFunctionCode, header.destination_node_id);
+    }
+    return AssembleCanId(kAdcToMainRequestFunctionCode, header.source_node_id);
   }
 
   if (header.category == MessageCategory::kBulkData) {
+    const std::uint8_t function_code = (header.type == protocol::MessageType::kDataSegmentAck)
+                                           ? kBulkDataSegmentAckFunctionCode
+                                           : kBulkDataSegmentFunctionCode;
     const std::uint8_t adc_node_id = (header.source_node_id != kMainBoardNodeId)
                                          ? header.source_node_id
                                          : header.destination_node_id;
-    return AssembleCanId(kBulkDataSegmentFunctionCode, adc_node_id);
+    return AssembleCanId(function_code, adc_node_id);
   }
 
   return AssembleCanId(kSystemHeartbeatFunctionCode, header.source_node_id);
@@ -107,8 +115,18 @@ constexpr std::optional<DecodedTransportHeader> CanIdentifierMapper::DecodeId(
                                         kMainBoardNodeId, node_id);
   }
 
+  if (function_code == kAdcToMainRequestFunctionCode) {
+    return UnicastTransportHeader::Make(MessageCategory::kControl, MessageType::kCommand, node_id,
+                                        kMainBoardNodeId);
+  }
+
   if (function_code == kBulkDataSegmentFunctionCode) {
     return UnicastTransportHeader::Make(MessageCategory::kBulkData, MessageType::kDataSegment,
+                                        node_id, kMainBoardNodeId);
+  }
+
+  if (function_code == kBulkDataSegmentAckFunctionCode) {
+    return UnicastTransportHeader::Make(MessageCategory::kBulkData, MessageType::kDataSegmentAck,
                                         node_id, kMainBoardNodeId);
   }
 

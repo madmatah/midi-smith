@@ -75,7 +75,7 @@ Adjust later according to required filters and buffer sizes.
     * **Tx Buffers Nbr**: 0
     * **Tx Fifo Queue Elmts Nbr**: 32
     * **Tx Elmt Size**: `64 bytes data field`
-    * **Std Filters Nbr**: 4
+    * **Std Filters Nbr**: 5
     * **Rx Fifo0 Elmts Nbr**: 32
     * **Rx Fifo0 Elmt Size**: `64 bytes data field`
 
