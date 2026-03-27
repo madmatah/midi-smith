@@ -20,6 +20,7 @@ midismith_require_lib(os)
 midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-config)
 midismith_require_lib(sensor-linearization)
+midismith_require_lib(calibration)
 midismith_require_lib(config)
 midismith_require_lib(telemetry)
 midismith_require_lib(shell-cmd-version)
@@ -42,7 +43,7 @@ if(HOST_TESTS)
     target_include_directories(adc_domain PUBLIC
         domain/include
     )
-    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing sensor_linearization bsp io os shell shell_cmd_config config telemetry shell_cmd_version)
+    target_link_libraries(adc_domain PUBLIC dsp midi piano_sensing sensor_linearization calibration bsp io os shell shell_cmd_config config telemetry shell_cmd_version)
 
     add_library(adc_app_lib STATIC)
     target_sources(adc_app_lib PRIVATE
@@ -71,6 +72,7 @@ if(HOST_TESTS)
         shell_cmd_config
         piano_sensing
         sensor_linearization
+        calibration
         config
         os
         shell_cmd_version
@@ -166,6 +168,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     shell
     shell_cmd_config
     sensor_linearization
+    calibration
     config
     telemetry
     shell_cmd_version

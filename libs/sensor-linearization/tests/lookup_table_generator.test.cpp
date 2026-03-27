@@ -5,9 +5,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
+#include "calibration/sensor_calibration.hpp"
 #include "sensor-linearization/sensor_response_curve.hpp"
 
 using namespace midismith::sensor_linearization;
+using midismith::calibration::SensorCalibration;
 using Catch::Matchers::WithinAbs;
 
 TEST_CASE("The LookupTableGenerator class", "[sensor][linearization]") {

@@ -4,16 +4,16 @@
 
 #include <array>
 #include <catch2/catch_test_macros.hpp>
-#include <cstring>
 #include <optional>
 #include <vector>
 
 #include "app/calibration/calibration_bulk_data_receiver_observer_requirements.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
+#include "calibration/sensor_calibration.hpp"
 #include "domain/config/main_board_config.hpp"
+#include "protocol-can/can_calibration_segment_packer.hpp"
 #include "protocol/messages.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
 
 namespace {
 
@@ -23,17 +23,14 @@ using CalibrationBulkDataReceiverObserverRequirements =
     midismith::main_board::app::calibration::CalibrationBulkDataReceiverObserverRequirements;
 using SensorCalibrationArray =
     CalibrationBulkDataReceiverObserverRequirements::SensorCalibrationArray;
-using SensorCalibration = midismith::sensor_linearization::SensorCalibration;
+using SensorCalibration = midismith::calibration::SensorCalibration;
 using CalibrationDataSegment = midismith::protocol::CalibrationDataSegment;
 using DataSegmentAckStatus = midismith::protocol::DataSegmentAckStatus;
 
 inline constexpr std::size_t kSensorsPerBoard =
     midismith::main_board::domain::config::kSensorsPerBoard;
-inline constexpr std::size_t kSensorsPerSegment = CalibrationDataSegment::kSensorsPerSegment;
-inline constexpr std::size_t kSensorCalibrationSizeBytes =
-    CalibrationDataSegment::kSensorCalibrationSizeBytes;
 inline constexpr std::size_t kTotalSegments =
-    (kSensorsPerBoard + kSensorsPerSegment - 1) / kSensorsPerSegment;
+    midismith::protocol_can::CanCalibrationSegmentPacker::ComputeTotalSegments(kSensorsPerBoard);
 
 class RecordingMessageSender final
     : public midismith::main_board::app::messaging::MainBoardMessageSenderRequirements {
@@ -144,14 +141,8 @@ CalibrationDataSegment MakeSegment(const SensorCalibrationArray& calibration,
   CalibrationDataSegment segment{};
   segment.seq_index = seq_index;
   segment.total_packets = total_packets;
-
-  for (std::size_t slot = 0; slot < kSensorsPerSegment; ++slot) {
-    const std::size_t sensor_index = seq_index * kSensorsPerSegment + slot;
-    if (sensor_index < kSensorsPerBoard) {
-      std::memcpy(segment.payload.data() + slot * kSensorCalibrationSizeBytes,
-                  &calibration[sensor_index], sizeof(SensorCalibration));
-    }
-  }
+  midismith::protocol_can::CanCalibrationSegmentPacker::PackSegment(
+      calibration.data(), calibration.size(), seq_index, segment.payload.data());
 
   return segment;
 }

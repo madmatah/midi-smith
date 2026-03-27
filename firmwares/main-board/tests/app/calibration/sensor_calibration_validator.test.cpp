@@ -5,11 +5,11 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "app/config/config.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
+#include "calibration/sensor_calibration.hpp"
 
+using midismith::calibration::SensorCalibration;
 using midismith::main_board::app::calibration::SensorCalibrationValidator;
 using midismith::main_board::app::config::kMaxValidStrikeCurrentMa;
-using midismith::sensor_linearization::SensorCalibration;
 
 TEST_CASE("The SensorCalibrationValidator class") {
   SensorCalibrationValidator validator;

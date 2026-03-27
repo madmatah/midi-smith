@@ -4,14 +4,14 @@
 
 #include "app/analog/acquisition_state_requirements.hpp"
 #include "app/config/sensors.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
+#include "calibration/board_calibration_data.hpp"
 
 namespace midismith::adc_board::app::analog {
 
 class AcquisitionControlRequirements : public AcquisitionStateRequirements {
  public:
-  using CalibrationArray = std::array<midismith::sensor_linearization::SensorCalibration,
-                                      midismith::adc_board::app::config::sensors::kSensorCount>;
+  using CalibrationArray = midismith::calibration::BoardCalibrationData<
+      midismith::adc_board::app::config::sensors::kSensorCount>;
 
   virtual ~AcquisitionControlRequirements() = default;
 

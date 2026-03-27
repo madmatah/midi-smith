@@ -3,4 +3,7 @@ project(sensor_linearization LANGUAGES CXX)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
-midismith_add_lib(NAME sensor_linearization)
+midismith_add_lib(NAME sensor_linearization
+    DEPENDS
+        calibration
+)

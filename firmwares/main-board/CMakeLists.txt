@@ -29,6 +29,7 @@ midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
 midismith_require_lib(config)
 midismith_require_lib(sensor-linearization)
+midismith_require_lib(calibration)
 
 if(HOST_TESTS)
     enable_testing()
@@ -41,7 +42,7 @@ if(HOST_TESTS)
     )
     target_include_directories(main_domain PUBLIC domain/include)
     target_link_libraries(main_domain PUBLIC config piano_controller midi bsp os telemetry
-                                             sensor_linearization)
+                                             sensor_linearization calibration)
 
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
@@ -65,7 +66,7 @@ if(HOST_TESTS)
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -160,6 +161,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     protocol_can
     config
     sensor_linearization
+    calibration
 
     # Add user defined libraries
 )

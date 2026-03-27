@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "sensor-linearization/sensor_calibration.hpp"
+#include "calibration/sensor_calibration.hpp"
 #include "sensor-linearization/sensor_linear_processor_configuration.hpp"
 #include "sensor-linearization/sensor_lookup_table.hpp"
 #include "sensor-linearization/sensor_response_curve.hpp"
@@ -36,7 +36,7 @@ inline void FillFallbackLookupTable(
 
 template <std::size_t kLookupTableSize>
 inline SensorLinearProcessorConfiguration<kLookupTableSize> MakeConfigurationFor(
-    const SensorCalibration& calibration,
+    const midismith::calibration::SensorCalibration& calibration,
     const SensorLookupTable<kLookupTableSize>& lookup_table_storage) noexcept {
   SensorLinearProcessorConfiguration<kLookupTableSize> cfg{};
   cfg.lookup_table = &lookup_table_storage;
@@ -55,7 +55,8 @@ class LookupTableGenerator {
  public:
   template <std::size_t kLookupTableSize>
   static LookupTableGenerationResult<kLookupTableSize> Generate(
-      const SensorResponseCurve& master, const SensorCalibration& calibration,
+      const SensorResponseCurve& master,
+      const midismith::calibration::SensorCalibration& calibration,
       SensorLookupTable<kLookupTableSize>& lookup_table_storage) noexcept {
     static_assert(kLookupTableSize >= 2u, "kLookupTableSize must be >= 2");
 

@@ -22,7 +22,7 @@ using midismith::main_board::domain::config::MainBoardData;
 class ValidityCheckerStub final : public CalibrationDataValidityRequirements {
  public:
   bool IsValidCalibration(
-      const midismith::sensor_linearization::SensorCalibration& calib) const noexcept override {
+      const midismith::calibration::SensorCalibration& calib) const noexcept override {
     return calib.rest_current_ma >= 0.0f && calib.strike_current_ma > calib.rest_current_ma &&
            calib.strike_current_ma <= 1.138f;
   }

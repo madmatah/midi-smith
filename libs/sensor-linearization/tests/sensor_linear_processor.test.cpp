@@ -6,6 +6,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cstddef>
 
+#include "calibration/sensor_calibration.hpp"
 #include "sensor-linearization/cny70_response_curve.hpp"
 #include "sensor-linearization/lookup_table_generator.hpp"
 
@@ -92,7 +93,7 @@ TEST_CASE("The SensorLinearProcessor class") {
   SECTION("CNY70 generator + processor maps strike to 0 and rest to 1") {
     const auto master =
         midismith::sensor_linearization::Cny70DatasheetSensorResponseCurve();
-    const midismith::sensor_linearization::SensorCalibration calibration{
+    const midismith::calibration::SensorCalibration calibration{
         .rest_current_ma = 0.047f,
         .strike_current_ma = 1.000f,
         .rest_distance_mm = 10.0f,

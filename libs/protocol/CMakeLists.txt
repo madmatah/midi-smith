@@ -8,6 +8,7 @@ midismith_add_lib(NAME protocol
         src/messages.cpp
         src/message_parser.cpp
         src/peer_monitor.cpp
+        src/transfer/segment_transfer_tracker.cpp
     DEPENDS
         byte-codec
 )
