@@ -9,4 +9,5 @@ midismith_add_test(NAME protocol
         inbound_message_dispatcher.test.cpp
         peer_monitor.test.cpp
         peer_registry.test.cpp
+        segment_transfer_tracker.test.cpp
 )

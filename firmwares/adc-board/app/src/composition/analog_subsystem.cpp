@@ -18,6 +18,7 @@
 #include "bsp/memory_sections.hpp"
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
+#include "calibration/board_calibration_data.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -78,7 +79,7 @@ using ProcessedSensorGroup = midismith::adc_board::domain::sensors::ProcessedSen
 
 using LookupTable = midismith::sensor_linearization::SensorLookupTable<
     midismith::adc_board::app::config::kSensorLookupTableSize>;
-using SensorCalibration = midismith::sensor_linearization::SensorCalibration;
+using SensorCalibration = midismith::calibration::SensorCalibration;
 using LinearizerConfiguration = Processor::LinearizerConfiguration;
 using LoggingSensorEventHandler =
     midismith::adc_board::app::piano_sensing::LoggingSensorEventHandler;
@@ -116,8 +117,8 @@ void GenerateAnalogSensorLookupTables(
         lookup_tables,
     std::array<LinearizerConfiguration, midismith::adc_board::app::config::sensors::kSensorCount>&
         configurations,
-    const std::array<SensorCalibration, midismith::adc_board::app::config::sensors::kSensorCount>&
-        calibration_by_index) noexcept {
+    const midismith::calibration::BoardCalibrationData<
+        midismith::adc_board::app::config::sensors::kSensorCount>& calibration_by_index) noexcept {
   const auto sensorResponseCurve =
       midismith::adc_board::app::config::kSensorResponseCurveProvider();
   for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
@@ -263,9 +264,8 @@ SensorsContext CreateSensorsContext() noexcept {
 }
 
 bool RegenerateAnalogSensorLookupTables(
-    const std::array<midismith::sensor_linearization::SensorCalibration,
-                     midismith::adc_board::app::config::sensors::kSensorCount>&
-        calibration_by_index) noexcept {
+    const midismith::calibration::BoardCalibrationData<
+        midismith::adc_board::app::config::sensors::kSensorCount>& calibration_by_index) noexcept {
   if (AdcState() != midismith::adc_board::app::analog::AcquisitionState::kDisabled) {
     return false;
   }

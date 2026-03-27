@@ -1,8 +1,7 @@
 #include "app/calibration/calibration_bulk_data_receiver.hpp"
 
-#include <cstring>
-
 #include "app/config/config.hpp"
+#include "protocol-can/can_calibration_segment_packer.hpp"
 
 namespace midismith::main_board::app::calibration {
 
@@ -14,8 +13,7 @@ CalibrationBulkDataReceiver::CalibrationBulkDataReceiver(
 
 void CalibrationBulkDataReceiver::BeginReceiving(std::uint8_t board_id) noexcept {
   board_id_ = board_id;
-  expected_total_segments_ = 0;
-  received_segments_bitmask_ = 0;
+  segment_transfer_tracker_.Reset();
   assembled_data_ = {};
   timeout_timer_.Start(midismith::main_board::app::config::kCalibrationReceiveTimeoutMs);
 }
@@ -27,15 +25,14 @@ void CalibrationBulkDataReceiver::OnCalibrationDataSegment(
     return;
   }
 
-  expected_total_segments_ = segment.total_packets;
   UnpackSegmentIntoAssembledData(segment);
 
   sender_.SendCalibrationAck(board_id_, segment.seq_index,
                              midismith::protocol::DataSegmentAckStatus::kOk);
 
-  received_segments_bitmask_ |= static_cast<std::uint8_t>(1u << segment.seq_index);
+  segment_transfer_tracker_.OnSegmentReceived(segment.seq_index, segment.total_packets);
 
-  if (AllSegmentsReceived()) {
+  if (segment_transfer_tracker_.IsComplete()) {
     timeout_timer_.Stop();
     observer_.OnDataReceived(board_id_, assembled_data_);
   }
@@ -53,22 +50,8 @@ void CalibrationBulkDataReceiver::HandleTimeout() noexcept {
 
 void CalibrationBulkDataReceiver::UnpackSegmentIntoAssembledData(
     const midismith::protocol::CalibrationDataSegment& segment) noexcept {
-  for (std::size_t slot = 0; slot < kSensorsPerSegment; ++slot) {
-    const std::size_t sensor_index = segment.seq_index * kSensorsPerSegment + slot;
-    if (sensor_index < kSensorsPerBoard) {
-      std::memcpy(&assembled_data_[sensor_index],
-                  segment.payload.data() + slot * kSensorCalibrationSizeBytes,
-                  sizeof(midismith::sensor_linearization::SensorCalibration));
-    }
-  }
-}
-
-bool CalibrationBulkDataReceiver::AllSegmentsReceived() const noexcept {
-  if (expected_total_segments_ == 0) {
-    return false;
-  }
-  const std::uint8_t full_mask = static_cast<std::uint8_t>((1u << expected_total_segments_) - 1u);
-  return (received_segments_bitmask_ & full_mask) == full_mask;
+  midismith::protocol_can::CanCalibrationSegmentPacker::UnpackSegment(
+      segment.payload.data(), segment.seq_index, assembled_data_.data(), assembled_data_.size());
 }
 
 }  // namespace midismith::main_board::app::calibration

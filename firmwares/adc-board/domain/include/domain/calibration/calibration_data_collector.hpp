@@ -5,16 +5,15 @@
 #include <cstdint>
 #include <limits>
 
+#include "calibration/board_calibration_data.hpp"
 #include "domain/sensors/sensor_registry.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
 
 namespace midismith::adc_board::domain::calibration {
 
 template <std::size_t kSensorCount>
 class CalibrationDataCollector {
  public:
-  using CalibrationArray =
-      std::array<midismith::sensor_linearization::SensorCalibration, kSensorCount>;
+  using CalibrationArray = midismith::calibration::BoardCalibrationData<kSensorCount>;
 
   explicit CalibrationDataCollector(const sensors::SensorRegistry& sensor_registry) noexcept
       : sensor_registry_(sensor_registry) {}

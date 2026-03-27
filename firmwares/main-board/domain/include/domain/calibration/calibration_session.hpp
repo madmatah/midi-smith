@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <span>
 
+#include "calibration/board_calibration_data.hpp"
 #include "domain/calibration/calibration_data.hpp"
 #include "domain/calibration/calibration_data_validity_requirements.hpp"
 #include "domain/calibration/calibration_session_observer_requirements.hpp"
 #include "domain/config/main_board_config.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
 
 namespace midismith::main_board::domain::calibration {
 
@@ -30,9 +30,8 @@ struct StrikeProgress {
 
 class CalibrationSession {
  public:
-  using SensorCalibrationArray =
-      std::array<midismith::sensor_linearization::SensorCalibration,
-                 midismith::main_board::domain::config::kSensorsPerBoard>;
+  using SensorCalibrationArray = midismith::calibration::BoardCalibrationData<
+      midismith::main_board::domain::config::kSensorsPerBoard>;
 
   CalibrationSession(const midismith::main_board::domain::config::MainBoardData& keymap_data,
                      CalibrationSessionObserverRequirements& observer,

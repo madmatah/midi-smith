@@ -3,16 +3,15 @@
 #include <array>
 #include <cstdint>
 
+#include "calibration/board_calibration_data.hpp"
 #include "domain/config/main_board_config.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
 
 namespace midismith::main_board::app::calibration {
 
 class CalibrationBulkDataReceiverObserverRequirements {
  public:
-  using SensorCalibrationArray =
-      std::array<midismith::sensor_linearization::SensorCalibration,
-                 midismith::main_board::domain::config::kSensorsPerBoard>;
+  using SensorCalibrationArray = midismith::calibration::BoardCalibrationData<
+      midismith::main_board::domain::config::kSensorsPerBoard>;
 
   virtual ~CalibrationBulkDataReceiverObserverRequirements() = default;
 

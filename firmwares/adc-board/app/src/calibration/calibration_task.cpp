@@ -1,9 +1,7 @@
 #include "app/calibration/calibration_task.hpp"
 
-#include <cstring>
-
 #include "app/config/config.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
+#include "protocol-can/can_calibration_segment_packer.hpp"
 
 namespace midismith::adc_board::app::calibration {
 
@@ -84,15 +82,8 @@ void CalibrationTask::SendCurrentSegment() noexcept {
 CalibrationTask::SegmentPayload CalibrationTask::PackSegmentPayload(
     std::size_t segment_index) const noexcept {
   SegmentPayload payload{};
-  for (std::size_t s = 0; s < kSensorsPerSegment; ++s) {
-    const std::size_t sensor_index = segment_index * kSensorsPerSegment + s;
-    if (sensor_index < calibration_data_.size()) {
-      std::memcpy(payload.data() +
-                      s * midismith::protocol::CalibrationDataSegment::kSensorCalibrationSizeBytes,
-                  &calibration_data_[sensor_index],
-                  sizeof(midismith::sensor_linearization::SensorCalibration));
-    }
-  }
+  midismith::protocol_can::CanCalibrationSegmentPacker::PackSegment(
+      calibration_data_.data(), calibration_data_.size(), segment_index, payload.data());
   return payload;
 }
 

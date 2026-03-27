@@ -8,6 +8,7 @@ midismith_add_lib(NAME protocol_can
         src/can_filter_factory.cpp
     DEPENDS
         bsp-types
+        calibration
         can-broker
         protocol
         stats

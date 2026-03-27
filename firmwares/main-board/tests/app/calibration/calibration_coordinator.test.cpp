@@ -12,6 +12,7 @@
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
 #include "bsp-types/storage/flash_sector_storage_requirements.hpp"
+#include "calibration/sensor_calibration.hpp"
 #include "domain/calibration/calibration_data_validity_requirements.hpp"
 #include "domain/calibration/calibration_session.hpp"
 #include "domain/config/main_board_config.hpp"
@@ -19,7 +20,6 @@
 #include "protocol/messages.hpp"
 #include "protocol/peer_status.hpp"
 #include "protocol/peer_status_provider_requirements.hpp"
-#include "sensor-linearization/sensor_calibration.hpp"
 
 namespace {
 
@@ -36,7 +36,7 @@ using CalibrationDataValidityRequirements =
 using CalibrationPersistentStore = midismith::main_board::app::storage::CalibrationPersistentStore;
 using MainBoardData = midismith::main_board::domain::config::MainBoardData;
 using KeymapEntry = midismith::main_board::domain::config::KeymapEntry;
-using SensorCalibration = midismith::sensor_linearization::SensorCalibration;
+using SensorCalibration = midismith::calibration::SensorCalibration;
 using DataSegmentAckStatus = midismith::protocol::DataSegmentAckStatus;
 
 // --- Mock stubs ---

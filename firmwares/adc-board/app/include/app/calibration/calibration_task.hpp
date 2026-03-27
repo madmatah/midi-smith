@@ -4,22 +4,24 @@
 #include <cstdint>
 #include <variant>
 
-#include "app/analog/acquisition_control_requirements.hpp"
 #include "app/config/config.hpp"
 #include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
+#include "calibration/board_calibration_data.hpp"
 #include "os-types/queue_requirements.hpp"
 #include "os-types/timer_requirements.hpp"
+#include "protocol-can/can_calibration_segment_packer.hpp"
 #include "protocol/messages.hpp"
 
 namespace midismith::adc_board::app::calibration {
 
 class CalibrationTask {
  public:
-  using CalibrationArray =
-      midismith::adc_board::app::analog::AcquisitionControlRequirements::CalibrationArray;
+  using CalibrationArray = midismith::calibration::BoardCalibrationData<
+      midismith::adc_board::app::config::sensors::kSensorCount>;
   using SegmentPayload =
-      std::array<std::uint8_t, midismith::protocol::CalibrationDataSegment::kPayloadSizeBytes>;
+      std::array<std::uint8_t,
+                 midismith::protocol_can::CanCalibrationSegmentPacker::kSegmentPayloadSizeBytes>;
 
   struct StartTransfer {
     CalibrationArray calibration_data;
@@ -32,10 +34,10 @@ class CalibrationTask {
   using Event = std::variant<StartTransfer, AckReceived, TimeoutTick>;
 
   static constexpr std::size_t kSensorsPerSegment =
-      midismith::protocol::CalibrationDataSegment::kSensorsPerSegment;
+      midismith::protocol_can::CanCalibrationSegmentPacker::kCalibrationsPerSegment;
   static constexpr std::size_t kTotalSegments =
-      (midismith::adc_board::app::config::sensors::kSensorCount + kSensorsPerSegment - 1) /
-      kSensorsPerSegment;
+      midismith::protocol_can::CanCalibrationSegmentPacker::ComputeTotalSegments(
+          midismith::adc_board::app::config::sensors::kSensorCount);
   static constexpr std::uint8_t kMaxRetries =
       static_cast<std::uint8_t>(midismith::adc_board::app::config::kCalibrationMaxRetries);
 

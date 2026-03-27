@@ -11,8 +11,7 @@ namespace midismith::adc_board::app::composition {
 namespace {
 
 using CalibrationTask = midismith::adc_board::app::calibration::CalibrationTask;
-using CalibrationArray =
-    midismith::adc_board::app::analog::AcquisitionControlRequirements::CalibrationArray;
+using CalibrationArray = CalibrationTask::CalibrationArray;
 
 midismith::os::Queue<CalibrationArray, 1>& CalibrationResultQueue() noexcept {
   static midismith::os::Queue<CalibrationArray, 1> queue;
