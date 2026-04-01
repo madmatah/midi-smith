@@ -49,5 +49,6 @@ constexpr uint32_t kCalibrationMaxRetries = 3;
 // The analog task responds between DMA interrupts (~1ms); 50ms gives ample margin
 // without starving other CAN traffic meaningfully.
 constexpr uint32_t kCalibrationDumpResultTimeoutMs = 50;
+constexpr uint32_t kCalibrationLoadSegmentTimeoutMs = 500;
 
 }  // namespace midismith::adc_board::app::config
