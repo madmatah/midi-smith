@@ -6,7 +6,6 @@
 #include "os/task.hpp"
 #include "os/timer.hpp"
 #include "protocol/peer_monitor_observer_requirements.hpp"
-#include "protocol/peer_status.hpp"
 
 namespace midismith::adc_board::app::composition {
 
@@ -31,12 +30,6 @@ void OnTimeoutCheckTick(void* context) noexcept {
   queue->Send(Event{Task::TimeoutCheckTick{}}, midismith::os::kNoWait);
 }
 
-class NullPeerMonitorObserver final : public midismith::protocol::PeerMonitorObserverRequirements {
- public:
-  void OnPeerHeartbeat(midismith::protocol::DeviceState /*device_state*/) noexcept override {}
-  void OnPeerLost() noexcept override {}
-};
-
 }  // namespace
 
 SupervisorContext CreateSupervisorContext() noexcept {
@@ -44,12 +37,12 @@ SupervisorContext CreateSupervisorContext() noexcept {
   return SupervisorContext{event_queue};
 }
 
-void CreateSupervisorSubsystem(messaging::AdcBoardMessageSenderRequirements& sender,
-                               analog::AcquisitionStateRequirements& acquisition_state,
-                               SupervisorContext& ctx) noexcept {
-  static NullPeerMonitorObserver peer_state_observer;
+void CreateSupervisorSubsystem(
+    messaging::AdcBoardMessageSenderRequirements& sender,
+    analog::AcquisitionStateRequirements& acquisition_state, SupervisorContext& ctx,
+    midismith::protocol::PeerMonitorObserverRequirements& peer_observer) noexcept {
   static midismith::os::OsUptimeProvider uptime_provider;
-  static Task supervisor_task(sender, acquisition_state, ctx.event_queue, peer_state_observer,
+  static Task supervisor_task(sender, acquisition_state, ctx.event_queue, peer_observer,
                               uptime_provider, app::config::kHeartbeatTimeoutMs);
   static midismith::os::Timer heartbeat_timer(OnHeartbeatTick, &ctx.event_queue);
   static midismith::os::Timer timeout_check_timer(OnTimeoutCheckTick, &ctx.event_queue);

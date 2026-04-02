@@ -4,10 +4,12 @@
 
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "app/analog/acquisition_state_requirements.hpp"
+#include "app/calibration/calibration_loader.hpp"
 #include "app/calibration/calibration_task.hpp"
 #include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/messaging/adc_inbound_ack_handler.hpp"
+#include "app/messaging/adc_inbound_calibration_data_handler.hpp"
 #include "app/storage/adc_board_persistent_configuration.hpp"
 #include "app/supervisor/adc_supervisor_task.hpp"
 #include "app/telemetry/sensor_rtt_stream_capture.hpp"
@@ -21,6 +23,7 @@
 #include "os-types/queue_requirements.hpp"
 #include "os-types/timer_requirements.hpp"
 #include "protocol-can/can_inbound_decode_stats_requirements.hpp"
+#include "protocol/peer_monitor_observer_requirements.hpp"
 
 namespace midismith::adc_board::app::composition {
 
@@ -63,6 +66,14 @@ struct SupervisorContext {
       event_queue;
 };
 
+struct CalibrationLoadInboundContext {
+  midismith::adc_board::app::messaging::AdcInboundCalibrationDataHandler& handler;
+};
+
+struct CalibrationLoadContext {
+  midismith::adc_board::app::calibration::CalibrationLoader& loader;
+};
+
 struct CalibrationContext {
   midismith::os::QueueRequirements<
       midismith::adc_board::app::calibration::CalibrationTask::CalibrationArray>&
@@ -84,7 +95,8 @@ CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::adc_board::app::analog::AcquisitionControlRequirements& acquisition_control,
     midismith::adc_board::app::storage::AdcBoardPersistentConfiguration& persistent_config,
-    SupervisorContext& supervisor_ctx, CalibrationContext& calibration_context) noexcept;
+    SupervisorContext& supervisor_ctx, CalibrationContext& calibration_context,
+    CalibrationLoadInboundContext& calibration_load_inbound_ctx) noexcept;
 ConfigContext CreateConfigSubsystem() noexcept;
 AdcControlContext CreateAdcControlContext() noexcept;
 
@@ -107,9 +119,15 @@ SupervisorContext CreateSupervisorContext() noexcept;
 void CreateSupervisorSubsystem(
     midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& sender,
     midismith::adc_board::app::analog::AcquisitionStateRequirements& acquisition_state,
-    SupervisorContext& ctx) noexcept;
+    SupervisorContext& ctx,
+    midismith::protocol::PeerMonitorObserverRequirements& peer_observer) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
                           SensorRttTelemetryControlContext& sensor_rtt) noexcept;
+
+CalibrationLoadInboundContext CreateCalibrationLoadInboundContext() noexcept;
+CalibrationLoadContext CreateCalibrationLoadSubsystem(
+    midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& sender,
+    SupervisorContext& supervisor_ctx) noexcept;
 
 }  // namespace midismith::adc_board::app::composition

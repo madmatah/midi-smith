@@ -51,4 +51,9 @@ constexpr uint32_t kCalibrationMaxRetries = 3;
 constexpr uint32_t kCalibrationDumpResultTimeoutMs = 50;
 constexpr uint32_t kCalibrationLoadSegmentTimeoutMs = 500;
 
+// Calibration load from main-board at init.
+// 2000ms absorbs the boot storm: 8 boards request sequentially (~50ms each).
+constexpr uint32_t kCalibrationLoadTimeoutMs = 2000;
+constexpr uint32_t kCalibrationLoadMaxRetries = 3;
+
 }  // namespace midismith::adc_board::app::config
