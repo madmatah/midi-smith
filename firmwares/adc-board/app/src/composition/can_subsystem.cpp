@@ -31,7 +31,8 @@ CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::adc_board::app::analog::AcquisitionControlRequirements& acquisition_control,
     midismith::adc_board::app::storage::AdcBoardPersistentConfiguration& persistent_config,
-    SupervisorContext& supervisor_ctx, CalibrationContext& calibration_context) noexcept {
+    SupervisorContext& supervisor_ctx, CalibrationContext& calibration_context,
+    CalibrationLoadInboundContext& calibration_load_inbound_ctx) noexcept {
   static midismith::os::Queue<midismith::bsp::can::FdcanFrame,
                               app::config::CAN_RECEIVE_QUEUE_CAPACITY>
       receive_queue;
@@ -44,7 +45,8 @@ CanContext CreateCanSubsystem(
   static midismith::adc_board::app::messaging::AdcInboundHeartbeatHandler inbound_heartbeat_handler(
       supervisor_ctx.event_queue);
   static midismith::protocol::handlers::InboundMessageDispatcher inbound_dispatcher(
-      inbound_command_handler, inbound_heartbeat_handler, calibration_context.ack_handler);
+      inbound_command_handler, inbound_heartbeat_handler, calibration_context.ack_handler,
+      calibration_load_inbound_ctx.handler);
   static midismith::protocol_can::CanToProtocolAdapter inbound_adapter(inbound_dispatcher);
   static midismith::can_broker::CanTask can_task(receive_queue, inbound_adapter);
   static midismith::adc_board::app::can::CanFilterUpdater can_filter_updater(transceiver);

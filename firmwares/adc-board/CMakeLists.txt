@@ -56,6 +56,7 @@ if(HOST_TESTS)
         app/src/supervisor/adc_supervisor_task.cpp
         app/src/calibration/calibration_task.cpp
         app/src/calibration/calibration_data_receiver.cpp
+        app/src/calibration/calibration_loader.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
         app/include
@@ -120,6 +121,8 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/calibration/calibration_task.cpp
     app/src/calibration/calibration_data_receiver.cpp
     app/src/composition/calibration_subsystem.cpp
+    app/src/calibration/calibration_loader.cpp
+    app/src/composition/calibration_load_subsystem.cpp
     app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
     domain/src/config/adc_board_config.cpp
     bsp/src/board.cpp

@@ -40,16 +40,24 @@ void Application::create_tasks() noexcept {
   midismith::adc_board::app::composition::CalibrationContext calibration_context =
       midismith::adc_board::app::composition::CreateCalibrationContext(adc_control.control);
 
+  midismith::adc_board::app::composition::CalibrationLoadInboundContext
+      calibration_load_inbound_ctx =
+          midismith::adc_board::app::composition::CreateCalibrationLoadInboundContext();
+
   midismith::adc_board::app::composition::CanContext can_context =
       midismith::adc_board::app::composition::CreateCanSubsystem(
-          logger, adc_control.control, config.adc_board_config, supervisor_ctx,
-          calibration_context);
+          logger, adc_control.control, config.adc_board_config, supervisor_ctx, calibration_context,
+          calibration_load_inbound_ctx);
 
   static midismith::adc_board::app::messaging::AdcBoardCanMessageSender can_message_sender(
       can_context.transceiver, config.adc_board_config.active_config().data.can_board_id);
 
   midismith::adc_board::app::composition::LaunchCalibrationTask(can_message_sender,
                                                                 calibration_context);
+
+  midismith::adc_board::app::composition::CalibrationLoadContext calibration_load_ctx =
+      midismith::adc_board::app::composition::CreateCalibrationLoadSubsystem(can_message_sender,
+                                                                             supervisor_ctx);
 
   (void) midismith::adc_board::app::composition::CreateAnalogSubsystem(
       sensor_rtt_capture, logger, can_message_sender, calibration_context);
@@ -63,7 +71,7 @@ void Application::create_tasks() noexcept {
       midismith::adc_board::app::composition::CreateSensorRttTelemetrySubsystem(sensors, adc_state,
                                                                                 sensor_rtt_capture);
   midismith::adc_board::app::composition::CreateSupervisorSubsystem(
-      can_message_sender, adc_state.state, supervisor_ctx);
+      can_message_sender, adc_state.state, supervisor_ctx, calibration_load_ctx.loader);
   midismith::adc_board::app::composition::CreateShellSubsystem(console, can_context, config,
                                                                adc_control, sensors, sensor_rtt);
 }

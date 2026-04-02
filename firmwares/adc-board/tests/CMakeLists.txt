@@ -25,6 +25,7 @@ midismith_add_firmware_test(NAME adc
         app/analog/signal_processing/calibration_workflow_stages.test.cpp
         app/calibration/calibration_task_test.cpp
         app/calibration/calibration_data_receiver.test.cpp
+        app/calibration/calibration_loader.test.cpp
     LINK_LIBRARIES adc_domain adc_app_lib
     USE_FAKEIT
 )
