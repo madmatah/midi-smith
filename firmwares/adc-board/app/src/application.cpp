@@ -2,7 +2,6 @@
 
 #include "app/calibration/calibration_manager.hpp"
 #include "app/composition/subsystems.hpp"
-#include "app/config/analog_acquisition.hpp"
 #include "app/config/config.hpp"
 #include "app/config/sensor_linearization.hpp"
 #include "app/messaging/adc_board_can_message_sender.hpp"
@@ -27,7 +26,9 @@ void Application::create_tasks() noexcept {
       ::midismith::adc_board::app::telemetry::DefaultSensorRttTelemetryOutputHz());
 
   // Console Stream (USART1)
-  alignas(32) BSP_AXI_SRAM_NOCACHE static midismith::adc_board::bsp::serial::UartStream<256, 1024>
+  alignas(32) BSP_AXI_SRAM_NOCACHE static midismith::adc_board::bsp::serial::UartStream<
+      midismith::adc_board::app::config::kConsoleUartRxBufferSize,
+      midismith::adc_board::app::config::kConsoleUartTxFifoSize>
       console_stream(huart1);
   (void) console_stream.StartRxDma();
 
