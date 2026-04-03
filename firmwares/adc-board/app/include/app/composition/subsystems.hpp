@@ -1,12 +1,13 @@
 #pragma once
 
-#include <array>
-
 #include "app/analog/acquisition_control_requirements.hpp"
 #include "app/analog/acquisition_state_requirements.hpp"
+#include "app/analog/lookup_table_regeneration_requirements.hpp"
+#include "app/calibration/calibration_apply_requirements.hpp"
 #include "app/calibration/calibration_loader.hpp"
+#include "app/calibration/calibration_manager.hpp"
+#include "app/calibration/calibration_query_requirements.hpp"
 #include "app/calibration/calibration_task.hpp"
-#include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/messaging/adc_inbound_ack_handler.hpp"
 #include "app/messaging/adc_inbound_calibration_data_handler.hpp"
@@ -16,7 +17,6 @@
 #include "app/telemetry/sensor_rtt_telemetry_control_requirements.hpp"
 #include "bsp-types/can/can_bus_stats_requirements.hpp"
 #include "bsp-types/can/fdcan_transceiver_requirements.hpp"
-#include "calibration/board_calibration_data.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "io/stream_requirements.hpp"
 #include "logging/logger_requirements.hpp"
@@ -108,9 +108,10 @@ AdcControlContext CreateAnalogSubsystem(
 AdcStateContext CreateAdcStateContext() noexcept;
 SensorsContext CreateSensorsContext() noexcept;
 
-bool RegenerateAnalogSensorLookupTables(
-    const midismith::calibration::BoardCalibrationData<
-        midismith::adc_board::app::config::sensors::kSensorCount>& calibration_by_index) noexcept;
+midismith::adc_board::app::analog::LookupTableRegenerationRequirements&
+GetLookupTableRegenerator() noexcept;
+
+midismith::adc_board::app::calibration::CalibrationManager& CreateCalibrationManager() noexcept;
 
 SensorRttTelemetryControlContext CreateSensorRttTelemetrySubsystem(
     SensorsContext& sensors, AdcStateContext& adc_state,
@@ -123,11 +124,15 @@ void CreateSupervisorSubsystem(
     midismith::protocol::PeerMonitorObserverRequirements& peer_observer) noexcept;
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
-                          SensorRttTelemetryControlContext& sensor_rtt) noexcept;
+                          SensorRttTelemetryControlContext& sensor_rtt,
+                          midismith::adc_board::app::calibration::CalibrationQueryRequirements&
+                              calibration_query) noexcept;
 
 CalibrationLoadInboundContext CreateCalibrationLoadInboundContext() noexcept;
 CalibrationLoadContext CreateCalibrationLoadSubsystem(
     midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& sender,
-    SupervisorContext& supervisor_ctx) noexcept;
+    SupervisorContext& supervisor_ctx,
+    midismith::adc_board::app::calibration::CalibrationApplyRequirements&
+        calibration_apply) noexcept;
 
 }  // namespace midismith::adc_board::app::composition

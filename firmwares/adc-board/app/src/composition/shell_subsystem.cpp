@@ -1,8 +1,10 @@
 #include <cstdint>
 #include <new>
 
+#include "app/calibration/calibration_query_requirements.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/shell/commands/adc_command.hpp"
+#include "app/shell/commands/calibration_command.hpp"
 #include "app/shell/commands/sensor_rtt_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
@@ -21,7 +23,9 @@ namespace midismith::adc_board::app::composition {
 
 void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContext& config,
                           AdcControlContext& adc_control, SensorsContext& sensors,
-                          SensorRttTelemetryControlContext& sensor_rtt) noexcept {
+                          SensorRttTelemetryControlContext& sensor_rtt,
+                          midismith::adc_board::app::calibration::CalibrationQueryRequirements&
+                              calibration_query) noexcept {
   static const midismith::shell::ShellConfig shell_config{"adc-board> "};
 
   alignas(midismith::adc_board::app::tasks::ShellTask) static std::uint8_t
@@ -57,6 +61,10 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContex
     static midismith::adc_board::app::shell::commands::SensorRttCommand sensor_rtt_cmd(
         sensors.registry, sensor_rtt.control);
     shell_task_ptr->RegisterCommand(sensor_rtt_cmd);
+
+    static midismith::adc_board::app::shell::commands::CalibrationCommand calibration_cmd(
+        calibration_query);
+    shell_task_ptr->RegisterCommand(calibration_cmd);
 
     static midismith::bsp::can::CanBusStatsProvider can_stats_provider(can.stats);
     static midismith::protocol_can::CanInboundDecodeStatsProvider can_inbound_stats_provider(

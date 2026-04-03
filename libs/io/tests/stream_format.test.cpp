@@ -129,6 +129,50 @@ TEST_CASE("The StreamFormat utility") {
     }
   }
 
+  SECTION("The WriteFloat() function") {
+    SECTION("When value has no fractional part") {
+      SECTION("Should write integer followed by dot and trailing zeros") {
+        midismith::io::WriteFloat<3>(out, 7.0f);
+        REQUIRE(out.Output() == "7.000");
+      }
+    }
+
+    SECTION("When fractional part needs no leading zeros") {
+      SECTION("Should write integer dot fraction") {
+        midismith::io::WriteFloat<3>(out, 0.642f);
+        REQUIRE(out.Output() == "0.642");
+      }
+    }
+
+    SECTION("When fractional part needs one leading zero") {
+      SECTION("Should write integer dot zero fraction") {
+        midismith::io::WriteFloat<3>(out, 0.050f);
+        REQUIRE(out.Output() == "0.050");
+      }
+    }
+
+    SECTION("When fractional part needs two leading zeros") {
+      SECTION("Should write integer dot two zeros fraction") {
+        midismith::io::WriteFloat<3>(out, 0.005f);
+        REQUIRE(out.Output() == "0.005");
+      }
+    }
+
+    SECTION("When kDecimalPlaces is 2") {
+      SECTION("Should write two decimal digits") {
+        midismith::io::WriteFloat<2>(out, 1.5f);
+        REQUIRE(out.Output() == "1.50");
+      }
+    }
+
+    SECTION("When kDecimalPlaces is 1") {
+      SECTION("Should write one decimal digit") {
+        midismith::io::WriteFloat<1>(out, 3.9f);
+        REQUIRE(out.Output() == "3.9");
+      }
+    }
+  }
+
   SECTION("The WriteBool() function") {
     SECTION("When value is true") {
       SECTION("Should write 'true'") {

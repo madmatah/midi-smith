@@ -4,9 +4,12 @@
 #include <functional>
 #include <utility>
 
+#include "app/analog/lookup_table_regeneration_requirements.hpp"
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
+#include "app/calibration/calibration_manager.hpp"
 #include "app/composition/subsystems.hpp"
+#include "app/config/sensor_linearization.hpp"
 #include "app/config/sensors.hpp"
 #include "app/config/sensors_validation.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
@@ -90,8 +93,8 @@ constexpr std::size_t kSensorCount = midismith::adc_board::app::config::sensors:
 
 std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
 LookupTablesA() noexcept {
-  // Potential optimization (-23KB DTCMRAM): move to AXI SRAM by adding BSP_AXI_SRAM prefix
-  static std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>
+  BSP_AXI_SRAM static std::array<LookupTable,
+                                 midismith::adc_board::app::config::sensors::kSensorCount>
       lookup_tables_a{};
   return lookup_tables_a;
 }
@@ -104,6 +107,22 @@ LinearizerConfigurationsA() noexcept {
   return configurations_a;
 }
 
+std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
+LookupTablesB() noexcept {
+  BSP_AXI_SRAM static std::array<LookupTable,
+                                 midismith::adc_board::app::config::sensors::kSensorCount>
+      lookup_tables_b{};
+  return lookup_tables_b;
+}
+
+std::array<LinearizerConfiguration, midismith::adc_board::app::config::sensors::kSensorCount>&
+LinearizerConfigurationsB() noexcept {
+  static std::array<LinearizerConfiguration,
+                    midismith::adc_board::app::config::sensors::kSensorCount>
+      configurations_b{};
+  return configurations_b;
+}
+
 std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>&
 ProcessorsArray() noexcept {
   static std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>
@@ -111,39 +130,38 @@ ProcessorsArray() noexcept {
   return processors;
 }
 
-void GenerateAnalogSensorLookupTables(
-    std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
-    std::array<LookupTable, midismith::adc_board::app::config::sensors::kSensorCount>&
-        lookup_tables,
-    std::array<LinearizerConfiguration, midismith::adc_board::app::config::sensors::kSensorCount>&
-        configurations,
-    const midismith::calibration::BoardCalibrationData<
-        midismith::adc_board::app::config::sensors::kSensorCount>& calibration_by_index) noexcept {
-  const auto sensorResponseCurve =
-      midismith::adc_board::app::config::kSensorResponseCurveProvider();
-  for (std::size_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
+class AnalogLookupTableRegenerator final
+    : public midismith::adc_board::app::analog::LookupTableRegenerationRequirements {
+ public:
+  void RegenerateSensor(
+      std::uint8_t sensor_index,
+      const midismith::calibration::SensorCalibration& calibration) noexcept override {
+    const bool write_to_a = !buffer_a_is_active_[sensor_index];
+
+    LookupTable& target_lut =
+        write_to_a ? LookupTablesA()[sensor_index] : LookupTablesB()[sensor_index];
+    LinearizerConfiguration& target_config = write_to_a ? LinearizerConfigurationsA()[sensor_index]
+                                                        : LinearizerConfigurationsB()[sensor_index];
+
+    const auto curve = midismith::adc_board::app::config::kSensorResponseCurveProvider();
     const auto result = midismith::sensor_linearization::LookupTableGenerator::Generate(
-        sensorResponseCurve, calibration_by_index[i], lookup_tables[i]);
-
-    configurations[i] = result.configuration;
-    processors[i].SetLinearizerConfiguration(&configurations[i]);
-  }
-}
-
-void ConfigureAnalogSensorProcessorsOnce() noexcept {
-  static bool configured = false;
-  if (configured) {
-    return;
+        curve, calibration, target_lut);
+    target_config = result.configuration;
+    ProcessorsArray()[sensor_index].SetLinearizerConfiguration(&target_config);
+    buffer_a_is_active_[sensor_index] = write_to_a;
   }
 
-  auto& processors = ProcessorsArray();
-  auto& lookup_tables_a = LookupTablesA();
-  auto& configurations_a = LinearizerConfigurationsA();
-  GenerateAnalogSensorLookupTables(processors, lookup_tables_a, configurations_a,
-                                   midismith::adc_board::app::config::kSensorCalibrationByIndex);
+  void RegenerateAll(
+      const midismith::calibration::BoardCalibrationData<
+          midismith::adc_board::app::config::sensors::kSensorCount>& data) noexcept override {
+    for (std::uint8_t i = 0; i < midismith::adc_board::app::config::sensors::kSensorCount; ++i) {
+      RegenerateSensor(i, data[i]);
+    }
+  }
 
-  configured = true;
-}
+ private:
+  bool buffer_a_is_active_[midismith::adc_board::app::config::sensors::kSensorCount]{};
+};
 
 void AttachSensorRttStreamCaptureToProcessors(
     std::array<Processor, midismith::adc_board::app::config::sensors::kSensorCount>& processors,
@@ -263,18 +281,16 @@ SensorsContext CreateSensorsContext() noexcept {
   return SensorsContext{SensorsRegistry()};
 }
 
-bool RegenerateAnalogSensorLookupTables(
-    const midismith::calibration::BoardCalibrationData<
-        midismith::adc_board::app::config::sensors::kSensorCount>& calibration_by_index) noexcept {
-  if (AdcState() != midismith::adc_board::app::analog::AcquisitionState::kDisabled) {
-    return false;
-  }
+midismith::adc_board::app::analog::LookupTableRegenerationRequirements&
+GetLookupTableRegenerator() noexcept {
+  static AnalogLookupTableRegenerator regenerator;
+  return regenerator;
+}
 
-  auto& processors = ProcessorsArray();
-  auto& lookup_tables = LookupTablesA();
-  auto& configurations = LinearizerConfigurationsA();
-  GenerateAnalogSensorLookupTables(processors, lookup_tables, configurations, calibration_by_index);
-  return true;
+midismith::adc_board::app::calibration::CalibrationManager& CreateCalibrationManager() noexcept {
+  static midismith::adc_board::app::calibration::CalibrationManager manager(
+      GetLookupTableRegenerator());
+  return manager;
 }
 
 AdcControlContext CreateAnalogSubsystem(
@@ -296,7 +312,6 @@ AdcControlContext CreateAnalogSubsystem(
                     midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence,
                 "ADC3 rank count must match AdcDma ranks");
 
-  ConfigureAnalogSensorProcessorsOnce();
   auto& processors = ProcessorsArray();
   AttachSensorRttStreamCaptureToProcessors(processors, capture);
   AttachSensorEventHandlersToProcessors(processors, logger, message_sender);

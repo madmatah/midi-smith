@@ -10,11 +10,12 @@ CalibrationLoader::CalibrationLoader(
     midismith::os::QueueRequirements<
         midismith::adc_board::app::supervisor::AdcSupervisorTask::Event>& supervisor_queue,
     midismith::os::TimerRequirements& request_retry_timer,
-    LookupTableRegenerator regenerate_lookup_tables) noexcept
+    midismith::adc_board::app::calibration::CalibrationApplyRequirements&
+        calibration_apply) noexcept
     : sender_(sender),
       supervisor_queue_(supervisor_queue),
       request_retry_timer_(request_retry_timer),
-      regenerate_lookup_tables_(regenerate_lookup_tables) {}
+      calibration_apply_(calibration_apply) {}
 
 void CalibrationLoader::SetReceiver(
     midismith::adc_board::app::calibration::CalibrationDataReceiver& receiver) noexcept {
@@ -42,9 +43,7 @@ void CalibrationLoader::OnCalibrationDataReceived(const SensorCalibrationArray& 
   request_retry_timer_.Stop();
   SensorCalibrationArray merged_data = data;
   midismith::adc_board::app::calibration::MergeDistanceValues(merged_data);
-  if (regenerate_lookup_tables_ != nullptr) {
-    regenerate_lookup_tables_(merged_data);
-  }
+  calibration_apply_.ApplyCalibration(merged_data);
   CompleteLoading();
 }
 

@@ -50,6 +50,7 @@ if(HOST_TESTS)
         app/src/can/can_filter_updater.cpp
         app/src/storage/adc_board_persistent_configuration.cpp
         app/src/shell/commands/sensor_rtt_command.cpp
+        app/src/shell/commands/calibration_command.cpp
         app/src/telemetry/sensor_rtt_schema_frame_builder.cpp
         app/src/messaging/adc_board_can_message_sender.cpp
         app/src/messaging/adc_inbound_command_handler.cpp
@@ -57,6 +58,7 @@ if(HOST_TESTS)
         app/src/calibration/calibration_task.cpp
         app/src/calibration/calibration_data_receiver.cpp
         app/src/calibration/calibration_loader.cpp
+        app/src/calibration/calibration_manager.cpp
     )
     target_include_directories(adc_app_lib PUBLIC
         app/include
@@ -138,6 +140,8 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     bsp/src/serial/uart_stream_registry.cpp
     app/src/shell/commands/adc_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
+    app/src/shell/commands/calibration_command.cpp
+    app/src/calibration/calibration_manager.cpp
 )
 
 

@@ -26,7 +26,9 @@ CalibrationLoadInboundContext CreateCalibrationLoadInboundContext() noexcept {
 
 CalibrationLoadContext CreateCalibrationLoadSubsystem(
     midismith::adc_board::app::messaging::AdcBoardMessageSenderRequirements& sender,
-    SupervisorContext& supervisor_ctx) noexcept {
+    SupervisorContext& supervisor_ctx,
+    midismith::adc_board::app::calibration::CalibrationApplyRequirements&
+        calibration_apply) noexcept {
   alignas(Loader) static std::uint8_t loader_storage[sizeof(Loader)];
   alignas(Receiver) static std::uint8_t receiver_storage[sizeof(Receiver)];
 
@@ -38,8 +40,8 @@ CalibrationLoadContext CreateCalibrationLoadSubsystem(
 
   static bool constructed = false;
   if (!constructed) {
-    new (loader_storage) Loader(sender, supervisor_ctx.event_queue, request_retry_timer,
-                                RegenerateAnalogSensorLookupTables);
+    new (loader_storage)
+        Loader(sender, supervisor_ctx.event_queue, request_retry_timer, calibration_apply);
     new (receiver_storage) Receiver(sender, *loader_ptr, segment_timeout_timer);
 
     loader_ptr->SetReceiver(*receiver_ptr);

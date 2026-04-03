@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 
+#include "app/calibration/calibration_apply_requirements.hpp"
 #include "app/calibration/calibration_data_receiver.hpp"
 #include "app/calibration/calibration_data_receiver_observer_requirements.hpp"
 #include "app/config/config.hpp"
@@ -150,14 +151,19 @@ class RecordingSupervisorQueue final : public midismith::os::QueueRequirements<S
   std::vector<SupervisorEvent> sent_events_;
 };
 
-bool recording_regenerate_called = false;
-SensorCalibrationArray last_regenerate_data{};
+class RecordingCalibrationApply final
+    : public midismith::adc_board::app::calibration::CalibrationApplyRequirements {
+ public:
+  void ApplyCalibration(const SensorCalibrationArray& data) noexcept override {
+    apply_called = true;
+    last_data = data;
+  }
+  void ApplySensorCalibration(std::uint8_t,
+                              const midismith::calibration::SensorCalibration&) noexcept override {}
 
-bool RecordingRegenerateLookupTables(const SensorCalibrationArray& data) noexcept {
-  recording_regenerate_called = true;
-  last_regenerate_data = data;
-  return true;
-}
+  bool apply_called = false;
+  SensorCalibrationArray last_data{};
+};
 
 SensorCalibrationArray MakeKnownCalibrationArray() noexcept {
   SensorCalibrationArray data{};
@@ -185,13 +191,12 @@ struct TestFixture {
   RecordingSupervisorQueue supervisor_queue;
   RecordingTimer retry_timer;
   RecordingTimer segment_timeout_timer;
-  Loader loader{sender, supervisor_queue, retry_timer, RecordingRegenerateLookupTables};
+  RecordingCalibrationApply calibration_apply;
+  Loader loader{sender, supervisor_queue, retry_timer, calibration_apply};
   CalibrationDataReceiver receiver{sender, loader, segment_timeout_timer};
 
   TestFixture() noexcept {
     loader.SetReceiver(receiver);
-    recording_regenerate_called = false;
-    last_regenerate_data = {};
   }
 
   void TransitionToReceiving() noexcept {
@@ -317,13 +322,13 @@ TEST_CASE("The CalibrationLoader class") {
         REQUIRE(f.retry_timer.stop_count() > 0);
       }
 
-      SECTION("Should call RegenerateAnalogSensorLookupTables with merged data") {
-        REQUIRE(recording_regenerate_called);
-        REQUIRE(last_regenerate_data[0].rest_distance_mm ==
+      SECTION("Should call ApplyCalibration with merged data") {
+        REQUIRE(f.calibration_apply.apply_called);
+        REQUIRE(f.calibration_apply.last_data[0].rest_distance_mm ==
                 midismith::adc_board::app::config::kDefaultSensorCalibration.rest_distance_mm);
-        REQUIRE(last_regenerate_data[0].strike_distance_mm ==
+        REQUIRE(f.calibration_apply.last_data[0].strike_distance_mm ==
                 midismith::adc_board::app::config::kDefaultSensorCalibration.strike_distance_mm);
-        REQUIRE(last_regenerate_data[0].rest_current_ma == known_data[0].rest_current_ma);
+        REQUIRE(f.calibration_apply.last_data[0].rest_current_ma == known_data[0].rest_current_ma);
       }
 
       SECTION("Should post InitializationComplete to supervisor queue") {
@@ -349,8 +354,8 @@ TEST_CASE("The CalibrationLoader class") {
         REQUIRE(f.retry_timer.stop_count() > 0);
       }
 
-      SECTION("Should not call RegenerateAnalogSensorLookupTables") {
-        REQUIRE_FALSE(recording_regenerate_called);
+      SECTION("Should not call ApplyCalibration") {
+        REQUIRE_FALSE(f.calibration_apply.apply_called);
       }
 
       SECTION("Should post InitializationComplete to supervisor queue") {
@@ -400,8 +405,8 @@ TEST_CASE("The CalibrationLoader class") {
         REQUIRE(f.loader.state() == State::kComplete);
       }
 
-      SECTION("Should not call RegenerateAnalogSensorLookupTables") {
-        REQUIRE_FALSE(recording_regenerate_called);
+      SECTION("Should not call ApplyCalibration") {
+        REQUIRE_FALSE(f.calibration_apply.apply_called);
       }
     }
   }
@@ -426,7 +431,7 @@ TEST_CASE("The CalibrationLoader class") {
 
     REQUIRE(f.loader.state() == State::kComplete);
     REQUIRE(f.supervisor_queue.initialization_complete_count() == 1);
-    REQUIRE(recording_regenerate_called);
+    REQUIRE(f.calibration_apply.apply_called);
   }
 }
 
