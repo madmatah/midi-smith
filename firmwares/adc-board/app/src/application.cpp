@@ -1,8 +1,10 @@
 #include "app/application.hpp"
 
+#include "app/calibration/calibration_manager.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/analog_acquisition.hpp"
 #include "app/config/config.hpp"
+#include "app/config/sensor_linearization.hpp"
 #include "app/messaging/adc_board_can_message_sender.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
 #include "bsp/board.hpp"
@@ -55,12 +57,17 @@ void Application::create_tasks() noexcept {
   midismith::adc_board::app::composition::LaunchCalibrationTask(can_message_sender,
                                                                 calibration_context);
 
-  midismith::adc_board::app::composition::CalibrationLoadContext calibration_load_ctx =
-      midismith::adc_board::app::composition::CreateCalibrationLoadSubsystem(can_message_sender,
-                                                                             supervisor_ctx);
-
   (void) midismith::adc_board::app::composition::CreateAnalogSubsystem(
       sensor_rtt_capture, logger, can_message_sender, calibration_context);
+
+  midismith::adc_board::app::calibration::CalibrationManager& calibration_manager =
+      midismith::adc_board::app::composition::CreateCalibrationManager();
+  calibration_manager.ApplyCalibration(
+      midismith::adc_board::app::config::kSensorCalibrationByIndex);
+
+  midismith::adc_board::app::composition::CalibrationLoadContext calibration_load_ctx =
+      midismith::adc_board::app::composition::CreateCalibrationLoadSubsystem(
+          can_message_sender, supervisor_ctx, calibration_manager);
 
   midismith::adc_board::app::composition::AdcStateContext adc_state =
       midismith::adc_board::app::composition::CreateAdcStateContext();
@@ -72,8 +79,8 @@ void Application::create_tasks() noexcept {
                                                                                 sensor_rtt_capture);
   midismith::adc_board::app::composition::CreateSupervisorSubsystem(
       can_message_sender, adc_state.state, supervisor_ctx, calibration_load_ctx.loader);
-  midismith::adc_board::app::composition::CreateShellSubsystem(console, can_context, config,
-                                                               adc_control, sensors, sensor_rtt);
+  midismith::adc_board::app::composition::CreateShellSubsystem(
+      console, can_context, config, adc_control, sensors, sensor_rtt, calibration_manager);
 }
 
 }  // namespace midismith::adc_board::app

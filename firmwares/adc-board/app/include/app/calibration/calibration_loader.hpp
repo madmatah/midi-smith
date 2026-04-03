@@ -2,21 +2,16 @@
 
 #include <cstdint>
 
+#include "app/calibration/calibration_apply_requirements.hpp"
 #include "app/calibration/calibration_data_receiver.hpp"
 #include "app/calibration/calibration_data_receiver_observer_requirements.hpp"
-#include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/supervisor/adc_supervisor_task.hpp"
-#include "calibration/board_calibration_data.hpp"
 #include "os-types/queue_requirements.hpp"
 #include "os-types/timer_requirements.hpp"
 #include "protocol/peer_monitor_observer_requirements.hpp"
 
 namespace midismith::adc_board::app::calibration {
-
-using LookupTableRegenerator =
-    bool (*)(const midismith::calibration::BoardCalibrationData<
-             midismith::adc_board::app::config::sensors::kSensorCount>&) noexcept;
 
 class CalibrationLoader final
     : public midismith::protocol::PeerMonitorObserverRequirements,
@@ -34,7 +29,8 @@ class CalibrationLoader final
       midismith::os::QueueRequirements<
           midismith::adc_board::app::supervisor::AdcSupervisorTask::Event>& supervisor_queue,
       midismith::os::TimerRequirements& request_retry_timer,
-      LookupTableRegenerator regenerate_lookup_tables) noexcept;
+      midismith::adc_board::app::calibration::CalibrationApplyRequirements&
+          calibration_apply) noexcept;
 
   void SetReceiver(
       midismith::adc_board::app::calibration::CalibrationDataReceiver& receiver) noexcept;
@@ -61,7 +57,7 @@ class CalibrationLoader final
   midismith::os::QueueRequirements<midismith::adc_board::app::supervisor::AdcSupervisorTask::Event>&
       supervisor_queue_;
   midismith::os::TimerRequirements& request_retry_timer_;
-  LookupTableRegenerator regenerate_lookup_tables_;
+  midismith::adc_board::app::calibration::CalibrationApplyRequirements& calibration_apply_;
   midismith::adc_board::app::calibration::CalibrationDataReceiver* receiver_ = nullptr;
 
   State state_{State::kWaitingForPeer};
