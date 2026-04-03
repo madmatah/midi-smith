@@ -33,6 +33,8 @@ constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
 // Shell
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
+constexpr std::size_t kConsoleUartRxBufferSize = 256;
+constexpr std::size_t kConsoleUartTxFifoSize = 2048;
 
 // RTT Telemetry
 constexpr uint32_t RTT_TELEMETRY_SENSOR_CHANNEL = 1;
