@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <variant>
 
+#include "app/calibration/calibration_save_completion_requirements.hpp"
+#include "app/calibration/calibration_save_request_sink_requirements.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
@@ -18,7 +20,7 @@
 
 namespace midismith::main_board::app::calibration {
 
-class CalibrationDataServerTask {
+class CalibrationDataServerTask final : public CalibrationSaveRequestSinkRequirements {
  public:
   using SensorCalibrationArray =
       std::array<midismith::calibration::SensorCalibration,
@@ -38,7 +40,12 @@ class CalibrationDataServerTask {
 
   struct AckTimeout {};
 
-  using Event = std::variant<LoadRequest, AckReceived, AckTimeout>;
+  struct SaveRequest {
+    const midismith::main_board::domain::calibration::CalibrationData* data;
+    CalibrationSaveCompletionRequirements* on_complete;
+  };
+
+  using Event = std::variant<LoadRequest, AckReceived, AckTimeout, SaveRequest>;
 
   static constexpr std::size_t kTotalSegments =
       midismith::protocol_can::CanCalibrationSegmentPacker::ComputeTotalSegments(
@@ -54,6 +61,9 @@ class CalibrationDataServerTask {
 
   void Run() noexcept;
 
+  void RequestSave(const midismith::main_board::domain::calibration::CalibrationData& data,
+                   CalibrationSaveCompletionRequirements& on_complete) noexcept override;
+
   static void OnAckTimeout(void* ctx) noexcept;
 
  private:
@@ -64,6 +74,7 @@ class CalibrationDataServerTask {
   void HandleLoadRequest(const LoadRequest& event) noexcept;
   void HandleAckReceived(const AckReceived& event) noexcept;
   void HandleAckTimeout() noexcept;
+  void HandleSaveRequest(const SaveRequest& event) noexcept;
   void StartTransferForBoard(std::uint8_t board_id) noexcept;
   void SendCurrentSegment() noexcept;
   SegmentPayload PackSegmentPayload(std::size_t segment_index) const noexcept;

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "app/calibration/calibration_save_completion_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
 #include "bsp-types/storage/flash_sector_storage_requirements.hpp"
 #include "domain/calibration/calibration_data.hpp"
@@ -225,6 +226,16 @@ DataSegmentAck MakeAck(std::uint8_t ack_index, DataSegmentAckStatus status) noex
   return ack;
 }
 
+class FakeSaveCompletionCallback final
+    : public midismith::main_board::app::calibration::CalibrationSaveCompletionRequirements {
+ public:
+  void OnSaveComplete() noexcept override {
+    ++completion_count;
+  }
+
+  int completion_count = 0;
+};
+
 }  // namespace
 
 TEST_CASE("The CalibrationDataServerTask class") {
@@ -420,6 +431,21 @@ TEST_CASE("The CalibrationDataServerTask class") {
 
         REQUIRE(sender.segment_call_count() == 1);
         REQUIRE(timer.stop_count() == 0);
+      }
+    }
+
+    SECTION("When a SaveRequest is received") {
+      SECTION("Should call store.Save() then invoke the completion callback") {
+        CalibrationData data_to_save = MakeCalibrationDataForBoard(1);
+        FakeSaveCompletionCallback completion;
+        task.RequestSave(data_to_save, completion);
+
+        task.Run();
+
+        REQUIRE(completion.completion_count == 1);
+        const auto* cached = store.cached_calibration();
+        REQUIRE(cached != nullptr);
+        REQUIRE(cached->board_data_valid[0] == true);
       }
     }
 

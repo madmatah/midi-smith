@@ -18,22 +18,42 @@ Stm32SpiFlash::Stm32SpiFlash(const Configuration& configuration) noexcept
   EndTransaction();
 }
 
+void Stm32SpiFlash::SetMutex(midismith::os::MutexRequirements& mutex) noexcept {
+  mutex_ = &mutex;
+}
+
+void Stm32SpiFlash::AcquireBus() noexcept {
+  if (mutex_ != nullptr) {
+    mutex_->Lock();
+  }
+}
+
+void Stm32SpiFlash::ReleaseBus() noexcept {
+  if (mutex_ != nullptr) {
+    mutex_->Unlock();
+  }
+}
+
 bool Stm32SpiFlash::Read(std::uint32_t address, void* buffer, std::size_t size_bytes) noexcept {
+  AcquireBus();
   BeginTransaction();
   std::uint8_t command_buffer[4] = {
       kCommandReadData, static_cast<std::uint8_t>((address >> 16) & 0xFF),
       static_cast<std::uint8_t>((address >> 8) & 0xFF), static_cast<std::uint8_t>(address & 0xFF)};
   if (!Transmit(command_buffer, 4)) {
     EndTransaction();
+    ReleaseBus();
     return false;
   }
   bool is_success = Receive(static_cast<std::uint8_t*>(buffer), size_bytes);
   EndTransaction();
+  ReleaseBus();
   return is_success;
 }
 
 bool Stm32SpiFlash::Write(std::uint32_t address, const void* data,
                           std::size_t size_bytes) noexcept {
+  AcquireBus();
   std::size_t remaining_bytes_to_write = size_bytes;
   std::uint32_t current_address = address;
   const std::uint8_t* source_data_pointer = static_cast<const std::uint8_t*>(data);
@@ -44,6 +64,7 @@ bool Stm32SpiFlash::Write(std::uint32_t address, const void* data,
         std::min(remaining_bytes_to_write, page_size_bytes() - page_offset_bytes);
 
     if (!EnableWriteOperations()) {
+      ReleaseBus();
       return false;
     }
 
@@ -54,11 +75,13 @@ bool Stm32SpiFlash::Write(std::uint32_t address, const void* data,
                                       static_cast<std::uint8_t>(current_address & 0xFF)};
     if (!Transmit(command_buffer, 4) || !Transmit(source_data_pointer, bytes_to_program)) {
       EndTransaction();
+      ReleaseBus();
       return false;
     }
     EndTransaction();
 
     if (!WaitUntilReady()) {
+      ReleaseBus();
       return false;
     }
 
@@ -66,11 +89,14 @@ bool Stm32SpiFlash::Write(std::uint32_t address, const void* data,
     current_address += bytes_to_program;
     source_data_pointer += bytes_to_program;
   }
+  ReleaseBus();
   return true;
 }
 
 bool Stm32SpiFlash::EraseSector(std::uint32_t address) noexcept {
+  AcquireBus();
   if (!EnableWriteOperations()) {
+    ReleaseBus();
     return false;
   }
   BeginTransaction();
@@ -80,13 +106,18 @@ bool Stm32SpiFlash::EraseSector(std::uint32_t address) noexcept {
   bool is_success = Transmit(command_buffer, 4);
   EndTransaction();
   if (!is_success) {
+    ReleaseBus();
     return false;
   }
-  return WaitUntilReady();
+  bool ready = WaitUntilReady();
+  ReleaseBus();
+  return ready;
 }
 
 bool Stm32SpiFlash::EraseChip() noexcept {
+  AcquireBus();
   if (!EnableWriteOperations()) {
+    ReleaseBus();
     return false;
   }
   BeginTransaction();
@@ -94,9 +125,12 @@ bool Stm32SpiFlash::EraseChip() noexcept {
   bool is_success = Transmit(&command, 1);
   EndTransaction();
   if (!is_success) {
+    ReleaseBus();
     return false;
   }
-  return WaitUntilReady();
+  bool ready = WaitUntilReady();
+  ReleaseBus();
+  return ready;
 }
 
 void Stm32SpiFlash::BeginTransaction() noexcept {
