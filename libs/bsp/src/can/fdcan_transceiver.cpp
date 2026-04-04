@@ -13,6 +13,43 @@ FDCAN_HandleTypeDef* HalHandle(void* handle) noexcept {
   return reinterpret_cast<FDCAN_HandleTypeDef*>(handle);
 }
 
+// Maps a raw byte count to the smallest valid CAN FD DLC code that fits it.
+// Valid CAN FD payload sizes: 0-8, 12, 16, 20, 24, 32, 48, 64.
+// DLC codes 0-8 map 1:1 to byte counts; 9-15 map to the extended sizes above.
+std::uint32_t ByteCountToFdCanDlc(std::uint8_t byte_count) noexcept {
+  if (byte_count <= 8u) return static_cast<std::uint32_t>(byte_count);
+  if (byte_count <= 12u) return 9u;
+  if (byte_count <= 16u) return 10u;
+  if (byte_count <= 20u) return 11u;
+  if (byte_count <= 24u) return 12u;
+  if (byte_count <= 32u) return 13u;
+  if (byte_count <= 48u) return 14u;
+  return 15u;
+}
+
+// Maps a received DLC code back to the actual number of bytes in the frame payload.
+std::uint8_t FdCanDlcToByteCount(std::uint32_t dlc_code) noexcept {
+  if (dlc_code <= 8u) return static_cast<std::uint8_t>(dlc_code);
+  switch (dlc_code) {
+    case 9u:
+      return 12u;
+    case 10u:
+      return 16u;
+    case 11u:
+      return 20u;
+    case 12u:
+      return 24u;
+    case 13u:
+      return 32u;
+    case 14u:
+      return 48u;
+    case 15u:
+      return 64u;
+    default:
+      return 0u;
+  }
+}
+
 }  // namespace
 
 FdcanTransceiver::FdcanTransceiver(void* hfdcan_handle,
@@ -63,10 +100,10 @@ bool FdcanTransceiver::Transmit(const FdcanFrame& frame) noexcept {
   tx_header.Identifier = frame.identifier;
   tx_header.IdType = FDCAN_STANDARD_ID;
   tx_header.TxFrameType = FDCAN_DATA_FRAME;
-  tx_header.DataLength = static_cast<std::uint32_t>(frame.data_length_bytes);
+  tx_header.DataLength = ByteCountToFdCanDlc(frame.data_length_bytes);
   tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
   tx_header.BitRateSwitch = FDCAN_BRS_OFF;
-  tx_header.FDFormat = FDCAN_CLASSIC_CAN;
+  tx_header.FDFormat = (frame.data_length_bytes <= 8u) ? FDCAN_CLASSIC_CAN : FDCAN_FD_CAN;
   tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
   tx_header.MessageMarker = 0;
 
@@ -93,7 +130,7 @@ void FdcanTransceiver::HandleRxFifo0MessagePending() noexcept {
     }
 
     frame.identifier = rx_header.Identifier;
-    frame.data_length_bytes = static_cast<std::uint8_t>(rx_header.DataLength);
+    frame.data_length_bytes = FdCanDlcToByteCount(rx_header.DataLength);
 
     stats_.IncrementRxReceived();
 
