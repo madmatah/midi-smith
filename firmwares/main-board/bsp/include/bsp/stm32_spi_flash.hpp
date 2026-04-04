@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "os-types/mutex_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
 namespace midismith::main_board::bsp {
@@ -16,6 +17,8 @@ class Stm32SpiFlash {
   };
 
   explicit Stm32SpiFlash(const Configuration& configuration) noexcept;
+
+  void SetMutex(midismith::os::MutexRequirements& mutex) noexcept;
 
   bool Read(std::uint32_t address, void* buffer, std::size_t size_bytes) noexcept;
   bool Write(std::uint32_t address, const void* data, std::size_t size_bytes) noexcept;
@@ -34,7 +37,10 @@ class Stm32SpiFlash {
 
  private:
   Configuration _configuration;
+  midismith::os::MutexRequirements* mutex_ = nullptr;
 
+  void AcquireBus() noexcept;
+  void ReleaseBus() noexcept;
   void BeginTransaction() noexcept;
   void EndTransaction() noexcept;
   bool WaitUntilReady() noexcept;

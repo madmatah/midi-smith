@@ -34,10 +34,23 @@ void CalibrationDataServerTask::Run() noexcept {
             HandleAckReceived(typed_event);
           } else if constexpr (std::is_same_v<T, AckTimeout>) {
             HandleAckTimeout();
+          } else if constexpr (std::is_same_v<T, SaveRequest>) {
+            HandleSaveRequest(typed_event);
           }
         },
         event);
   }
+}
+
+void CalibrationDataServerTask::RequestSave(
+    const midismith::main_board::domain::calibration::CalibrationData& data,
+    CalibrationSaveCompletionRequirements& on_complete) noexcept {
+  event_queue_.Send(SaveRequest{&data, &on_complete}, midismith::os::kNoWait);
+}
+
+void CalibrationDataServerTask::HandleSaveRequest(const SaveRequest& event) noexcept {
+  store_.Save(*event.data);
+  event.on_complete->OnSaveComplete();
 }
 
 void CalibrationDataServerTask::HandleLoadRequest(const LoadRequest& event) noexcept {

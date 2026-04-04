@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "app/calibration/calibration_bulk_data_receiver.hpp"
+#include "app/calibration/calibration_save_completion_requirements.hpp"
+#include "app/calibration/calibration_save_request_sink_requirements.hpp"
 #include "app/config/config.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
@@ -34,6 +36,10 @@ using CalibrationSessionObserverRequirements =
     midismith::main_board::domain::calibration::CalibrationSessionObserverRequirements;
 using CalibrationValidatorRequirements = midismith::calibration::CalibrationValidatorRequirements;
 using CalibrationPersistentStore = midismith::main_board::app::storage::CalibrationPersistentStore;
+using CalibrationSaveRequestSinkRequirements =
+    midismith::main_board::app::calibration::CalibrationSaveRequestSinkRequirements;
+using CalibrationSaveCompletionRequirements =
+    midismith::main_board::app::calibration::CalibrationSaveCompletionRequirements;
 using MainBoardData = midismith::main_board::domain::config::MainBoardData;
 using KeymapEntry = midismith::main_board::domain::config::KeymapEntry;
 using SensorCalibration = midismith::calibration::SensorCalibration;
@@ -155,6 +161,26 @@ class MockPeerStatusProvider final : public midismith::protocol::PeerStatusProvi
   std::vector<std::uint8_t> healthy_peer_ids_;
 };
 
+class FakeSaveRequestSink final : public CalibrationSaveRequestSinkRequirements {
+ public:
+  void RequestSave(const CalibrationData&,
+                   CalibrationSaveCompletionRequirements& on_complete) noexcept override {
+    pending_completion_ = &on_complete;
+    ++request_count;
+  }
+
+  void TriggerCompletion() noexcept {
+    auto* cb = pending_completion_;
+    pending_completion_ = nullptr;
+    cb->OnSaveComplete();
+  }
+
+  int request_count = 0;
+
+ private:
+  CalibrationSaveCompletionRequirements* pending_completion_ = nullptr;
+};
+
 class StubFlashStorage final : public midismith::bsp::storage::FlashSectorStorageRequirements {
  public:
   static constexpr std::size_t kSectorSize = 4096;
@@ -245,6 +271,9 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
   CalibrationBulkDataReceiver receiver(sender, coordinator, receive_timer);
   coordinator.SetReceiver(receiver);
 
+  FakeSaveRequestSink fake_sink;
+  coordinator.SetSaveSink(fake_sink);
+
   SECTION("StartCalibration") {
     coordinator.StartCalibration();
 
@@ -287,6 +316,10 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
     REQUIRE(sender.dump_request_calls[1] == 2);
 
     coordinator.OnDataReceived(2, valid_data);
+    REQUIRE(coordinator.state() == CalibrationState::kSaving);
+    REQUIRE(fake_sink.request_count == 1);
+
+    fake_sink.TriggerCompletion();
     REQUIRE(coordinator.state() == CalibrationState::kDone);
     REQUIRE(session_observer.complete_count == 1);
   }
@@ -303,6 +336,10 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
     REQUIRE(coordinator.state() == CalibrationState::kConfirmingPartialData);
 
     coordinator.ConfirmSavePartial();
+    REQUIRE(coordinator.state() == CalibrationState::kSaving);
+    REQUIRE(fake_sink.request_count == 1);
+
+    fake_sink.TriggerCompletion();
     REQUIRE(coordinator.state() == CalibrationState::kDone);
   }
 
@@ -322,6 +359,7 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
     const auto valid_data = MakeValidCalibrationArray();
     coordinator.OnDataReceived(1, valid_data);
     coordinator.OnDataReceived(2, valid_data);
+    fake_sink.TriggerCompletion();
     REQUIRE(coordinator.state() == CalibrationState::kDone);
 
     coordinator.StartCalibration();

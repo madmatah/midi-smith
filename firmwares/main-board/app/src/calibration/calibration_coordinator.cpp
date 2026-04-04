@@ -43,6 +43,14 @@ void CalibrationCoordinator::SetRestPhaseTimer(os::TimerRequirements& timer) noe
   rest_phase_timer_ = &timer;
 }
 
+void CalibrationCoordinator::SetSaveSink(CalibrationSaveRequestSinkRequirements& sink) noexcept {
+  save_sink_ = &sink;
+}
+
+void CalibrationCoordinator::OnSaveComplete() noexcept {
+  session_.OnSaveDone();
+}
+
 void CalibrationCoordinator::StartCalibration() noexcept {
   if (session_.state() == domain::calibration::CalibrationState::kDone ||
       session_.state() == domain::calibration::CalibrationState::kAborted) {
@@ -143,9 +151,11 @@ void CalibrationCoordinator::AdvanceToNextBoard() noexcept {
 }
 
 void CalibrationCoordinator::TrySave() noexcept {
-  if (session_.state() == domain::calibration::CalibrationState::kSaving) {
-    store_.Save(session_.collected_data());
-    session_.OnSaveDone();
+  if (session_.state() != domain::calibration::CalibrationState::kSaving) {
+    return;
+  }
+  if (save_sink_ != nullptr) {
+    save_sink_->RequestSave(session_.collected_data(), *this);
   }
 }
 

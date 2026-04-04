@@ -6,6 +6,7 @@
 #include "bsp/memory_sections.hpp"
 #include "bsp/rtt_logger.hpp"
 #include "bsp/serial/uart_stream.hpp"
+#include "os/mutex.hpp"
 #include "usart.h"
 
 namespace midismith::main_board::app {
@@ -15,6 +16,9 @@ void Application::init() noexcept {
 }
 
 void Application::create_tasks() noexcept {
+  static midismith::os::Mutex spi_flash_mutex;
+  midismith::main_board::bsp::Board::spi_flash().SetMutex(spi_flash_mutex);
+
   static midismith::bsp::RttLogger rtt_logger;
 
   alignas(32) BSP_RAM_NOCACHE static midismith::main_board::bsp::serial::UartStream<

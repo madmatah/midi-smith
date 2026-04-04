@@ -5,6 +5,8 @@
 
 #include "app/calibration/calibration_bulk_data_receiver.hpp"
 #include "app/calibration/calibration_bulk_data_receiver_observer_requirements.hpp"
+#include "app/calibration/calibration_save_completion_requirements.hpp"
+#include "app/calibration/calibration_save_request_sink_requirements.hpp"
 #include "app/messaging/main_board_inbound_calibration_handler.hpp"
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/shell/calibration_coordinator_requirements.hpp"
@@ -18,6 +20,7 @@ namespace midismith::main_board::app::calibration {
 
 class CalibrationCoordinator final : public shell::CalibrationCoordinatorRequirements,
                                      public CalibrationBulkDataReceiverObserverRequirements,
+                                     public CalibrationSaveCompletionRequirements,
                                      public messaging::CalibrationCoordinatorInboundTarget {
  public:
   CalibrationCoordinator(domain::calibration::CalibrationSession& session,
@@ -27,6 +30,7 @@ class CalibrationCoordinator final : public shell::CalibrationCoordinatorRequire
 
   void SetReceiver(CalibrationBulkDataReceiver& receiver) noexcept;
   void SetRestPhaseTimer(os::TimerRequirements& timer) noexcept;
+  void SetSaveSink(CalibrationSaveRequestSinkRequirements& sink) noexcept;
 
   void StartCalibration() noexcept override;
   void FinishStrikePhase() noexcept override;
@@ -37,6 +41,8 @@ class CalibrationCoordinator final : public shell::CalibrationCoordinatorRequire
   [[nodiscard]] domain::calibration::StrikeProgress GetStrikeProgress() const noexcept override;
   [[nodiscard]] const domain::calibration::CalibrationData* GetStoredCalibration()
       const noexcept override;
+
+  void OnSaveComplete() noexcept override;
 
   void OnDataReceived(std::uint8_t board_id, const SensorCalibrationArray& data) noexcept override;
   void OnReceiveTimeout(std::uint8_t board_id) noexcept override;
@@ -60,6 +66,7 @@ class CalibrationCoordinator final : public shell::CalibrationCoordinatorRequire
   protocol::PeerStatusProviderRequirements& peer_status_;
   CalibrationBulkDataReceiver* receiver_ = nullptr;
   os::TimerRequirements* rest_phase_timer_ = nullptr;
+  CalibrationSaveRequestSinkRequirements* save_sink_ = nullptr;
 
   std::array<std::uint8_t, kMaxBoardCount> active_board_ids_{};
   std::uint8_t active_board_count_ = 0;

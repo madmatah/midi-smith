@@ -88,6 +88,7 @@ CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, C
   calibration_store.Preload();
 
   coordinator.SetReceiver(receiver);
+  coordinator.SetSaveSink(calibration_server_task);
   calibration_command.SetCoordinator(coordinator);
 
   inbound_ctx.handler.SetCoordinator(coordinator);
