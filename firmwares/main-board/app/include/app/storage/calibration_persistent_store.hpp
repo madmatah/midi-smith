@@ -16,14 +16,20 @@ class CalibrationPersistentStore {
   midismith::config::ConfigStatus Load(
       midismith::main_board::domain::calibration::CalibrationData& out) noexcept;
 
+  midismith::config::ConfigStatus Preload() noexcept;
+
   midismith::bsp::storage::StorageOperationResult Save(
       const midismith::main_board::domain::calibration::CalibrationData& data) noexcept;
+
+  [[nodiscard]] const midismith::main_board::domain::calibration::CalibrationData*
+  cached_calibration() const noexcept;
 
  private:
   midismith::config::StorageManager<
       midismith::main_board::domain::calibration::CalibrationStorableConfig>
       storage_manager_;
   midismith::main_board::domain::calibration::CalibrationStorableConfig ram_config_;
+  bool cache_valid_ = false;
 };
 
 }  // namespace midismith::main_board::app::storage

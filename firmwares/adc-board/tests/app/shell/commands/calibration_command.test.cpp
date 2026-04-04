@@ -4,13 +4,21 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <fakeit.hpp>
 #include <string>
 
 #include "app/calibration/calibration_query_requirements.hpp"
 #include "app/config/sensors.hpp"
+#include "app/shell/blocking_delay_requirements.hpp"
 #include "calibration/board_calibration_data.hpp"
 #include "calibration/sensor_calibration.hpp"
 #include "io/stream_requirements.hpp"
+
+#define fakeit_Method(mock, method) Method(mock, method)
+
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
 
 namespace {
 
@@ -49,7 +57,10 @@ class CalibrationQueryStub
 
 TEST_CASE("The CalibrationCommand class") {
   CalibrationQueryStub query_stub;
-  midismith::adc_board::app::shell::commands::CalibrationCommand command(query_stub);
+  Mock<midismith::adc_board::app::shell::BlockingDelayRequirements> blocking_delay_mock;
+  midismith::adc_board::app::shell::commands::CalibrationCommand command(query_stub,
+                                                                         blocking_delay_mock.get());
+  When(fakeit_Method(blocking_delay_mock, DelayMs)).AlwaysDo([](std::uint32_t) noexcept {});
   RecordingStream out;
 
   SECTION("The Name() method") {
@@ -87,7 +98,7 @@ TEST_CASE("The CalibrationCommand class") {
       }
     }
 
-    SECTION("When called with 'status'") {
+    SECTION("When called with 'show'") {
       query_stub.data_[0] = midismith::calibration::SensorCalibration{
           .rest_current_ma = 0.127f,
           .strike_current_ma = 0.642f,
@@ -96,7 +107,7 @@ TEST_CASE("The CalibrationCommand class") {
       };
 
       char arg0[] = "calibration";
-      char arg1[] = "status";
+      char arg1[] = "show";
       char* argv[] = {arg0, arg1};
       command.Run(2, argv, out);
 
@@ -128,6 +139,11 @@ TEST_CASE("The CalibrationCommand class") {
 
       SECTION("Should include strike_mm label in the output") {
         REQUIRE_THAT(out.output(), Catch::Matchers::ContainsSubstring("strike_mm="));
+      }
+
+      SECTION("Should pace UART output with a delay after each sensor line") {
+        Verify(fakeit_Method(blocking_delay_mock, DelayMs)(10u))
+            .Exactly(midismith::adc_board::app::config::sensors::kSensorCount);
       }
     }
   }

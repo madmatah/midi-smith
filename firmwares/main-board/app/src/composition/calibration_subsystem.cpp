@@ -7,6 +7,7 @@
 #include "app/config/config.hpp"
 #include "app/config/flash_layout.hpp"
 #include "app/shell/calibration_command.hpp"
+#include "app/shell/os_clock_blocking_delay.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
 #include "bsp/board.hpp"
 #include "bsp/storage/spi_flash_sector_storage.hpp"
@@ -50,7 +51,9 @@ CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, C
   static midismith::calibration::SensorCalibrationValidator validator(
       config::kMinimumCalibrationDeltaMa, config::kMaxValidStrikeCurrentMa);
 
-  static midismith::main_board::app::shell::CalibrationCommand calibration_command;
+  static midismith::main_board::app::shell::OsClockBlockingDelay calibration_blocking_delay;
+  static midismith::main_board::app::shell::CalibrationCommand calibration_command(
+      calibration_blocking_delay);
 
   static midismith::main_board::domain::calibration::CalibrationSession calibration_session(
       config_ctx.persistent_config.active_config().data, calibration_command, validator);
@@ -81,6 +84,8 @@ CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, C
     receiver_constructed = true;
   }
   auto& receiver = *receiver_ptr;
+
+  calibration_store.Preload();
 
   coordinator.SetReceiver(receiver);
   calibration_command.SetCoordinator(coordinator);

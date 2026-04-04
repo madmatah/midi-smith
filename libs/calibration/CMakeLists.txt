@@ -3,4 +3,6 @@ project(calibration LANGUAGES CXX)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
-midismith_add_lib(NAME calibration)
+midismith_add_lib(NAME calibration
+    DEPENDS io
+)

@@ -6,6 +6,7 @@
 #include "app/shell/commands/adc_command.hpp"
 #include "app/shell/commands/calibration_command.hpp"
 #include "app/shell/commands/sensor_rtt_command.hpp"
+#include "app/shell/os_clock_blocking_delay.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "bsp-types/can/can_bus_stats_provider.hpp"
@@ -64,8 +65,9 @@ void CreateShellSubsystem(ConsoleContext& console, CanContext& can, ConfigContex
         sensors.registry, sensor_rtt.control);
     shell_task_ptr->RegisterCommand(sensor_rtt_cmd);
 
+    static midismith::adc_board::app::shell::OsClockBlockingDelay calibration_blocking_delay;
     static midismith::adc_board::app::shell::commands::CalibrationCommand calibration_cmd(
-        calibration_query);
+        calibration_query, calibration_blocking_delay);
     shell_task_ptr->RegisterCommand(calibration_cmd);
 
     static midismith::bsp::Stm32BoardReset board_reset;

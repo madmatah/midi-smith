@@ -12,11 +12,13 @@ constexpr uint32_t SHELL_TASK_PRIORITY = 1;
 constexpr uint32_t MIDI_TASK_PRIORITY = 3;
 
 // Stack sizes
-constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
 constexpr uint32_t MIDI_TASK_STACK_BYTES = 2048;
 
-// Idle delays
+// Shell
+constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
+constexpr std::size_t kConsoleUartRxBufferSize = 256;
+constexpr std::size_t kConsoleUartTxFifoSize = 1024;
 
 // Queue capacities
 constexpr uint32_t MIDI_QUEUE_CAPACITY = 64;
