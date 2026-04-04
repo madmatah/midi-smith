@@ -106,17 +106,16 @@ void CalibrationDataServerTask::HandleAckTimeout() noexcept {
 }
 
 void CalibrationDataServerTask::StartTransferForBoard(std::uint8_t board_id) noexcept {
-  midismith::main_board::domain::calibration::CalibrationData stored_calibration_data{};
-  store_.Load(stored_calibration_data);
+  store_.Load(stored_calibration_data_);
 
   const std::size_t board_index = static_cast<std::size_t>(board_id - 1u);
-  if (!stored_calibration_data.board_data_valid[board_index]) {
+  if (!stored_calibration_data_.board_data_valid[board_index]) {
     sender_.SendCalibrationDataSegment(board_id, 0, 0, SegmentPayload{});
     StartNextPendingRequest();
     return;
   }
 
-  calibration_data_ = stored_calibration_data.sensor_calibrations[board_index];
+  calibration_data_ = stored_calibration_data_.sensor_calibrations[board_index];
   active_board_id_ = board_id;
   current_segment_index_ = 0;
   retry_count_ = 0;

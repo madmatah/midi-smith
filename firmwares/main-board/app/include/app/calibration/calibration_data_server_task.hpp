@@ -9,6 +9,7 @@
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
 #include "calibration/sensor_calibration.hpp"
+#include "domain/calibration/calibration_data.hpp"
 #include "domain/config/main_board_config.hpp"
 #include "os-types/queue_requirements.hpp"
 #include "os-types/timer_requirements.hpp"
@@ -75,6 +76,7 @@ class CalibrationDataServerTask {
   midismith::os::QueueRequirements<Event>& event_queue_;
   midismith::os::TimerRequirements& ack_timer_;
 
+  midismith::main_board::domain::calibration::CalibrationData stored_calibration_data_{};
   SensorCalibrationArray calibration_data_{};
   std::array<std::uint8_t, kMaxPendingRequests> pending_board_ids_{};
   std::size_t pending_request_head_index_ = 0;
