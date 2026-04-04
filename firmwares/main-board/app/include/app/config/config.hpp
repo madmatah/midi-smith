@@ -22,7 +22,9 @@ constexpr uint32_t kHeartbeatTimeoutMs = 1500;
 constexpr uint32_t kTimeoutCheckPeriodMs = 100;
 
 // Calibration
-constexpr std::uint32_t CALIBRATION_SERVER_TASK_STACK_BYTES = 512;
+// CalibrationDataServerTask loads calibration storage metadata and still needs headroom for
+// protocol packing and queue dispatch.
+constexpr std::uint32_t CALIBRATION_SERVER_TASK_STACK_BYTES = 1536;
 constexpr std::uint32_t CALIBRATION_SERVER_TASK_PRIORITY = 1;
 constexpr std::uint32_t kCalibrationServerEventQueueCapacity = 16;
 constexpr std::uint32_t kCalibrationServerAckTimeoutMs = 100;
