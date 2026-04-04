@@ -17,7 +17,6 @@
 #include "dsp/filters/constant_filter.hpp"
 #include "dsp/filters/identity_filter.hpp"
 #include "dsp/filters/max_filter.hpp"
-#include "dsp/filters/min_filter.hpp"
 #include "dsp/filters/simple_moving_average.hpp"
 #include "dsp/logic/and.hpp"
 #include "dsp/logic/gate_open.hpp"
@@ -49,7 +48,6 @@ using ConstantFilter = midismith::dsp::filters::ConstantFilter<kValue>;
 template <float kScale>
 using LinearScaler = midismith::dsp::converters::LinearScaler<kScale>;
 using MaxFilter = midismith::dsp::filters::MaxFilter;
-using MinFilter = midismith::dsp::filters::MinFilter;
 using IdentityFilter = midismith::dsp::filters::IdentityFilter;
 template <std::uint32_t kWindowSize>
 using SimpleMovingAverage = midismith::dsp::filters::SimpleMovingAverage<kWindowSize>;
@@ -84,7 +82,7 @@ using CalibrationRestInner =
            StageWorkflow<MaxFilter, CaptureState<&SensorState::calibration_rest_peak_current_ma>>,
            IdentityFilter>;
 using CalibrationStrikeInner =
-    StageWorkflow<MinFilter, CaptureState<&SensorState::calibration_strike_min_current_ma>>;
+    StageWorkflow<MaxFilter, CaptureState<&SensorState::calibration_strike_max_current_ma>>;
 
 using CalibrationRestTap = Tap<CalibrationRestInner>;
 using CalibrationStrikeTap = Tap<CalibrationStrikeInner>;

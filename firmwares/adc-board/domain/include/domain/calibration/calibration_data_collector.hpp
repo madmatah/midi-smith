@@ -30,7 +30,7 @@ class CalibrationDataCollector {
       }
 
       const float rest_current_ma = sensor_state->calibration_rest_peak_current_ma;
-      const float strike_current_ma = sensor_state->calibration_strike_min_current_ma;
+      const float strike_current_ma = sensor_state->calibration_strike_max_current_ma;
 
       const bool rest_is_valid = rest_current_ma > 0.0f;
       const bool strike_is_valid = strike_current_ma < std::numeric_limits<float>::max();

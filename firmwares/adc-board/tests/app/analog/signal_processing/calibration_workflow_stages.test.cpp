@@ -25,20 +25,20 @@ TEST_CASE("CalibrationStrikeInner") {
   TestContext ctx{sensor_state};
   workflow::CalibrationStrikeInner stage{};
 
-  SECTION("Running min accumulates correctly across samples") {
+  SECTION("Running max accumulates correctly across samples") {
     stage.Transform(1.0f, ctx);
     stage.Transform(0.5f, ctx);
     stage.Transform(0.8f, ctx);
 
-    REQUIRE_THAT(sensor_state.calibration_strike_min_current_ma, WithinAbs(0.5f, 0.001f));
+    REQUIRE_THAT(sensor_state.calibration_strike_max_current_ma, WithinAbs(1.0f, 0.001f));
   }
 
-  SECTION("After Reset, next sample becomes the new min") {
+  SECTION("After Reset, next sample becomes the new max") {
     stage.Transform(0.3f, ctx);
     stage.Reset();
     stage.Transform(0.9f, ctx);
 
-    REQUIRE_THAT(sensor_state.calibration_strike_min_current_ma, WithinAbs(0.9f, 0.001f));
+    REQUIRE_THAT(sensor_state.calibration_strike_max_current_ma, WithinAbs(0.9f, 0.001f));
   }
 }
 
@@ -122,7 +122,7 @@ TEST_CASE("ControlSurface::ResetCalibrationFilters") {
   SECTION("CalibrationStrike filter is reset: next sample becomes the new min") {
     strike_tap.Transform(0.9f, ctx);
 
-    REQUIRE_THAT(sensor_state.calibration_strike_min_current_ma, WithinAbs(0.9f, 0.001f));
+    REQUIRE_THAT(sensor_state.calibration_strike_max_current_ma, WithinAbs(0.9f, 0.001f));
   }
 }
 

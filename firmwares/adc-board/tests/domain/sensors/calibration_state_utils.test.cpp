@@ -13,7 +13,7 @@ TEST_CASE("ResetCalibrationState") {
 
   SensorState state{};
   state.calibration_rest_peak_current_ma = 1.5f;
-  state.calibration_strike_min_current_ma = 0.3f;
+  state.calibration_strike_max_current_ma = 0.3f;
   state.is_calibration_rest_phase = true;
   state.last_current_ma = 2.0f;
 
@@ -23,8 +23,8 @@ TEST_CASE("ResetCalibrationState") {
     REQUIRE_THAT(state.calibration_rest_peak_current_ma, WithinAbs(0.0f, 0.001f));
   }
 
-  SECTION("Should reset calibration_strike_min_current_ma to max float") {
-    REQUIRE(state.calibration_strike_min_current_ma == std::numeric_limits<float>::max());
+  SECTION("Should reset calibration_strike_max_current_ma to zero") {
+    REQUIRE(state.calibration_strike_max_current_ma == 0.0f);
   }
 
   SECTION("Should reset is_calibration_rest_phase to false") {
