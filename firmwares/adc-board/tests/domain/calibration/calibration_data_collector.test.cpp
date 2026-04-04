@@ -34,7 +34,8 @@ TEST_CASE("CalibrationDataCollector") {
       sensor_states[2].calibration_rest_peak_current_ma = 0.9f;
       sensor_states[2].calibration_strike_min_current_ma = 0.1f;
 
-      const auto result = collector.CollectCalibrationData();
+      CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
+      collector.CollectCalibrationData(result);
 
       REQUIRE_THAT(result[0].rest_current_ma, WithinAbs(1.0f, 0.001f));
       REQUIRE_THAT(result[0].strike_current_ma, WithinAbs(0.2f, 0.001f));
@@ -50,7 +51,8 @@ TEST_CASE("CalibrationDataCollector") {
       sensor_states[0].calibration_rest_peak_current_ma = 0.0f;
       sensor_states[0].calibration_strike_min_current_ma = 0.2f;
 
-      const auto result = collector.CollectCalibrationData();
+      CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
+      collector.CollectCalibrationData(result);
 
       REQUIRE_THAT(result[0].rest_current_ma, WithinAbs(0.0f, 0.001f));
       REQUIRE_THAT(result[0].strike_current_ma, WithinAbs(0.0f, 0.001f));
@@ -62,7 +64,8 @@ TEST_CASE("CalibrationDataCollector") {
       sensor_states[1].calibration_rest_peak_current_ma = 1.0f;
       sensor_states[1].calibration_strike_min_current_ma = std::numeric_limits<float>::max();
 
-      const auto result = collector.CollectCalibrationData();
+      CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
+      collector.CollectCalibrationData(result);
 
       REQUIRE_THAT(result[1].rest_current_ma, WithinAbs(0.0f, 0.001f));
       REQUIRE_THAT(result[1].strike_current_ma, WithinAbs(0.0f, 0.001f));
@@ -75,7 +78,8 @@ TEST_CASE("CalibrationDataCollector") {
     sensor_states[2].calibration_rest_peak_current_ma = 0.8f;
     sensor_states[2].calibration_strike_min_current_ma = 0.15f;
 
-    const auto result = collector.CollectCalibrationData();
+    CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
+    collector.CollectCalibrationData(result);
 
     REQUIRE_THAT(result[0].rest_current_ma, WithinAbs(0.5f, 0.001f));
     REQUIRE_THAT(result[2].rest_current_ma, WithinAbs(0.8f, 0.001f));
