@@ -7,10 +7,12 @@
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "bsp-types/can/can_bus_stats_provider.hpp"
+#include "bsp/stm32_board_reset.hpp"
 #include "os/runtime_stats.hpp"
 #include "protocol-can/can_inbound_decode_stats_provider.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
 #include "shell-cmd-os-stats/status_command.hpp"
+#include "shell-cmd-reboot/reboot_command.hpp"
 #include "shell-cmd-version/version_command.hpp"
 
 namespace midismith::main_board::app::composition {
@@ -62,6 +64,10 @@ void CreateShellSubsystem(
 
   static midismith::main_board::app::shell::KeymapCommand keymap_cmd(keymap_setup_coordinator);
   shell_task_ptr->RegisterCommand(keymap_cmd);
+
+  static midismith::bsp::Stm32BoardReset board_reset;
+  static midismith::shell_cmd_reboot::RebootCommand reboot_cmd(board_reset);
+  shell_task_ptr->RegisterCommand(reboot_cmd);
 
   shell_task_ptr->RegisterCommand(calibration_ctx.command);
 

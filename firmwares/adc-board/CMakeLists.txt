@@ -25,6 +25,7 @@ midismith_require_lib(config)
 midismith_require_lib(telemetry)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
+midismith_require_lib(shell-cmd-reboot)
 midismith_require_lib(shell-cmd-stats)
 midismith_require_lib(stats)
 midismith_require_lib(bsp-types)
@@ -81,6 +82,7 @@ if(HOST_TESTS)
         os
         shell_cmd_version
         shell_cmd_os_stats
+        shell_cmd_reboot
     )
     midismith_enable_coverage_compile(adc_domain)
     midismith_enable_coverage_compile(adc_app_lib)
@@ -182,6 +184,7 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     telemetry
     shell_cmd_version
     shell_cmd_os_stats
+    shell_cmd_reboot
     shell_cmd_stats
     stats
     can_broker
