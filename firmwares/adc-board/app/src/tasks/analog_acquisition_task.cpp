@@ -86,7 +86,8 @@ AnalogAcquisitionTask::AnalogAcquisitionTask(
     volatile midismith::adc_board::app::analog::AcquisitionState& state,
     ProcessedSensorGroup& analog_group,
     midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue,
-    midismith::adc_board::domain::sensors::SensorRegistry& sensor_registry) noexcept
+    midismith::adc_board::domain::sensors::SensorRegistry& sensor_registry,
+    midismith::calibration::CalibrationValidatorRequirements& calibration_validator) noexcept
     : queue_(queue),
       control_queue_(control_queue),
       tia_shutdown_(tia_shutdown),
@@ -95,7 +96,7 @@ AnalogAcquisitionTask::AnalogAcquisitionTask(
       state_(state),
       analog_group_(analog_group),
       calibration_result_queue_(calibration_result_queue),
-      collector_(sensor_registry) {}
+      collector_(sensor_registry, calibration_validator) {}
 
 void AnalogAcquisitionTask::entry(void* ctx) noexcept {
   if (ctx == nullptr) {

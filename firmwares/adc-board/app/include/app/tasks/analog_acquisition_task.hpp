@@ -11,6 +11,7 @@
 #include "bsp/adc/adc_dma.hpp"
 #include "bsp/gpio_requirements.hpp"
 #include "bsp/time/timestamp_counter_requirements.hpp"
+#include "calibration/calibration_validator_requirements.hpp"
 #include "domain/calibration/calibration_data_collector.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "os/queue.hpp"
@@ -47,7 +48,8 @@ class AnalogAcquisitionTask {
       AdcDma& adc_dma, TimestampCounterRequirements& timestamp_counter,
       volatile AnalogAcquisitionState& state, ProcessedSensorGroup& analog_group,
       midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue,
-      SensorRegistry& sensor_registry) noexcept;
+      SensorRegistry& sensor_registry,
+      midismith::calibration::CalibrationValidatorRequirements& calibration_validator) noexcept;
 
   bool start() noexcept;
 

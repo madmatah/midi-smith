@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/config/sensor_linearization.hpp"
+#include "app/config/calibration.hpp"
 #include "app/config/sensors.hpp"
 #include "calibration/board_calibration_data.hpp"
 

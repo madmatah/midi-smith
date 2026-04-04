@@ -10,8 +10,8 @@
 #include "app/calibration/calibration_apply_requirements.hpp"
 #include "app/calibration/calibration_data_receiver.hpp"
 #include "app/calibration/calibration_data_receiver_observer_requirements.hpp"
+#include "app/config/calibration.hpp"
 #include "app/config/config.hpp"
-#include "app/config/sensor_linearization.hpp"
 #include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/supervisor/adc_supervisor_task.hpp"
@@ -168,8 +168,8 @@ class RecordingCalibrationApply final
 SensorCalibrationArray MakeKnownCalibrationArray() noexcept {
   SensorCalibrationArray data{};
   for (std::size_t i = 0; i < kSensorCount; ++i) {
-    data[i].rest_current_ma = static_cast<float>(i) * 1.0f;
-    data[i].strike_current_ma = static_cast<float>(i) * 0.1f;
+    data[i].rest_current_ma = 0.1f + static_cast<float>(i) * 0.01f;
+    data[i].strike_current_ma = 0.6f + static_cast<float>(i) * 0.01f;
     data[i].rest_distance_mm = 0.0f;
     data[i].strike_distance_mm = 0.0f;
   }

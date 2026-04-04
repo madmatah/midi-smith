@@ -9,9 +9,12 @@
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
 #include "app/calibration/calibration_manager.hpp"
 #include "app/composition/subsystems.hpp"
+#include "app/config/calibration.hpp"
+#include "app/config/calibration_validation.hpp"  // IWYU pragma: keep
 #include "app/config/sensor_linearization.hpp"
+#include "app/config/sensor_linearization_validation.hpp"  // IWYU pragma: keep
 #include "app/config/sensors.hpp"
-#include "app/config/sensors_validation.hpp"
+#include "app/config/sensors_validation.hpp"  // IWYU pragma: keep
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "app/piano_sensing/logging_sensor_event_handler.hpp"
 #include "app/piano_sensing/remote_message_sensor_event_handler.hpp"
@@ -22,6 +25,7 @@
 #include "bsp/pins.hpp"
 #include "bsp/time/tim2_timestamp_counter.hpp"
 #include "calibration/board_calibration_data.hpp"
+#include "calibration/sensor_calibration_validator.hpp"
 #include "domain/sensors/processed_sensor_group.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 #include "domain/sensors/sensor_state.hpp"
@@ -249,6 +253,10 @@ void StartAnalogAcquisitionTask(
 
   alignas(midismith::adc_board::app::tasks::AnalogAcquisitionTask) static std::uint8_t
       analog_task_storage[sizeof(midismith::adc_board::app::tasks::AnalogAcquisitionTask)];
+  static midismith::calibration::SensorCalibrationValidator calibration_validator(
+      midismith::adc_board::app::config::kMinimumCalibrationDeltaMa,
+      midismith::adc_board::app::config::kMaxValidStrikeCurrentMa);
+
   static bool analog_constructed = false;
   midismith::adc_board::app::tasks::AnalogAcquisitionTask* analog_task_ptr = nullptr;
   if (!analog_constructed) {
@@ -256,7 +264,7 @@ void StartAnalogAcquisitionTask(
         new (analog_task_storage) midismith::adc_board::app::tasks::AnalogAcquisitionTask(
             adc_frame_queue, AdcControlQueue(), midismith::adc_board::bsp::pins::TiaShutdown(),
             adc_dma, timestamp_counter, AdcState(), analog_group, calibration_result_queue,
-            SensorsRegistry());
+            SensorsRegistry(), calibration_validator);
     analog_constructed = true;
   } else {
     analog_task_ptr = reinterpret_cast<midismith::adc_board::app::tasks::AnalogAcquisitionTask*>(

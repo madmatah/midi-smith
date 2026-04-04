@@ -9,8 +9,8 @@
 
 #include "app/calibration/calibration_data_receiver_observer_requirements.hpp"
 #include "app/calibration/merge_distance_values.hpp"
+#include "app/config/calibration.hpp"
 #include "app/config/config.hpp"
-#include "app/config/sensor_linearization.hpp"
 #include "app/config/sensors.hpp"
 #include "app/messaging/adc_board_message_sender_requirements.hpp"
 #include "calibration/sensor_calibration.hpp"

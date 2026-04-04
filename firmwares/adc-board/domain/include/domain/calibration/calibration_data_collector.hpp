@@ -3,9 +3,10 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 
 #include "calibration/board_calibration_data.hpp"
+#include "calibration/calibration_validator_requirements.hpp"
+#include "calibration/sensor_calibration.hpp"
 #include "domain/sensors/sensor_registry.hpp"
 
 namespace midismith::adc_board::domain::calibration {
@@ -15,8 +16,10 @@ class CalibrationDataCollector {
  public:
   using CalibrationArray = midismith::calibration::BoardCalibrationData<kSensorCount>;
 
-  explicit CalibrationDataCollector(const sensors::SensorRegistry& sensor_registry) noexcept
-      : sensor_registry_(sensor_registry) {}
+  explicit CalibrationDataCollector(
+      const sensors::SensorRegistry& sensor_registry,
+      const midismith::calibration::CalibrationValidatorRequirements& validator) noexcept
+      : sensor_registry_(sensor_registry), validator_(validator) {}
 
   void CollectCalibrationData(CalibrationArray& calibration_data) const noexcept {
     calibration_data = CalibrationArray{};
@@ -29,21 +32,21 @@ class CalibrationDataCollector {
         continue;
       }
 
-      const float rest_current_ma = sensor_state->calibration_rest_peak_current_ma;
-      const float strike_current_ma = sensor_state->calibration_strike_max_current_ma;
+      const midismith::calibration::SensorCalibration measured{
+          .rest_current_ma = sensor_state->calibration_rest_peak_current_ma,
+          .strike_current_ma = sensor_state->calibration_strike_max_current_ma,
+      };
 
-      const bool rest_is_valid = rest_current_ma > 0.0f;
-      const bool strike_is_valid = strike_current_ma < std::numeric_limits<float>::max();
-
-      if (rest_is_valid && strike_is_valid) {
-        calibration_data[index].rest_current_ma = rest_current_ma;
-        calibration_data[index].strike_current_ma = strike_current_ma;
+      if (validator_.IsValidCalibration(measured)) {
+        calibration_data[index].rest_current_ma = measured.rest_current_ma;
+        calibration_data[index].strike_current_ma = measured.strike_current_ma;
       }
     }
   }
 
  private:
   const sensors::SensorRegistry& sensor_registry_;
+  const midismith::calibration::CalibrationValidatorRequirements& validator_;
 };
 
 }  // namespace midismith::adc_board::domain::calibration
