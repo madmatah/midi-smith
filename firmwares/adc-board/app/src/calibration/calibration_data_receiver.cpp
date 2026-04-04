@@ -20,11 +20,7 @@ void CalibrationDataReceiver::BeginReceiving() noexcept {
 
 void CalibrationDataReceiver::OnCalibrationDataSegment(
     const midismith::protocol::CalibrationDataSegment& segment,
-    std::uint8_t source_node_id) noexcept {
-  if (source_node_id != midismith::protocol::kMainBoardNodeId) {
-    return;
-  }
-
+    std::uint8_t /*source_node_id*/) noexcept {
   if (segment.total_packets == 0) {
     timeout_timer_.Stop();
     observer_.OnCalibrationNoDataAvailable();
