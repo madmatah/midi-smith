@@ -53,16 +53,20 @@ using CalibrationArray =
 class NullTimerStub final : public midismith::os::TimerRequirements {
  public:
   bool Start(std::uint32_t) noexcept override {
+    ++start_call_count;
     return true;
   }
   bool Stop() noexcept override {
     return true;
   }
+
+  int start_call_count = 0;
 };
 
 class NullEventQueueStub final : public midismith::os::QueueRequirements<CalibrationEvent> {
  public:
   bool Send(const CalibrationEvent&, std::uint32_t) noexcept override {
+    ++send_call_count;
     return true;
   }
   bool SendFromIsr(const CalibrationEvent&) noexcept override {
@@ -71,6 +75,8 @@ class NullEventQueueStub final : public midismith::os::QueueRequirements<Calibra
   bool Receive(CalibrationEvent&, std::uint32_t) noexcept override {
     return false;
   }
+
+  int send_call_count = 0;
 };
 
 class NullResultQueueStub final : public midismith::os::QueueRequirements<CalibrationArray> {
@@ -82,8 +88,12 @@ class NullResultQueueStub final : public midismith::os::QueueRequirements<Calibr
     return true;
   }
   bool Receive(CalibrationArray&, std::uint32_t) noexcept override {
-    return false;
+    ++receive_call_count;
+    return receive_result;
   }
+
+  bool receive_result = false;
+  int receive_call_count = 0;
 };
 
 }  // namespace
@@ -114,6 +124,25 @@ TEST_CASE("The AdcInboundCommandHandler class", "[adc-board][app][messaging]") {
     handler.OnCalibStart(midismith::protocol::CalibStart{midismith::protocol::CalibMode::kAuto});
 
     REQUIRE(acquisition_control.request_calibration_start_call_count == 1);
+    REQUIRE(rest_phase_timer.start_call_count == 1);
+  }
+
+  SECTION("When OnDumpRequest() receives calibration data") {
+    calibration_result_queue.receive_result = true;
+
+    handler.OnDumpRequest(midismith::protocol::DumpRequest{}, 1);
+
+    REQUIRE(acquisition_control.request_calibration_data_collection_call_count == 1);
+    REQUIRE(calibration_result_queue.receive_call_count == 1);
+    REQUIRE(calibration_event_queue.send_call_count == 1);
+  }
+
+  SECTION("When OnDumpRequest() times out waiting for calibration data") {
+    handler.OnDumpRequest(midismith::protocol::DumpRequest{}, 1);
+
+    REQUIRE(acquisition_control.request_calibration_data_collection_call_count == 1);
+    REQUIRE(calibration_result_queue.receive_call_count == 1);
+    REQUIRE(calibration_event_queue.send_call_count == 0);
   }
 }
 

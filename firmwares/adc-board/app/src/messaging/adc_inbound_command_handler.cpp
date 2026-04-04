@@ -26,14 +26,16 @@ void AdcInboundCommandHandler::OnDumpRequest(const midismith::protocol::DumpRequ
   (void) command;
   (void) acquisition_control_.RequestCalibrationDataCollection();
 
-  CalibrationArray result{};
   if (!calibration_result_queue_.Receive(
-          result, midismith::adc_board::app::config::kCalibrationDumpResultTimeoutMs)) {
+          pending_calibration_data_,
+          midismith::adc_board::app::config::kCalibrationDumpResultTimeoutMs)) {
     return;
   }
 
   using StartTransfer = midismith::adc_board::app::calibration::CalibrationTask::StartTransfer;
-  calibration_event_queue_.Send(StartTransfer{result}, midismith::os::kNoWait);
+  calibration_transfer_event_.template emplace<StartTransfer>();
+  std::get<StartTransfer>(calibration_transfer_event_).calibration_data = pending_calibration_data_;
+  calibration_event_queue_.Send(calibration_transfer_event_, midismith::os::kNoWait);
 }
 
 }  // namespace midismith::adc_board::app::messaging
