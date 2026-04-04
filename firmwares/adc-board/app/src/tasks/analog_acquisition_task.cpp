@@ -195,7 +195,8 @@ void AnalogAcquisitionTask::HandleRestPhaseComplete() noexcept {
 }
 
 void AnalogAcquisitionTask::HandleCollectCalibrationData() noexcept {
-  calibration_result_queue_.Send(collector_.CollectCalibrationData(), midismith::os::kNoWait);
+  collector_.CollectCalibrationData(collected_calibration_data_);
+  calibration_result_queue_.Send(collected_calibration_data_, midismith::os::kNoWait);
 }
 
 void AnalogAcquisitionTask::ProcessAdc1Frame(

@@ -77,6 +77,7 @@ class AnalogAcquisitionTask {
   ProcessedSensorGroup& analog_group_;
   midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue_;
   CalibrationDataCollector collector_;
+  CalibrationArray collected_calibration_data_{};
 
   AdcRankMappedFrameDecoder decoder_{};
 

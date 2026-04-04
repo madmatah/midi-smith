@@ -18,8 +18,8 @@ class CalibrationDataCollector {
   explicit CalibrationDataCollector(const sensors::SensorRegistry& sensor_registry) noexcept
       : sensor_registry_(sensor_registry) {}
 
-  CalibrationArray CollectCalibrationData() const noexcept {
-    CalibrationArray result{};
+  void CollectCalibrationData(CalibrationArray& calibration_data) const noexcept {
+    calibration_data = CalibrationArray{};
 
     for (std::size_t index = 0; index < kSensorCount; ++index) {
       const auto sensor_id = static_cast<std::uint8_t>(index + 1u);
@@ -36,12 +36,10 @@ class CalibrationDataCollector {
       const bool strike_is_valid = strike_current_ma < std::numeric_limits<float>::max();
 
       if (rest_is_valid && strike_is_valid) {
-        result[index].rest_current_ma = rest_current_ma;
-        result[index].strike_current_ma = strike_current_ma;
+        calibration_data[index].rest_current_ma = rest_current_ma;
+        calibration_data[index].strike_current_ma = strike_current_ma;
       }
     }
-
-    return result;
   }
 
  private:
