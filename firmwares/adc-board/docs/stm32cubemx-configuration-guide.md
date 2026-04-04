@@ -500,6 +500,8 @@ If you use them, repeat the configuration above with the same parameters (115200
 1. **Interface**: `CMSIS_V2`.
 2. **Tasks and Queues**: Increase the stack size of `defaultTask` to at least **1024 words**.
    * *Why? Peripheral initialization takes place in this task and consumes a lot of stack. A value that is too low causes an immediate HardFault at startup.*
+3. **Config parameters** > **`configTOTAL_HEAP_SIZE`**: set to **32768**.
+
 
 ### 11.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
 
