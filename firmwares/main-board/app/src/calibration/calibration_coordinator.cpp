@@ -7,10 +7,14 @@ namespace midismith::main_board::app::calibration {
 
 namespace {
 
+bool IsBoardIdInRange(std::uint8_t board_id) noexcept {
+  return board_id >= 1u && board_id <= midismith::main_board::domain::config::kMaxBoardCount;
+}
+
 class ConnectedBoardsVisitor final : public protocol::PeerStatusVisitorRequirements {
  public:
   void OnPeer(std::uint8_t node_id, protocol::PeerStatus status) noexcept override {
-    if (status.connectivity == protocol::PeerConnectivity::kHealthy) {
+    if (status.connectivity == protocol::PeerConnectivity::kHealthy && IsBoardIdInRange(node_id)) {
       connected_mask_ |= static_cast<std::uint8_t>(1u << (node_id - 1));
     }
   }

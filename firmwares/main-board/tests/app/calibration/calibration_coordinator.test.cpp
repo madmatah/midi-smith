@@ -373,6 +373,22 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
     REQUIRE(sender.dump_request_calls.empty());
   }
 
+  SECTION("Invalid peer IDs from the peer status provider are ignored") {
+    MockPeerStatusProvider invalid_peers;
+    invalid_peers.AddHealthyPeer(0);
+    invalid_peers.AddHealthyPeer(1);
+    invalid_peers.AddHealthyPeer(9);
+
+    CalibrationCoordinator invalid_coordinator(session, store, sender, invalid_peers);
+    RecordingTimer invalid_rest_timer;
+    invalid_coordinator.SetRestPhaseTimer(invalid_rest_timer);
+
+    invalid_coordinator.StartCalibration();
+
+    REQUIRE(sender.calib_start_calls.size() == 1);
+    REQUIRE(sender.calib_start_calls[0].target_node_id == 1);
+  }
+
   SECTION("Static timer callback invokes OnRestPhaseComplete") {
     coordinator.StartCalibration();
     CalibrationCoordinator::OnRestPhaseTimeout(&coordinator);
