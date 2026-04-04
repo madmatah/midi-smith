@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp/cortex/fault_diagnostics.h"
 #include "bsp/serial/uart_stream_irq_bridge.h"
 /* USER CODE END Includes */
 
@@ -93,6 +94,9 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  register uint32_t exc_return __asm("lr");
+  BspFaultDiagnosticsCaptureException(exc_return, kBspFaultKindHardFault);
+  BspFaultDiagnosticsHalt();
 
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
@@ -108,6 +112,9 @@ void HardFault_Handler(void)
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+  register uint32_t exc_return __asm("lr");
+  BspFaultDiagnosticsCaptureException(exc_return, kBspFaultKindMemManage);
+  BspFaultDiagnosticsHalt();
 
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
@@ -123,6 +130,9 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
+  register uint32_t exc_return __asm("lr");
+  BspFaultDiagnosticsCaptureException(exc_return, kBspFaultKindBusFault);
+  BspFaultDiagnosticsHalt();
 
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
@@ -138,6 +148,9 @@ void BusFault_Handler(void)
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
+  register uint32_t exc_return __asm("lr");
+  BspFaultDiagnosticsCaptureException(exc_return, kBspFaultKindUsageFault);
+  BspFaultDiagnosticsHalt();
 
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
