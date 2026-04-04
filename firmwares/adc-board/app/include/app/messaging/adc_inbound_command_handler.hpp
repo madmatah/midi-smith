@@ -35,6 +35,8 @@ class AdcInboundCommandHandler final {
   midismith::os::TimerRequirements& rest_phase_timer_;
   midismith::os::QueueRequirements<CalibrationEvent>& calibration_event_queue_;
   midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue_;
+  CalibrationArray pending_calibration_data_{};
+  CalibrationEvent calibration_transfer_event_{};
 };
 
 }  // namespace midismith::adc_board::app::messaging
