@@ -5,8 +5,8 @@
 #include <span>
 
 #include "calibration/board_calibration_data.hpp"
+#include "calibration/calibration_validator_requirements.hpp"
 #include "domain/calibration/calibration_data.hpp"
-#include "domain/calibration/calibration_data_validity_requirements.hpp"
 #include "domain/calibration/calibration_session_observer_requirements.hpp"
 #include "domain/config/main_board_config.hpp"
 
@@ -33,9 +33,10 @@ class CalibrationSession {
   using SensorCalibrationArray = midismith::calibration::BoardCalibrationData<
       midismith::main_board::domain::config::kSensorsPerBoard>;
 
-  CalibrationSession(const midismith::main_board::domain::config::MainBoardData& keymap_data,
-                     CalibrationSessionObserverRequirements& observer,
-                     CalibrationDataValidityRequirements& validity_checker) noexcept;
+  CalibrationSession(
+      const midismith::main_board::domain::config::MainBoardData& keymap_data,
+      CalibrationSessionObserverRequirements& observer,
+      midismith::calibration::CalibrationValidatorRequirements& validity_checker) noexcept;
 
   void StartSession() noexcept;
   void OnRestPhaseComplete() noexcept;
@@ -68,7 +69,7 @@ class CalibrationSession {
   CalibrationData collected_data_{};
   const midismith::main_board::domain::config::MainBoardData& keymap_data_;
   CalibrationSessionObserverRequirements& observer_;
-  CalibrationDataValidityRequirements& validity_checker_;
+  midismith::calibration::CalibrationValidatorRequirements& validity_checker_;
   CalibrationState state_ = CalibrationState::kIdle;
 
   void BuildAwaitedBoardsMask() noexcept;

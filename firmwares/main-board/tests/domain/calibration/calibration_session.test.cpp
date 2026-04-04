@@ -8,7 +8,7 @@
 
 namespace {
 
-using midismith::main_board::domain::calibration::CalibrationDataValidityRequirements;
+using midismith::calibration::CalibrationValidatorRequirements;
 using midismith::main_board::domain::calibration::CalibrationSession;
 using midismith::main_board::domain::calibration::CalibrationSessionObserverRequirements;
 using midismith::main_board::domain::calibration::CalibrationState;
@@ -19,7 +19,7 @@ using midismith::main_board::domain::config::kMaxKeymapEntries;
 using midismith::main_board::domain::config::kSensorsPerBoard;
 using midismith::main_board::domain::config::MainBoardData;
 
-class ValidityCheckerStub final : public CalibrationDataValidityRequirements {
+class ValidityCheckerStub final : public CalibrationValidatorRequirements {
  public:
   bool IsValidCalibration(
       const midismith::calibration::SensorCalibration& calib) const noexcept override {
