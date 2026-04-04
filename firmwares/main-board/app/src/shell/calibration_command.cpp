@@ -2,7 +2,10 @@
 
 #include <string_view>
 
+#include "calibration/sensor_calibration_formatter.hpp"
+#include "domain/calibration/calibration_data.hpp"
 #include "domain/calibration/calibration_session.hpp"
+#include "domain/config/main_board_config.hpp"
 #include "io/stream_format.hpp"
 
 namespace midismith::main_board::app::shell {
@@ -11,13 +14,16 @@ namespace {
 
 using CalibrationState = midismith::main_board::domain::calibration::CalibrationState;
 
+constexpr std::uint32_t kPauseAfterSensorLineMs = 10u;
+
 constexpr std::string_view kUsage =
-    "usage: calibration <start|finish|status|confirm|abort>\r\n"
+    "usage: calibration <start|finish|status|confirm|abort|show>\r\n"
     "  start    Begin calibration (ensure all keys are at rest first)\r\n"
     "  finish   End strike phase and collect data from boards\r\n"
     "  status   Show current calibration state and strike progress\r\n"
     "  confirm  Confirm saving partial calibration data (when prompted)\r\n"
-    "  abort    Cancel the current calibration session\r\n";
+    "  abort    Cancel the current calibration session\r\n"
+    "  show     Display stored calibration data for all boards\r\n";
 
 constexpr std::string_view StateLabel(CalibrationState state) noexcept {
   switch (state) {
@@ -43,8 +49,15 @@ constexpr std::string_view StateLabel(CalibrationState state) noexcept {
 
 }  // namespace
 
+CalibrationCommand::CalibrationCommand(BlockingDelayRequirements& blocking_delay) noexcept
+    : blocking_delay_(blocking_delay) {}
+
 void CalibrationCommand::SetCoordinator(CalibrationCoordinatorRequirements& coordinator) noexcept {
   coordinator_ = &coordinator;
+}
+
+void CalibrationCommand::PauseToAllowUartTransmitBufferDrain() noexcept {
+  blocking_delay_.DelayMs(kPauseAfterSensorLineMs);
 }
 
 void CalibrationCommand::Run(int argc, char** argv,
@@ -73,6 +86,8 @@ void CalibrationCommand::Run(int argc, char** argv,
     RunConfirm(out);
   } else if (subcommand == "abort") {
     RunAbort(out);
+  } else if (subcommand == "show") {
+    RunShow(out);
   } else {
     PrintUsage(out);
   }
@@ -136,6 +151,35 @@ void CalibrationCommand::RunAbort(midismith::io::WritableStreamRequirements& out
     return;
   }
   coordinator_->Abort();
+}
+
+void CalibrationCommand::RunShow(midismith::io::WritableStreamRequirements& out) noexcept {
+  const auto* data = coordinator_->GetStoredCalibration();
+  if (data == nullptr) {
+    out.Write("no calibration data stored\r\n");
+    return;
+  }
+
+  for (std::uint8_t board_index = 0;
+       board_index < midismith::main_board::domain::config::kMaxBoardCount; ++board_index) {
+    if (!data->board_data_valid[board_index]) {
+      out.Write("board[");
+      midismith::io::WriteUint8(out, board_index);
+      out.Write("]: no data\r\n");
+      continue;
+    }
+
+    out.Write("board[");
+    midismith::io::WriteUint8(out, board_index);
+    out.Write("]:\r\n");
+
+    for (std::uint8_t sensor_index = 0;
+         sensor_index < midismith::main_board::domain::config::kSensorsPerBoard; ++sensor_index) {
+      midismith::calibration::WriteSensorCalibrationLine(
+          out, sensor_index, data->sensor_calibrations[board_index][sensor_index]);
+      PauseToAllowUartTransmitBufferDrain();
+    }
+  }
 }
 
 void CalibrationCommand::PrintUsage(midismith::io::WritableStreamRequirements& out) const noexcept {

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <span>
 
+#include "app/shell/blocking_delay_requirements.hpp"
 #include "app/shell/calibration_coordinator_requirements.hpp"
 #include "domain/calibration/calibration_session_observer_requirements.hpp"
 #include "io/stream_requirements.hpp"
@@ -14,7 +15,7 @@ class CalibrationCommand final
     : public midismith::shell::CommandRequirements,
       public midismith::main_board::domain::calibration::CalibrationSessionObserverRequirements {
  public:
-  CalibrationCommand() noexcept = default;
+  explicit CalibrationCommand(BlockingDelayRequirements& blocking_delay) noexcept;
 
   void SetCoordinator(CalibrationCoordinatorRequirements& coordinator) noexcept;
 
@@ -22,7 +23,7 @@ class CalibrationCommand final
     return "calibration";
   }
   std::string_view Help() const noexcept override {
-    return "Calibrate sensors (calibration <start|finish|status|confirm|abort>)";
+    return "Calibrate sensors (calibration <start|finish|status|confirm|abort|show>)";
   }
   void Run(int argc, char** argv, midismith::io::WritableStreamRequirements& out) noexcept override;
 
@@ -35,13 +36,17 @@ class CalibrationCommand final
 
  private:
   CalibrationCoordinatorRequirements* coordinator_ = nullptr;
+  BlockingDelayRequirements& blocking_delay_;
   midismith::io::WritableStreamRequirements* output_stream_ = nullptr;
+
+  void PauseToAllowUartTransmitBufferDrain() noexcept;
 
   void RunStart(midismith::io::WritableStreamRequirements& out) noexcept;
   void RunFinish(midismith::io::WritableStreamRequirements& out) noexcept;
   void RunStatus(midismith::io::WritableStreamRequirements& out) noexcept;
   void RunConfirm(midismith::io::WritableStreamRequirements& out) noexcept;
   void RunAbort(midismith::io::WritableStreamRequirements& out) noexcept;
+  void RunShow(midismith::io::WritableStreamRequirements& out) noexcept;
   void PrintUsage(midismith::io::WritableStreamRequirements& out) const noexcept;
 };
 

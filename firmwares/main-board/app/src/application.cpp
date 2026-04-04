@@ -17,7 +17,9 @@ void Application::init() noexcept {
 void Application::create_tasks() noexcept {
   static midismith::bsp::RttLogger rtt_logger;
 
-  alignas(32) BSP_RAM_NOCACHE static midismith::main_board::bsp::serial::UartStream<256, 1024>
+  alignas(32) BSP_RAM_NOCACHE static midismith::main_board::bsp::serial::UartStream<
+      midismith::main_board::app::config::kConsoleUartRxBufferSize,
+      midismith::main_board::app::config::kConsoleUartTxFifoSize>
       console_stream(huart1);
   (void) console_stream.StartRxDma();
 

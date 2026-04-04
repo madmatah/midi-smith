@@ -4,36 +4,31 @@
 #include <string_view>
 
 #include "app/config/sensors.hpp"
-#include "io/stream_format.hpp"
+#include "calibration/sensor_calibration_formatter.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
 namespace {
 
-void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
-  out.Write("usage: calibration status\r\n");
-}
+constexpr std::uint32_t kPauseAfterSensorLineMs = 10u;
 
-void WriteSensorCalibrationLine(
-    midismith::io::WritableStreamRequirements& out, std::uint8_t sensor_id,
-    const midismith::calibration::SensorCalibration& calibration) noexcept {
-  out.Write("sensor[");
-  midismith::io::WriteUint8(out, sensor_id);
-  out.Write("]  rest_mA=");
-  midismith::io::WriteFloat<3>(out, calibration.rest_current_ma);
-  out.Write("  strike_mA=");
-  midismith::io::WriteFloat<3>(out, calibration.strike_current_ma);
-  out.Write("  rest_mm=");
-  midismith::io::WriteFloat<3>(out, calibration.rest_distance_mm);
-  out.Write("  strike_mm=");
-  midismith::io::WriteFloat<3>(out, calibration.strike_distance_mm);
-  out.Write("\r\n");
+void WriteUsage(midismith::io::WritableStreamRequirements& out) noexcept {
+  out.Write("usage: calibration show\r\n");
 }
 
 }  // namespace
 
+CalibrationCommand::CalibrationCommand(
+    midismith::adc_board::app::calibration::CalibrationQueryRequirements& query,
+    BlockingDelayRequirements& blocking_delay) noexcept
+    : query_(query), blocking_delay_(blocking_delay) {}
+
+void CalibrationCommand::PauseToAllowUartTransmitBufferDrain() noexcept {
+  blocking_delay_.DelayMs(kPauseAfterSensorLineMs);
+}
+
 void CalibrationCommand::Run(int argc, char** argv,
                              midismith::io::WritableStreamRequirements& out) noexcept {
-  if (argc < 2 || argv == nullptr || argv[1] == nullptr || std::string_view(argv[1]) != "status") {
+  if (argc < 2 || argv == nullptr || argv[1] == nullptr || std::string_view(argv[1]) != "show") {
     WriteUsage(out);
     return;
   }
@@ -41,7 +36,9 @@ void CalibrationCommand::Run(int argc, char** argv,
   for (std::uint8_t index = 0; index < midismith::adc_board::app::config::sensors::kSensorCount;
        ++index) {
     const std::uint8_t sensor_id = midismith::adc_board::app::config::sensors::kSensorIds[index];
-    WriteSensorCalibrationLine(out, sensor_id, query_.sensor_calibration(index));
+    midismith::calibration::WriteSensorCalibrationLine(out, sensor_id,
+                                                       query_.sensor_calibration(index));
+    PauseToAllowUartTransmitBufferDrain();
   }
 }
 

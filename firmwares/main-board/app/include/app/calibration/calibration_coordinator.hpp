@@ -35,6 +35,8 @@ class CalibrationCoordinator final : public shell::CalibrationCoordinatorRequire
 
   [[nodiscard]] domain::calibration::CalibrationState state() const noexcept override;
   [[nodiscard]] domain::calibration::StrikeProgress GetStrikeProgress() const noexcept override;
+  [[nodiscard]] const domain::calibration::CalibrationData* GetStoredCalibration()
+      const noexcept override;
 
   void OnDataReceived(std::uint8_t board_id, const SensorCalibrationArray& data) noexcept override;
   void OnReceiveTimeout(std::uint8_t board_id) noexcept override;

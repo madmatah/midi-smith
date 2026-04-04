@@ -3,11 +3,22 @@
 #include "app/shell/calibration_command.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <fakeit.hpp>
 #include <string>
 
+#include "app/shell/blocking_delay_requirements.hpp"
 #include "app/shell/calibration_coordinator_requirements.hpp"
+#include "domain/calibration/calibration_data.hpp"
 #include "domain/calibration/calibration_session.hpp"
+#include "domain/config/main_board_config.hpp"
 #include "io/stream_requirements.hpp"
+
+#define fakeit_Method(mock, method) Method(mock, method)
+
+using fakeit::Mock;
+using fakeit::Verify;
+using fakeit::When;
 
 namespace {
 
@@ -65,6 +76,20 @@ class CalibrationCoordinatorStub final
     return abort_called_;
   }
 
+  [[nodiscard]] const midismith::main_board::domain::calibration::CalibrationData*
+  GetStoredCalibration() const noexcept override {
+    if (!has_stored_calibration_) {
+      return nullptr;
+    }
+    return &stored_calibration_;
+  }
+
+  void set_stored_calibration(
+      const midismith::main_board::domain::calibration::CalibrationData& data) noexcept {
+    stored_calibration_ = data;
+    has_stored_calibration_ = true;
+  }
+
  private:
   CalibrationState state_ = CalibrationState::kIdle;
   StrikeProgress progress_{0u, 0u};
@@ -72,6 +97,8 @@ class CalibrationCoordinatorStub final
   bool finish_strike_phase_called_ = false;
   bool confirm_save_partial_called_ = false;
   bool abort_called_ = false;
+  midismith::main_board::domain::calibration::CalibrationData stored_calibration_{};
+  bool has_stored_calibration_ = false;
 };
 
 class RecordingStream final : public midismith::io::WritableStreamRequirements {
@@ -107,8 +134,10 @@ using midismith::main_board::app::shell::CalibrationCommand;
 TEST_CASE("The CalibrationCommand class") {
   CalibrationCoordinatorStub coordinator;
   RecordingStream stream;
-  CalibrationCommand command;
+  Mock<midismith::main_board::app::shell::BlockingDelayRequirements> blocking_delay_mock;
+  CalibrationCommand command(blocking_delay_mock.get());
   command.SetCoordinator(coordinator);
+  When(fakeit_Method(blocking_delay_mock, DelayMs)).AlwaysDo([](std::uint32_t) noexcept {});
 
   SECTION("The Name() method") {
     SECTION("When called") {
@@ -286,7 +315,6 @@ TEST_CASE("The CalibrationCommand class") {
   }
 
   SECTION("Observer callbacks") {
-    // Establish the output stream by running a command first
     char argv0[] = "calibration";
     char argv1[] = "status";
     char* argv[] = {argv0, argv1};
@@ -333,9 +361,66 @@ TEST_CASE("The CalibrationCommand class") {
     }
   }
 
+  SECTION("The 'show' subcommand") {
+    SECTION("When no calibration data is stored") {
+      SECTION("Should print a 'no calibration data stored' message") {
+        char argv0[] = "calibration";
+        char argv1[] = "show";
+        char* argv[] = {argv0, argv1};
+        command.Run(2, argv, stream);
+        REQUIRE_THAT(stream.output(), Catch::Matchers::ContainsSubstring("no calibration data"));
+      }
+    }
+
+    SECTION("When calibration data is stored with one valid board") {
+      midismith::main_board::domain::calibration::CalibrationData data{};
+      data.board_data_valid[0] = true;
+      data.sensor_calibrations[0][0] = midismith::calibration::SensorCalibration{
+          .rest_current_ma = 1.0f,
+          .strike_current_ma = 2.0f,
+          .rest_distance_mm = 3.0f,
+          .strike_distance_mm = 4.0f,
+      };
+      coordinator.set_stored_calibration(data);
+
+      char argv0[] = "calibration";
+      char argv1[] = "show";
+      char* argv[] = {argv0, argv1};
+      command.Run(2, argv, stream);
+
+      SECTION("Should include 'board[0]' in the output") {
+        REQUIRE_THAT(stream.output(), Catch::Matchers::ContainsSubstring("board[0]"));
+      }
+
+      SECTION("Should print sensor lines for that board") {
+        REQUIRE_THAT(stream.output(), Catch::Matchers::ContainsSubstring("sensor[0]"));
+        REQUIRE_THAT(stream.output(), Catch::Matchers::ContainsSubstring("rest_mA="));
+      }
+
+      SECTION("Should pace UART output with a delay after each sensor line") {
+        Verify(fakeit_Method(blocking_delay_mock, DelayMs)(10u))
+            .Exactly(midismith::main_board::domain::config::kSensorsPerBoard);
+      }
+    }
+
+    SECTION("When a board entry is marked invalid") {
+      midismith::main_board::domain::calibration::CalibrationData data{};
+      data.board_data_valid[0] = false;
+      coordinator.set_stored_calibration(data);
+
+      char argv0[] = "calibration";
+      char argv1[] = "show";
+      char* argv[] = {argv0, argv1};
+      command.Run(2, argv, stream);
+
+      SECTION("Should print 'no data' for that board") {
+        REQUIRE_THAT(stream.output(), Catch::Matchers::ContainsSubstring("no data"));
+      }
+    }
+  }
+
   SECTION("Observer callbacks before any Run() call") {
     SECTION("Should not crash (null pointer guard)") {
-      // No Run() called yet — output_stream_ is null
       REQUIRE_NOTHROW(command.OnRestPhaseStarted());
       REQUIRE_NOTHROW(command.OnStrikePhaseStarted());
       REQUIRE_NOTHROW(command.OnCollectingDataStarted());
@@ -347,4 +432,4 @@ TEST_CASE("The CalibrationCommand class") {
   }
 }
 
-#endif  // defined(UNIT_TESTS)
+#endif

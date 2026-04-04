@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/calibration/calibration_data.hpp"
 #include "domain/calibration/calibration_session.hpp"
 
 namespace midismith::main_board::app::shell {
@@ -18,6 +19,9 @@ class CalibrationCoordinatorRequirements {
 
   [[nodiscard]] virtual midismith::main_board::domain::calibration::StrikeProgress
   GetStrikeProgress() const noexcept = 0;
+
+  [[nodiscard]] virtual const midismith::main_board::domain::calibration::CalibrationData*
+  GetStoredCalibration() const noexcept = 0;
 };
 
 }  // namespace midismith::main_board::app::shell

@@ -143,6 +143,7 @@ target_sources(${ADC_FIRMWARE_TARGET} PRIVATE
     app/src/shell/commands/adc_command.cpp
     app/src/shell/commands/sensor_rtt_command.cpp
     app/src/shell/commands/calibration_command.cpp
+    app/src/shell/os_clock_blocking_delay.cpp
     app/src/calibration/calibration_manager.cpp
 )
 

@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include "app/calibration/calibration_query_requirements.hpp"
+#include "app/shell/blocking_delay_requirements.hpp"
 #include "shell/command_requirements.hpp"
 
 namespace midismith::adc_board::app::shell::commands {
@@ -10,8 +11,8 @@ namespace midismith::adc_board::app::shell::commands {
 class CalibrationCommand final : public midismith::shell::CommandRequirements {
  public:
   explicit CalibrationCommand(
-      midismith::adc_board::app::calibration::CalibrationQueryRequirements& query) noexcept
-      : query_(query) {}
+      midismith::adc_board::app::calibration::CalibrationQueryRequirements& query,
+      BlockingDelayRequirements& blocking_delay) noexcept;
 
   std::string_view Name() const noexcept override {
     return "calibration";
@@ -25,6 +26,9 @@ class CalibrationCommand final : public midismith::shell::CommandRequirements {
 
  private:
   midismith::adc_board::app::calibration::CalibrationQueryRequirements& query_;
+  BlockingDelayRequirements& blocking_delay_;
+
+  void PauseToAllowUartTransmitBufferDrain() noexcept;
 };
 
 }  // namespace midismith::adc_board::app::shell::commands

@@ -149,4 +149,9 @@ void CalibrationCoordinator::TrySave() noexcept {
   }
 }
 
+const domain::calibration::CalibrationData* CalibrationCoordinator::GetStoredCalibration()
+    const noexcept {
+  return store_.cached_calibration();
+}
+
 }  // namespace midismith::main_board::app::calibration
