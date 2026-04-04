@@ -10,7 +10,7 @@ bool IsBoardIdInRange(std::uint8_t board_id) noexcept {
 }
 
 bool IsSensorIdInRange(std::uint8_t sensor_id) noexcept {
-  return sensor_id < midismith::main_board::domain::config::kSensorsPerBoard;
+  return sensor_id >= 1 && sensor_id <= midismith::main_board::domain::config::kSensorsPerBoard;
 }
 
 }  // namespace
@@ -45,7 +45,7 @@ void CalibrationSession::OnSensorEvent(std::uint8_t board_id, std::uint8_t senso
   if (!IsBoardIdInRange(board_id) || !IsSensorIdInRange(sensor_id)) {
     return;
   }
-  sensor_struck_[board_id - 1][sensor_id] = true;
+  sensor_struck_[board_id - 1][sensor_id - 1] = true;
 }
 
 void CalibrationSession::FinishStrikePhase(std::uint8_t connected_boards_mask) noexcept {
@@ -134,7 +134,7 @@ StrikeProgress CalibrationSession::GetStrikeProgress() const noexcept {
   for (std::uint8_t i = 0; i < keymap_data_.entry_count; ++i) {
     const auto& entry = keymap_data_.entries[i];
     if (IsBoardIdInRange(entry.board_id) && IsSensorIdInRange(entry.sensor_id) &&
-        sensor_struck_[entry.board_id - 1][entry.sensor_id]) {
+        sensor_struck_[entry.board_id - 1][entry.sensor_id - 1]) {
       ++struck_count;
     }
   }
@@ -188,7 +188,7 @@ bool CalibrationSession::HasValidCalibration(std::uint8_t board_id,
   if (!collected_data_.board_data_valid[board_id - 1]) {
     return false;
   }
-  const auto& calib = collected_data_.sensor_calibrations[board_id - 1][sensor_id];
+  const auto& calib = collected_data_.sensor_calibrations[board_id - 1][sensor_id - 1];
   return validity_checker_.IsValidCalibration(calib);
 }
 

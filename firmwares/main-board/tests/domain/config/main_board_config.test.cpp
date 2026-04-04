@@ -28,24 +28,25 @@ TEST_CASE("The CreateDefaultMainBoardConfig function") {
 
 TEST_CASE("The IsValidKeymapEntry function") {
   SECTION("Should accept a valid entry") {
-    REQUIRE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60}));
-    REQUIRE(IsValidKeymapEntry({.board_id = 8, .sensor_id = 21, .midi_note = 127}));
+    REQUIRE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60}));
+    REQUIRE(IsValidKeymapEntry({.board_id = 8, .sensor_id = 22, .midi_note = 127}));
   }
 
   SECTION("Should reject board_id 0") {
-    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 0, .sensor_id = 0, .midi_note = 60}));
+    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 0, .sensor_id = 1, .midi_note = 60}));
   }
 
   SECTION("Should reject board_id above max") {
-    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 9, .sensor_id = 0, .midi_note = 60}));
+    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 9, .sensor_id = 1, .midi_note = 60}));
   }
 
-  SECTION("Should reject sensor_id at or above sensors per board") {
-    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 22, .midi_note = 60}));
+  SECTION("Should reject sensor_id 0 or above max") {
+    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60}));
+    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 23, .midi_note = 60}));
   }
 
   SECTION("Should reject midi_note above 127") {
-    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 128}));
+    REQUIRE_FALSE(IsValidKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 128}));
   }
 }
 

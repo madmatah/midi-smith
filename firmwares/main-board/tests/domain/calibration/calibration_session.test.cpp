@@ -95,7 +95,7 @@ void AdvanceToCollectingData(CalibrationSession& session) {
 }  // namespace
 
 TEST_CASE("CalibrationSession", "[main-board][domain][calibration]") {
-  MainBoardData keymap = MakeKeymap(21, {{1, 0, 21}, {1, 1, 22}, {2, 0, 60}});
+  MainBoardData keymap = MakeKeymap(21, {{1, 1, 21}, {1, 2, 22}, {2, 1, 60}});
   ObserverStub observer;
   ValidityCheckerStub validity_checker;
   CalibrationSession session(keymap, observer, validity_checker);
@@ -145,35 +145,36 @@ TEST_CASE("CalibrationSession", "[main-board][domain][calibration]") {
     AdvanceToMeasuringStrikes(session);
 
     SECTION("Marks a valid sensor as struck") {
-      session.OnSensorEvent(1, 0);
+      session.OnSensorEvent(1, 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 1);
     }
 
     SECTION("Ignores duplicate strikes") {
-      session.OnSensorEvent(1, 0);
-      session.OnSensorEvent(1, 0);
+      session.OnSensorEvent(1, 1);
+      session.OnSensorEvent(1, 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 1);
     }
 
     SECTION("Ignores out-of-range board_id") {
-      session.OnSensorEvent(0, 0);
-      session.OnSensorEvent(kMaxBoardCount + 1, 0);
+      session.OnSensorEvent(0, 1);
+      session.OnSensorEvent(kMaxBoardCount + 1, 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 0);
     }
 
     SECTION("Ignores out-of-range sensor_id") {
-      session.OnSensorEvent(1, kSensorsPerBoard);
+      session.OnSensorEvent(1, 0);
+      session.OnSensorEvent(1, kSensorsPerBoard + 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 0);
     }
 
     SECTION("Counts all three keymap entries when struck") {
-      session.OnSensorEvent(1, 0);
       session.OnSensorEvent(1, 1);
-      session.OnSensorEvent(2, 0);
+      session.OnSensorEvent(1, 2);
+      session.OnSensorEvent(2, 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 3);
     }
@@ -186,7 +187,7 @@ TEST_CASE("CalibrationSession", "[main-board][domain][calibration]") {
 
     SECTION("Is a no-op when not in kMeasuringStrikes") {
       session.Abort();
-      session.OnSensorEvent(1, 0);
+      session.OnSensorEvent(1, 1);
 
       REQUIRE(session.GetStrikeProgress().struck_count == 0);
     }

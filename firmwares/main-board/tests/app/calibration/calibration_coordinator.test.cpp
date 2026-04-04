@@ -223,7 +223,7 @@ CalibrationSession::SensorCalibrationArray MakeValidCalibrationArray() {
 }  // namespace
 
 TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") {
-  MainBoardData keymap = MakeKeymap({{1, 0, 21}, {1, 1, 22}, {2, 0, 60}});
+  MainBoardData keymap = MakeKeymap({{1, 1, 21}, {1, 2, 22}, {2, 1, 60}});
 
   RecordingSessionObserver session_observer;
   AlwaysValidValidator validator;
@@ -272,9 +272,9 @@ TEST_CASE("The CalibrationCoordinator class", "[main-board][app][calibration]") 
     coordinator.OnRestPhaseComplete();
     REQUIRE(coordinator.state() == CalibrationState::kMeasuringStrikes);
 
-    coordinator.OnSensorEvent(1, 0);
     coordinator.OnSensorEvent(1, 1);
-    coordinator.OnSensorEvent(2, 0);
+    coordinator.OnSensorEvent(1, 2);
+    coordinator.OnSensorEvent(2, 1);
     REQUIRE(coordinator.GetStrikeProgress().struck_count == 3);
 
     coordinator.FinishStrikePhase();
