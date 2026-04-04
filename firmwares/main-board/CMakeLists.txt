@@ -20,6 +20,7 @@ midismith_require_lib(io)
 midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
+midismith_require_lib(shell-cmd-reboot)
 midismith_require_lib(shell-cmd-stats)
 midismith_require_lib(stats)
 midismith_require_lib(os-types)
@@ -67,7 +68,7 @@ if(HOST_TESTS)
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -156,6 +157,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     shell
     shell_cmd_version
     shell_cmd_os_stats
+    shell_cmd_reboot
     shell_cmd_stats
     stats
     can_broker
