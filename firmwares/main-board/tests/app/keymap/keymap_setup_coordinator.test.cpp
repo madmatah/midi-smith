@@ -97,7 +97,7 @@ TEST_CASE("The KeymapSetupCoordinator class", "[main-board][app][keymap]") {
   }
 
   SECTION("StartSetup resets the keymap in persistent config") {
-    persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60});
+    persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60});
     REQUIRE(persistent_config.active_config().data.entry_count == 1u);
 
     coordinator.StartSetup(5u, 36u);
@@ -133,7 +133,7 @@ TEST_CASE("The KeymapSetupCoordinator class", "[main-board][app][keymap]") {
   }
 
   SECTION("TryCaptureNoteOn returns false when no session is in progress") {
-    bool captured = coordinator.TryCaptureNoteOn(1u, 0u);
+    bool captured = coordinator.TryCaptureNoteOn(1u, 1u);
     REQUIRE_FALSE(captured);
   }
 
@@ -153,8 +153,8 @@ TEST_CASE("The KeymapSetupCoordinator class", "[main-board][app][keymap]") {
   SECTION("TryCaptureNoteOn assigns sequential MIDI notes") {
     coordinator.StartSetup(3u, 60u);
 
-    coordinator.TryCaptureNoteOn(1u, 0u);
     coordinator.TryCaptureNoteOn(1u, 1u);
+    coordinator.TryCaptureNoteOn(1u, 2u);
 
     REQUIRE(persistent_config.active_config().data.entries[0].midi_note == 60u);
     REQUIRE(persistent_config.active_config().data.entries[1].midi_note == 61u);
@@ -162,9 +162,9 @@ TEST_CASE("The KeymapSetupCoordinator class", "[main-board][app][keymap]") {
 
   SECTION("TryCaptureNoteOn requests persist when the last key is captured") {
     coordinator.StartSetup(2u, 60u);
-    coordinator.TryCaptureNoteOn(1u, 0u);
-
     coordinator.TryCaptureNoteOn(1u, 1u);
+
+    coordinator.TryCaptureNoteOn(1u, 2u);
 
     REQUIRE_FALSE(coordinator.is_in_progress());
     REQUIRE(storage_control.request_count == 1);
@@ -172,17 +172,17 @@ TEST_CASE("The KeymapSetupCoordinator class", "[main-board][app][keymap]") {
 
   SECTION("TryCaptureNoteOn returns false after session completes") {
     coordinator.StartSetup(1u, 60u);
-    coordinator.TryCaptureNoteOn(1u, 0u);
+    coordinator.TryCaptureNoteOn(1u, 1u);
     REQUIRE_FALSE(coordinator.is_in_progress());
 
-    bool captured = coordinator.TryCaptureNoteOn(1u, 1u);
+    bool captured = coordinator.TryCaptureNoteOn(1u, 2u);
 
     REQUIRE_FALSE(captured);
   }
 
   SECTION("A new session can start after the previous one completes") {
     coordinator.StartSetup(1u, 60u);
-    coordinator.TryCaptureNoteOn(1u, 0u);
+    coordinator.TryCaptureNoteOn(1u, 1u);
     REQUIRE_FALSE(coordinator.is_in_progress());
 
     bool started = coordinator.StartSetup(2u, 48u);

@@ -20,7 +20,8 @@ MainBoardConfig CreateDefaultMainBoardConfig() noexcept {
 
 bool IsValidKeymapEntry(const KeymapEntry& entry) noexcept {
   return entry.midi_note <= kMaxMidiNote && entry.board_id >= 1 &&
-         entry.board_id <= kMaxBoardCount && entry.sensor_id < kSensorsPerBoard;
+         entry.board_id <= kMaxBoardCount && entry.sensor_id >= 1 &&
+         entry.sensor_id <= kSensorsPerBoard;
 }
 
 }  // namespace midismith::main_board::domain::config

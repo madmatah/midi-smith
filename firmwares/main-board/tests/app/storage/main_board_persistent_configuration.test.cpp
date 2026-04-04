@@ -242,21 +242,21 @@ TEST_CASE("The MainBoardPersistentConfiguration class") {
     persistent_config.Load();
 
     SECTION("Should add a valid entry") {
-      REQUIRE(persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60}));
+      REQUIRE(persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60}));
       REQUIRE(persistent_config.active_config().data.entry_count == 1);
       REQUIRE(persistent_config.active_config().data.entries[0].midi_note == 60);
     }
 
     SECTION("Should reject an invalid entry") {
       REQUIRE_FALSE(
-          persistent_config.AddKeymapEntry({.board_id = 0, .sensor_id = 0, .midi_note = 60}));
+          persistent_config.AddKeymapEntry({.board_id = 0, .sensor_id = 1, .midi_note = 60}));
       REQUIRE(persistent_config.active_config().data.entry_count == 0);
     }
 
     SECTION("Should reject when keymap is full") {
       for (std::uint8_t i = 0; i < midismith::main_board::domain::config::kMaxKeymapEntries; ++i) {
         std::uint8_t board_id = static_cast<std::uint8_t>((i / 22) + 1);
-        std::uint8_t sensor_id = static_cast<std::uint8_t>(i % 22);
+        std::uint8_t sensor_id = static_cast<std::uint8_t>((i % 22) + 1);
         REQUIRE(
             persistent_config.AddKeymapEntry({.board_id = board_id,
                                               .sensor_id = sensor_id,
@@ -264,11 +264,11 @@ TEST_CASE("The MainBoardPersistentConfiguration class") {
       }
 
       REQUIRE_FALSE(
-          persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60}));
+          persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60}));
     }
 
     SECTION("Should persist entries after Commit and reload") {
-      persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60});
+      persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60});
       persistent_config.AddKeymapEntry({.board_id = 2, .sensor_id = 5, .midi_note = 72});
       persistent_config.Commit();
 
@@ -282,7 +282,7 @@ TEST_CASE("The MainBoardPersistentConfiguration class") {
 
   SECTION("The ResetKeymap method") {
     persistent_config.Load();
-    persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 0, .midi_note = 60});
+    persistent_config.AddKeymapEntry({.board_id = 1, .sensor_id = 1, .midi_note = 60});
 
     persistent_config.ResetKeymap(88u, 21u);
 
