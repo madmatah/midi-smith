@@ -80,7 +80,10 @@ void CalibrationCommand::Run(int argc, char** argv,
 
 void CalibrationCommand::RunStart(midismith::io::WritableStreamRequirements& out) noexcept {
   const CalibrationState current_state = coordinator_->state();
-  if (current_state != CalibrationState::kIdle) {
+  const bool is_restartable = current_state == CalibrationState::kIdle ||
+                              current_state == CalibrationState::kDone ||
+                              current_state == CalibrationState::kAborted;
+  if (!is_restartable) {
     out.Write("error: calibration already in progress (state: ");
     out.Write(StateLabel(current_state));
     out.Write(")\r\n");

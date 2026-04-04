@@ -157,7 +157,29 @@ TEST_CASE("The CalibrationCommand class") {
       }
     }
 
-    SECTION("When state is not kIdle") {
+    SECTION("When state is kDone") {
+      SECTION("Should call StartCalibration") {
+        coordinator.set_state(CalibrationState::kDone);
+        char argv0[] = "calibration";
+        char argv1[] = "start";
+        char* argv[] = {argv0, argv1};
+        command.Run(2, argv, stream);
+        REQUIRE(coordinator.start_calibration_called());
+      }
+    }
+
+    SECTION("When state is kAborted") {
+      SECTION("Should call StartCalibration") {
+        coordinator.set_state(CalibrationState::kAborted);
+        char argv0[] = "calibration";
+        char argv1[] = "start";
+        char* argv[] = {argv0, argv1};
+        command.Run(2, argv, stream);
+        REQUIRE(coordinator.start_calibration_called());
+      }
+    }
+
+    SECTION("When calibration is in progress") {
       SECTION("Should print an error and not call StartCalibration") {
         coordinator.set_state(CalibrationState::kMeasuringStrikes);
         char argv0[] = "calibration";
