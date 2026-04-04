@@ -16,7 +16,10 @@ constexpr uint32_t SENSOR_RTT_TELEMETRY_TASK_PRIORITY = 1;
 
 // Stack sizes
 constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
-constexpr uint32_t ANALOG_ACQUISITION_TASK_STACK_BYTES = 2048;
+// AnalogAcquisitionTask runs a deep DSP/piano-sensing pipeline. The calibration dump path also
+// executes in this task, so 2048 bytes leaves too little headroom, but 4096 bytes exhausts the
+// current FreeRTOS heap budget during boot.
+constexpr uint32_t ANALOG_ACQUISITION_TASK_STACK_BYTES = 3072;
 constexpr uint32_t SENSOR_RTT_TELEMETRY_TASK_STACK_BYTES = 1024;
 
 // CAN
@@ -42,7 +45,9 @@ constexpr uint32_t RTT_TELEMETRY_SENSOR_BUFFER_SIZE = 8192;
 constexpr uint32_t RTT_TELEMETRY_FREQUENCY_HZ = 5000;
 
 // Calibration
-constexpr uint32_t CALIBRATION_TASK_STACK_BYTES = 512;
+// CalibrationTask keeps a large Event variant on stack while packing and sending CAN segments.
+// 512 bytes is too tight once the serialization path adds its own local buffers.
+constexpr uint32_t CALIBRATION_TASK_STACK_BYTES = 1536;
 constexpr uint32_t CALIBRATION_TASK_PRIORITY = 1;
 constexpr uint32_t kCalibrationRestDurationMs = 2000;
 constexpr uint32_t kCalibrationAckTimeoutMs = 100;
