@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "app/config/analog_acquisition.hpp"
+#include "app/config/calibration.hpp"
 #include "app/config/sensor_linearization.hpp"
 
 namespace midismith::adc_board::app::config {

@@ -1,6 +1,7 @@
 #include "app/calibration/calibration_loader.hpp"
 
 #include "app/calibration/merge_distance_values.hpp"
+#include "app/calibration/replace_invalid_currents_with_defaults.hpp"
 #include "app/config/config.hpp"
 
 namespace midismith::adc_board::app::calibration {
@@ -43,6 +44,7 @@ void CalibrationLoader::OnCalibrationDataReceived(const SensorCalibrationArray& 
   request_retry_timer_.Stop();
   SensorCalibrationArray merged_data = data;
   midismith::adc_board::app::calibration::MergeDistanceValues(merged_data);
+  midismith::adc_board::app::calibration::ReplaceInvalidCurrentsWithDefaults(merged_data);
   calibration_apply_.ApplyCalibration(merged_data);
   CompleteLoading();
 }

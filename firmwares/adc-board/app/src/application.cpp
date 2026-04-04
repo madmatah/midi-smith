@@ -2,8 +2,8 @@
 
 #include "app/calibration/calibration_manager.hpp"
 #include "app/composition/subsystems.hpp"
+#include "app/config/calibration.hpp"
 #include "app/config/config.hpp"
-#include "app/config/sensor_linearization.hpp"
 #include "app/messaging/adc_board_can_message_sender.hpp"
 #include "app/telemetry/sensor_rtt_telemetry_defaults.hpp"
 #include "bsp/board.hpp"
