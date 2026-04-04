@@ -28,11 +28,11 @@ TEST_CASE("CalibrationDataCollector") {
   SECTION("When all sensors have valid calibration data") {
     SECTION("CollectCalibrationData should return all valid entries") {
       sensor_states[0].calibration_rest_peak_current_ma = 1.0f;
-      sensor_states[0].calibration_strike_min_current_ma = 0.2f;
+      sensor_states[0].calibration_strike_max_current_ma = 0.2f;
       sensor_states[1].calibration_rest_peak_current_ma = 1.1f;
-      sensor_states[1].calibration_strike_min_current_ma = 0.3f;
+      sensor_states[1].calibration_strike_max_current_ma = 0.3f;
       sensor_states[2].calibration_rest_peak_current_ma = 0.9f;
-      sensor_states[2].calibration_strike_min_current_ma = 0.1f;
+      sensor_states[2].calibration_strike_max_current_ma = 0.1f;
 
       CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
       collector.CollectCalibrationData(result);
@@ -49,7 +49,7 @@ TEST_CASE("CalibrationDataCollector") {
   SECTION("When a sensor has rest = 0 (uncalibrated)") {
     SECTION("CollectCalibrationData should leave that entry default-initialized") {
       sensor_states[0].calibration_rest_peak_current_ma = 0.0f;
-      sensor_states[0].calibration_strike_min_current_ma = 0.2f;
+      sensor_states[0].calibration_strike_max_current_ma = 0.2f;
 
       CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
       collector.CollectCalibrationData(result);
@@ -62,7 +62,7 @@ TEST_CASE("CalibrationDataCollector") {
   SECTION("When a sensor has strike = max_float (uncalibrated)") {
     SECTION("CollectCalibrationData should leave that entry default-initialized") {
       sensor_states[1].calibration_rest_peak_current_ma = 1.0f;
-      sensor_states[1].calibration_strike_min_current_ma = std::numeric_limits<float>::max();
+      sensor_states[1].calibration_strike_max_current_ma = std::numeric_limits<float>::max();
 
       CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
       collector.CollectCalibrationData(result);
@@ -74,9 +74,9 @@ TEST_CASE("CalibrationDataCollector") {
 
   SECTION("Values should be mapped to the correct array indices") {
     sensor_states[0].calibration_rest_peak_current_ma = 0.5f;
-    sensor_states[0].calibration_strike_min_current_ma = 0.1f;
+    sensor_states[0].calibration_strike_max_current_ma = 0.1f;
     sensor_states[2].calibration_rest_peak_current_ma = 0.8f;
-    sensor_states[2].calibration_strike_min_current_ma = 0.15f;
+    sensor_states[2].calibration_strike_max_current_ma = 0.15f;
 
     CalibrationDataCollector<kTestSensorCount>::CalibrationArray result{};
     collector.CollectCalibrationData(result);

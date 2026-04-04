@@ -8,7 +8,7 @@ namespace midismith::adc_board::domain::sensors {
 struct SensorState {
   float last_current_ma = 0.0f;
   float calibration_rest_peak_current_ma = 0.0f;
-  float calibration_strike_min_current_ma = std::numeric_limits<float>::max();
+  float calibration_strike_max_current_ma = 0.0f;
   bool is_calibration_rest_phase = false;
   float last_filtered_adc_value = 0.0f;
   float last_shank_position_norm = 0.0f;
