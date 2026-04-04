@@ -215,6 +215,7 @@ TEST_CASE("The StorageManager class") {
 
       auto result = storage_manager.Save(config);
       REQUIRE(result == midismith::bsp::storage::StorageOperationResult::kSuccess);
+      REQUIRE(config.crc32 != 0);
 
       TestConfig saved{};
       std::memcpy(&saved, flash.storage(), sizeof(saved));

@@ -39,17 +39,15 @@ class StorageManager {
     return status;
   }
 
-  midismith::bsp::storage::StorageOperationResult Save(const TConfig& ram_config) noexcept {
+  midismith::bsp::storage::StorageOperationResult Save(TConfig& ram_config) noexcept {
     using midismith::bsp::storage::StorageOperationResult;
 
-    TConfig config_to_save = ram_config;
-    ConfigValidator<TConfig>::StampCrc(config_to_save);
+    ConfigValidator<TConfig>::StampCrc(ram_config);
 
-    TConfig flash_contents{};
-    auto read_result =
-        flash_storage_.Read(0, reinterpret_cast<std::uint8_t*>(&flash_contents), sizeof(TConfig));
+    auto read_result = flash_storage_.Read(0, reinterpret_cast<std::uint8_t*>(&flash_read_buffer_),
+                                           sizeof(TConfig));
     if (read_result == StorageOperationResult::kSuccess &&
-        std::memcmp(&config_to_save, &flash_contents, sizeof(config_to_save)) == 0) {
+        std::memcmp(&ram_config, &flash_read_buffer_, sizeof(ram_config)) == 0) {
       return StorageOperationResult::kSuccess;
     }
 
@@ -58,13 +56,14 @@ class StorageManager {
       return erase_result;
     }
 
-    return flash_storage_.Write(0, reinterpret_cast<const std::uint8_t*>(&config_to_save),
-                                sizeof(config_to_save));
+    return flash_storage_.Write(0, reinterpret_cast<const std::uint8_t*>(&ram_config),
+                                sizeof(ram_config));
   }
 
  private:
   midismith::bsp::storage::FlashSectorStorageRequirements& flash_storage_;
   TConfig default_config_;
+  TConfig flash_read_buffer_{};
 };
 
 }  // namespace midismith::config
