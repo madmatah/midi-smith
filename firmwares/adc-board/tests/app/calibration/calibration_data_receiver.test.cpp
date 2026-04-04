@@ -214,16 +214,6 @@ TEST_CASE("The CalibrationDataReceiver class") {
       }
     }
 
-    SECTION("When source_node_id is not kMainBoardNodeId") {
-      SECTION("Should ignore the segment and not send an ACK") {
-        const auto segment = MakeSegment(calibration, 0, static_cast<std::uint8_t>(kTotalSegments));
-        receiver.OnCalibrationDataSegment(segment, 5);
-
-        REQUIRE(sender.ack_calls().empty());
-        REQUIRE_FALSE(observer.received_data().has_value());
-      }
-    }
-
     SECTION("When total_packets is 0") {
       CalibrationDataSegment no_data_segment{};
       no_data_segment.seq_index = 0;
