@@ -31,6 +31,7 @@ constexpr std::uint32_t kCalibrationServerAckTimeoutMs = 100;
 constexpr std::uint32_t kCalibrationServerMaxRetries = 3;
 constexpr std::uint32_t kCalibrationReceiveTimeoutMs = 500;
 constexpr float kMaxValidStrikeCurrentMa = 1.138f;
+constexpr float kMinimumCalibrationDeltaMa = 0.0f;
 constexpr std::uint32_t kCalibrationRestDurationMs = 2000;
 
 // ADC board lifecycle

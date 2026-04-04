@@ -1,5 +1,7 @@
 #include "domain/calibration/calibration_session.hpp"
 
+#include "calibration/calibration_validator_requirements.hpp"
+
 
 namespace midismith::main_board::domain::calibration {
 
@@ -18,7 +20,7 @@ bool IsSensorIdInRange(std::uint8_t sensor_id) noexcept {
 CalibrationSession::CalibrationSession(
     const midismith::main_board::domain::config::MainBoardData& keymap_data,
     CalibrationSessionObserverRequirements& observer,
-    CalibrationDataValidityRequirements& validity_checker) noexcept
+    midismith::calibration::CalibrationValidatorRequirements& validity_checker) noexcept
     : keymap_data_(keymap_data), observer_(observer), validity_checker_(validity_checker) {}
 
 void CalibrationSession::StartSession() noexcept {

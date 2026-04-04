@@ -13,8 +13,8 @@
 #include "app/messaging/main_board_message_sender_requirements.hpp"
 #include "app/storage/calibration_persistent_store.hpp"
 #include "bsp-types/storage/flash_sector_storage_requirements.hpp"
+#include "calibration/calibration_validator_requirements.hpp"
 #include "calibration/sensor_calibration.hpp"
-#include "domain/calibration/calibration_data_validity_requirements.hpp"
 #include "domain/calibration/calibration_session.hpp"
 #include "domain/config/main_board_config.hpp"
 #include "os-types/timer_requirements.hpp"
@@ -32,8 +32,7 @@ using CalibrationState = midismith::main_board::domain::calibration::Calibration
 using CalibrationData = midismith::main_board::domain::calibration::CalibrationData;
 using CalibrationSessionObserverRequirements =
     midismith::main_board::domain::calibration::CalibrationSessionObserverRequirements;
-using CalibrationDataValidityRequirements =
-    midismith::main_board::domain::calibration::CalibrationDataValidityRequirements;
+using CalibrationValidatorRequirements = midismith::calibration::CalibrationValidatorRequirements;
 using CalibrationPersistentStore = midismith::main_board::app::storage::CalibrationPersistentStore;
 using MainBoardData = midismith::main_board::domain::config::MainBoardData;
 using KeymapEntry = midismith::main_board::domain::config::KeymapEntry;
@@ -42,7 +41,7 @@ using DataSegmentAckStatus = midismith::protocol::DataSegmentAckStatus;
 
 // --- Mock stubs ---
 
-class AlwaysValidValidator final : public CalibrationDataValidityRequirements {
+class AlwaysValidValidator final : public CalibrationValidatorRequirements {
  public:
   bool IsValidCalibration(const SensorCalibration&) const noexcept override {
     return true;

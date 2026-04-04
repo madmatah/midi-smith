@@ -3,7 +3,6 @@
 #include "app/calibration/calibration_bulk_data_receiver.hpp"
 #include "app/calibration/calibration_coordinator.hpp"
 #include "app/calibration/calibration_data_server_task.hpp"
-#include "app/calibration/sensor_calibration_validator.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/config/flash_layout.hpp"
@@ -11,6 +10,7 @@
 #include "app/storage/calibration_persistent_store.hpp"
 #include "bsp/board.hpp"
 #include "bsp/storage/spi_flash_sector_storage.hpp"
+#include "calibration/sensor_calibration_validator.hpp"
 #include "domain/calibration/calibration_session.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
@@ -47,7 +47,8 @@ CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, C
       can_ctx.message_sender, calibration_store, calibration_server_event_queue,
       calibration_server_ack_timer);
 
-  static midismith::main_board::app::calibration::SensorCalibrationValidator validator;
+  static midismith::calibration::SensorCalibrationValidator validator(
+      config::kMinimumCalibrationDeltaMa, config::kMaxValidStrikeCurrentMa);
 
   static midismith::main_board::app::shell::CalibrationCommand calibration_command;
 
