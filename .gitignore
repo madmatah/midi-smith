@@ -29,6 +29,8 @@ CMakeUserPresets.json
 # --- Caches ---
 .cache/
 **/.cache/
+.venv/
+**/.venv/
 __pycache__/
 **/__pycache__/
 
