@@ -1,0 +1,22 @@
+[project]
+name = "midi-smith-tools"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+rtt-scope = [
+    "numpy",
+    "vispy",
+    "glfw",
+]
+rtt-dsp = [
+    "numpy",
+    "scipy",
+    "pyqtgraph",
+    "PyQt6",
+]
+rtt-midi = [
+    "mido",
+    "python-rtmidi",
+]

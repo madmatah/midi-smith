@@ -4,6 +4,14 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "${script_dir}/.." && pwd)"
 
+if command -v uv >/dev/null 2>&1; then
+    exec uv run \
+        --directory "${repo_root}" \
+        --only-group rtt-dsp \
+        --frozen \
+        python -m tools.rtt_dsp_app "$@"
+fi
+
 cd "${repo_root}"
 
 if command -v python3 >/dev/null 2>&1; then
