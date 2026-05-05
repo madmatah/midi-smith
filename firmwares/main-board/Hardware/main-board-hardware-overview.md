@@ -73,9 +73,9 @@ The core board connects to the carrier board through:
 
 | Signal | MCU Pin | STM32 Function | Notes |
 | :--- | :--- | :--- | :--- |
-| `CAN_RX` | `PB8` | `FDCAN1_RX` | Receive from the CAN transceiver |
-| `CAN_TX` | `PB9` | `FDCAN1_TX` | Transmit to the CAN transceiver |
-| `CAN_STANDBY` | `PB5` | `GPIO_Output` | `Low` = normal mode, `High` = standby |
+| `FDCAN_RX` | `PB8` | `FDCAN1_RX` | Receive from the CAN transceiver |
+| `FDCAN_TX` | `PB9` | `FDCAN1_TX` | Transmit to the CAN transceiver |
+| `FDCAN_STANDBY` | `PB5` | `GPIO_Output` | `Low` = normal mode, `High` = standby |
 
 **Notes**
 - CAN termination is configured with two jumper headers on the carrier board.
@@ -142,8 +142,6 @@ The core board connects to the carrier board through:
 **Notes**
 - This interface supports **SWD debug** and a **USART2 console**.
 - JTAG is not used on this board.
-- The current firmware console is instantiated on `huart1` in `application.cpp`, so the
-  firmware still targets `USART1` rather than the STDC14 UART routing on `USART2`.
 
 **Connector Pinout**
 | Pin | Description |
@@ -163,7 +161,7 @@ The core board connects to the carrier board through:
 | `13` | `USART2_RX` |
 | `14` | `USART2_TX` |
 
-### Auxiliary Serial
+### Auxiliary Serial expansion (Not used yet)
 - **Role:** auxiliary serial expansion.
 - **Board Side:** carrier board.
 - **Physical Interface:** PH 2-pin connector.
@@ -290,10 +288,10 @@ The core board connects to the carrier board through:
 
 | Signal / Device | MCU Pin | STM32 Function | Notes |
 | :--- | :--- | :--- | :--- |
-| `U8_SCK` | `PB3` | `SPI1_SCK` | `U8` SPI flash clock |
-| `U8_MISO` | `PB4` | `SPI1_MISO` | `U8` SPI flash data out |
-| `U8_MOSI` | `PD7` | `SPI1_MOSI` | `U8` SPI flash data in |
-| `U8_CS` | `PD6` | `GPIO_Output` | `U8` chip select |
+| `SPI1_SCK` | `PB3` | `SPI1_SCK` | `U8` SPI flash clock |
+| `SPI1_MISO` | `PB4` | `SPI1_MISO` | `U8` SPI flash data out |
+| `SPI1_MOSI` | `PD7` | `SPI1_MOSI` | `U8` SPI flash data in |
+| `FLASH_CS` | `PD6` | `GPIO_Output` | `U8` chip select |
 
 **Notes**
 - `U8` is currently used for persistent application data such as MIDI mapping and ADC
