@@ -8,8 +8,8 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 **[`Pinout View` window]**
 
 ### CAN Communication (TJA1042T)
-- **PB8** : `FDCAN1_RX`
-- **PB9** : `FDCAN1_TX`
+- **PB8** : `FDCAN1_RX` (FDCAN1_RX)
+- **PB9** : `FDCAN1_TX` (FDCAN1_TX)
 - **PB5** : `FDCAN_STANDBY` (GPIO OUT)
 
 ### USB MIDI (Native Interface)
@@ -46,10 +46,6 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 - **PB4** : `SPI1_MISO` (SPI1_MISO)
 - **PD6** : `FLASH_CS`   (GPIO_Output)
 
-## USART1 :
-- **PA9**  : `USART1_TX` (Console)
-- **PA10** : `USART1_RX` (Console)
-
 ## MIDI
 - **PB10** : `MIDI_OUT` (USART3_TX)
 - **PB11** : `MIDI_IN` (USART3_RX)
@@ -67,7 +63,7 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 ## Rotary encoder 
 - **PA5** : `TIM2_CH1`
 - **PA1** : `TIM2_CH2`
-- **PB15** : `GPIO` (GPIO_Input)
+- **PB15** : `ROTARY_BTN` (GPIO_Input)
 
 
 ---
@@ -146,31 +142,7 @@ Device Descriptor tab:
 
 ---
 
-## 6. Console Configuration (USART1)
-**[`Connectivity` > `USART1`]**
-
-1.  **Mode** : `Asynchronous`.
-2.  **Parameters** :
-    *   **Baud Rate** : `115200 Bits/s`.
-    *   **Word Length** : `8 Bits`.
-    *   **Parity** : `None`.
-    *   **Stop Bits** : `1`.
-3. **DMA Settings**:
-   1. Click `Add` and add **two requests**:
-      - `USART1_RX` (Peripheral-to-Memory)
-      - `USART1_TX` (Memory-to-Peripheral)
-   2. For **USART1_RX**:
-      - **Mode**: `Circular`
-      - **Data Width (Memory)**: `Byte`
-      - **Data Width (Peripheral)**: `Byte`
-   3. For **USART1_TX**:
-      - **Mode**: `Normal`
-      - **Data Width (Memory)**: `Byte`
-      - **Data Width (Peripheral)**: `Byte`
-4.  **NVIC Settings** :
-- Enable `USART1 global interrupt`.
-- Enable interrupts for the **DMA streams** associated with `USART1_RX` and `USART1_TX`.
-- Set the UART/DMA priority to **5** (or lower) and keep **ADC/FDCAN at a higher priority**.
+## 6. Console Configuration (USART2)
 
 **[`Connectivity` > `USART2`]**
 1.  **Mode** : `Asynchronous`.
@@ -212,7 +184,7 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 - **Data [3:0]** : Select **`Port 1`** (enables PD11, PD12, PE2, PD13).
 
 **2. Configuration (Parameter Settings):**
-- **Memory Type** : `Macronix` (standard for Winbond NOR Flash).
+- **Memory Type** : `Macronix` (The Macronix standard works with the Winbond NOR Flash).
 - **Fifo Threshold** : `4`.
 - **Clock Prescaler** : `2` (280 MHz / (1+2) = 93.3 MHz; chip max 133 MHz).
 - **Sample Shifting**: `Half Cycle` (required at high speed for data stability).
@@ -238,11 +210,11 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 3.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
 4.  **USER_LED (PE3)** : Output Level `High` (off by default on this board).
 5. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
-6. **LCD_BLK (PE10)** : Output Level Low (display off by default).
+6. **LCD_LED (PE10)** : Output Level Low (display off by default).
 
 ---
 
-## 10. Debug
+## 9. Debug
 
 **[`Trace and Debug` > `DEBUG`]**
 
@@ -257,7 +229,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 
 ---
 
-## 11. Enable FreeRTOS
+## 10. Enable FreeRTOS
 
 **[`Middlewares and Software Packs` > `FREERTOS`]**
 
@@ -265,7 +237,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 2.  **Tasks and Queues**: Increase `defaultTask` stack size to at least **1024 words**.
     *   USB initialization (`MX_USB_DEVICE_Init`) runs in this task and uses a lot of stack. A smaller value causes an immediate HardFault at startup.
 
-### 11.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
+### 10.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
 
 Objective: expose MCU CPU load and per-task runtime usage in the shell (`status` / `ps` commands).
 
@@ -278,7 +250,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 12. Project Manager (Cursor / VS Code Setup)
+## 11. Project Manager (Cursor / VS Code Setup)
 
 1.  **Project Name**: `H7B0_Master_Controller`
 2.  **Toolchain / IDE**: `CMake`
@@ -293,7 +265,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 13. MPU Configuration (NoCache Zone)
+## 12. MPU Configuration (NoCache Zone)
 
 The Cortex-M7 L1 cache can cause coherence issues with DMA. An 8 KB RAM region at 0x24000000 is reserved for non-cacheable DMA buffers.
 
