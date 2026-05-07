@@ -30,17 +30,17 @@ At a high level, the main-board provides:
 
 ### Two-Board Assembly
 The main-board is built from two hardware parts:
-- A **WeAct H7xx core board** containing the MCU and several onboard peripherals.
+- A **WeAct H743 core board** containing the MCU and several onboard peripherals.
 - A **carrier board** adding the project-specific connectors, transceivers, power switching,
   and debug access.
 
 ### Core Board
 The core board provides:
-- ARM Cortex-M7 MCU (`STM32H7B0`), up to `280 MHz`.
-- Embedded memory: `128 Kbytes` Flash and `~1.4 Mbytes` RAM.
+- ARM Cortex-M7 MCU (`STM32H743VIT6`), up to `480 MHz`.
+- Embedded memory: `2048 Kbytes` Flash and `1 MB` RAM.
 - On-board USB connector.
 - Integrated TFT display.
-- External storage (`8 MB` SPI flash, `8 MB` OCTOSPI flash, MicroSD).
+- External storage (`8 MB` SPI flash, `8 MB` QSPI flash, MicroSD).
 - User LED.
 
 ### Carrier Board
@@ -297,23 +297,23 @@ The core board connects to the carrier board through:
 - `U8` is currently used for persistent application data such as MIDI mapping and ADC
   calibration.
 
-### OCTOSPI Flash
+### QSPI Flash
 - **Board Side:** core board.
 - **Role:** future high-speed external storage.
-- **MCU Peripheral:** `OCTOSPI1`.
+- **MCU Peripheral:** `QUADSPI`.
 
 | Signal / Device | MCU Pin | STM32 Function | Notes |
 | :--- | :--- | :--- | :--- |
-| `U7_CLK` | `PB2` | `OCTOSPIM_P1_CLK` | `U7` OCTOSPI flash clock |
-| `U7_NCS` | `PB6` | `OCTOSPIM_P1_NCS` | `U7` chip select |
-| `U7_IO0` | `PD11` | `OCTOSPIM_P1_IO0` | `U7` data line |
-| `U7_IO1` | `PD12` | `OCTOSPIM_P1_IO1` | `U7` data line |
-| `U7_IO2` | `PE2` | `OCTOSPIM_P1_IO2` | `U7` data line |
-| `U7_IO3` | `PD13` | `OCTOSPIM_P1_IO3` | `U7` data line |
+| `U7_CLK` | `PB2` | `QUADSPI_CLK` | `U7` QSPI flash clock |
+| `U7_NCS` | `PB6` | `QUADSPI_BK1_NCS` | `U7` chip select |
+| `U7_IO0` | `PD11` | `QUADSPI_BK1_IO0` | `U7` data line |
+| `U7_IO1` | `PD12` | `QUADSPI_BK1_IO1` | `U7` data line |
+| `U7_IO2` | `PE2` | `QUADSPI_BK1_IO2` | `U7` data line |
+| `U7_IO3` | `PD13` | `QUADSPI_BK1_IO3` | `U7` data line |
 
 **Notes**
 - `U7` is available for future high-speed assets / XIP usage.
-- Avoid writes to the OCTOSPI memory-mapped storage while the display is active, to preserve
+- Avoid writes to the QSPI memory-mapped storage while the display is active, to preserve
   reliable access to the `0x90000000` memory-mapped region.
 
 ### MicroSD
