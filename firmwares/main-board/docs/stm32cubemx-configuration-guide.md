@@ -1,6 +1,6 @@
-# CubeMX Configuration Guide: H7B0 Main Node (Display & CAN)
+# CubeMX Configuration Guide: Main Node (Display & CAN)
 
-This guide describes how to configure the STM32H7B0 as the central controller: receiving CAN data and driving an IPS display over SPI.
+This guide describes how to configure the STM32H743VIT6 as the central controller: receiving CAN data and driving an IPS display over SPI.
 
 ---
 
@@ -34,12 +34,12 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
 - **PE3**  : `USER_LED` (GPIO_Output)
 
 ### External Storage (SPI Flash (U8) & QSPI (U7))
-- **PB2** : `OCTOSPIM_P1_CLK` (OCTOSPIM_P1_CLK)
-- **PB6** : `OCTOSPIM_P1_NCS` (OCTOSPIM_P1_NCS)
-- **PD11** : `OCTOSPIM_P1_IO0` (OCTOSPIM_P1_IO0)
-- **PD12** : `OCTOSPIM_P1_IO1` (OCTOSPIM_P1_IO1)
-- **PE2** : `OCTOSPIM_P1_IO2` (OCTOSPIM_P1_IO2)
-- **PD13** : `OCTOSPIM_P1_IO3` (OCTOSPIM_P1_IO3)
+- **PB2** : `QUADSPI_CLK` (QUADSPI_CLK)
+- **PB6** : `QUADSPI_BK1_NCS` (QUADSPI_BK1_NCS)
+- **PD11** : `QUADSPI_BK1_IO0` (QUADSPI_BK1_IO0)
+- **PD12** : `QUADSPI_BK1_IO1` (QUADSPI_BK1_IO1)
+- **PE2** : `QUADSPI_BK1_IO2` (QUADSPI_BK1_IO2)
+- **PD13** : `QUADSPI_BK1_IO3` (QUADSPI_BK1_IO3)
 
 - **PB3** : `SPI1_SCK`  (SPI1_SCK)
 - **PD7** : `SPI1_MOSI` (SPI1_MOSI)
@@ -76,9 +76,9 @@ This guide describes how to configure the STM32H7B0 as the central controller: r
     - **Input frequency (HSE)** : `25` MHz
     * **HSE** : Select `HSE` in PLL source mux
     * **System Clock Mux**: PLLCLK
-    * **CDCPRE** : Enter `280` MHz (maximum for the H7B0) and let CubeMX resolve the PLLs.
+    * **CDCPRE** : Enter `480` MHz (maximum for the H743) and let CubeMX resolve the PLLs.
     * **USB Clock Mux (48 MHz)** : Select `PLL3Q` or `HSI48` to get exactly **48 MHz**. Otherwise the MIDI device will not be recognized.
-    * **FDCAN Clock Mux** : Choose `HSE` or `PLL1Q` for a stable frequency (e.g. 80 MHz, by selecting /7 on PLL1Q).
+    * **FDCAN Clock Mux** : Choose `HSE` or `PLL1Q` for a stable frequency (e.g. 80 MHz, by selecting /?? on PLL1Q).
 
 ---
 
@@ -170,12 +170,14 @@ Device Descriptor tab:
 
 ---
 
-## 7. Flash Memory Layout (Dual Flash Strategy)
-The H7B0 has only **128 KB** of internal Flash.
-The WeAct board has two external Flash chips (W25Q64JV) used to separate graphical assets from system storage.
+## 7. Flash Memory Layout (External Flash Strategy)
+The H743VIT6 has **2048 Kbytes** of internal Flash.
+The WeAct board also has two external Flash chips (W25Q64JV): 1 SPI and 1 QSPI.
+The SPI is used to persist configuration.
+The QSPI is not used yet, but might be used to store graphical resources for the display.
 
 ### A. QSPI Flash (Not used yet - U7)
-**[`Connectivity` > `OCTOSPI1`]**
+**[`Connectivity` > `QUADSPI`]**
 
 **1. Mode (top section):**
 - **Mode** : `Single/Dual/Quad SPI` -> `Quad SPI`.
@@ -186,7 +188,7 @@ The WeAct board has two external Flash chips (W25Q64JV) used to separate graphic
 **2. Configuration (Parameter Settings):**
 - **Memory Type** : `Macronix` (The Macronix standard works with the Winbond NOR Flash).
 - **Fifo Threshold** : `4`.
-- **Clock Prescaler** : `2` (280 MHz / (1+2) = 93.3 MHz; chip max 133 MHz).
+- **Clock Prescaler** : `4` (480 MHz / (1+4) = 96 MHz; chip max 133 MHz).
 - **Sample Shifting**: `Half Cycle` (required at high speed for data stability).
 - **Flash Size** : `22` (for 8 MB, 2^23 bytes; CubeMX uses n-1).
 - **Chip Select High Time** : `2 cycles` (safe deselect between accesses).
@@ -252,7 +254,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ## 11. Project Manager (Cursor / VS Code Setup)
 
-1.  **Project Name**: `H7B0_Master_Controller`
+1.  **Project Name**: `H743_Main_Controller`
 2.  **Toolchain / IDE**: `CMake`
 3.  **Code Generator**:
     * **Library Files**: `Copy only the necessary library files`.
