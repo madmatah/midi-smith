@@ -1,6 +1,6 @@
-# CubeMX Configuration Guide: Main Node (Display & CAN)
+# CubeMX Configuration Guide: Main Node (Orchestration and MIDI interface)
 
-This guide describes how to configure the STM32H743VIT6 as the central controller: receiving CAN data and driving an IPS display over SPI.
+This guide describes how to configure the STM32H743VIT6 as the central controller.
 
 ---
 
@@ -72,13 +72,13 @@ This guide describes how to configure the STM32H743VIT6 as the central controlle
 
 1.  **HSE Input** :
     * `System Core` > `RCC` > `High Speed Clock (HSE)` : **Crystal/Ceramic Resonator** (25 MHz on the WeAct board).
+    * `System Core` > `RCC` > `Low Speed Clock (LSE)` : **Crystal/Ceramic Resonator** (32.768 KHz on the WeAct board)
 2.  **Clock Tree Tab** :
     - **Input frequency (HSE)** : `25` MHz
     * **HSE** : Select `HSE` in PLL source mux
     * **System Clock Mux**: PLLCLK
     * **CDCPRE** : Enter `480` MHz (maximum for the H743) and let CubeMX resolve the PLLs.
-    * **USB Clock Mux (48 MHz)** : Select `PLL3Q` or `HSI48` to get exactly **48 MHz**. Otherwise the MIDI device will not be recognized.
-    * **FDCAN Clock Mux** : Choose `HSE` or `PLL1Q` for a stable frequency (e.g. 80 MHz, by selecting /?? on PLL1Q).
+    * **FDCAN Clock Mux** : Choose `HSE` or `PLL1Q` for a stable frequency (e.g. 80 MHz, by selecting /12 on PLL1Q).
 
 ---
 
@@ -110,12 +110,11 @@ Adjust later according to required filters and buffer sizes.
 ---
 
 ## 4. USB MIDI Configuration
-**[`Connectivity` > `USB_OTG_HS`]**
-1.  **External PHY** : `Disable`.
-2.  **Internal FS PHY** : `Device_Only`.
-*
+**[`Connectivity` > `USB_OTG_FS`]**
+*  **Mode** : `Device only`.
+
 **[`Middlewares` > `USB_DEVICE`]**
-1.  **Class For HS IP** : `Audio Class (MIDI)`.
+1.  **Class For FS IP** : `Audio Class (MIDI)`.
 2.  **USBD_MAX_NUM_INTERFACES** : `2`.
 
 Device Descriptor tab:
@@ -124,6 +123,11 @@ Device Descriptor tab:
 - PRODUCT_STRING : "Midi Smith"
 - CONFIGURATION_STRING : MIDI Config
 - INTERFACE_STRING : MIDI Interface
+
+**[`Clock Tree Tab`]**
+
+* **USB Clock Mux (48 MHz)** : Select `PLL3Q` or `HSI48` to get exactly **48 MHz**. Otherwise the MIDI device will not be recognized.
+
 
 ---
 
@@ -134,11 +138,11 @@ Device Descriptor tab:
 2.  **Parameters** :
     * **Data Size** : `8 Bits`.
     * **First Bit** : `MSB First`.
-    * **Baud Rate** : Set the prescaler for **<= 15 Mbit/s**
+    * **Baud Rate** : Set the prescaler to 2 for **<= 15 Mbit/s**
     * **Clock Polarity (CPOL)** : `Low (0)`.
     * **Clock Phase (CPHA)** : `1 Edge (0)`.
 3.  **Clock Tree Tab** :
-    * **SPI4 Clock Mux** : Choose `PLL2Q`
+    * **SPI4 Clock Mux** : Choose `HSE`
 
 ---
 
@@ -166,7 +170,6 @@ Device Descriptor tab:
 4.  **NVIC Settings** :
 - Enable `USART2 global interrupt`.
 - Enable interrupts for the **DMA streams** associated with `USART2_RX` and `USART2_TX`.
-- Set the UART/DMA priority to **5** (or lower) and keep **ADC/FDCAN at a higher priority**.
 
 ---
 
@@ -180,19 +183,18 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 **[`Connectivity` > `QUADSPI`]**
 
 **1. Mode (top section):**
-- **Mode** : `Single/Dual/Quad SPI` -> `Quad SPI`.
-- **Port1 CLK** : **Check the box** (enables PB2).
-- **Chip Select Port1 NCS** : **Check the box** (enables PB6).
-- **Data [3:0]** : Select **`Port 1`** (enables PD11, PD12, PE2, PD13).
+- **Mode** : `Bank1 with Quand SPI Lines`.
+- **Chip Select for Dual bank** : **Disable**
 
 **2. Configuration (Parameter Settings):**
-- **Memory Type** : `Macronix` (The Macronix standard works with the Winbond NOR Flash).
+- **Clock Prescaler** : `2` (240 MHz / (1+2) = 80 MHz; chip max 133 MHz).
 - **Fifo Threshold** : `4`.
-- **Clock Prescaler** : `4` (480 MHz / (1+4) = 96 MHz; chip max 133 MHz).
 - **Sample Shifting**: `Half Cycle` (required at high speed for data stability).
 - **Flash Size** : `22` (for 8 MB, 2^23 bytes; CubeMX uses n-1).
 - **Chip Select High Time** : `2 cycles` (safe deselect between accesses).
-- **Memory-Mapped Mode** : Enabled from BSP code (address `0x90000000`).
+- **Clock Mode** : `Low` (CPOL=0).
+- **Dual Flash** : `Disabled`
+- **Flash ID** : `Flash ID 1`
 
 ### B. SPI Flash (Persistent Config)
 **[`Connectivity` > `SPI1`]**
@@ -207,12 +209,20 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ## 8. GPIO Initialization
 **[`System Core` > `GPIO`]**
-1. **LCD_WR_RS (PE13)** : Output level `Low`
-2. **LCD_CS (PE11)** : Output level `High` (disabled by default)
-3.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
-4.  **USER_LED (PE3)** : Output Level `High` (off by default on this board).
-5. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
-6. **LCD_LED (PE10)** : Output Level Low (display off by default).
+1. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
+2.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
+3. **LCD_CS (PE11)** : Output level `High` (disabled by default)
+4. **LCD_LED (PE10)** : Output Level Low (display off by default).
+5. **LCD_WR_RS (PE13)** : Output level `Low`
+6. **LOAD1** (P1) : Output level `Low`
+7. **LOAD2** (P2) : Output level `Low`
+8. **LOAD3** (P3) : Output level `Low`
+9. **LOAD4** (P4) : Output level `Low`
+10. **LOAD5** (P5) : Output level `Low`
+11. **LOAD6** (P6) : Output level `Low`
+12. **LOAD7** (P7) : Output level `Low`
+13. **LOAD8** (P8) : Output level `Low`
+14.  **USER_LED (PE3)** : Output Level `Low`
 
 ---
 
@@ -226,7 +236,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 
 **[`System Core` > `SYS`]**
 
-**SysTick**: `TIM5`
+**Timebase source**: `TIM5`
 
 
 ---
@@ -238,6 +248,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 1.  **Interface**: `CMSIS_V2`
 2.  **Tasks and Queues**: Increase `defaultTask` stack size to at least **1024 words**.
     *   USB initialization (`MX_USB_DEVICE_Init`) runs in this task and uses a lot of stack. A smaller value causes an immediate HardFault at startup.
+3. **Config parameters** > **`configTOTAL_HEAP_SIZE`**: set to **32768**.
 
 ### 10.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
 
@@ -246,15 +257,16 @@ Objective: expose MCU CPU load and per-task runtime usage in the shell (`status`
 In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 1. Open the FreeRTOS configuration parameters.
-2. Enable **`configGENERATE_RUN_TIME_STATS`** = `1`.
-3. Keep **`configUSE_TRACE_FACILITY`** = `1` (required by `uxTaskGetSystemState`).
+2. Enable **GENERATE_RUN_TIME_STATS**
+3. Enable **USE_TRACE_FACILITY** (required by `uxTaskGetSystemState`).
+4. Enable **USE_STATS_FORMATTING_FUNCTIONS**
 
 
 ---
 
 ## 11. Project Manager (Cursor / VS Code Setup)
 
-1.  **Project Name**: `H743_Main_Controller`
+1.  **Project Name**: `main-board`
 2.  **Toolchain / IDE**: `CMake`
 3.  **Code Generator**:
     * **Library Files**: `Copy only the necessary library files`.

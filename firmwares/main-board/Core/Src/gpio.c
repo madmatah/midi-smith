@@ -32,16 +32,17 @@
 
 /* USER CODE END 1 */
 
-/** Configure pins as
-        * Analog
-        * Input
-        * Output
-        * EVENT_OUT
-        * EXTI
-     PA2   ------> USART2_TX
-     PA3   ------> USART2_RX
+/** Configure pins
+     PC14-OSC32_IN (OSC32_IN)   ------> RCC_OSC32_IN
+     PC15-OSC32_OUT (OSC32_OUT)   ------> RCC_OSC32_OUT
+     PH0-OSC_IN (PH0)   ------> RCC_OSC_IN
+     PH1-OSC_OUT (PH1)   ------> RCC_OSC_OUT
+     PA1   ------> S_TIM2_CH2
+     PA5   ------> S_TIM2_CH1_ETR
      PB10   ------> USART3_TX
      PB11   ------> USART3_RX
+     PA13 (JTMS/SWDIO)   ------> DEBUG_JTMS-SWDIO
+     PA14 (JTCK/SWCLK)   ------> DEBUG_JTCK-SWCLK
 */
 void MX_GPIO_Init(void)
 {
@@ -57,15 +58,15 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, USER_LED_Pin|LCD_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOE, USER_LED_Pin|LOAD_2_Pin|LOAD_1_Pin|LOAD_4_Pin
+                          |LCD_LED_Pin|LCD_WR_RS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LOAD_3_Pin|LOAD_5_Pin|LOAD_6_Pin|LOAD_7_Pin
                           |LOAD_8_Pin|FDCAN_STANDBY_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, LOAD_2_Pin|LOAD_1_Pin|LOAD_4_Pin|LCD_LED_Pin
-                          |LCD_WR_RS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
@@ -79,12 +80,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA2 PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+  /*Configure GPIO pins : PA1 PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LOAD_3_Pin LOAD_5_Pin LOAD_6_Pin LOAD_7_Pin
@@ -96,8 +97,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : MIDI_OUT_Pin MIDI_IN_Pin */
-  GPIO_InitStruct.Pin = MIDI_OUT_Pin|MIDI_IN_Pin;
+  /*Configure GPIO pins : PB10 PB11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

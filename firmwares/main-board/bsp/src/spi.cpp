@@ -36,7 +36,7 @@ void Spi::notify_done_from_isr() noexcept {
 
 }  // namespace midismith::main_board::bsp
 extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi) {
-  if (hspi == &hspi2) {
-    midismith::main_board::bsp::Board::spi2().notify_done_from_isr();
+  if (hspi == &hspi1) {
+    midismith::main_board::bsp::Board::spi1().notify_done_from_isr();
   }
 }

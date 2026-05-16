@@ -102,7 +102,6 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/composition/supervisor_subsystem.cpp
     bsp/src/board.cpp
     bsp/src/spi.cpp
-    bsp/src/stm32_octospi.cpp
     bsp/src/stm32_spi_flash.cpp
     bsp/src/storage/spi_flash_sector_storage.cpp
     bsp/src/usb_midi.cpp
@@ -110,6 +109,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/usb_midi/usbd_midi.c
     bsp/src/serial/uart_stream_registry.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
+    bsp/src/cortex/d3_sram_nocache_mpu.cpp
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_task.cpp
     app/src/messaging/main_board_can_message_sender.cpp

@@ -7,7 +7,7 @@
 #include "usbd_def.h"
 
 extern "C" {
-extern USBD_HandleTypeDef hUsbDeviceHS;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 }
 
 namespace midismith::main_board::bsp {
@@ -17,7 +17,7 @@ void UsbMidi::SendRawMessage(const uint8_t* data, uint8_t length) noexcept {
 }
 
 bool UsbMidi::IsAvailable() const noexcept {
-  return hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
+  return hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED;
 }
 
 midismith::midi::TransportStatus UsbMidi::TrySendRawMessage(const uint8_t* data,
@@ -31,7 +31,7 @@ midismith::midi::TransportStatus UsbMidi::TrySendRawMessage(const uint8_t* data,
   }
 
   USBD_MIDI_HandleTypeDef* hmidi =
-      reinterpret_cast<USBD_MIDI_HandleTypeDef*>(hUsbDeviceHS.pClassData);
+      reinterpret_cast<USBD_MIDI_HandleTypeDef*>(hUsbDeviceFS.pClassData);
   if (hmidi == nullptr || hmidi->tx_state != 0) {
     return midismith::midi::TransportStatus::kBusy;
   }
@@ -45,7 +45,7 @@ midismith::midi::TransportStatus UsbMidi::TrySendRawMessage(const uint8_t* data,
   if (length >= 3) packet.midi_byte3 = data[2];
 
   hmidi->tx_state = 1;
-  const auto status = USBD_LL_Transmit(&hUsbDeviceHS, kMidiInEndpoint,
+  const auto status = USBD_LL_Transmit(&hUsbDeviceFS, kMidiInEndpoint,
                                        reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
 
   if (status == USBD_OK) {
