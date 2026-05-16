@@ -71,7 +71,8 @@ unsigned long getRunTimeCounterValue(void);
 
 /* USER CODE BEGIN 1 */
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
-__weak void configureTimerForRunTimeStats(void) {
+__weak void configureTimerForRunTimeStats(void)
+{
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 #if defined(DWT_LAR)
   DWT->LAR = 0xC5ACCE55u;
@@ -80,7 +81,8 @@ __weak void configureTimerForRunTimeStats(void) {
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-__weak unsigned long getRunTimeCounterValue(void) {
+__weak unsigned long getRunTimeCounterValue(void)
+{
   return (unsigned long)(DWT->CYCCNT >> 16);
 }
 /* USER CODE END 1 */

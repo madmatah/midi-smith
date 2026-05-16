@@ -27,11 +27,11 @@ using UartIdleCallback = void (*)(void* ctx) noexcept;
  * @warning MEMORY COHERENCY CRITICAL:
  * On Cortex-M7, the L1 Cache can lead to desynchronization between CPU and DMA.
  * This class MUST be instantiated in a non-cacheable memory region configured via MPU, using the
- * BSP_RAM_NOCACHE macro.
+ * BSP_AXI_SRAM_NOCACHE macro.
  * @note Usage Example:
  * @code
- * alignas(32) BSP_RAM_NOCACHE
- * static midismith::main_board::bsp::serial::UartStream<256, 1024> console_stream(huart1);
+ * alignas(32) BSP_AXI_SRAM_NOCACHE
+ * static midismith::main_board::bsp::serial::UartStream<256, 1024> console_stream(huart2);
  * @endcode
  */
 template <std::size_t kRxBufferSize, std::size_t kTxFifoSize>

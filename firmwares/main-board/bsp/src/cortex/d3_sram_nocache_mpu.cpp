@@ -1,17 +1,17 @@
-#include "bsp/cortex/axi_sram_nocache_mpu.hpp"
+#include "bsp/cortex/d3_sram_nocache_mpu.hpp"
 
 #include "stm32h7xx_hal.h"
 
 namespace midismith::main_board::bsp::cortex {
 
-void AxiSramNoCacheMpu::ConfigureRegion() noexcept {
+void D3SramNoCacheMpu::ConfigureRegion() noexcept {
   HAL_MPU_Disable();
 
   MPU_Region_InitTypeDef region = {};
   region.Enable = MPU_REGION_ENABLE;
-  region.Number = MPU_REGION_NUMBER1;
+  region.Number = MPU_REGION_NUMBER2;
   region.BaseAddress = kBaseAddress;
-  region.Size = MPU_REGION_SIZE_8KB;
+  region.Size = MPU_REGION_SIZE_64KB;
   region.SubRegionDisable = 0x00;
   region.TypeExtField = MPU_TEX_LEVEL0;
   region.AccessPermission = MPU_REGION_FULL_ACCESS;

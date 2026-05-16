@@ -6,16 +6,16 @@
 #include "usbd_desc.h"
 
 extern "C" {
-extern USBD_HandleTypeDef hUsbDeviceHS;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 void BSP_UsbMidi_Init(void) noexcept {
-  if (USBD_Init(&hUsbDeviceHS, &HS_Desc, DEVICE_HS) != USBD_OK) {
+  if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK) {
     Error_Handler();
   }
-  if (USBD_RegisterClass(&hUsbDeviceHS, &USBD_MIDI_ClassDriver) != USBD_OK) {
+  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_MIDI_ClassDriver) != USBD_OK) {
     Error_Handler();
   }
-  if (USBD_Start(&hUsbDeviceHS) != USBD_OK) {
+  if (USBD_Start(&hUsbDeviceFS) != USBD_OK) {
     Error_Handler();
   }
   HAL_PWREx_EnableUSBVoltageDetector();

@@ -6,8 +6,8 @@
 **
 **  Author		: STM32CubeMX
 **
-**  Abstract    : Linker script for STM32H7B0VBTx series
-**                128Kbytes FLASH and 1216Kbytes RAM
+**  Abstract    : Linker script for STM32H743VITx series
+**                2048Kbytes FLASH and 1056Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
@@ -56,11 +56,12 @@ ENTRY(Reset_Handler)
 MEMORY
 {
 DTCMRAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
-RAM_NOCACHE (xrw) : ORIGIN = 0x24000000, LENGTH = 8K
-RAM (xrw)         : ORIGIN = 0x24002000, LENGTH = 1016K
+AXI_SRAM_NOCACHE (xrw) : ORIGIN = 0x24000000, LENGTH = 8K
+AXI_SRAM (xrw)         : ORIGIN = 0x24002000, LENGTH = 504K
+RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
+RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
-EXTFLASH (rx)   : ORIGIN = 0x90000000, LENGTH = 8M
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 2048K
 }
 
 /* Highest address of the user mode stack */
@@ -212,21 +213,40 @@ SECTIONS
   PROVIDE( __tls_size_align = (__tls_size + __tls_align - 1) & ~(__tls_align - 1) );
   PROVIDE( __arm32_tls_tcb_offset = MAX(8, __tls_align) );
   PROVIDE( __arm64_tls_tcb_offset = MAX(16, __tls_align) );
-  
-  .ram_nocache (NOLOAD) : ALIGN(32)
+
+  .axi_sram_nocache (NOLOAD) : ALIGN(32)
   {
     . = ALIGN(32);
-    *(.ram_nocache)
-    *(.ram_nocache*)
+    __axi_sram_nocache_start__ = .;
+    *(.axi_sram_nocache)
+    *(.axi_sram_nocache*)
     . = ALIGN(32);
-  } >RAM_NOCACHE
+    __axi_sram_nocache_end__ = .;
+  } >AXI_SRAM_NOCACHE
+
+  .d3_sram_nocache (NOLOAD) : ALIGN(32)
+  {
+    . = ALIGN(32);
+    __d3_sram_nocache_start__ = .;
+    *(.d3_sram_nocache)
+    *(.d3_sram_nocache*)
+    . = ALIGN(32);
+    __d3_sram_nocache_end__ = .;
+  } >RAM_D3
+
+  .axi_sram_bss (NOLOAD) : ALIGN(4)
+  {
+    *(.axi_sram_bss)
+    *(.axi_sram_bss*)
+    . = ALIGN(4);
+  } >AXI_SRAM
 
   .rtt (NOLOAD) : ALIGN(4)
   {
     *(.rtt)
     *(.rtt*)
     . = ALIGN(4);
-  } >RAM
+  } >AXI_SRAM
 
   .bss (NOLOAD) : ALIGN(4)
   {
@@ -254,14 +274,6 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >DTCMRAM
-
-  .ext_flash :
-  {
-    . = ALIGN(4);
-    *(.ext_flash)
-    *(.ext_flash*)
-    . = ALIGN(4);
-  } >EXTFLASH
 
 
 
