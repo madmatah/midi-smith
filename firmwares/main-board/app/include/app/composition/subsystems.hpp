@@ -70,6 +70,7 @@ CanContext CreateCanSubsystem(
     SupervisorContext& supervisor_ctx, CalibrationInboundContext& calibration_inbound_ctx) noexcept;
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept;
 AdcBoardsContext CreateSupervisorSubsystem(
+    midismith::logging::LoggerRequirements& logger,
     midismith::main_board::app::messaging::MainBoardMessageSenderRequirements& sender,
     SupervisorContext& ctx) noexcept;
 CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, CanContext& can_ctx,

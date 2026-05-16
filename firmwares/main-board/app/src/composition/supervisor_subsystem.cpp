@@ -1,9 +1,12 @@
-#include "app/adc/adc_board_power_switch_requirements.hpp"
 #include "app/adc/adc_boards_controller.hpp"
 #include "app/composition/subsystems.hpp"
 #include "app/config/config.hpp"
 #include "app/shell/adc_boards_control_requirements.hpp"
 #include "app/supervisor/network_supervisor_task.hpp"
+#include "bsp/adc_board_power_switch.hpp"
+#include "bsp/gpio.hpp"
+#include "logging/logger_requirements.hpp"
+#include "main.h"
 #include "os-types/queue_requirements.hpp"
 #include "os/os_uptime_provider.hpp"
 #include "os/queue.hpp"
@@ -34,13 +37,6 @@ void OnTimeoutCheckTick(void* context) noexcept {
   auto* queue = static_cast<midismith::os::QueueRequirements<Event>*>(context);
   queue->Send(Event{Task::TimeoutCheckTick{}}, midismith::os::kNoWait);
 }
-
-class NullAdcBoardPowerSwitch final
-    : public midismith::main_board::app::adc::AdcBoardPowerSwitchRequirements {
- public:
-  void PowerOn(std::uint8_t /*peer_id*/) noexcept override {}
-  void PowerOff(std::uint8_t /*peer_id*/) noexcept override {}
-};
 
 class SupervisorCommandProxy final
     : public midismith::main_board::app::shell::AdcBoardsControlRequirements {
@@ -82,9 +78,29 @@ SupervisorContext CreateSupervisorContext() noexcept {
   return SupervisorContext{event_queue};
 }
 
-AdcBoardsContext CreateSupervisorSubsystem(messaging::MainBoardMessageSenderRequirements& sender,
+AdcBoardsContext CreateSupervisorSubsystem(midismith::logging::LoggerRequirements& logger,
+                                           messaging::MainBoardMessageSenderRequirements& sender,
                                            SupervisorContext& ctx) noexcept {
-  static NullAdcBoardPowerSwitch power_switch;
+  static midismith::bsp::Gpio load_1(reinterpret_cast<std::uintptr_t>(LOAD_1_GPIO_Port),
+                                     LOAD_1_Pin);
+  static midismith::bsp::Gpio load_2(reinterpret_cast<std::uintptr_t>(LOAD_2_GPIO_Port),
+                                     LOAD_2_Pin);
+  static midismith::bsp::Gpio load_3(reinterpret_cast<std::uintptr_t>(LOAD_3_GPIO_Port),
+                                     LOAD_3_Pin);
+  static midismith::bsp::Gpio load_4(reinterpret_cast<std::uintptr_t>(LOAD_4_GPIO_Port),
+                                     LOAD_4_Pin);
+  static midismith::bsp::Gpio load_5(reinterpret_cast<std::uintptr_t>(LOAD_5_GPIO_Port),
+                                     LOAD_5_Pin);
+  static midismith::bsp::Gpio load_6(reinterpret_cast<std::uintptr_t>(LOAD_6_GPIO_Port),
+                                     LOAD_6_Pin);
+  static midismith::bsp::Gpio load_7(reinterpret_cast<std::uintptr_t>(LOAD_7_GPIO_Port),
+                                     LOAD_7_Pin);
+  static midismith::bsp::Gpio load_8(reinterpret_cast<std::uintptr_t>(LOAD_8_GPIO_Port),
+                                     LOAD_8_Pin);
+  static std::array<midismith::bsp::GpioRequirements*, app::config::kMaxPeerCount> load_gpios = {
+      &load_1, &load_2, &load_3, &load_4, &load_5, &load_6, &load_7, &load_8};
+  static midismith::main_board::bsp::AdcBoardPowerSwitch<app::config::kMaxPeerCount> power_switch(
+      load_gpios, logger);
   static midismith::os::OsUptimeProvider uptime_provider;
   static BoardsController boards_controller(sender, power_switch, app::config::kPowerOnTimeoutMs,
                                             uptime_provider);
