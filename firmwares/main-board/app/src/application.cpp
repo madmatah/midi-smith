@@ -39,7 +39,7 @@ void Application::create_tasks() noexcept {
 
   midismith::main_board::app::composition::ConsoleContext console_ctx = {.stream = console_stream};
   auto boards_ctx = midismith::main_board::app::composition::CreateSupervisorSubsystem(
-      can_ctx.message_sender, supervisor_ctx);
+      rtt_logger, can_ctx.message_sender, supervisor_ctx);
   auto calib_ctx = midismith::main_board::app::composition::CreateCalibrationSubsystem(
       config_ctx, can_ctx, boards_ctx, calib_inbound_ctx);
   midismith::main_board::app::composition::CreateShellSubsystem(
