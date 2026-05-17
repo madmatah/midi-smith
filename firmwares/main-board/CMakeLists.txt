@@ -106,6 +106,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/storage/spi_flash_sector_storage.cpp
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
+    bsp/src/usart_midi.cpp
     bsp/src/usb_midi/usbd_midi.c
     bsp/src/serial/uart_stream_registry.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp

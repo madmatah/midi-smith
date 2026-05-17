@@ -173,7 +173,35 @@ Device Descriptor tab:
 
 ---
 
-## 7. Flash Memory Layout (External Flash Strategy)
+## 7. DIN MIDI Configuration (USART3)
+
+**[`Connectivity` > `USART3`]**
+
+1.  **Mode** : `Asynchronous`.
+2.  **Parameters** :
+    *   **Baud Rate** : `31250 Bits/s` (DIN MIDI standard).
+    *   **Word Length** : `8 Bits`.
+    *   **Parity** : `None`.
+    *   **Stop Bits** : `1`.
+3. **DMA Settings**:
+   1. Click `Add` and add **two requests**:
+      - `USART3_TX` (Memory-to-Peripheral)
+      - `USART3_RX` (Peripheral-to-Memory)
+   2. For **USART3_TX**:
+      - **Mode**: `Normal`
+      - **Data Width (Memory)**: `Byte`
+      - **Data Width (Peripheral)**: `Byte`
+   3. For **USART3_RX**:
+      - **Mode**: `Circular`
+      - **Data Width (Memory)**: `Byte`
+      - **Data Width (Peripheral)**: `Byte`
+4.  **NVIC Settings** :
+- Enable `USART3 global interrupt`.
+- Enable interrupts for the **DMA streams** associated with `USART3_TX` and `USART3_RX`.
+
+---
+
+## 8. Flash Memory Layout (External Flash Strategy)
 The H743VIT6 has **2048 Kbytes** of internal Flash.
 The WeAct board also has two external Flash chips (W25Q64JV): 1 SPI and 1 QSPI.
 The SPI is used to persist configuration.
@@ -207,7 +235,7 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ---
 
-## 8. GPIO Initialization
+## 9. GPIO Initialization
 **[`System Core` > `GPIO`]**
 1. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
 2.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
@@ -226,7 +254,7 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ---
 
-## 9. Debug
+## 10. Debug
 
 **[`Trace and Debug` > `DEBUG`]**
 
@@ -241,7 +269,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 
 ---
 
-## 10. Enable FreeRTOS
+## 11. Enable FreeRTOS
 
 **[`Middlewares and Software Packs` > `FREERTOS`]**
 
@@ -250,7 +278,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
     *   USB initialization (`MX_USB_DEVICE_Init`) runs in this task and uses a lot of stack. A smaller value causes an immediate HardFault at startup.
 3. **Config parameters** > **`configTOTAL_HEAP_SIZE`**: set to **32768**.
 
-### 10.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
+### 11.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
 
 Objective: expose MCU CPU load and per-task runtime usage in the shell (`status` / `ps` commands).
 
@@ -264,7 +292,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 11. Project Manager (Cursor / VS Code Setup)
+## 12. Project Manager (Cursor / VS Code Setup)
 
 1.  **Project Name**: `main-board`
 2.  **Toolchain / IDE**: `CMake`
@@ -279,7 +307,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 12. MPU Configuration (NoCache Zone)
+## 13. MPU Configuration (NoCache Zone)
 
 The Cortex-M7 L1 cache can cause coherence issues with DMA. An 8 KB RAM region at 0x24000000 is reserved for non-cacheable DMA buffers.
 

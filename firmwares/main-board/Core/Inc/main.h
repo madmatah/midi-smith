@@ -79,6 +79,10 @@ void Error_Handler(void);
 #define LCD_WR_RS_GPIO_Port GPIOE
 #define LCD_SDA_Pin GPIO_PIN_14
 #define LCD_SDA_GPIO_Port GPIOE
+#define MIDI_OUT_Pin GPIO_PIN_10
+#define MIDI_OUT_GPIO_Port GPIOB
+#define MIDI_IN_Pin GPIO_PIN_11
+#define MIDI_IN_GPIO_Port GPIOB
 #define LOAD_6_Pin GPIO_PIN_12
 #define LOAD_6_GPIO_Port GPIOB
 #define LOAD_7_Pin GPIO_PIN_13

@@ -21,7 +21,8 @@ constexpr std::size_t kConsoleUartRxBufferSize = 256;
 constexpr std::size_t kConsoleUartTxFifoSize = 1024;
 
 // Queue capacities
-constexpr uint32_t MIDI_QUEUE_CAPACITY = 64;
+constexpr uint32_t USB_MIDI_QUEUE_CAPACITY = 64;
+constexpr uint32_t DIN_MIDI_QUEUE_CAPACITY = 64;
 
 // Timings
 constexpr uint32_t LED_BLINK_PERIOD_MS = 500;
