@@ -19,14 +19,14 @@ BinarySemaphore::~BinarySemaphore() noexcept {
   }
 }
 
-bool BinarySemaphore::acquire(std::uint32_t timeout_ms) noexcept {
+bool BinarySemaphore::Acquire(std::uint32_t timeout_ms) noexcept {
   if (!_sem) {
     return false;
   }
   return osSemaphoreAcquire(s(_sem), timeout_ms) == osOK;
 }
 
-bool BinarySemaphore::release() noexcept {
+bool BinarySemaphore::Release() noexcept {
   if (!_sem) {
     return false;
   }

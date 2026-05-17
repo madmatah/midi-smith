@@ -10,9 +10,11 @@ namespace midismith::main_board::app::config {
 // Task priorities
 constexpr uint32_t SHELL_TASK_PRIORITY = 1;
 constexpr uint32_t MIDI_TASK_PRIORITY = 3;
+constexpr uint32_t MIDI_INPUT_TASK_PRIORITY = 3;
 
 // Stack sizes
 constexpr uint32_t MIDI_TASK_STACK_BYTES = 2048;
+constexpr uint32_t MIDI_INPUT_TASK_STACK_BYTES = 1024;
 
 // Shell
 constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;

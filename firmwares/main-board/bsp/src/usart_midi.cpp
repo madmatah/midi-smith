@@ -42,11 +42,56 @@ midismith::midi::TransportStatus UsartMidi::TrySendRawMessage(const uint8_t* dat
   return midismith::midi::TransportStatus::kError;
 }
 
+bool UsartMidi::StartReception() noexcept {
+  if (HAL_UART_Receive_DMA(&huart_, rx_buffer_, kRxBufferSize) != HAL_OK) {
+    return false;
+  }
+  __HAL_UART_ENABLE_IT(&huart_, UART_IT_IDLE);
+  return true;
+}
+
+void UsartMidi::SetByteAvailableCallback(ByteAvailableCallback cb, void* ctx) noexcept {
+  byte_available_callback_ = cb;
+  byte_available_ctx_ = ctx;
+}
+
+midismith::io::ReadResult UsartMidi::Read(uint8_t& byte) noexcept {
+  if (huart_.hdmarx == nullptr) {
+    return midismith::io::ReadResult::kError;
+  }
+
+  const std::uint16_t remaining = static_cast<std::uint16_t>(__HAL_DMA_GET_COUNTER(huart_.hdmarx));
+  const std::size_t write_idx =
+      static_cast<std::size_t>((kRxBufferSize - remaining) % kRxBufferSize);
+
+  if (read_idx_ == write_idx) {
+    return midismith::io::ReadResult::kNoData;
+  }
+
+  byte = rx_buffer_[read_idx_];
+  read_idx_++;
+  if (read_idx_ >= kRxBufferSize) {
+    read_idx_ = 0;
+  }
+
+  return midismith::io::ReadResult::kOk;
+}
+
 UART_HandleTypeDef* UsartMidi::handle() noexcept {
   return &huart_;
 }
 
-void UsartMidi::HandleUartIrq() noexcept {}
+void UsartMidi::HandleUartIrq() noexcept {
+  if (!__HAL_UART_GET_FLAG(&huart_, UART_FLAG_IDLE)) {
+    return;
+  }
+
+  __HAL_UART_CLEAR_IDLEFLAG(&huart_);
+
+  if (byte_available_callback_ != nullptr) {
+    byte_available_callback_(byte_available_ctx_);
+  }
+}
 
 void UsartMidi::HandleTxCompleteIrq() noexcept {
   tx_in_progress_ = false;

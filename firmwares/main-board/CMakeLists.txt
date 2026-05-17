@@ -48,6 +48,7 @@ if(HOST_TESTS)
     add_library(main_app_lib STATIC)
     target_sources(main_app_lib PRIVATE
         app/src/app/midi/async_task_midi_controller.cpp
+        app/src/app/midi/midi_input_task.cpp
         app/src/messaging/main_board_can_message_sender.cpp
         app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
         app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
@@ -112,7 +113,8 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
     bsp/src/cortex/d3_sram_nocache_mpu.cpp
     app/src/app/midi/async_task_midi_controller.cpp
-    app/src/app/midi/midi_task.cpp
+    app/src/app/midi/midi_output_task.cpp
+    app/src/app/midi/midi_input_task.cpp
     app/src/messaging/main_board_can_message_sender.cpp
     app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
     app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp

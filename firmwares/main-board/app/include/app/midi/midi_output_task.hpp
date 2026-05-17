@@ -13,7 +13,7 @@ namespace midismith::main_board::app::midi {
  * It consumes messages from a queue and forwards them to a transport (e.g., USB).
  * It handles backpressure (busy transport) with retries and handles disconnects.
  */
-class MidiTask {
+class MidiOutputTask {
  public:
   /**
    * @brief Constructor.
@@ -22,9 +22,10 @@ class MidiTask {
    * @param logger For error reporting.
    * @param retry_timeout_ms Max time to retry sending if transport is busy.
    */
-  MidiTask(midismith::os::QueueRequirements<MidiCommand>& queue,
-           midismith::midi::MidiTransportRequirements& transport,
-           midismith::logging::LoggerRequirements& logger, uint32_t retry_timeout_ms = 100) noexcept
+  MidiOutputTask(midismith::os::QueueRequirements<MidiCommand>& queue,
+                 midismith::midi::MidiTransportRequirements& transport,
+                 midismith::logging::LoggerRequirements& logger,
+                 uint32_t retry_timeout_ms = 100) noexcept
       : _queue(queue),
         _transport(transport),
         _logger(logger),

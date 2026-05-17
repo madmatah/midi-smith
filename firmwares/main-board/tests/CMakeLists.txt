@@ -4,6 +4,7 @@ midismith_add_firmware_test(NAME main
     SOURCES
         domain/config/main_board_config.test.cpp
         app/midi/async_task_midi_controller.test.cpp
+        app/midi/midi_input_task.test.cpp
         app/messaging/main_board_can_message_sender.test.cpp
         app/messaging/main_board_inbound_sensor_event_logging_handler.test.cpp
         app/messaging/main_board_inbound_sensor_event_midi_handler.test.cpp

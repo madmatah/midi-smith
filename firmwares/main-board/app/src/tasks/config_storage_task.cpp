@@ -11,7 +11,7 @@ ConfigStorageTask::ConfigStorageTask(
     : config_(config) {}
 
 void ConfigStorageTask::RequestPersist() noexcept {
-  semaphore_.release();
+  semaphore_.Release();
 }
 
 void ConfigStorageTask::entry(void* ctx) noexcept {
@@ -22,7 +22,7 @@ void ConfigStorageTask::entry(void* ctx) noexcept {
 
 void ConfigStorageTask::run() noexcept {
   for (;;) {
-    semaphore_.acquire(midismith::os::kWaitForever);
+    semaphore_.Acquire(midismith::os::kWaitForever);
     config_.Commit();
   }
 }
