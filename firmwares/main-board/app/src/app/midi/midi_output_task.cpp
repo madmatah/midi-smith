@@ -1,10 +1,10 @@
-#include "app/midi/midi_task.hpp"
+#include "app/midi/midi_output_task.hpp"
 
 #include "os/clock.hpp"
 
 namespace midismith::main_board::app::midi {
 
-[[noreturn]] void MidiTask::Run() noexcept {
+[[noreturn]] void MidiOutputTask::Run() noexcept {
   while (true) {
     MidiCommand command{};
     if (_queue.Receive(command, midismith::os::kWaitForever)) {
@@ -13,13 +13,13 @@ namespace midismith::main_board::app::midi {
   }
 }
 
-void MidiTask::ProcessCommand(const MidiCommand& command) noexcept {
+void MidiOutputTask::ProcessCommand(const MidiCommand& command) noexcept {
   if (_transport.IsAvailable()) {
     TransmitWithRetry(command);
   }
 }
 
-void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
+void MidiOutputTask::TransmitWithRetry(const MidiCommand& command) noexcept {
   uint32_t elapsed_ms = 0;
   const uint32_t kRetryIntervalMs = 1;
 
@@ -37,7 +37,7 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
     }
 
     if (status == midismith::midi::TransportStatus::kError) {
-      _logger.logf(midismith::logging::Level::Error, "MidiTask: Transport error\n");
+      _logger.logf(midismith::logging::Level::Error, "MidiOutputTask: Transport error\n");
       return;
     }
 
@@ -46,7 +46,7 @@ void MidiTask::TransmitWithRetry(const MidiCommand& command) noexcept {
     }
   }
 
-  _logger.logf(midismith::logging::Level::Warn, "MidiTask: Drop message (timeout)\n");
+  _logger.logf(midismith::logging::Level::Warn, "MidiOutputTask: Drop message (timeout)\n");
 }
 
 }  // namespace midismith::main_board::app::midi
