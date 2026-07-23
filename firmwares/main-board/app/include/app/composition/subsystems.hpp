@@ -59,6 +59,15 @@ struct CalibrationContext {
   midismith::shell::CommandRequirements& command;
 };
 
+struct ShellCommandsContext {
+  midismith::shell::CommandRequirements& status;
+  midismith::shell::CommandRequirements& can;
+  midismith::shell::CommandRequirements& adc;
+  midismith::shell::CommandRequirements& keymap;
+  midismith::shell::CommandRequirements& version;
+  midismith::shell::CommandRequirements& calibration;
+};
+
 ConfigContext CreateConfigSubsystem() noexcept;
 SupervisorContext CreateSupervisorContext() noexcept;
 CalibrationInboundContext CreateCalibrationInboundContext() noexcept;
@@ -76,7 +85,7 @@ AdcBoardsContext CreateSupervisorSubsystem(
 CalibrationContext CreateCalibrationSubsystem(const ConfigContext& config_ctx, CanContext& can_ctx,
                                               const AdcBoardsContext& boards_ctx,
                                               CalibrationInboundContext& inbound_ctx) noexcept;
-void CreateShellSubsystem(
+ShellCommandsContext CreateShellSubsystem(
     ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
     midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
     CalibrationContext& calibration_ctx) noexcept;

@@ -17,7 +17,7 @@
 
 namespace midismith::main_board::app::composition {
 
-void CreateShellSubsystem(
+ShellCommandsContext CreateShellSubsystem(
     ConsoleContext& console, CanContext& can, AdcBoardsContext& boards,
     midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
     CalibrationContext& calibration_ctx) noexcept {
@@ -72,6 +72,15 @@ void CreateShellSubsystem(
   shell_task_ptr->RegisterCommand(calibration_ctx.command);
 
   (void) shell_task_ptr->start();
+
+  return ShellCommandsContext{
+      .status = status_cmd,
+      .can = can_cmd,
+      .adc = adc_cmd,
+      .keymap = keymap_cmd,
+      .version = version_cmd,
+      .calibration = calibration_ctx.command,
+  };
 }
 
 }  // namespace midismith::main_board::app::composition

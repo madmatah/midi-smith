@@ -1,6 +1,7 @@
 #include "app/application.hpp"
 
 #include "app/composition/subsystems.hpp"
+#include "app/composition/ui_subsystem.hpp"
 #include "app/config.hpp"
 #include "bsp/board.hpp"
 #include "bsp/memory_sections.hpp"
@@ -42,8 +43,10 @@ void Application::create_tasks() noexcept {
       rtt_logger, can_ctx.message_sender, supervisor_ctx);
   auto calib_ctx = midismith::main_board::app::composition::CreateCalibrationSubsystem(
       config_ctx, can_ctx, boards_ctx, calib_inbound_ctx);
-  midismith::main_board::app::composition::CreateShellSubsystem(
+  auto shell_commands_ctx = midismith::main_board::app::composition::CreateShellSubsystem(
       console_ctx, can_ctx, boards_ctx, config_ctx.keymap_setup_coordinator, calib_ctx);
+  midismith::main_board::app::composition::CreateUiSubsystem(config_ctx, calib_ctx,
+                                                             shell_commands_ctx);
 }
 
 }  // namespace midismith::main_board::app

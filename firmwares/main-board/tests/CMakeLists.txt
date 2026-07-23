@@ -26,6 +26,7 @@ midismith_add_firmware_test(NAME main
         app/calibration/calibration_data_server_task.test.cpp
         app/calibration/calibration_coordinator.test.cpp
         app/storage/calibration_persistent_store.test.cpp
+        app/ui/screens/calibration_progress_screen.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )
