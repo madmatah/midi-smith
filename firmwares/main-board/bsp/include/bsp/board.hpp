@@ -12,12 +12,22 @@ class Board {
  public:
   static void init() noexcept;
   static midismith::bsp::GpioRequirements& user_led() noexcept;
+  static midismith::bsp::GpioRequirements& lcd_chip_select() noexcept;
+  static midismith::bsp::GpioRequirements& lcd_data_command() noexcept;
+  static midismith::bsp::GpioRequirements& lcd_backlight() noexcept;
+  static midismith::bsp::GpioRequirements& rotary_button_gpio() noexcept;
   static Spi& spi1() noexcept;
+  static void* spi4_handle() noexcept;
+  static void* tim2_handle() noexcept;
   static UsbMidi& usb_midi() noexcept;
   static Stm32SpiFlash& spi_flash() noexcept;
 
  private:
   static midismith::bsp::Gpio _user_led;
+  static midismith::bsp::Gpio _lcd_chip_select;
+  static midismith::bsp::Gpio _lcd_data_command;
+  static midismith::bsp::Gpio _lcd_backlight;
+  static midismith::bsp::Gpio _rotary_button;
   static Spi _spi1;
   static UsbMidi _usb_midi;
   static Stm32SpiFlash _spi_flash;

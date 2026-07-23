@@ -17,6 +17,8 @@ midismith_require_lib(bsp)
 midismith_require_lib(os)
 midismith_require_lib(telemetry)
 midismith_require_lib(io)
+midismith_require_lib(text-display)
+midismith_require_lib(menu)
 midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
@@ -65,11 +67,12 @@ if(HOST_TESTS)
         app/src/calibration/calibration_data_server_task.cpp
         app/src/calibration/calibration_coordinator.cpp
         app/src/storage/calibration_persistent_store.cpp
+        app/src/app/ui/screens/calibration_progress_screen.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -108,6 +111,9 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
     bsp/src/usart_midi.cpp
+    bsp/src/tft_display.cpp
+    bsp/src/rotary_encoder.cpp
+    bsp/src/rotary_button.cpp
     bsp/src/usb_midi/usbd_midi.c
     bsp/src/serial/uart_stream_registry.cpp
     bsp/src/cortex/axi_sram_nocache_mpu.cpp
@@ -115,6 +121,16 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/midi/async_task_midi_controller.cpp
     app/src/app/midi/midi_output_task.cpp
     app/src/app/midi/midi_input_task.cpp
+    app/src/app/ui/font_8x16.cpp
+    app/src/app/ui/tft_text_display.cpp
+    app/src/app/ui/ui_task.cpp
+    app/src/app/ui/menu_tree.cpp
+    app/src/app/ui/items/keymap_setup_flow_item.cpp
+    app/src/app/ui/items/calibration_flow_item.cpp
+    app/src/app/ui/items/stats_view_item.cpp
+    app/src/app/ui/screens/keymap_progress_screen.cpp
+    app/src/app/ui/screens/calibration_progress_screen.cpp
+    app/src/app/ui/screens/persistent_config_view.cpp
     app/src/messaging/main_board_can_message_sender.cpp
     app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
     app/src/messaging/main_board_inbound_sensor_event_midi_handler.cpp
@@ -132,6 +148,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/calibration/calibration_coordinator.cpp
     app/src/storage/calibration_persistent_store.cpp
     app/src/composition/calibration_subsystem.cpp
+    app/src/composition/ui_subsystem.cpp
     domain/src/main_board_config.cpp
     domain/src/keymap/keymap_lookup.cpp
     domain/src/keymap/keymap_setup_session.cpp
@@ -158,6 +175,8 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     os
     telemetry
     io
+    text_display
+    menu
     shell
     shell_cmd_version
     shell_cmd_os_stats

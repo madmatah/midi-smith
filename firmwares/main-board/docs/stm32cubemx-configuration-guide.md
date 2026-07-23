@@ -146,7 +146,30 @@ Device Descriptor tab:
 
 ---
 
-## 6. Console Configuration (USART2)
+## 6. Rotary Encoder Configuration (TIM2)
+**[`Timers` > `TIM2`]**
+
+1. **Mode**:
+   * **Combined Channels**: `Encoder Mode`.
+   * **Clock Source**: `Disable`.
+2. **Parameter Settings**:
+   * **Prescaler (PSC - 16 bits value)**: `0`.
+   * **Counter Mode**: `Up`.
+   * **Counter Period (AutoReload Register - 32 bits value)**: `65535`.
+   * **Internal Clock Division (CKD)**: `No Division`.
+   * **auto-reload preload**: `Disable`.
+3. **Encoder**:
+   * **Encoder Mode**: `Encoder Mode TI1 and TI2`.
+   * **Channel 1 Polarity**: `Rising Edge`.
+   * **Channel 1 IC Selection**: `Direct`.
+   * **Channel 1 Prescaler Division Ratio**: `No division`.
+   * **Channel 1 Input Filter**: `0`.
+   * **Channel 2 Polarity**: `Rising Edge`.
+   * **Channel 2 IC Selection**: `Direct`.
+   * **Channel 2 Prescaler Division Ratio**: `No division`.
+   * **Channel 2 Input Filter**: `0`.
+
+## 7. Console Configuration (USART2)
 
 **[`Connectivity` > `USART2`]**
 1.  **Mode** : `Asynchronous`.
@@ -173,7 +196,7 @@ Device Descriptor tab:
 
 ---
 
-## 7. DIN MIDI Configuration (USART3)
+## 8. DIN MIDI Configuration (USART3)
 
 **[`Connectivity` > `USART3`]**
 
@@ -201,7 +224,7 @@ Device Descriptor tab:
 
 ---
 
-## 8. Flash Memory Layout (External Flash Strategy)
+## 9. Flash Memory Layout (External Flash Strategy)
 The H743VIT6 has **2048 Kbytes** of internal Flash.
 The WeAct board also has two external Flash chips (W25Q64JV): 1 SPI and 1 QSPI.
 The SPI is used to persist configuration.
@@ -235,12 +258,12 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ---
 
-## 9. GPIO Initialization
+## 10. GPIO Initialization
 **[`System Core` > `GPIO`]**
 1. **FDCAN_STANDBY (PB5)**: Output level `Low` (CAN transceiver in normal mode)
 2.  **FLASH_CS (PD6)** : Output Level `High` (disables U8 at boot).
 3. **LCD_CS (PE11)** : Output level `High` (disabled by default)
-4. **LCD_LED (PE10)** : Output Level Low (display off by default).
+4. **LCD_LED (PE10)** : Output Level `High` (display off by default).
 5. **LCD_WR_RS (PE13)** : Output level `Low`
 6. **LOAD1** (P1) : Output level `Low`
 7. **LOAD2** (P2) : Output level `Low`
@@ -254,7 +277,7 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ---
 
-## 10. Debug
+## 11. Debug
 
 **[`Trace and Debug` > `DEBUG`]**
 
@@ -269,7 +292,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
 
 ---
 
-## 11. Enable FreeRTOS
+## 12. Enable FreeRTOS
 
 **[`Middlewares and Software Packs` > `FREERTOS`]**
 
@@ -278,7 +301,7 @@ Essential; otherwise the board can only be flashed once and the debug interface 
     *   USB initialization (`MX_USB_DEVICE_Init`) runs in this task and uses a lot of stack. A smaller value causes an immediate HardFault at startup.
 3. **Config parameters** > **`configTOTAL_HEAP_SIZE`**: set to **32768**.
 
-### 11.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
+### 12.1 Enable FreeRTOS Runtime Stats (CPU load monitoring)
 
 Objective: expose MCU CPU load and per-task runtime usage in the shell (`status` / `ps` commands).
 
@@ -292,7 +315,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 12. Project Manager (Cursor / VS Code Setup)
+## 13. Project Manager (Cursor / VS Code Setup)
 
 1.  **Project Name**: `main-board`
 2.  **Toolchain / IDE**: `CMake`
@@ -307,7 +330,7 @@ In **[`Middlewares and Software Packs` > `FREERTOS`]**:
 
 ---
 
-## 13. MPU Configuration (NoCache Zone)
+## 14. MPU Configuration (NoCache Zone)
 
 The Cortex-M7 L1 cache can cause coherence issues with DMA. An 8 KB RAM region at 0x24000000 is reserved for non-cacheable DMA buffers.
 
