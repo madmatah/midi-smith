@@ -5,8 +5,6 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
-#include "os/clock.hpp"
-#include "os/task.hpp"
 
 namespace midismith::main_board::app::ui {
 
@@ -16,8 +14,9 @@ UiTask::UiTask(midismith::bsp::input::RotationSourceRequirements& encoder,
                midismith::text_display::TextDisplayRequirements& display,
                DisplayPowerRequirements& display_power, SplashRequirements& splash,
                midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
-               ActivitySourceRequirements& wake_activity, std::uint32_t tick_period_ms,
-               InitializeCallback initialize_callback, void* initialize_context) noexcept
+               ActivitySourceRequirements& wake_activity, midismith::os::DelayRequirements& delay,
+               std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
+               void* initialize_context) noexcept
     : encoder_(encoder),
       button_(button),
       runtime_(runtime),
@@ -26,6 +25,7 @@ UiTask::UiTask(midismith::bsp::input::RotationSourceRequirements& encoder,
       splash_(splash),
       injected_events_(injected_events),
       wake_activity_(wake_activity),
+      delay_(delay),
       tick_period_ms_(tick_period_ms),
       initialize_callback_(initialize_callback),
       initialize_context_(initialize_context),
@@ -47,31 +47,38 @@ void UiTask::run() noexcept {
   runtime_.Render(display_);
   display_.Flush();
   for (;;) {
-    midismith::os::Clock::delay_ms(tick_period_ms_);
-    const std::int16_t rotation_detents = encoder_.ReadDeltaDetents();
-    const auto button_event = button_.Poll();
-    midismith::menu::InputEvent injected_event{};
-    bool injected_event_received = injected_events_.Receive(injected_event, 0);
-    const bool input_activity_detected =
-        rotation_detents != 0 || button_event != midismith::bsp::input::ButtonEvent::kNone ||
-        injected_event_received;
-    const bool wake_activity_detected = wake_activity_.ConsumeActivity();
-    if (ProcessBacklightState(input_activity_detected || wake_activity_detected)) {
-      continue;
-    }
+    delay_.DelayMs(tick_period_ms_);
+    Tick();
+  }
+}
+
+void UiTask::Tick() noexcept {
+  const std::int16_t rotation_detents = encoder_.ReadDeltaDetents();
+  const auto button_event = button_.Poll();
+  midismith::menu::InputEvent injected_event{};
+  bool injected_event_received = injected_events_.Receive(injected_event, 0);
+  const bool physical_input_detected =
+      rotation_detents != 0 || button_event != midismith::bsp::input::ButtonEvent::kNone;
+  const bool wake_activity_detected = wake_activity_.ConsumeActivity();
+  const BacklightOutcome outcome = ProcessBacklightState(
+      physical_input_detected || injected_event_received || wake_activity_detected);
+  if (outcome == BacklightOutcome::kAsleep) {
+    return;
+  }
+  if (outcome == BacklightOutcome::kAwake) {
     DispatchRotation(rotation_detents);
     DispatchButton(button_event);
-    while (injected_event_received) {
-      runtime_.HandleInput(injected_event);
-      injected_event_received = injected_events_.Receive(injected_event, 0);
-    }
-    if (runtime_.is_dirty()) {
-      runtime_.Render(display_);
-      display_.Flush();
-    }
-    if (midismith::main_board::app::config::kUiEncoderDebugOverlay) {
-      RenderEncoderDebugOverlay();
-    }
+  }
+  while (injected_event_received) {
+    runtime_.HandleInput(injected_event);
+    injected_event_received = injected_events_.Receive(injected_event, 0);
+  }
+  if (runtime_.is_dirty()) {
+    runtime_.Render(display_);
+    display_.Flush();
+  }
+  if (midismith::main_board::app::config::kUiEncoderDebugOverlay) {
+    RenderEncoderDebugOverlay();
   }
 }
 
@@ -87,27 +94,21 @@ void UiTask::RenderEncoderDebugOverlay() noexcept {
   display_.Flush();
 }
 
-bool UiTask::ProcessBacklightState(bool input_activity_detected) noexcept {
+UiTask::BacklightOutcome UiTask::ProcessBacklightState(bool input_activity_detected) noexcept {
   if (input_activity_detected) {
     idle_tracker_.NoteActivity();
     if (backlight_off_) {
       backlight_off_ = false;
       display_power_.SetBacklight(true);
-      return true;
+      return BacklightOutcome::kJustWokeUp;
     }
-    return false;
+    return BacklightOutcome::kAwake;
   }
   if (idle_tracker_.Tick()) {
     backlight_off_ = true;
     display_power_.SetBacklight(false);
   }
-  return backlight_off_;
-}
-
-bool UiTask::start() noexcept {
-  return midismith::os::Task::create("UiTask", UiTask::entry, this,
-                                     midismith::main_board::app::config::kUiTaskStackBytes,
-                                     midismith::main_board::app::config::kUiTaskPriority);
+  return backlight_off_ ? BacklightOutcome::kAsleep : BacklightOutcome::kAwake;
 }
 
 void UiTask::DispatchRotation(std::int16_t detents) noexcept {
