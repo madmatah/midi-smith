@@ -4,6 +4,7 @@
 
 #include "app/ui/display_power_requirements.hpp"
 #include "app/ui/idle_tracker.hpp"
+#include "app/ui/splash_requirements.hpp"
 #include "bsp/rotary_button.hpp"
 #include "bsp/rotary_encoder.hpp"
 #include "menu/menu_runtime.hpp"
@@ -19,7 +20,7 @@ class UiTask {
   UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
          midismith::main_board::bsp::RotaryButton& button, midismith::menu::MenuRuntime& runtime,
          midismith::text_display::TextDisplayRequirements& display,
-         DisplayPowerRequirements& display_power,
+         DisplayPowerRequirements& display_power, SplashRequirements& splash,
          midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
          std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
          void* initialize_context) noexcept;
@@ -29,7 +30,6 @@ class UiTask {
   bool start() noexcept;
 
  private:
-  void RenderSplashScreen() noexcept;
   void RenderEncoderDebugOverlay() noexcept;
   bool ProcessBacklightState(bool input_activity_detected) noexcept;
   void DispatchRotation(std::int16_t detents) noexcept;
@@ -40,6 +40,7 @@ class UiTask {
   midismith::menu::MenuRuntime& runtime_;
   midismith::text_display::TextDisplayRequirements& display_;
   DisplayPowerRequirements& display_power_;
+  SplashRequirements& splash_;
   midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events_;
   std::uint32_t tick_period_ms_;
   InitializeCallback initialize_callback_;

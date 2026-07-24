@@ -69,6 +69,7 @@ void TftDisplay::Init() noexcept {
   WriteData(kMemoryAccessLandscapeBgr);
   WriteCommand(kDisplayOn);
   delay_ms_(delay_context_, 20);
+  FillRect(0, 0, width(), height(), 0x0000);
   SetBacklight(true);
 }
 
