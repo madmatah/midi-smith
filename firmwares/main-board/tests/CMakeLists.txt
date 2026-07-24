@@ -37,6 +37,7 @@ midismith_add_firmware_test(NAME main
         app/ui/ui_task.test.cpp
         app/ui/items/menu_flow_items.test.cpp
         app/ui/screens/keymap_progress_screen.test.cpp
+        app/ui/screens/persistent_config_view.test.cpp
     INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT

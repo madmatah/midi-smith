@@ -79,6 +79,7 @@ if(HOST_TESTS)
         app/src/app/ui/items/keymap_setup_flow_item.cpp
         app/src/app/ui/items/stats_view_item.cpp
         app/src/app/ui/screens/keymap_progress_screen.cpp
+        app/src/app/ui/screens/persistent_config_view.cpp
         app/src/shell/ui_command.cpp
     )
     target_include_directories(main_app_lib PUBLIC
