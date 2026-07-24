@@ -7,7 +7,6 @@
 #include "menu/menu_controller_requirements.hpp"
 #include "menu/progress_bar.hpp"
 #include "menu/text_layout.hpp"
-#include "menu/title_bar.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::main_board::app::ui::screens {
@@ -63,13 +62,9 @@ CalibrationProgressScreen::CalibrationProgressScreen(
     midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator) noexcept
     : coordinator_(coordinator) {}
 
-std::string_view CalibrationProgressScreen::title() const noexcept {
-  return "Calibration";
-}
-
 void CalibrationProgressScreen::OnEnter(
     midismith::menu::MenuControllerRequirements& controller) noexcept {
-  parent_title_ = controller.parent_title();
+  static_cast<void>(controller);
   if (!started_) {
     coordinator_.StartCalibration();
     started_ = true;
@@ -112,12 +107,15 @@ void CalibrationProgressScreen::Render(
   const std::string_view rendered_progress(
       progress_text.data(), static_cast<std::size_t>(result.ptr - progress_text.data()));
 
+  constexpr std::string_view kTitle = "Calibration";
   const CalibrationState state = coordinator_.state();
   const std::string_view state_label = StateLabel(state);
   const std::uint8_t footer_row = static_cast<std::uint8_t>(display.rows() - 1);
 
   display.Clear();
-  midismith::menu::RenderTitleBar(display, parent_title_, title());
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, midismith::menu::CenteredColumn(display.columns(), kTitle.size()), kTitle,
+                   midismith::text_display::CellAttribute::kTitle);
 
   if (state == CalibrationState::kDone || state == CalibrationState::kAborted) {
     const std::uint8_t done_row = static_cast<std::uint8_t>((display.rows() - 2) / 2);

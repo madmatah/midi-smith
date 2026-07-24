@@ -11,7 +11,6 @@ midismith_add_lib(NAME menu
         src/numeric_input_screen.cpp
         src/text_view_screen.cpp
         src/progress_bar.cpp
-        src/title_bar.cpp
         src/line_buffer.cpp
         src/line_buffer_stream.cpp
     DEPENDS text-display io

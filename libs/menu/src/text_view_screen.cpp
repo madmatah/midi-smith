@@ -3,7 +3,7 @@
 #include <string_view>
 
 #include "menu/menu_controller_requirements.hpp"
-#include "menu/title_bar.hpp"
+#include "menu/text_layout.hpp"
 #include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -12,12 +12,8 @@ namespace midismith::menu {
 TextViewScreen::TextViewScreen(std::string_view title, LineBuffer& buffer) noexcept
     : title_(title), buffer_(buffer) {}
 
-std::string_view TextViewScreen::title() const noexcept {
-  return title_;
-}
-
 void TextViewScreen::OnEnter(MenuControllerRequirements& controller) noexcept {
-  parent_title_ = controller.parent_title();
+  static_cast<void>(controller);
   first_visible_line_ = 0;
   dirty_ = true;
 }
@@ -38,7 +34,9 @@ bool TextViewScreen::HandleInput(InputEvent event,
 void TextViewScreen::Render(midismith::text_display::TextDisplayRequirements& display) noexcept {
   namespace glyphs = midismith::text_display::glyphs;
   display.Clear();
-  RenderTitleBar(display, parent_title_, title_);
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
+                   midismith::text_display::CellAttribute::kTitle);
   const std::uint8_t visible_line_count = display.rows() > 1 ? display.rows() - 1 : 0;
   AdjustScroll(0, visible_line_count);
   for (std::uint8_t row_offset = 0; row_offset < visible_line_count; row_offset++) {

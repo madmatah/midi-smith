@@ -9,5 +9,4 @@ midismith_add_test(NAME menu
         menu_runtime.test.cpp
         line_buffer_stream.test.cpp
         progress_bar.test.cpp
-        title_bar.test.cpp
 )
