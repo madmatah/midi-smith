@@ -47,7 +47,7 @@ void Application::create_tasks() noexcept {
   auto shell_commands_ctx = midismith::main_board::app::composition::CreateShellSubsystem(
       console_ctx, can_ctx, boards_ctx, config_ctx.keymap_setup_coordinator, calib_ctx);
   midismith::main_board::app::composition::CreateUiSubsystem(config_ctx, calib_ctx,
-                                                             shell_commands_ctx);
+                                                             shell_commands_ctx, midi_context);
   (void) shell_commands_ctx.task.start();
 }
 

@@ -5,9 +5,14 @@
 
 namespace midismith::main_board::app::ui {
 
-midismith::menu::MenuScreenRequirements& BuildMenuTree(
-    midismith::main_board::app::composition::ConfigContext& config,
-    midismith::main_board::app::composition::CalibrationContext& calibration,
-    midismith::main_board::app::composition::ShellCommandsContext& commands) noexcept;
+struct MenuTree {
+  midismith::menu::MenuScreenRequirements& root;
+  midismith::menu::MenuScreenRequirements& midi_monitor;
+};
 
-}
+MenuTree BuildMenuTree(midismith::main_board::app::composition::ConfigContext& config,
+                       midismith::main_board::app::composition::CalibrationContext& calibration,
+                       midismith::main_board::app::composition::ShellCommandsContext& commands,
+                       midismith::main_board::app::composition::MidiContext& midi) noexcept;
+
+}  // namespace midismith::main_board::app::ui

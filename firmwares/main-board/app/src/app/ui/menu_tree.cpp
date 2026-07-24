@@ -8,6 +8,7 @@
 #include "app/ui/items/stats_view_item.hpp"
 #include "app/ui/screens/calibration_progress_screen.hpp"
 #include "app/ui/screens/keymap_progress_screen.hpp"
+#include "app/ui/screens/midi_monitor_screen.hpp"
 #include "app/ui/screens/persistent_config_view.hpp"
 #include "domain/config/main_board_config.hpp"
 #include "menu/items/back_item.hpp"
@@ -35,10 +36,10 @@ void OnStartNoteConfirmed(void* context, std::int32_t value,
 
 }  // namespace
 
-midismith::menu::MenuScreenRequirements& BuildMenuTree(
-    midismith::main_board::app::composition::ConfigContext& config,
-    midismith::main_board::app::composition::CalibrationContext& calibration,
-    midismith::main_board::app::composition::ShellCommandsContext& commands) noexcept {
+MenuTree BuildMenuTree(midismith::main_board::app::composition::ConfigContext& config,
+                       midismith::main_board::app::composition::CalibrationContext& calibration,
+                       midismith::main_board::app::composition::ShellCommandsContext& commands,
+                       midismith::main_board::app::composition::MidiContext& midi) noexcept {
   static std::array<char, midismith::main_board::app::config::kLineBufferMaxLines *
                               midismith::main_board::app::config::kLineBufferLineCapacity>
       line_buffer_text{};
@@ -93,10 +94,16 @@ midismith::menu::MenuScreenRequirements& BuildMenuTree(
       &stats_back_item};
   static midismith::menu::ListScreen stats_screen("Stats", stats_items.data(), stats_items.size());
 
+  static midismith::main_board::app::ui::screens::MidiMonitorScreen midi_monitor_screen(
+      midi.activity, midismith::main_board::app::config::kMidiMonitorActivityDecayMs /
+                         midismith::main_board::app::config::kUiTickPeriodMs);
+
+  static midismith::menu::items::SubmenuItem midi_monitor_menu_item("MIDI Monitor",
+                                                                    midi_monitor_screen);
   static midismith::menu::items::SubmenuItem config_menu_item("Config", config_screen);
   static midismith::menu::items::SubmenuItem stats_menu_item("Stats", stats_screen);
-  static std::array<midismith::menu::MenuItemRequirements*, 2> root_items{&config_menu_item,
-                                                                          &stats_menu_item};
+  static std::array<midismith::menu::MenuItemRequirements*, 3> root_items{
+      &midi_monitor_menu_item, &config_menu_item, &stats_menu_item};
   static midismith::menu::ListScreen root_screen("Midi Smith", root_items.data(),
                                                  root_items.size());
 
@@ -106,7 +113,7 @@ midismith::menu::MenuScreenRequirements& BuildMenuTree(
   start_note_screen = midismith::menu::NumericInputScreen("Start note", 21, 0, 127,
                                                           OnStartNoteConfirmed, &keymap_item);
 
-  return root_screen;
+  return MenuTree{root_screen, midi_monitor_screen};
 }
 
 }  // namespace midismith::main_board::app::ui
