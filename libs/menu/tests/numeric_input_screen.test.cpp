@@ -129,7 +129,7 @@ TEST_CASE("The NumericInputScreen class") {
         REQUIRE(display.AttributeAt(0, 0) == CellAttribute::kTitle);
         REQUIRE(display.CharAt(3, 9) == '5');
         REQUIRE(display.AttributeAt(3, 9) == CellAttribute::kAccent);
-        REQUIRE(display.CharAt(3, 7) == glyphs::kArrowLeft);
+        REQUIRE(display.CharAt(3, 6) == glyphs::kArrowLeft);
         REQUIRE(display.CharAt(3, 12) == glyphs::kChevronRight);
         REQUIRE_THAT(display.RowText(GridDisplayStub::kRows - 1), ContainsSubstring("1-10"));
         REQUIRE_THAT(display.RowText(GridDisplayStub::kRows - 1), ContainsSubstring("Btn:OK"));
