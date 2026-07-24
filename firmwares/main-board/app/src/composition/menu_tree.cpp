@@ -1,4 +1,4 @@
-#include "app/ui/menu_tree.hpp"
+#include "app/composition/menu_tree.hpp"
 
 #include <array>
 
@@ -18,7 +18,7 @@
 #include "menu/numeric_input_screen.hpp"
 #include "menu/text_view_screen.hpp"
 
-namespace midismith::main_board::app::ui {
+namespace midismith::main_board::app::composition {
 
 namespace {
 
@@ -36,10 +36,8 @@ void OnStartNoteConfirmed(void* context, std::int32_t value,
 
 }  // namespace
 
-MenuTree BuildMenuTree(midismith::main_board::app::composition::ConfigContext& config,
-                       midismith::main_board::app::composition::CalibrationContext& calibration,
-                       midismith::main_board::app::composition::ShellCommandsContext& commands,
-                       midismith::main_board::app::composition::MidiContext& midi) noexcept {
+MenuTree BuildMenuTree(ConfigContext& config, CalibrationContext& calibration,
+                       ShellCommandsContext& commands, MidiContext& midi) noexcept {
   static std::array<char, midismith::main_board::app::config::kLineBufferMaxLines *
                               midismith::main_board::app::config::kLineBufferLineCapacity>
       line_buffer_text{};
@@ -116,4 +114,4 @@ MenuTree BuildMenuTree(midismith::main_board::app::composition::ConfigContext& c
   return MenuTree{root_screen, midi_monitor_screen};
 }
 
-}  // namespace midismith::main_board::app::ui
+}  // namespace midismith::main_board::app::composition
