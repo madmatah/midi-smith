@@ -81,6 +81,14 @@ TEST_CASE("The Font8x16Glyph function") {
               Copy(Font8x16Glyph(glyphs::BarFill(glyphs::kBarFillLevels))));
     }
 
+    SECTION("Should keep two custom glyphs independent while both are held") {
+      const auto arrow_up = Font8x16Glyph(glyphs::kArrowUp);
+      const auto arrow_down = Font8x16Glyph(glyphs::kArrowDown);
+
+      REQUIRE(Copy(arrow_up) != Copy(arrow_down));
+      REQUIRE(Copy(arrow_up) == Copy(Font8x16Glyph(glyphs::kArrowUp)));
+    }
+
     SECTION("Should draw every navigation arrow") {
       REQUIRE_FALSE(IsBlank(Font8x16Glyph(glyphs::kArrowUp)));
       REQUIRE_FALSE(IsBlank(Font8x16Glyph(glyphs::kArrowDown)));

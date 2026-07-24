@@ -312,7 +312,7 @@ constexpr GlyphBitmap kFallbackGlyph{0x00, 0x00, 0xFE, 0x82, 0x82, 0x82, 0x82, 0
 constexpr std::uint8_t kBarBandTopRow = 5;
 constexpr std::uint8_t kBarBandBottomRow = 10;
 
-GlyphBitmap BuildBarFillGlyph(std::uint8_t eighths) noexcept {
+constexpr GlyphBitmap BuildBarFillGlyph(std::uint8_t eighths) noexcept {
   GlyphBitmap glyph{};
   const std::uint8_t row_bits = eighths == 0 ? 0 : static_cast<std::uint8_t>(0xFF << (8 - eighths));
   for (std::uint8_t row = kBarBandTopRow; row <= kBarBandBottomRow; row++) {
@@ -321,8 +321,8 @@ GlyphBitmap BuildBarFillGlyph(std::uint8_t eighths) noexcept {
   return glyph;
 }
 
-GlyphBitmap BuildRowsGlyph(std::uint8_t first_row,
-                           std::initializer_list<std::uint8_t> rows) noexcept {
+constexpr GlyphBitmap BuildRowsGlyph(std::uint8_t first_row,
+                                     std::initializer_list<std::uint8_t> rows) noexcept {
   GlyphBitmap glyph{};
   std::uint8_t row = first_row;
   for (std::uint8_t bits : rows) {
@@ -332,13 +332,13 @@ GlyphBitmap BuildRowsGlyph(std::uint8_t first_row,
   return glyph;
 }
 
-GlyphBitmap BuildFullHeightGlyph(std::uint8_t row_bits) noexcept {
+constexpr GlyphBitmap BuildFullHeightGlyph(std::uint8_t row_bits) noexcept {
   GlyphBitmap glyph{};
   glyph.fill(row_bits);
   return glyph;
 }
 
-GlyphBitmap BuildCustomGlyph(char character) noexcept {
+constexpr GlyphBitmap BuildCustomGlyph(char character) noexcept {
   if (character >= glyphs::kBarFillBase && character <= glyphs::kBarFillFull) {
     return BuildBarFillGlyph(static_cast<std::uint8_t>(character - glyphs::kBarFillBase));
   }
@@ -364,13 +364,24 @@ GlyphBitmap BuildCustomGlyph(char character) noexcept {
   }
 }
 
+constexpr std::size_t kCustomGlyphCount =
+    static_cast<std::size_t>(glyphs::kScrollThumb - glyphs::kActivityDotIdle) + 1;
+
+constexpr std::array<GlyphBitmap, kCustomGlyphCount> BuildCustomGlyphTable() noexcept {
+  std::array<GlyphBitmap, kCustomGlyphCount> table{};
+  for (std::size_t index = 0; index < kCustomGlyphCount; index++) {
+    table[index] = BuildCustomGlyph(static_cast<char>(glyphs::kActivityDotIdle + index));
+  }
+  return table;
+}
+
+constexpr std::array<GlyphBitmap, kCustomGlyphCount> kCustomGlyphs = BuildCustomGlyphTable();
+
 }  // namespace
 
 std::span<const std::uint8_t, 16> Font8x16Glyph(char character) noexcept {
-  static GlyphBitmap custom_glyph{};
   if (glyphs::IsCustomGlyph(character)) {
-    custom_glyph = BuildCustomGlyph(character);
-    return custom_glyph;
+    return kCustomGlyphs[static_cast<std::size_t>(character - glyphs::kActivityDotIdle)];
   }
   if (character < kFirstPrintableCharacter || character > kLastPrintableCharacter) {
     return kFallbackGlyph;
