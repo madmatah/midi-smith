@@ -221,6 +221,23 @@ TEST_CASE("The MidiActivityCollector class") {
       }
     }
 
+    SECTION("When every declared source records one message") {
+      SECTION("Should give each source its own slot") {
+        for (std::size_t index = 0; index < midismith::midi_monitor::kMidiActivitySourceCount;
+             index++) {
+          Record(collector, static_cast<MidiActivitySource>(index), {0xF8});
+        }
+
+        const auto snapshot = collector.CaptureSnapshot();
+
+        for (std::size_t index = 0; index < midismith::midi_monitor::kMidiActivitySourceCount;
+             index++) {
+          REQUIRE(snapshot.message_count(static_cast<MidiActivitySource>(index)) == 1);
+        }
+        REQUIRE(snapshot.total_message_count == midismith::midi_monitor::kMidiActivitySourceCount);
+      }
+    }
+
     SECTION("When the message is empty or absent") {
       SECTION("Should ignore it") {
         collector.RecordMessage(MidiActivitySource::kKeys, nullptr, 3);
