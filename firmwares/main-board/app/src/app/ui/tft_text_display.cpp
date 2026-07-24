@@ -18,8 +18,8 @@ struct CellColors {
 constexpr std::uint16_t kBackground = Rgb565(0, 0, 0);
 constexpr std::uint16_t kTextPrimary = Rgb565(235, 235, 235);
 constexpr std::uint16_t kTextMuted = Rgb565(124, 124, 128);
-constexpr std::uint16_t kAmberAccent = Rgb565(255, 176, 0);
-constexpr std::uint16_t kInkOnAccent = Rgb565(24, 16, 0);
+constexpr std::uint16_t kCyanAccent = Rgb565(0, 190, 255);
+constexpr std::uint16_t kInkOnAccent = Rgb565(0, 20, 32);
 constexpr std::uint16_t kTitleBackground = Rgb565(16, 64, 152);
 constexpr std::uint16_t kTitleForeground = Rgb565(240, 244, 248);
 constexpr std::uint16_t kSuccessGreen = Rgb565(64, 216, 96);
@@ -33,13 +33,13 @@ constexpr CellColors ThemeColors(midismith::text_display::CellAttribute attribut
     case midismith::text_display::CellAttribute::kNormal:
       return {kTextPrimary, kBackground};
     case midismith::text_display::CellAttribute::kHighlight:
-      return {kInkOnAccent, kAmberAccent};
+      return {kInkOnAccent, kCyanAccent};
     case midismith::text_display::CellAttribute::kDim:
       return {kTextMuted, kBackground};
     case midismith::text_display::CellAttribute::kTitle:
       return {kTitleForeground, kTitleBackground};
     case midismith::text_display::CellAttribute::kAccent:
-      return {kAmberAccent, kBackground};
+      return {kCyanAccent, kBackground};
     case midismith::text_display::CellAttribute::kSuccess:
       return {kSuccessGreen, kBackground};
     case midismith::text_display::CellAttribute::kWarning:
