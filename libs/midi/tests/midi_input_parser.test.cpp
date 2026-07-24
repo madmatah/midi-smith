@@ -94,46 +94,53 @@ TEST_CASE("MidiInputParser") {
       }
     }
 
-    SECTION("When receiving SysEx (F0 01 02 03 F7)") {
-      SECTION("Should emit nothing") {
-        FeedAll(parser, {0xF0, 0x01, 0x02, 0x03, 0xF7});
-        REQUIRE(sink.received_messages.empty());
-      }
-    }
+    SECTION("System exclusive is deliberately dropped and never relayed") {
+      SECTION(
+          "Because the sinks carry whole messages of at most three bytes, a dump would have "
+          "to be split, and a dump truncated by a full queue leaves the receiver waiting "
+          "for an end-of-exclusive that never comes") {
+        SECTION("When receiving a complete SysEx (F0 01 02 03 F7)") {
+          SECTION("Should emit nothing") {
+            FeedAll(parser, {0xF0, 0x01, 0x02, 0x03, 0xF7});
+            REQUIRE(sink.received_messages.empty());
+          }
+        }
 
-    SECTION("When data bytes follow a SysEx that interrupted running status") {
-      SECTION("Should ignore them because SysEx clears running status") {
-        FeedAll(parser, {0x90, 0x3C, 0x7F});
-        REQUIRE(sink.received_messages.size() == 1);
+        SECTION("When data bytes follow a SysEx that interrupted running status") {
+          SECTION("Should ignore them because SysEx clears running status") {
+            FeedAll(parser, {0x90, 0x3C, 0x7F});
+            REQUIRE(sink.received_messages.size() == 1);
 
-        FeedAll(parser, {0xF0, 0x01, 0xF7});
-        REQUIRE(sink.received_messages.size() == 1);
+            FeedAll(parser, {0xF0, 0x01, 0xF7});
+            REQUIRE(sink.received_messages.size() == 1);
 
-        FeedAll(parser, {0x3D, 0x7F});
-        REQUIRE(sink.received_messages.size() == 1);
-      }
-    }
+            FeedAll(parser, {0x3D, 0x7F});
+            REQUIRE(sink.received_messages.size() == 1);
+          }
+        }
 
-    SECTION("When a Clock byte appears inside a SysEx") {
-      SECTION("Should emit the Clock and continue dropping SysEx") {
-        FeedAll(parser, {0xF0, 0x01, 0xF8, 0x02, 0xF7});
-        REQUIRE(sink.received_messages.size() == 1);
-        REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0xF8});
-      }
-    }
+        SECTION("When a Clock byte appears inside a SysEx") {
+          SECTION("Should emit the Clock and continue dropping SysEx") {
+            FeedAll(parser, {0xF0, 0x01, 0xF8, 0x02, 0xF7});
+            REQUIRE(sink.received_messages.size() == 1);
+            REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0xF8});
+          }
+        }
 
-    SECTION("When a new SysEx starts while another is in progress") {
-      SECTION("Should restart the SysEx silently") {
-        FeedAll(parser, {0xF0, 0x01, 0xF0, 0x02, 0xF7});
-        REQUIRE(sink.received_messages.empty());
-      }
-    }
+        SECTION("When a new SysEx starts while another is in progress") {
+          SECTION("Should restart the SysEx silently") {
+            FeedAll(parser, {0xF0, 0x01, 0xF0, 0x02, 0xF7});
+            REQUIRE(sink.received_messages.empty());
+          }
+        }
 
-    SECTION("When a channel voice status interrupts a SysEx") {
-      SECTION("Should abort the SysEx and start the new message") {
-        FeedAll(parser, {0xF0, 0x01, 0x02, 0x90, 0x3C, 0x7F});
-        REQUIRE(sink.received_messages.size() == 1);
-        REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0x90, 0x3C, 0x7F});
+        SECTION("When a channel voice status interrupts a SysEx") {
+          SECTION("Should abort the SysEx and start the new message") {
+            FeedAll(parser, {0xF0, 0x01, 0x02, 0x90, 0x3C, 0x7F});
+            REQUIRE(sink.received_messages.size() == 1);
+            REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0x90, 0x3C, 0x7F});
+          }
+        }
       }
     }
 
