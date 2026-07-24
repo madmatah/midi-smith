@@ -7,6 +7,8 @@
 #include "bsp/memory_sections.hpp"
 #include "bsp/usart_midi.hpp"
 #include "bsp/usb_midi.hpp"
+#include "midi-monitor/midi_activity_collector.hpp"
+#include "midi-monitor/midi_activity_tap.hpp"
 #include "midi/midi_fanout_controller.hpp"
 #include "os/binary_semaphore.hpp"
 #include "os/queue.hpp"
@@ -39,6 +41,8 @@ void release_semaphore_from_isr(void* ctx) noexcept {
 }  // namespace
 
 MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) noexcept {
+  static midismith::midi_monitor::MidiActivityCollector midi_activity_collector;
+
   static midismith::os::Queue<midismith::main_board::app::midi::MidiCommand,
                               midismith::main_board::app::config::USB_MIDI_QUEUE_CAPACITY>
       usb_midi_queue;
@@ -57,18 +61,30 @@ MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) 
   static midismith::main_board::app::midi::MidiOutputTask din_midi_task(
       din_midi_queue, din_midi, logger, midismith::main_board::app::config::MIDI_RETRY_TIMEOUT_MS);
 
-  static midismith::midi::MidiControllerRequirements* fanout_sinks[] = {&usb_midi_controller,
-                                                                        &din_midi_controller};
+  static midismith::midi_monitor::MidiActivityTap usb_output_tap(
+      usb_midi_controller, midi_activity_collector,
+      midismith::midi_monitor::MidiActivitySource::kUsbOut);
+  static midismith::midi_monitor::MidiActivityTap din_output_tap(
+      din_midi_controller, midi_activity_collector,
+      midismith::midi_monitor::MidiActivitySource::kDinOut);
+
+  static midismith::midi::MidiControllerRequirements* fanout_sinks[] = {&usb_output_tap,
+                                                                        &din_output_tap};
   static midismith::midi::MidiFanoutController midi_fanout(fanout_sinks, 2);
+
+  static midismith::midi_monitor::MidiActivityTap keys_tap(
+      midi_fanout, midi_activity_collector, midismith::midi_monitor::MidiActivitySource::kKeys);
 
   static midismith::piano_controller::MidiPiano::Config piano_config = {
       .channel = 0, .sustain_cc = 64, .soft_cc = 67, .sostenuto_cc = 66};
-  static midismith::piano_controller::MidiPiano piano(midi_fanout, piano_config);
+  static midismith::piano_controller::MidiPiano piano(keys_tap, piano_config);
 
   static midismith::os::BinarySemaphore din_midi_input_wake;
   din_midi.SetByteAvailableCallback(release_semaphore_from_isr, &din_midi_input_wake);
   (void) din_midi.StartReception();
-  static midismith::main_board::app::midi::MidiInputTask midi_input_task(din_midi, midi_fanout,
+  static midismith::midi_monitor::MidiActivityTap din_input_tap(
+      midi_fanout, midi_activity_collector, midismith::midi_monitor::MidiActivitySource::kDinIn);
+  static midismith::main_board::app::midi::MidiInputTask midi_input_task(din_midi, din_input_tap,
                                                                          din_midi_input_wake);
 
   (void) midismith::os::Task::create("UsbMidiInputTask", midi_output_task_entry, &usb_midi_task,
@@ -82,7 +98,7 @@ MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) 
       midismith::main_board::app::config::MIDI_INPUT_TASK_STACK_BYTES,
       midismith::main_board::app::config::MIDI_INPUT_TASK_PRIORITY);
 
-  return MidiContext{piano};
+  return MidiContext{piano, midi_activity_collector};
 }
 
 }  // namespace midismith::main_board::app::composition
