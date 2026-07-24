@@ -18,6 +18,7 @@
 #include "bsp/tft_display.hpp"
 #include "os/clock.hpp"
 #include "os/clock_delay.hpp"
+#include "os/os_uptime_provider.hpp"
 #include "os/queue.hpp"
 #include "os/task.hpp"
 #include "splash/animation.hpp"
@@ -65,9 +66,11 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
                                  static_cast<std::size_t>(midismith::splash::kDisplayWidth) *
                                      midismith::main_board::app::config::kSplashBandRows>
       splash_band_row_colors;
+  static midismith::os::ClockDelay ui_delay;
+  static midismith::os::OsUptimeProvider ui_uptime;
   static midismith::main_board::app::ui::TftSplashPlayer splash_player(
       tft_display, midismith::main_board::app::config::kSplashBandRows, splash_band_pixels,
-      splash_band_row_pixels, splash_band_row_colors,
+      splash_band_row_pixels, splash_band_row_colors, ui_delay, ui_uptime,
       midismith::main_board::app::config::kSplashFramePeriodMs,
       midismith::main_board::app::config::kSplashSaturationPercent);
   static midismith::main_board::bsp::RotaryEncoder encoder(
@@ -91,10 +94,9 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
   (void) commands.task.RegisterCommand(ui_command);
   static midismith::main_board::app::ui::MidiActivityWakeSource midi_activity_wake_source(
       midi.activity, runtime, menu_tree.midi_monitor);
-  static midismith::os::ClockDelay ui_tick_delay;
   static midismith::main_board::app::ui::UiTask ui_task(
       encoder, button, runtime, text_display, text_display, splash_player, injected_input_queue,
-      midi_activity_wake_source, ui_tick_delay, midismith::main_board::app::config::kUiTickPeriodMs,
+      midi_activity_wake_source, ui_delay, midismith::main_board::app::config::kUiTickPeriodMs,
       InitializeTftDisplay, &tft_display);
 
   (void) midismith::os::Task::create("UiTask", midismith::main_board::app::ui::UiTask::entry,
