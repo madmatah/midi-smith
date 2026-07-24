@@ -71,6 +71,7 @@ if(HOST_TESTS)
         app/src/storage/calibration_persistent_store.cpp
         app/src/app/ui/screens/calibration_progress_screen.cpp
         app/src/app/ui/screens/midi_monitor_screen.cpp
+        app/src/app/ui/midi_activity_wake_source.cpp
         app/src/shell/ui_command.cpp
     )
     target_include_directories(main_app_lib PUBLIC
@@ -136,6 +137,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/ui/screens/keymap_progress_screen.cpp
     app/src/app/ui/screens/calibration_progress_screen.cpp
     app/src/app/ui/screens/midi_monitor_screen.cpp
+    app/src/app/ui/midi_activity_wake_source.cpp
     app/src/app/ui/screens/persistent_config_view.cpp
     app/src/messaging/main_board_can_message_sender.cpp
     app/src/messaging/main_board_inbound_sensor_event_logging_handler.cpp
