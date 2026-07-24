@@ -8,4 +8,5 @@ midismith_add_test(NAME menu
         text_view_screen.test.cpp
         menu_runtime.test.cpp
         line_buffer_stream.test.cpp
+        progress_bar.test.cpp
 )

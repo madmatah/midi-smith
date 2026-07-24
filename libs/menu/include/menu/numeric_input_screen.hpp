@@ -17,7 +17,7 @@ class NumericInputScreen final : public MenuScreenRequirements {
                      void* callback_context) noexcept;
 
   void OnEnter(MenuControllerRequirements& controller) noexcept override;
-  void HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
+  bool HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
   bool is_dirty() const noexcept override;
 
@@ -25,6 +25,11 @@ class NumericInputScreen final : public MenuScreenRequirements {
   void set_value(std::int32_t value) noexcept;
 
  private:
+  static constexpr std::int16_t kFastRotationThresholdDetents = 3;
+  static constexpr std::int32_t kFastRotationMultiplier = 5;
+  static constexpr std::int16_t kVeryFastRotationThresholdDetents = 6;
+  static constexpr std::int32_t kVeryFastRotationMultiplier = 10;
+
   std::int32_t Clamp(std::int32_t value) const noexcept;
 
   std::string_view title_;

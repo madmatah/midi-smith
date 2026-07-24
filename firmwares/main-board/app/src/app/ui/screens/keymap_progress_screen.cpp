@@ -2,9 +2,11 @@
 
 #include <array>
 #include <charconv>
+#include <string_view>
 
-#include "io/stream_format.hpp"
 #include "menu/menu_controller_requirements.hpp"
+#include "menu/progress_bar.hpp"
+#include "menu/text_layout.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::main_board::app::ui::screens {
@@ -18,14 +20,16 @@ void KeymapProgressScreen::OnEnter(
   static_cast<void>(controller);
 }
 
-void KeymapProgressScreen::HandleInput(
+bool KeymapProgressScreen::HandleInput(
     midismith::menu::InputEvent event,
     midismith::menu::MenuControllerRequirements& controller) noexcept {
   if (event.kind == midismith::menu::InputEvent::Kind::kButtonPress ||
       event.kind == midismith::menu::InputEvent::Kind::kButtonLongPress) {
     coordinator_.CancelSetup();
     controller.Pop();
+    return true;
   }
+  return false;
 }
 
 void KeymapProgressScreen::Render(
@@ -37,12 +41,41 @@ void KeymapProgressScreen::Render(
   *result.ptr = '/';
   result = std::to_chars(result.ptr + 1, captured_text.data() + captured_text.size(),
                          session.key_count());
+  const std::string_view rendered_captured(
+      captured_text.data(), static_cast<std::size_t>(result.ptr - captured_text.data()));
+
+  constexpr std::string_view kTitle = "Keymap";
+  constexpr std::string_view kPrompt = "Press each key";
+  const std::uint8_t footer_row = static_cast<std::uint8_t>(display.rows() - 1);
 
   display.Clear();
-  display.DrawText(0, 0, "Keymap", midismith::text_display::CellAttribute::kDim);
-  display.DrawText(2, 0, "Captured");
-  display.DrawText(3, 0, std::string_view(captured_text.data()));
-  display.DrawText(5, 0, "Press btn cancel");
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, midismith::menu::CenteredColumn(display.columns(), kTitle.size()), kTitle,
+                   midismith::text_display::CellAttribute::kTitle);
+
+  if (session.key_count() > 0 && session.captured_count() >= session.key_count()) {
+    constexpr std::string_view kDoneLabel = "Done";
+    const std::uint8_t done_row = static_cast<std::uint8_t>((display.rows() - 2) / 2);
+    display.DrawTextDoubleSize(
+        done_row, midismith::menu::CenteredColumn(display.columns(), kDoneLabel.size() * 2),
+        kDoneLabel, midismith::text_display::CellAttribute::kSuccess);
+    display.FillRow(footer_row, midismith::text_display::CellAttribute::kFooter);
+    display.DrawText(footer_row, 1, "Btn exit", midismith::text_display::CellAttribute::kFooter);
+    return;
+  }
+
+  const std::uint8_t prompt_row = static_cast<std::uint8_t>(display.rows() / 4);
+  const std::uint8_t bar_row = static_cast<std::uint8_t>(display.rows() / 2);
+  display.DrawText(prompt_row, midismith::menu::CenteredColumn(display.columns(), kPrompt.size()),
+                   kPrompt, midismith::text_display::CellAttribute::kAccent);
+  midismith::menu::RenderProgressBar(display, bar_row, 1,
+                                     static_cast<std::uint8_t>(display.columns() - 2),
+                                     session.captured_count(), session.key_count());
+  display.DrawText(static_cast<std::uint8_t>(bar_row + 1),
+                   midismith::menu::CenteredColumn(display.columns(), rendered_captured.size()),
+                   rendered_captured, midismith::text_display::CellAttribute::kDim);
+  display.FillRow(footer_row, midismith::text_display::CellAttribute::kFooter);
+  display.DrawText(footer_row, 1, "Btn cancel", midismith::text_display::CellAttribute::kFooter);
 }
 
 bool KeymapProgressScreen::is_dirty() const noexcept {

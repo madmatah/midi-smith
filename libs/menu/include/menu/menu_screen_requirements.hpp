@@ -15,7 +15,7 @@ class MenuScreenRequirements {
   virtual ~MenuScreenRequirements() = default;
 
   virtual void OnEnter(MenuControllerRequirements& controller) noexcept = 0;
-  virtual void HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept = 0;
+  virtual bool HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept = 0;
   virtual void Render(midismith::text_display::TextDisplayRequirements& display) noexcept = 0;
   virtual bool is_dirty() const noexcept = 0;
 };

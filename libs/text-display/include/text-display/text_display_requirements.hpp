@@ -17,6 +17,10 @@ class TextDisplayRequirements {
   virtual void Clear() noexcept = 0;
   virtual void DrawText(std::uint8_t row, std::uint8_t column, std::string_view text,
                         CellAttribute attribute = CellAttribute::kNormal) noexcept = 0;
+  virtual void DrawTextDoubleSize(std::uint8_t row, std::uint8_t column, std::string_view text,
+                                  CellAttribute attribute = CellAttribute::kNormal) noexcept {
+    DrawText(row, column, text, attribute);
+  }
   virtual void FillRow(std::uint8_t row,
                        CellAttribute attribute = CellAttribute::kNormal) noexcept = 0;
   virtual void Flush() noexcept = 0;

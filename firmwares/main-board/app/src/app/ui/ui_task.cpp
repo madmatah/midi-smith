@@ -1,8 +1,14 @@
 #include "app/ui/ui_task.hpp"
 
+#include <array>
+#include <charconv>
+#include <string_view>
+
 #include "app/config/ui.hpp"
+#include "menu/text_layout.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
+#include "text-display/glyphs.hpp"
 
 namespace midismith::main_board::app::ui {
 
@@ -10,15 +16,17 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
                midismith::main_board::bsp::RotaryButton& button,
                midismith::menu::MenuRuntime& runtime,
                midismith::text_display::TextDisplayRequirements& display,
-               std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
-               void* initialize_context) noexcept
+               DisplayPowerRequirements& display_power, std::uint32_t tick_period_ms,
+               InitializeCallback initialize_callback, void* initialize_context) noexcept
     : encoder_(encoder),
       button_(button),
       runtime_(runtime),
       display_(display),
+      display_power_(display_power),
       tick_period_ms_(tick_period_ms),
       initialize_callback_(initialize_callback),
-      initialize_context_(initialize_context) {}
+      initialize_context_(initialize_context),
+      idle_tracker_(midismith::main_board::app::config::kUiBacklightTimeoutMs / tick_period_ms) {}
 
 void UiTask::entry(void* context) noexcept {
   if (context == nullptr) {
@@ -32,17 +40,59 @@ void UiTask::run() noexcept {
     initialize_callback_(initialize_context_);
   }
   encoder_.Start();
+  RenderSplashScreen();
+  midismith::os::Clock::delay_ms(midismith::main_board::app::config::kUiSplashDurationMs);
   runtime_.Render(display_);
   display_.Flush();
   for (;;) {
     midismith::os::Clock::delay_ms(tick_period_ms_);
-    DispatchRotation(encoder_.ReadDeltaDetents());
-    DispatchButton(button_.Poll());
+    const std::int16_t rotation_detents = encoder_.ReadDeltaDetents();
+    const auto button_event = button_.Poll();
+    const bool input_activity_detected =
+        rotation_detents != 0 ||
+        button_event != midismith::main_board::bsp::RotaryButton::Event::kNone;
+    if (ProcessBacklightState(input_activity_detected)) {
+      continue;
+    }
+    DispatchRotation(rotation_detents);
+    DispatchButton(button_event);
     if (runtime_.is_dirty()) {
       runtime_.Render(display_);
       display_.Flush();
     }
+    if (midismith::main_board::app::config::kUiEncoderDebugOverlay) {
+      RenderEncoderDebugOverlay();
+    }
   }
+}
+
+void UiTask::RenderEncoderDebugOverlay() noexcept {
+  constexpr std::uint8_t kCounterTextWidth = 5;
+  std::array<char, 8> counter_text{};
+  counter_text.fill(' ');
+  static_cast<void>(std::to_chars(counter_text.data(), counter_text.data() + counter_text.size(),
+                                  encoder_.raw_counter()));
+  display_.DrawText(0, static_cast<std::uint8_t>(display_.columns() - kCounterTextWidth),
+                    std::string_view(counter_text.data(), kCounterTextWidth),
+                    midismith::text_display::CellAttribute::kWarning);
+  display_.Flush();
+}
+
+bool UiTask::ProcessBacklightState(bool input_activity_detected) noexcept {
+  if (input_activity_detected) {
+    idle_tracker_.NoteActivity();
+    if (backlight_off_) {
+      backlight_off_ = false;
+      display_power_.SetBacklight(true);
+      return true;
+    }
+    return false;
+  }
+  if (idle_tracker_.Tick()) {
+    backlight_off_ = true;
+    display_power_.SetBacklight(false);
+  }
+  return backlight_off_;
 }
 
 bool UiTask::start() noexcept {
@@ -51,14 +101,27 @@ bool UiTask::start() noexcept {
                                      midismith::main_board::app::config::kUiTaskPriority);
 }
 
+void UiTask::RenderSplashScreen() noexcept {
+  namespace glyphs = midismith::text_display::glyphs;
+  constexpr std::string_view kProductName = "Midi Smith";
+  const std::uint8_t title_row = static_cast<std::uint8_t>((display_.rows() - 3) / 2);
+  const std::uint8_t divider_row = static_cast<std::uint8_t>(title_row + 3);
+  display_.Clear();
+  display_.DrawTextDoubleSize(
+      title_row, midismith::menu::CenteredColumn(display_.columns(), kProductName.size() * 2),
+      kProductName, midismith::text_display::CellAttribute::kAccent);
+  std::array<char, 32> divider{};
+  divider.fill(glyphs::BarFill(glyphs::kBarFillLevels));
+  const std::size_t divider_width =
+      display_.columns() < divider.size() ? display_.columns() : divider.size();
+  display_.DrawText(divider_row, 0, std::string_view(divider.data(), divider_width),
+                    midismith::text_display::CellAttribute::kDim);
+  display_.Flush();
+}
+
 void UiTask::DispatchRotation(std::int16_t detents) noexcept {
-  while (detents > 0) {
-    runtime_.HandleInput(midismith::menu::InputEvent::Rotate(1));
-    detents--;
-  }
-  while (detents < 0) {
-    runtime_.HandleInput(midismith::menu::InputEvent::Rotate(-1));
-    detents++;
+  if (detents != 0) {
+    runtime_.HandleInput(midismith::menu::InputEvent::Rotate(detents));
   }
 }
 

@@ -16,10 +16,11 @@ class ScreenStub final : public midismith::menu::MenuScreenRequirements {
     static_cast<void>(controller);
   }
 
-  void HandleInput(midismith::menu::InputEvent event,
+  bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override {
     static_cast<void>(event);
     static_cast<void>(controller);
+    return false;
   }
 
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override {

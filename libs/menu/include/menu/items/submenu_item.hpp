@@ -3,6 +3,7 @@
 #include "menu/menu_controller_requirements.hpp"
 #include "menu/menu_item_requirements.hpp"
 #include "menu/menu_screen_requirements.hpp"
+#include "text-display/glyphs.hpp"
 
 namespace midismith::menu::items {
 
@@ -13,6 +14,10 @@ class SubmenuItem final : public midismith::menu::MenuItemRequirements {
 
   std::string_view label() const noexcept override {
     return label_;
+  }
+
+  char trailing_glyph() const noexcept override {
+    return midismith::text_display::glyphs::kChevronRight;
   }
 
   void Activate(midismith::menu::MenuControllerRequirements& controller) noexcept override {

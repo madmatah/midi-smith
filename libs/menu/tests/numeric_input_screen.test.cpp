@@ -3,11 +3,16 @@
 #include "menu/numeric_input_screen.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "menu/menu_controller_requirements.hpp"
-#include "text-display/text_display_requirements.hpp"
+#include "test_display_stub.hpp"
 
 namespace {
+
+using Catch::Matchers::ContainsSubstring;
+using midismith::menu::test::GridDisplayStub;
+using midismith::text_display::CellAttribute;
 
 struct ConfirmationRecorder {
   bool called = false;
@@ -37,30 +42,6 @@ class ControllerStub final : public midismith::menu::MenuControllerRequirements 
   int pop_count = 0;
 };
 
-class DisplayStub final : public midismith::text_display::TextDisplayRequirements {
- public:
-  std::uint8_t columns() const noexcept override {
-    return 16;
-  }
-  std::uint8_t rows() const noexcept override {
-    return 10;
-  }
-  void Clear() noexcept override {}
-  void DrawText(std::uint8_t row, std::uint8_t column, std::string_view text,
-                midismith::text_display::CellAttribute attribute) noexcept override {
-    static_cast<void>(row);
-    static_cast<void>(column);
-    static_cast<void>(text);
-    static_cast<void>(attribute);
-  }
-  void FillRow(std::uint8_t row,
-               midismith::text_display::CellAttribute attribute) noexcept override {
-    static_cast<void>(row);
-    static_cast<void>(attribute);
-  }
-  void Flush() noexcept override {}
-};
-
 }  // namespace
 
 TEST_CASE("The NumericInputScreen class") {
@@ -75,6 +56,30 @@ TEST_CASE("The NumericInputScreen class") {
         screen.HandleInput(midismith::menu::InputEvent::Rotate(20), controller);
 
         REQUIRE(screen.value() == 10);
+      }
+    }
+
+    SECTION("When the rotation is fast") {
+      SECTION("Should accelerate the value change") {
+        ConfirmationRecorder recorder;
+        midismith::menu::NumericInputScreen screen("Key count", 5, 1, 100, RecordConfirmation,
+                                                   &recorder);
+        ControllerStub controller;
+
+        screen.HandleInput(midismith::menu::InputEvent::Rotate(3), controller);
+
+        REQUIRE(screen.value() == 20);
+      }
+
+      SECTION("Should accelerate even more on very fast rotation") {
+        ConfirmationRecorder recorder;
+        midismith::menu::NumericInputScreen screen("Key count", 5, 1, 100, RecordConfirmation,
+                                                   &recorder);
+        ControllerStub controller;
+
+        screen.HandleInput(midismith::menu::InputEvent::Rotate(-6), controller);
+
+        REQUIRE(screen.value() == 1);
       }
     }
 
@@ -101,11 +106,44 @@ TEST_CASE("The NumericInputScreen class") {
         ConfirmationRecorder recorder;
         midismith::menu::NumericInputScreen screen("Key count", 5, 1, 10, RecordConfirmation,
                                                    &recorder);
-        DisplayStub display;
+        GridDisplayStub display;
 
         screen.Render(display);
 
         REQUIRE(!screen.is_dirty());
+      }
+    }
+
+    SECTION("When rendering the value") {
+      SECTION("Should show a centered accent value with title bar and footer") {
+        ConfirmationRecorder recorder;
+        midismith::menu::NumericInputScreen screen("Key count", 5, 1, 10, RecordConfirmation,
+                                                   &recorder);
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        REQUIRE_THAT(display.RowText(0), ContainsSubstring("Key count"));
+        REQUIRE(display.AttributeAt(0, 0) == CellAttribute::kTitle);
+        REQUIRE(display.CharAt(3, 9) == '5');
+        REQUIRE(display.AttributeAt(3, 9) == CellAttribute::kAccent);
+        REQUIRE_THAT(display.RowText(GridDisplayStub::kRows - 1), ContainsSubstring("1-10"));
+        REQUIRE_THAT(display.RowText(GridDisplayStub::kRows - 1), ContainsSubstring("Btn:OK"));
+        REQUIRE(display.AttributeAt(GridDisplayStub::kRows - 1, 0) == CellAttribute::kFooter);
+      }
+
+      SECTION("Should show a gauge reflecting the position in the range") {
+        ConfirmationRecorder recorder;
+        midismith::menu::NumericInputScreen screen("Key count", 5, 1, 10, RecordConfirmation,
+                                                   &recorder);
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        const std::uint8_t gauge_row = GridDisplayStub::kRows - 2;
+        REQUIRE(display.AttributeAt(gauge_row, 1) == CellAttribute::kAccent);
+        REQUIRE(display.AttributeAt(gauge_row, GridDisplayStub::kColumns - 2) ==
+                CellAttribute::kDim);
       }
     }
   }

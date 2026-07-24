@@ -4,13 +4,20 @@
 
 #include <array>
 #include <catch2/catch_test_macros.hpp>
-#include <string>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <string_view>
 
+#include "menu/items/submenu_item.hpp"
 #include "menu/menu_controller_requirements.hpp"
-#include "text-display/text_display_requirements.hpp"
+#include "test_display_stub.hpp"
+#include "text-display/glyphs.hpp"
 
 namespace {
+
+using Catch::Matchers::ContainsSubstring;
+using midismith::menu::test::GridDisplayStub;
+using midismith::text_display::CellAttribute;
+namespace glyphs = midismith::text_display::glyphs;
 
 class RecordingItem final : public midismith::menu::MenuItemRequirements {
  public:
@@ -41,33 +48,23 @@ class ControllerStub final : public midismith::menu::MenuControllerRequirements 
   }
 };
 
-class DisplayStub final : public midismith::text_display::TextDisplayRequirements {
+class ScreenStub final : public midismith::menu::MenuScreenRequirements {
  public:
-  std::uint8_t columns() const noexcept override {
-    return 12;
+  void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override {
+    static_cast<void>(controller);
   }
-  std::uint8_t rows() const noexcept override {
-    return 3;
+  bool HandleInput(midismith::menu::InputEvent event,
+                   midismith::menu::MenuControllerRequirements& controller) noexcept override {
+    static_cast<void>(event);
+    static_cast<void>(controller);
+    return false;
   }
-
-  void Clear() noexcept override {}
-
-  void DrawText(std::uint8_t row, std::uint8_t column, std::string_view text,
-                midismith::text_display::CellAttribute attribute) noexcept override {
-    static_cast<void>(column);
-    rows_text[row] = std::string(text);
-    row_attributes[row] = attribute;
+  void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override {
+    static_cast<void>(display);
   }
-
-  void FillRow(std::uint8_t row,
-               midismith::text_display::CellAttribute attribute) noexcept override {
-    row_attributes[row] = attribute;
+  bool is_dirty() const noexcept override {
+    return false;
   }
-
-  void Flush() noexcept override {}
-
-  std::array<std::string, 3> rows_text{};
-  std::array<midismith::text_display::CellAttribute, 3> row_attributes{};
 };
 
 }  // namespace
@@ -104,25 +101,92 @@ TEST_CASE("The ListScreen class") {
   }
 
   SECTION("The Render() method") {
-    SECTION("When more items exist than visible rows") {
-      SECTION("Should render the selected window with highlight") {
+    SECTION("When rendering a titled list") {
+      SECTION("Should center the title on a full-width title bar") {
         RecordingItem first_item("One");
-        RecordingItem second_item("Two");
-        RecordingItem third_item("Three");
-        std::array<midismith::menu::MenuItemRequirements*, 3> items{&first_item, &second_item,
-                                                                    &third_item};
+        std::array<midismith::menu::MenuItemRequirements*, 1> items{&first_item};
         midismith::menu::ListScreen screen("Root", items.data(), items.size());
-        ControllerStub controller;
-        DisplayStub display;
+        GridDisplayStub display;
 
-        screen.HandleInput(midismith::menu::InputEvent::Rotate(2), controller);
         screen.Render(display);
 
-        REQUIRE(screen.first_visible_index() == 1);
-        REQUIRE(display.rows_text[0] == "Root");
-        REQUIRE(display.rows_text[2] == "Three");
-        REQUIRE(display.row_attributes[2] == midismith::text_display::CellAttribute::kHighlight);
+        REQUIRE_THAT(display.RowText(0), ContainsSubstring("Root"));
+        REQUIRE(display.CharAt(0, 8) == 'R');
+        REQUIRE(display.AttributeAt(0, 0) == CellAttribute::kTitle);
+        REQUIRE(display.AttributeAt(0, GridDisplayStub::kColumns - 1) == CellAttribute::kTitle);
+      }
+
+      SECTION("Should indent labels and highlight the selected row") {
+        RecordingItem first_item("One");
+        RecordingItem second_item("Two");
+        std::array<midismith::menu::MenuItemRequirements*, 2> items{&first_item, &second_item};
+        midismith::menu::ListScreen screen("Root", items.data(), items.size());
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        REQUIRE(display.CharAt(1, 1) == 'O');
+        REQUIRE(display.AttributeAt(1, 1) == CellAttribute::kHighlight);
+        REQUIRE(display.AttributeAt(2, 1) == CellAttribute::kNormal);
         REQUIRE(!screen.is_dirty());
+      }
+    }
+
+    SECTION("When the list contains a submenu item") {
+      SECTION("Should draw a chevron on the right edge of the item row") {
+        ScreenStub submenu_screen;
+        midismith::menu::items::SubmenuItem submenu_item("Config", submenu_screen);
+        std::array<midismith::menu::MenuItemRequirements*, 1> items{&submenu_item};
+        midismith::menu::ListScreen screen("Root", items.data(), items.size());
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        REQUIRE(display.CharAt(1, GridDisplayStub::kColumns - 2) == glyphs::kChevronRight);
+      }
+    }
+
+    SECTION("When more items exist than visible rows") {
+      SECTION("Should show the down indicator while earlier items are all visible") {
+        std::array<RecordingItem, 9> pool{
+            RecordingItem("Item0"), RecordingItem("Item1"), RecordingItem("Item2"),
+            RecordingItem("Item3"), RecordingItem("Item4"), RecordingItem("Item5"),
+            RecordingItem("Item6"), RecordingItem("Item7"), RecordingItem("Item8")};
+        std::array<midismith::menu::MenuItemRequirements*, 9> items{&pool[0], &pool[1], &pool[2],
+                                                                    &pool[3], &pool[4], &pool[5],
+                                                                    &pool[6], &pool[7], &pool[8]};
+        midismith::menu::ListScreen screen("Root", items.data(), items.size());
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        REQUIRE(screen.first_visible_index() == 0);
+        REQUIRE(display.CharAt(1, GridDisplayStub::kColumns - 1) != glyphs::kArrowUp);
+        REQUIRE(display.CharAt(GridDisplayStub::kRows - 1, GridDisplayStub::kColumns - 1) ==
+                glyphs::kArrowDown);
+      }
+
+      SECTION("Should scroll the window and show the up indicator at the end") {
+        std::array<RecordingItem, 9> pool{
+            RecordingItem("Item0"), RecordingItem("Item1"), RecordingItem("Item2"),
+            RecordingItem("Item3"), RecordingItem("Item4"), RecordingItem("Item5"),
+            RecordingItem("Item6"), RecordingItem("Item7"), RecordingItem("Item8")};
+        std::array<midismith::menu::MenuItemRequirements*, 9> items{&pool[0], &pool[1], &pool[2],
+                                                                    &pool[3], &pool[4], &pool[5],
+                                                                    &pool[6], &pool[7], &pool[8]};
+        midismith::menu::ListScreen screen("Root", items.data(), items.size());
+        ControllerStub controller;
+        GridDisplayStub display;
+
+        screen.HandleInput(midismith::menu::InputEvent::Rotate(8), controller);
+        screen.Render(display);
+
+        REQUIRE(screen.first_visible_index() == 2);
+        REQUIRE_THAT(display.RowText(GridDisplayStub::kRows - 1), ContainsSubstring("Item8"));
+        REQUIRE(display.AttributeAt(GridDisplayStub::kRows - 1, 1) == CellAttribute::kHighlight);
+        REQUIRE(display.CharAt(1, GridDisplayStub::kColumns - 1) == glyphs::kArrowUp);
+        REQUIRE(display.CharAt(GridDisplayStub::kRows - 1, GridDisplayStub::kColumns - 1) !=
+                glyphs::kArrowDown);
       }
     }
   }

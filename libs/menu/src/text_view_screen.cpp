@@ -1,6 +1,10 @@
 #include "menu/text_view_screen.hpp"
 
+#include <string_view>
+
 #include "menu/menu_controller_requirements.hpp"
+#include "menu/text_layout.hpp"
+#include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::menu {
@@ -14,20 +18,25 @@ void TextViewScreen::OnEnter(MenuControllerRequirements& controller) noexcept {
   dirty_ = true;
 }
 
-void TextViewScreen::HandleInput(InputEvent event,
+bool TextViewScreen::HandleInput(InputEvent event,
                                  MenuControllerRequirements& controller) noexcept {
   if (event.kind == InputEvent::Kind::kRotate) {
     AdjustScroll(event.detents, 0);
-    return;
+    return true;
   }
   if (event.kind == InputEvent::Kind::kButtonPress) {
     controller.Pop();
+    return true;
   }
+  return false;
 }
 
 void TextViewScreen::Render(midismith::text_display::TextDisplayRequirements& display) noexcept {
+  namespace glyphs = midismith::text_display::glyphs;
   display.Clear();
-  display.DrawText(0, 0, title_, midismith::text_display::CellAttribute::kDim);
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
+                   midismith::text_display::CellAttribute::kTitle);
   const std::uint8_t visible_line_count = display.rows() > 1 ? display.rows() - 1 : 0;
   AdjustScroll(0, visible_line_count);
   for (std::uint8_t row_offset = 0; row_offset < visible_line_count; row_offset++) {
@@ -36,6 +45,30 @@ void TextViewScreen::Render(midismith::text_display::TextDisplayRequirements& di
       break;
     }
     display.DrawText(static_cast<std::uint8_t>(row_offset + 1), 0, buffer_.line(line_index));
+  }
+  const std::size_t total_line_count = buffer_.line_count();
+  if (visible_line_count > 0 && total_line_count > visible_line_count) {
+    const std::uint8_t scrollbar_column = static_cast<std::uint8_t>(display.columns() - 1);
+    const std::uint8_t track_cells = visible_line_count;
+    std::uint8_t thumb_cells =
+        static_cast<std::uint8_t>(track_cells * visible_line_count / total_line_count);
+    if (thumb_cells == 0) {
+      thumb_cells = 1;
+    }
+    const std::uint8_t maximum_thumb_offset = static_cast<std::uint8_t>(track_cells - thumb_cells);
+    const std::size_t maximum_first_line = total_line_count - visible_line_count;
+    const std::uint8_t thumb_offset =
+        static_cast<std::uint8_t>(maximum_thumb_offset * first_visible_line_ / maximum_first_line);
+    for (std::uint8_t track_cell = 0; track_cell < track_cells; track_cell++) {
+      const bool cell_in_thumb =
+          track_cell >= thumb_offset && track_cell < thumb_offset + thumb_cells;
+      const char scrollbar_glyph = cell_in_thumb ? glyphs::kScrollThumb : glyphs::kScrollTrack;
+      const auto scrollbar_attribute = cell_in_thumb
+                                           ? midismith::text_display::CellAttribute::kAccent
+                                           : midismith::text_display::CellAttribute::kDim;
+      display.DrawText(static_cast<std::uint8_t>(track_cell + 1), scrollbar_column,
+                       std::string_view(&scrollbar_glyph, 1), scrollbar_attribute);
+    }
   }
   dirty_ = false;
 }

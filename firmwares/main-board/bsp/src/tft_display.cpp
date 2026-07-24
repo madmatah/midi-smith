@@ -10,10 +10,15 @@ namespace midismith::main_board::bsp {
 namespace {
 
 constexpr std::uint16_t kDisplayWidth = 160;
-constexpr std::uint16_t kDisplayHeight = 128;
+constexpr std::uint16_t kDisplayHeight = 80;
+// The 80x160 panel sits centered in the ST7735S 132x162 RAM; landscape swaps the offsets.
+constexpr std::uint16_t kColumnAddressOffset = 1;
+constexpr std::uint16_t kRowAddressOffset = 26;
 constexpr std::uint32_t kSpiTimeoutMs = 100;
 constexpr std::uint8_t kSoftwareReset = 0x01;
 constexpr std::uint8_t kSleepOut = 0x11;
+// This IPS panel is normally-white: colors are displayed inverted unless INVON is set.
+constexpr std::uint8_t kInversionOn = 0x21;
 constexpr std::uint8_t kColorMode = 0x3A;
 constexpr std::uint8_t kMemoryAccessControl = 0x36;
 constexpr std::uint8_t kDisplayOn = 0x29;
@@ -57,6 +62,7 @@ void TftDisplay::Init() noexcept {
   delay_ms_(delay_context_, 150);
   WriteCommand(kSleepOut);
   delay_ms_(delay_context_, 120);
+  WriteCommand(kInversionOn);
   WriteCommand(kColorMode);
   WriteData(kRgb565ColorMode);
   WriteCommand(kMemoryAccessControl);
@@ -143,11 +149,13 @@ void TftDisplay::WriteData(const std::uint8_t* data, std::uint16_t size) noexcep
 
 void TftDisplay::SetAddressWindow(std::uint16_t x, std::uint16_t y, std::uint16_t width,
                                   std::uint16_t height) noexcept {
-  const std::uint16_t x_end = static_cast<std::uint16_t>(x + width - 1);
-  const std::uint16_t y_end = static_cast<std::uint16_t>(y + height - 1);
-  const std::array<std::uint8_t, 4> column_data{HighByte(x), LowByte(x), HighByte(x_end),
-                                                LowByte(x_end)};
-  const std::array<std::uint8_t, 4> row_data{HighByte(y), LowByte(y), HighByte(y_end),
+  const std::uint16_t x_start = static_cast<std::uint16_t>(x + kColumnAddressOffset);
+  const std::uint16_t y_start = static_cast<std::uint16_t>(y + kRowAddressOffset);
+  const std::uint16_t x_end = static_cast<std::uint16_t>(x_start + width - 1);
+  const std::uint16_t y_end = static_cast<std::uint16_t>(y_start + height - 1);
+  const std::array<std::uint8_t, 4> column_data{HighByte(x_start), LowByte(x_start),
+                                                HighByte(x_end), LowByte(x_end)};
+  const std::array<std::uint8_t, 4> row_data{HighByte(y_start), LowByte(y_start), HighByte(y_end),
                                              LowByte(y_end)};
   WriteCommand(kColumnAddressSet);
   WriteData(column_data.data(), column_data.size());
