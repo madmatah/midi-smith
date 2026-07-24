@@ -139,7 +139,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/ui/tft_splash_player.cpp
     app/src/app/ui/tft_text_display.cpp
     app/src/app/ui/ui_task.cpp
-    app/src/app/ui/menu_tree.cpp
+    app/src/composition/menu_tree.cpp
     app/src/app/ui/items/keymap_setup_flow_item.cpp
     app/src/app/ui/items/calibration_flow_item.cpp
     app/src/app/ui/items/stats_view_item.cpp

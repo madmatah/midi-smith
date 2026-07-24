@@ -2,11 +2,11 @@
 
 #include <array>
 
+#include "app/composition/menu_tree.hpp"
 #include "app/config/ui.hpp"
 #include "app/config/ui_validation.hpp"
 #include "app/shell/ui_command.hpp"
 #include "app/tasks/shell_task.hpp"
-#include "app/ui/menu_tree.hpp"
 #include "app/ui/midi_activity_wake_source.hpp"
 #include "app/ui/tft_splash_player.hpp"
 #include "app/ui/tft_text_display.hpp"
@@ -79,8 +79,7 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       midismith::main_board::bsp::Board::rotary_button_gpio(),
       midismith::main_board::app::config::kUiButtonDebounceReads,
       midismith::main_board::app::config::kUiButtonLongPressReads);
-  static auto menu_tree =
-      midismith::main_board::app::ui::BuildMenuTree(config, calibration, commands, midi);
+  static auto menu_tree = BuildMenuTree(config, calibration, commands, midi);
   static std::array<midismith::menu::MenuScreenRequirements*,
                     midismith::main_board::app::config::kMenuStackMaxDepth>
       menu_stack_storage{};
