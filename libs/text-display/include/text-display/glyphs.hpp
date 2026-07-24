@@ -4,6 +4,8 @@
 
 namespace midismith::text_display::glyphs {
 
+inline constexpr char kActivityDotIdle = '\x0E';
+inline constexpr char kActivityDotActive = '\x0F';
 inline constexpr char kBarFillBase = '\x10';
 inline constexpr char kBarFillFull = '\x18';
 inline constexpr char kArrowUp = '\x19';
@@ -20,7 +22,11 @@ constexpr char BarFill(std::uint32_t eighths) noexcept {
 }
 
 constexpr bool IsCustomGlyph(char character) noexcept {
-  return character >= kBarFillBase && character <= kScrollThumb;
+  return character >= kActivityDotIdle && character <= kScrollThumb;
+}
+
+constexpr char ActivityDot(bool active) noexcept {
+  return active ? kActivityDotActive : kActivityDotIdle;
 }
 
 }  // namespace midismith::text_display::glyphs

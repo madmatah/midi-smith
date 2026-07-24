@@ -344,6 +344,10 @@ GlyphBitmap BuildCustomGlyph(char character) noexcept {
     return BuildBarFillGlyph(static_cast<std::uint8_t>(character - glyphs::kBarFillBase));
   }
   switch (character) {
+    case glyphs::kActivityDotIdle:
+      return BuildRowsGlyph(5, {0x3C, 0x42, 0x42, 0x42, 0x42, 0x3C});
+    case glyphs::kActivityDotActive:
+      return BuildRowsGlyph(5, {0x3C, 0x7E, 0x7E, 0x7E, 0x7E, 0x3C});
     case glyphs::kArrowUp:
       return BuildRowsGlyph(5, {0x18, 0x18, 0x3C, 0x3C, 0x7E, 0x7E});
     case glyphs::kArrowDown:
