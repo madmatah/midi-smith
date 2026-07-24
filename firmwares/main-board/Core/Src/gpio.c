@@ -88,7 +88,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : ROTARY_BTN_Pin */
   GPIO_InitStruct.Pin = ROTARY_BTN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(ROTARY_BTN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : FLASH_CS_Pin */
