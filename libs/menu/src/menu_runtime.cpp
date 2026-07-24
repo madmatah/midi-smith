@@ -50,11 +50,6 @@ bool MenuRuntime::Push(MenuScreenRequirements& screen) noexcept {
   return true;
 }
 
-std::string_view MenuRuntime::parent_title() const noexcept {
-  const MenuScreenRequirements* parent_screen = stack_.below_top();
-  return parent_screen == nullptr ? std::string_view{} : parent_screen->title();
-}
-
 bool MenuRuntime::Pop() noexcept {
   if (stack_.size() <= 1) {
     return false;

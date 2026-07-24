@@ -7,7 +7,6 @@
 #include "menu/menu_controller_requirements.hpp"
 #include "menu/progress_bar.hpp"
 #include "menu/text_layout.hpp"
-#include "menu/title_bar.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::main_board::app::ui::screens {
@@ -16,13 +15,9 @@ KeymapProgressScreen::KeymapProgressScreen(
     midismith::main_board::app::keymap::KeymapSetupCoordinator& coordinator) noexcept
     : coordinator_(coordinator) {}
 
-std::string_view KeymapProgressScreen::title() const noexcept {
-  return "Keymap";
-}
-
 void KeymapProgressScreen::OnEnter(
     midismith::menu::MenuControllerRequirements& controller) noexcept {
-  parent_title_ = controller.parent_title();
+  static_cast<void>(controller);
 }
 
 bool KeymapProgressScreen::HandleInput(
@@ -49,11 +44,14 @@ void KeymapProgressScreen::Render(
   const std::string_view rendered_captured(
       captured_text.data(), static_cast<std::size_t>(result.ptr - captured_text.data()));
 
+  constexpr std::string_view kTitle = "Keymap";
   constexpr std::string_view kPrompt = "Press each key";
   const std::uint8_t footer_row = static_cast<std::uint8_t>(display.rows() - 1);
 
   display.Clear();
-  midismith::menu::RenderTitleBar(display, parent_title_, title());
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, midismith::menu::CenteredColumn(display.columns(), kTitle.size()), kTitle,
+                   midismith::text_display::CellAttribute::kTitle);
 
   if (session.key_count() > 0 && session.captured_count() >= session.key_count()) {
     constexpr std::string_view kDoneLabel = "Done";

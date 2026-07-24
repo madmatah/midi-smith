@@ -3,7 +3,7 @@
 #include <string_view>
 
 #include "menu/menu_controller_requirements.hpp"
-#include "menu/title_bar.hpp"
+#include "menu/text_layout.hpp"
 #include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -13,12 +13,8 @@ ListScreen::ListScreen(std::string_view title, MenuItemRequirements* const* item
                        std::size_t item_count, bool wrap_navigation) noexcept
     : title_(title), items_(items), item_count_(item_count), wrap_navigation_(wrap_navigation) {}
 
-std::string_view ListScreen::title() const noexcept {
-  return title_;
-}
-
 void ListScreen::OnEnter(MenuControllerRequirements& controller) noexcept {
-  parent_title_ = controller.parent_title();
+  static_cast<void>(controller);
   marquee_render_count_ = 0;
   dirty_ = true;
 }
@@ -38,7 +34,9 @@ bool ListScreen::HandleInput(InputEvent event, MenuControllerRequirements& contr
 void ListScreen::Render(midismith::text_display::TextDisplayRequirements& display) noexcept {
   namespace glyphs = midismith::text_display::glyphs;
   display.Clear();
-  RenderTitleBar(display, parent_title_, title_);
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
+                   midismith::text_display::CellAttribute::kTitle);
   const std::uint8_t visible_item_count = display.rows() > 1 ? display.rows() - 1 : 0;
   AdjustVisibleWindow(visible_item_count);
   std::size_t last_visible_index = first_visible_index_;

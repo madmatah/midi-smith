@@ -10,7 +10,6 @@ class KeymapProgressScreen final : public midismith::menu::MenuScreenRequirement
   explicit KeymapProgressScreen(
       midismith::main_board::app::keymap::KeymapSetupCoordinator& coordinator) noexcept;
 
-  std::string_view title() const noexcept override;
   void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override;
   bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override;
@@ -19,7 +18,6 @@ class KeymapProgressScreen final : public midismith::menu::MenuScreenRequirement
 
  private:
   midismith::main_board::app::keymap::KeymapSetupCoordinator& coordinator_;
-  std::string_view parent_title_{};
 };
 
 }  // namespace midismith::main_board::app::ui::screens

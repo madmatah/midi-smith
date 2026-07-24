@@ -16,7 +16,6 @@ class NumericInputScreen final : public MenuScreenRequirements {
                      std::int32_t maximum_value, ConfirmCallback callback,
                      void* callback_context) noexcept;
 
-  std::string_view title() const noexcept override;
   void OnEnter(MenuControllerRequirements& controller) noexcept override;
   bool HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
@@ -34,7 +33,6 @@ class NumericInputScreen final : public MenuScreenRequirements {
   std::int32_t Clamp(std::int32_t value) const noexcept;
 
   std::string_view title_;
-  std::string_view parent_title_{};
   std::int32_t default_value_;
   std::int32_t minimum_value_;
   std::int32_t maximum_value_;
