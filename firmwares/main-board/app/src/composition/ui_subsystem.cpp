@@ -36,7 +36,7 @@ void InitializeTftDisplay(void* context) noexcept {
 }  // namespace
 
 void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
-                       ShellCommandsContext& commands) noexcept {
+                       ShellCommandsContext& commands, MidiContext& midi) noexcept {
   static midismith::main_board::bsp::TftDisplay tft_display(
       midismith::main_board::bsp::Board::spi4_handle(),
       midismith::main_board::bsp::Board::lcd_chip_select(),
@@ -73,12 +73,12 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       midismith::main_board::bsp::Board::rotary_button_gpio(),
       midismith::main_board::app::config::kUiButtonDebounceReads,
       midismith::main_board::app::config::kUiButtonLongPressReads);
-  static auto& root_screen =
-      midismith::main_board::app::ui::BuildMenuTree(config, calibration, commands);
+  static auto menu_tree =
+      midismith::main_board::app::ui::BuildMenuTree(config, calibration, commands, midi);
   static std::array<midismith::menu::MenuScreenRequirements*,
                     midismith::main_board::app::config::kMenuStackMaxDepth>
       menu_stack_storage{};
-  static midismith::menu::MenuRuntime runtime(root_screen, menu_stack_storage.data(),
+  static midismith::menu::MenuRuntime runtime(menu_tree.root, menu_stack_storage.data(),
                                               menu_stack_storage.size());
   runtime.set_navigation_observer(text_display);
   static midismith::os::Queue<midismith::menu::InputEvent,
