@@ -15,6 +15,7 @@ ListScreen::ListScreen(std::string_view title, MenuItemRequirements* const* item
 
 void ListScreen::OnEnter(MenuControllerRequirements& controller) noexcept {
   static_cast<void>(controller);
+  marquee_render_count_ = 0;
   dirty_ = true;
 }
 
@@ -39,19 +40,29 @@ void ListScreen::Render(midismith::text_display::TextDisplayRequirements& displa
   const std::uint8_t visible_item_count = display.rows() > 1 ? display.rows() - 1 : 0;
   AdjustVisibleWindow(visible_item_count);
   std::size_t last_visible_index = first_visible_index_;
+  bool marquee_visible = false;
   for (std::uint8_t row_offset = 0; row_offset < visible_item_count; row_offset++) {
     const std::size_t item_index = first_visible_index_ + row_offset;
     if (item_index >= item_count_) {
       break;
     }
     last_visible_index = item_index;
-    const auto attribute = item_index == selected_index_
-                               ? midismith::text_display::CellAttribute::kHighlight
-                               : midismith::text_display::CellAttribute::kNormal;
+    const bool item_selected = item_index == selected_index_;
+    const auto attribute = item_selected ? midismith::text_display::CellAttribute::kHighlight
+                                         : midismith::text_display::CellAttribute::kNormal;
     const std::uint8_t display_row = static_cast<std::uint8_t>(row_offset + 1);
-    display.FillRow(display_row, attribute);
-    display.DrawText(display_row, 1, items_[item_index]->label(), attribute);
     const char trailing_glyph = items_[item_index]->trailing_glyph();
+    std::string_view label = items_[item_index]->label();
+    const std::size_t label_width = static_cast<std::size_t>(
+        display.columns() - 2 - (trailing_glyph != kNoTrailingGlyph ? 1 : 0));
+    if (item_selected && label.size() > label_width) {
+      marquee_visible = true;
+      label = label.substr(MarqueeOffset(label.size() - label_width), label_width);
+    } else {
+      label = label.substr(0, label_width);
+    }
+    display.FillRow(display_row, attribute);
+    display.DrawText(display_row, 1, label, attribute);
     if (trailing_glyph != kNoTrailingGlyph && display.columns() >= 2) {
       display.DrawText(display_row, static_cast<std::uint8_t>(display.columns() - 2),
                        std::string_view(&trailing_glyph, 1), attribute);
@@ -71,11 +82,26 @@ void ListScreen::Render(midismith::text_display::TextDisplayRequirements& displa
     display.DrawText(static_cast<std::uint8_t>(display.rows() - 1), indicator_column,
                      std::string_view(&glyphs::kArrowDown, 1), attribute);
   }
+  marquee_active_ = marquee_visible;
+  if (marquee_active_) {
+    marquee_render_count_++;
+  }
   dirty_ = false;
 }
 
+std::size_t ListScreen::MarqueeOffset(std::size_t overflow) const noexcept {
+  const std::uint32_t cycle_renders = static_cast<std::uint32_t>(2 * kMarqueePauseRenders) +
+                                      static_cast<std::uint32_t>(overflow) * kMarqueeStepRenders;
+  const std::uint32_t cycle_position = marquee_render_count_ % cycle_renders;
+  if (cycle_position < kMarqueePauseRenders) {
+    return 0;
+  }
+  const std::size_t stepped_offset = (cycle_position - kMarqueePauseRenders) / kMarqueeStepRenders;
+  return stepped_offset < overflow ? stepped_offset : overflow;
+}
+
 bool ListScreen::is_dirty() const noexcept {
-  return dirty_;
+  return dirty_ || marquee_active_;
 }
 
 std::size_t ListScreen::selected_index() const noexcept {
@@ -109,7 +135,10 @@ void ListScreen::MoveSelection(std::int16_t detents, std::uint8_t visible_item_c
       }
     }
   }
-  dirty_ = dirty_ || previous_index != selected_index_;
+  if (previous_index != selected_index_) {
+    marquee_render_count_ = 0;
+    dirty_ = true;
+  }
 }
 
 void ListScreen::AdjustVisibleWindow(std::uint8_t visible_item_count) noexcept {

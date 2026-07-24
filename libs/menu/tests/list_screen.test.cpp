@@ -132,6 +132,30 @@ TEST_CASE("The ListScreen class") {
       }
     }
 
+    SECTION("When the selected label is wider than the row") {
+      SECTION("Should keep the screen dirty and scroll the label after the pause") {
+        RecordingItem long_item("ABCDEFGHIJKLMNOPQRSTUVWX");
+        std::array<midismith::menu::MenuItemRequirements*, 1> items{&long_item};
+        midismith::menu::ListScreen screen("Root", items.data(), items.size());
+        GridDisplayStub display;
+
+        screen.Render(display);
+
+        REQUIRE(display.CharAt(1, 1) == 'A');
+        REQUIRE(display.CharAt(1, 18) == 'R');
+        REQUIRE(screen.is_dirty());
+
+        for (std::uint16_t render_index = 0;
+             render_index < midismith::menu::ListScreen::kMarqueePauseRenders +
+                                midismith::menu::ListScreen::kMarqueeStepRenders;
+             render_index++) {
+          screen.Render(display);
+        }
+
+        REQUIRE(display.CharAt(1, 1) == 'B');
+      }
+    }
+
     SECTION("When the list contains a submenu item") {
       SECTION("Should draw a chevron on the right edge of the item row") {
         ScreenStub submenu_screen;
