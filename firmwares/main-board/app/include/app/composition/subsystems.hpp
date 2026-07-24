@@ -17,6 +17,10 @@
 #include "protocol/peer_status_provider_requirements.hpp"
 #include "shell/command_requirements.hpp"
 
+namespace midismith::main_board::app::tasks {
+class ShellTask;
+}
+
 namespace midismith::main_board::app::composition {
 
 struct ConfigContext {
@@ -66,6 +70,7 @@ struct ShellCommandsContext {
   midismith::shell::CommandRequirements& keymap;
   midismith::shell::CommandRequirements& version;
   midismith::shell::CommandRequirements& calibration;
+  midismith::main_board::app::tasks::ShellTask& task;
 };
 
 ConfigContext CreateConfigSubsystem() noexcept;

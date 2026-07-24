@@ -11,6 +11,7 @@ constexpr std::uint32_t kUiTickPeriodMs = 20;
 constexpr std::uint32_t kUiSplashDurationMs = 1500;
 constexpr std::uint32_t kUiBacklightTimeoutMs = 120000;
 constexpr bool kUiEncoderDebugOverlay = false;
+constexpr std::uint32_t kUiInjectedEventQueueDepth = 8;
 constexpr std::uint8_t kUiButtonDebounceReads = 3;
 constexpr std::uint16_t kUiButtonLongPressReads = 50;
 constexpr std::size_t kMenuStackMaxDepth = 6;
