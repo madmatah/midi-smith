@@ -5,6 +5,7 @@ midismith_add_infra_lib(NAME os
         src/binary_semaphore.cpp
         src/mutex.cpp
         src/clock.cpp
+        src/clock_delay.cpp
         src/memory.cpp
         src/os_uptime_provider.cpp
         src/queue.cpp
