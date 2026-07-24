@@ -2,8 +2,11 @@
 
 #include <array>
 #include <charconv>
+#include <string_view>
 
 #include "menu/menu_controller_requirements.hpp"
+#include "menu/progress_bar.hpp"
+#include "menu/text_layout.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::menu {
@@ -25,32 +28,92 @@ void NumericInputScreen::OnEnter(MenuControllerRequirements& controller) noexcep
   dirty_ = true;
 }
 
-void NumericInputScreen::HandleInput(InputEvent event,
+bool NumericInputScreen::HandleInput(InputEvent event,
                                      MenuControllerRequirements& controller) noexcept {
   if (event.kind == InputEvent::Kind::kRotate) {
-    set_value(value_ + event.detents);
-    return;
+    const std::int16_t magnitude =
+        event.detents < 0 ? static_cast<std::int16_t>(-event.detents) : event.detents;
+    std::int32_t multiplier = 1;
+    if (magnitude >= kVeryFastRotationThresholdDetents) {
+      multiplier = kVeryFastRotationMultiplier;
+    } else if (magnitude >= kFastRotationThresholdDetents) {
+      multiplier = kFastRotationMultiplier;
+    }
+    set_value(value_ + event.detents * multiplier);
+    return true;
   }
   if (event.kind == InputEvent::Kind::kButtonPress) {
     controller.Pop();
     if (callback_ != nullptr) {
       callback_(callback_context_, value_, controller);
     }
+    return true;
+  }
+  return false;
+}
+
+namespace {
+
+std::string_view AppendNumber(std::array<char, 24>& buffer, std::size_t& used_length,
+                              std::int32_t value) noexcept {
+  const auto result =
+      std::to_chars(buffer.data() + used_length, buffer.data() + buffer.size(), value);
+  const std::string_view appended(
+      buffer.data() + used_length,
+      static_cast<std::size_t>(result.ptr - buffer.data()) - used_length);
+  used_length += appended.size();
+  return appended;
+}
+
+void AppendText(std::array<char, 24>& buffer, std::size_t& used_length,
+                std::string_view text) noexcept {
+  for (char character : text) {
+    if (used_length >= buffer.size()) {
+      return;
+    }
+    buffer[used_length] = character;
+    used_length++;
   }
 }
 
+}  // namespace
+
 void NumericInputScreen::Render(
     midismith::text_display::TextDisplayRequirements& display) noexcept {
-  std::array<char, 16> value_text{};
-  const auto result =
-      std::to_chars(value_text.data(), value_text.data() + value_text.size(), value_);
-  const std::string_view rendered_value(value_text.data(),
-                                        static_cast<std::size_t>(result.ptr - value_text.data()));
+  std::array<char, 24> value_text{};
+  std::size_t value_length = 0;
+  const std::string_view rendered_value = AppendNumber(value_text, value_length, value_);
+
+  std::array<char, 24> range_text{};
+  std::size_t range_length = 0;
+  AppendNumber(range_text, range_length, minimum_value_);
+  AppendText(range_text, range_length, "-");
+  AppendNumber(range_text, range_length, maximum_value_);
+  const std::string_view rendered_range(range_text.data(), range_length);
 
   display.Clear();
-  display.DrawText(0, 0, title_, midismith::text_display::CellAttribute::kDim);
-  display.FillRow(2, midismith::text_display::CellAttribute::kHighlight);
-  display.DrawText(2, 0, rendered_value, midismith::text_display::CellAttribute::kHighlight);
+  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
+  display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
+                   midismith::text_display::CellAttribute::kTitle);
+  const std::uint8_t value_row = static_cast<std::uint8_t>(display.rows() / 2 - 1);
+  display.DrawTextDoubleSize(value_row,
+                             CenteredColumn(display.columns(), rendered_value.size() * 2),
+                             rendered_value, midismith::text_display::CellAttribute::kAccent);
+  const std::uint8_t gauge_row = static_cast<std::uint8_t>(display.rows() - 2);
+  if (gauge_row > value_row + 1 && display.columns() > 2) {
+    RenderProgressBar(display, gauge_row, 1, static_cast<std::uint8_t>(display.columns() - 2),
+                      static_cast<std::uint32_t>(value_ - minimum_value_),
+                      static_cast<std::uint32_t>(maximum_value_ - minimum_value_));
+  }
+  const std::uint8_t footer_row = static_cast<std::uint8_t>(display.rows() - 1);
+  display.FillRow(footer_row, midismith::text_display::CellAttribute::kFooter);
+  display.DrawText(footer_row, 1, rendered_range, midismith::text_display::CellAttribute::kFooter);
+  constexpr std::string_view kConfirmHint = "Btn:OK";
+  if (display.columns() > kConfirmHint.size() + 1) {
+    display.DrawText(footer_row,
+                     static_cast<std::uint8_t>(display.columns() - kConfirmHint.size() - 1),
+                     kConfirmHint, midismith::text_display::CellAttribute::kFooter);
+  }
   dirty_ = false;
 }
 

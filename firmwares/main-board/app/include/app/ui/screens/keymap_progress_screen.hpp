@@ -11,7 +11,7 @@ class KeymapProgressScreen final : public midismith::menu::MenuScreenRequirement
       midismith::main_board::app::keymap::KeymapSetupCoordinator& coordinator) noexcept;
 
   void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override;
-  void HandleInput(midismith::menu::InputEvent event,
+  bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
   bool is_dirty() const noexcept override;

@@ -49,8 +49,8 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
   static midismith::menu::MenuRuntime runtime(root_screen, menu_stack_storage.data(),
                                               menu_stack_storage.size());
   static midismith::main_board::app::ui::UiTask ui_task(
-      encoder, button, runtime, text_display, midismith::main_board::app::config::kUiTickPeriodMs,
-      InitializeTftDisplay, &tft_display);
+      encoder, button, runtime, text_display, text_display,
+      midismith::main_board::app::config::kUiTickPeriodMs, InitializeTftDisplay, &tft_display);
 
   (void) ui_task.start();
 }

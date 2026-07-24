@@ -18,12 +18,13 @@ class ScreenStub final : public midismith::menu::MenuScreenRequirements {
     dirty = true;
   }
 
-  void HandleInput(midismith::menu::InputEvent event,
+  bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override {
     static_cast<void>(event);
     static_cast<void>(controller);
     input_count++;
     dirty = true;
+    return consume_input;
   }
 
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override {
@@ -40,6 +41,7 @@ class ScreenStub final : public midismith::menu::MenuScreenRequirements {
   int input_count = 0;
   int render_count = 0;
   bool dirty = false;
+  bool consume_input = false;
 };
 
 class DisplayStub final : public midismith::text_display::TextDisplayRequirements {
@@ -80,6 +82,46 @@ TEST_CASE("The MenuRuntime class") {
 
         REQUIRE(root_screen.input_count == 1);
         REQUIRE(runtime.is_dirty());
+      }
+    }
+
+    SECTION("When a long press is not consumed by the top screen") {
+      SECTION("Should pop back to the previous screen") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+        runtime.Push(child_screen);
+
+        runtime.HandleInput(midismith::menu::InputEvent::ButtonLongPress());
+
+        REQUIRE(child_screen.input_count == 1);
+        REQUIRE(root_screen.enter_count == 2);
+      }
+
+      SECTION("Should stay on the root screen when already at the root") {
+        ScreenStub root_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+
+        runtime.HandleInput(midismith::menu::InputEvent::ButtonLongPress());
+
+        REQUIRE(root_screen.enter_count == 1);
+      }
+    }
+
+    SECTION("When a long press is consumed by the top screen") {
+      SECTION("Should not pop the screen") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        child_screen.consume_input = true;
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+        runtime.Push(child_screen);
+
+        runtime.HandleInput(midismith::menu::InputEvent::ButtonLongPress());
+
+        REQUIRE(root_screen.enter_count == 1);
       }
     }
   }

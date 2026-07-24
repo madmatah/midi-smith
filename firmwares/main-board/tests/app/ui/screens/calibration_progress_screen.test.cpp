@@ -11,6 +11,7 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
+#include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 #define fakeit_Method(mock, method) Method(mock, method)
@@ -98,17 +99,21 @@ TEST_CASE("The CalibrationProgressScreen class") {
         REQUIRE(display.dropped_draw_count == 0);
       }
 
-      SECTION("Should show the state, the progress, and both button hints") {
+      SECTION("Should show the state, the progress bar, and both footer hints") {
         auto coordinator = MakeStrikePhaseCoordinator();
         RecordingTextDisplay display;
         CalibrationProgressScreen screen(coordinator.get());
 
         screen.Render(display);
 
-        REQUIRE_THAT(display.RowText(2), ContainsSubstring("Press all keys"));
-        REQUIRE_THAT(display.RowText(5), ContainsSubstring("12/88"));
-        REQUIRE_THAT(display.RowText(6), ContainsSubstring("Btn next"));
-        REQUIRE_THAT(display.RowText(7), ContainsSubstring("Hold abort"));
+        const std::string full_bar_cell(1, midismith::text_display::glyphs::BarFill(
+                                               midismith::text_display::glyphs::kBarFillLevels));
+        REQUIRE_THAT(display.RowText(0), ContainsSubstring("Calibration"));
+        REQUIRE_THAT(display.RowText(1), ContainsSubstring("Press all keys"));
+        REQUIRE_THAT(display.RowText(2), ContainsSubstring(full_bar_cell));
+        REQUIRE_THAT(display.RowText(3), ContainsSubstring("12/88"));
+        REQUIRE_THAT(display.RowText(4), ContainsSubstring("Btn next"));
+        REQUIRE_THAT(display.RowText(4), ContainsSubstring("Hold abort"));
       }
     }
   }

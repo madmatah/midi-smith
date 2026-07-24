@@ -14,7 +14,7 @@ class ListScreen final : public MenuScreenRequirements {
              bool wrap_navigation = true) noexcept;
 
   void OnEnter(MenuControllerRequirements& controller) noexcept override;
-  void HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
+  bool HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
   bool is_dirty() const noexcept override;
 

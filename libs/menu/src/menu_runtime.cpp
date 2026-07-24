@@ -18,7 +18,10 @@ void MenuRuntime::HandleInput(InputEvent event) noexcept {
   if (current_screen == nullptr) {
     return;
   }
-  current_screen->HandleInput(event, *this);
+  const bool consumed = current_screen->HandleInput(event, *this);
+  if (!consumed && event.kind == InputEvent::Kind::kButtonLongPress) {
+    Pop();
+  }
   dirty_ = dirty_ || current_screen->is_dirty();
 }
 

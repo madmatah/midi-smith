@@ -20,6 +20,10 @@ void RotaryEncoder::Start() noexcept {
   pending_counts_ = 0;
 }
 
+std::uint16_t RotaryEncoder::raw_counter() const noexcept {
+  return static_cast<std::uint16_t>(__HAL_TIM_GET_COUNTER(TimerHandle(timer_handle_)));
+}
+
 std::int16_t RotaryEncoder::ReadDeltaDetents() noexcept {
   const auto current_counter =
       static_cast<std::uint16_t>(__HAL_TIM_GET_COUNTER(TimerHandle(timer_handle_)));

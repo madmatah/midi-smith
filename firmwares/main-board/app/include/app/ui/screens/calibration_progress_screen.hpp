@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "app/shell/calibration_coordinator_requirements.hpp"
 #include "menu/menu_screen_requirements.hpp"
 
@@ -11,7 +13,7 @@ class CalibrationProgressScreen final : public midismith::menu::MenuScreenRequir
       midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator) noexcept;
 
   void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override;
-  void HandleInput(midismith::menu::InputEvent event,
+  bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
   bool is_dirty() const noexcept override;
@@ -19,6 +21,7 @@ class CalibrationProgressScreen final : public midismith::menu::MenuScreenRequir
  private:
   midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator_;
   bool started_ = false;
+  std::uint16_t spinner_render_count_ = 0;
 };
 
 }  // namespace midismith::main_board::app::ui::screens

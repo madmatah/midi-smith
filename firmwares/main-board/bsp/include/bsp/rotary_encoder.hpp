@@ -10,6 +10,7 @@ class RotaryEncoder {
 
   void Start() noexcept;
   std::int16_t ReadDeltaDetents() noexcept;
+  std::uint16_t raw_counter() const noexcept;
 
  private:
   static constexpr std::int16_t kCountsPerDetent = 4;
