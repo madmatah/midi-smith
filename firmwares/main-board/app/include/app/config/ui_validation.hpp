@@ -9,5 +9,7 @@ static_assert(kTftTextColumns * kTftFontWidth == midismith::splash::kDisplayWidt
 static_assert(kTftTextRows * kTftFontHeight == midismith::splash::kDisplayHeight);
 static_assert(midismith::splash::kDisplayHeight % kSplashBandRows == 0);
 static_assert(kSplashFramePeriodMs > 0);
+static_assert(kUiTickPeriodMs > 0);
+static_assert(kMidiMonitorActivityDecayMs >= kUiTickPeriodMs);
 
 }  // namespace midismith::main_board::app::config
