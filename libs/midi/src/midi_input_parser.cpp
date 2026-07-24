@@ -95,9 +95,8 @@ void MidiInputParser::HandleStatusByte(uint8_t byte) noexcept {
   }
 
   if (byte == kSysExEnd) {
-    if (state_ == State::kSysExInProgress) {
-      state_ = State::kWaitingForStatus;
-    }
+    state_ = State::kWaitingForStatus;
+    data_bytes_collected_ = 0;
     running_status_ = 0;
     return;
   }
