@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
+#include "app/ui/recording_text_display.hpp"
 #include "menu/menu_controller_requirements.hpp"
 #include "midi-monitor/midi_activity_collector.hpp"
 #include "text-display/glyphs.hpp"
@@ -27,77 +28,7 @@ using midismith::text_display::CellAttribute;
 
 constexpr std::uint16_t kDecayRenders = 4;
 
-struct RecordingTextDisplay final : public midismith::text_display::TextDisplayRequirements {
-  static constexpr std::uint8_t kColumns = midismith::main_board::app::config::kTftTextColumns;
-  static constexpr std::uint8_t kRows = midismith::main_board::app::config::kTftTextRows;
-
-  RecordingTextDisplay() {
-    Clear();
-  }
-
-  std::uint8_t columns() const noexcept override {
-    return kColumns;
-  }
-  std::uint8_t rows() const noexcept override {
-    return kRows;
-  }
-
-  void Clear() noexcept override {
-    for (auto& row : cells) {
-      row.fill(' ');
-    }
-    for (auto& row : attributes) {
-      row.fill(CellAttribute::kNormal);
-    }
-    double_size_rows.fill(false);
-  }
-
-  void DrawText(std::uint8_t row, std::uint8_t column, std::string_view text,
-                CellAttribute attribute) noexcept override {
-    if (row >= kRows || column >= kColumns) {
-      dropped_draw_count++;
-      return;
-    }
-    std::uint8_t target_column = column;
-    for (char character : text) {
-      if (target_column >= kColumns) {
-        dropped_draw_count++;
-        break;
-      }
-      cells[row][target_column] = character;
-      attributes[row][target_column] = attribute;
-      target_column++;
-    }
-  }
-
-  void DrawTextDoubleSize(std::uint8_t row, std::uint8_t column, std::string_view text,
-                          CellAttribute attribute) noexcept override {
-    if (row < kRows) {
-      double_size_rows[row] = true;
-    }
-    DrawText(row, column, text, attribute);
-  }
-
-  void FillRow(std::uint8_t row, CellAttribute attribute) noexcept override {
-    if (row >= kRows) {
-      return;
-    }
-    attributes[row].fill(attribute);
-    filled_rows[row] = attribute;
-  }
-
-  void Flush() noexcept override {}
-
-  std::string RowText(std::uint8_t row) const {
-    return std::string(cells[row].data(), cells[row].size());
-  }
-
-  std::array<std::array<char, kColumns>, kRows> cells{};
-  std::array<std::array<CellAttribute, kColumns>, kRows> attributes{};
-  std::array<bool, kRows> double_size_rows{};
-  std::array<CellAttribute, kRows> filled_rows{};
-  int dropped_draw_count = 0;
-};
+using midismith::main_board::test::RecordingTextDisplay;
 
 class FixedSnapshotSource final : public midismith::midi_monitor::MidiActivitySnapshotRequirements {
  public:
