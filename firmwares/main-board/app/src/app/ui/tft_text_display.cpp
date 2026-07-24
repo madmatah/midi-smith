@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "app/ui/font_8x16.hpp"
+#include "app/ui/glyph_scaler.hpp"
 
 namespace midismith::main_board::app::ui {
 
@@ -224,15 +225,13 @@ void TftTextDisplay::RenderCellToFramebuffer(std::uint8_t row, std::uint8_t colu
         quadrant == GlyphQuadrant::kBottomLeft || quadrant == GlyphQuadrant::kBottomRight;
     const bool right_half =
         quadrant == GlyphQuadrant::kTopRight || quadrant == GlyphQuadrant::kBottomRight;
-    const std::uint8_t source_row_offset = bottom_half ? kFontHeight / 2 : 0;
-    const std::uint8_t source_column_offset = right_half ? kFontWidth / 2 : 0;
+    const std::uint8_t target_x_offset = right_half ? kFontWidth : 0;
+    const std::uint8_t target_y_offset = bottom_half ? kFontHeight : 0;
     for (std::uint8_t target_row = 0; target_row < kFontHeight; target_row++) {
-      const std::uint8_t source_bits = glyph[source_row_offset + target_row / 2];
       std::uint8_t target_bits = 0;
       for (std::uint8_t target_bit = 0; target_bit < kFontWidth; target_bit++) {
-        const std::uint8_t source_bit =
-            static_cast<std::uint8_t>(source_column_offset + target_bit / 2);
-        if ((source_bits & (0x80 >> source_bit)) != 0) {
+        if (SampleScaledGlyphPixel(glyph, static_cast<std::uint8_t>(target_x_offset + target_bit),
+                                   static_cast<std::uint8_t>(target_y_offset + target_row))) {
           target_bits |= static_cast<std::uint8_t>(0x80 >> target_bit);
         }
       }
