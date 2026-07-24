@@ -11,6 +11,23 @@
 
 namespace midismith::main_board::app::ui::screens {
 
+namespace {
+
+constexpr std::string_view kWidestCapturedCountText = "255/255";
+
+using CapturedCountBuffer = std::array<char, kWidestCapturedCountText.size()>;
+
+std::string_view FormatCapturedCount(std::uint8_t captured_count, std::uint8_t key_count,
+                                     CapturedCountBuffer& buffer) noexcept {
+  char* const buffer_end = buffer.data() + buffer.size();
+  auto result = std::to_chars(buffer.data(), buffer_end, captured_count);
+  *result.ptr = '/';
+  result = std::to_chars(result.ptr + 1, buffer_end, key_count);
+  return std::string_view(buffer.data(), static_cast<std::size_t>(result.ptr - buffer.data()));
+}
+
+}  // namespace
+
 KeymapProgressScreen::KeymapProgressScreen(
     midismith::main_board::app::keymap::KeymapSetupCoordinator& coordinator) noexcept
     : coordinator_(coordinator) {}
@@ -35,14 +52,9 @@ bool KeymapProgressScreen::HandleInput(
 void KeymapProgressScreen::Render(
     midismith::text_display::TextDisplayRequirements& display) noexcept {
   const auto& session = coordinator_.session();
-  std::array<char, 16> captured_text{};
-  auto result = std::to_chars(captured_text.data(), captured_text.data() + captured_text.size(),
-                              session.captured_count());
-  *result.ptr = '/';
-  result = std::to_chars(result.ptr + 1, captured_text.data() + captured_text.size(),
-                         session.key_count());
-  const std::string_view rendered_captured(
-      captured_text.data(), static_cast<std::size_t>(result.ptr - captured_text.data()));
+  CapturedCountBuffer captured_text{};
+  const std::string_view rendered_captured =
+      FormatCapturedCount(session.captured_count(), session.key_count(), captured_text);
 
   constexpr std::string_view kTitle = "Keymap";
   constexpr std::string_view kPrompt = "Press each key";
