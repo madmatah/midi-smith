@@ -15,6 +15,7 @@ class MenuStack {
 
   MenuScreenRequirements* top() noexcept;
   const MenuScreenRequirements* top() const noexcept;
+  const MenuScreenRequirements* below_top() const noexcept;
   std::size_t size() const noexcept;
   std::size_t capacity() const noexcept;
   bool is_empty() const noexcept;

@@ -12,6 +12,7 @@ class CalibrationProgressScreen final : public midismith::menu::MenuScreenRequir
   explicit CalibrationProgressScreen(
       midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator) noexcept;
 
+  std::string_view title() const noexcept override;
   void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override;
   bool HandleInput(midismith::menu::InputEvent event,
                    midismith::menu::MenuControllerRequirements& controller) noexcept override;
@@ -20,6 +21,7 @@ class CalibrationProgressScreen final : public midismith::menu::MenuScreenRequir
 
  private:
   midismith::main_board::app::shell::CalibrationCoordinatorRequirements& coordinator_;
+  std::string_view parent_title_{};
   bool started_ = false;
   std::uint16_t spinner_render_count_ = 0;
 };

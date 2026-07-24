@@ -7,6 +7,7 @@
 #include "menu/menu_controller_requirements.hpp"
 #include "menu/progress_bar.hpp"
 #include "menu/text_layout.hpp"
+#include "menu/title_bar.hpp"
 #include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -23,8 +24,12 @@ NumericInputScreen::NumericInputScreen(std::string_view title, std::int32_t defa
       callback_context_(callback_context),
       value_(Clamp(default_value)) {}
 
+std::string_view NumericInputScreen::title() const noexcept {
+  return title_;
+}
+
 void NumericInputScreen::OnEnter(MenuControllerRequirements& controller) noexcept {
-  static_cast<void>(controller);
+  parent_title_ = controller.parent_title();
   value_ = Clamp(default_value_);
   dirty_ = true;
 }
@@ -93,9 +98,7 @@ void NumericInputScreen::Render(
   const std::string_view rendered_range(range_text.data(), range_length);
 
   display.Clear();
-  display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
-  display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
-                   midismith::text_display::CellAttribute::kTitle);
+  RenderTitleBar(display, parent_title_, title_);
   namespace glyphs = midismith::text_display::glyphs;
   const std::uint8_t value_row = static_cast<std::uint8_t>(display.rows() / 2 - 1);
   const std::uint8_t value_column = CenteredColumn(display.columns(), rendered_value.size() * 2);

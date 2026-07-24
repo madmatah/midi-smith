@@ -21,6 +21,7 @@ class MenuRuntime final : public MenuControllerRequirements {
 
   bool Push(MenuScreenRequirements& screen) noexcept override;
   bool Pop() noexcept override;
+  std::string_view parent_title() const noexcept override;
 
  private:
   MenuStack stack_;

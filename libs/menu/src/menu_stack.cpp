@@ -39,6 +39,13 @@ const MenuScreenRequirements* MenuStack::top() const noexcept {
   return storage_[size_ - 1];
 }
 
+const MenuScreenRequirements* MenuStack::below_top() const noexcept {
+  if (size_ < 2) {
+    return nullptr;
+  }
+  return storage_[size_ - 2];
+}
+
 std::size_t MenuStack::size() const noexcept {
   return size_;
 }
