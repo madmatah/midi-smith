@@ -68,8 +68,7 @@ TEST_CASE("SensorCalibrationValidator") {
   }
 
   SECTION("Given strike current at the maximum valid value") {
-    const SensorCalibration calib{.rest_current_ma = 0.1f,
-                                  .strike_current_ma = kTestMaxStrikeMa};
+    const SensorCalibration calib{.rest_current_ma = 0.1f, .strike_current_ma = kTestMaxStrikeMa};
 
     SECTION("Should return true") {
       REQUIRE(validator.IsValidCalibration(calib));

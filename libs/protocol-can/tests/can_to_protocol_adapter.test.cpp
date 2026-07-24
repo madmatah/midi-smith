@@ -3,10 +3,9 @@
 #include "protocol-can/can_to_protocol_adapter.hpp"
 
 #include <array>
+#include <catch2/catch_test_macros.hpp>
 #include <optional>
 #include <span>
-
-#include <catch2/catch_test_macros.hpp>
 
 #include "protocol-can/can_mapper.hpp"
 #include "protocol/builders.hpp"

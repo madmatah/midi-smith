@@ -2,18 +2,17 @@
 
 #include "piano-sensing/composite_sensor_event_handler.hpp"
 
-#include <fakeit.hpp>
-
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <fakeit.hpp>
 #include <functional>
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 

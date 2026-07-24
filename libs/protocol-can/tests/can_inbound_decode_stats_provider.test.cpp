@@ -2,17 +2,17 @@
 
 #include "protocol-can/can_inbound_decode_stats_provider.hpp"
 
-#include <fakeit.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <fakeit.hpp>
 
 #include "stats/stats_publish_status.hpp"
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
@@ -41,10 +41,18 @@ TEST_CASE("The CanInboundDecodeStatsProvider class", "[protocol-can][stats]") {
         provider.ProvideStats(midismith::stats::EmptyStatsRequest{}, visitor_mock.get());
 
     REQUIRE(status == midismith::stats::StatsPublishStatus::kOk);
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("dispatched_message_count", 42u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("unknown_identifier_count", 3u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("invalid_payload_count", 7u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("dropped_message_count", 1u)).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("dispatched_message_count", 42u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("unknown_identifier_count", 3u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("invalid_payload_count", 7u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("dropped_message_count", 1u))
+        .Once();
   }
 
   SECTION("ProvideStats returns kOk when all counters are zero") {

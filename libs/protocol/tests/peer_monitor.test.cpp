@@ -18,7 +18,9 @@ class RecordingPeerMonitorObserver final : public PeerMonitorObserverRequirement
     last_device_state_ = device_state;
   }
 
-  void OnPeerLost() noexcept override { ++lost_count_; }
+  void OnPeerLost() noexcept override {
+    ++lost_count_;
+  }
 
   int heartbeat_count_{0};
   int lost_count_{0};

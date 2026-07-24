@@ -1,9 +1,9 @@
 #if defined(UNIT_TESTS)
 #include "os-types/runtime_status_stats_provider.hpp"
 
-#include <fakeit.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <fakeit.hpp>
 #include <string_view>
 
 #include "os-types/os_status_request.hpp"
@@ -12,10 +12,10 @@
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
@@ -66,14 +66,28 @@ TEST_CASE("The RuntimeStatusStatsProvider class", "[libs][os-types]") {
 
     REQUIRE(status == midismith::stats::StatsPublishStatus::kOk);
     Verify(fakeit_Method(runtime_stats_mock, CaptureStatusSnapshot).Using(300u, fakeit::_)).Once();
-    
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)).Using("cpu_load", "45.6%")).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("window_ms", 300u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("task_count", 7u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("heap_free_bytes", 11000u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("heap_min_bytes", 9000u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint64_t)).Using("uptime_ms", 12345u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)).Using("truncated", true)).Once();
+
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view))
+               .Using("cpu_load", "45.6%"))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("window_ms", 300u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("task_count", 7u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("heap_free_bytes", 11000u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("heap_min_bytes", 9000u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint64_t))
+               .Using("uptime_ms", 12345u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool))
+               .Using("truncated", true))
+        .Once();
   }
 }
 #endif

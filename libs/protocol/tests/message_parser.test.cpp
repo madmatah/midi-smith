@@ -5,7 +5,26 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 
-using namespace midismith::protocol;
+using midismith::protocol::AdcStart;
+using midismith::protocol::AdcStop;
+using midismith::protocol::BroadcastTransportHeader;
+using midismith::protocol::CalibMode;
+using midismith::protocol::CalibrationDataSegment;
+using midismith::protocol::CalibrationLoadRequest;
+using midismith::protocol::CalibStart;
+using midismith::protocol::Command;
+using midismith::protocol::CommandAction;
+using midismith::protocol::DataSegmentAck;
+using midismith::protocol::DataSegmentAckStatus;
+using midismith::protocol::DeviceState;
+using midismith::protocol::DumpRequest;
+using midismith::protocol::Heartbeat;
+using midismith::protocol::MessageCategory;
+using midismith::protocol::MessageParser;
+using midismith::protocol::MessageType;
+using midismith::protocol::SensorEvent;
+using midismith::protocol::SensorEventType;
+using midismith::protocol::UnicastTransportHeader;
 
 TEST_CASE("The MessageParser class", "[protocol]") {
   SECTION("The Decode() method") {
@@ -14,7 +33,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And valid payload") {
           SECTION("Should reconstruct the SensorEvent and preserve routing") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kRealTime,
-                                                      MessageType::kSensorEvent, 1, 0);
+                                                       MessageType::kSensorEvent, 1, 0);
             std::array<std::uint8_t, 3> payload = {
                 static_cast<std::uint8_t>(SensorEventType::kNoteOn), 60, 100};
 
@@ -34,7 +53,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And undersized payload") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kRealTime,
-                                                      MessageType::kSensorEvent, 1, 0);
+                                                       MessageType::kSensorEvent, 1, 0);
             std::array<std::uint8_t, 2> payload = {1, 60};
 
             auto result = MessageParser::Decode(header, payload);
@@ -46,7 +65,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And invalid sensor event type") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kRealTime,
-                                                      MessageType::kSensorEvent, 1, 0);
+                                                       MessageType::kSensorEvent, 1, 0);
             std::array<std::uint8_t, 3> payload = {0xFF, 60, 100};
 
             auto result = MessageParser::Decode(header, payload);
@@ -59,7 +78,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With an unsupported type") {
         SECTION("Should return nullopt") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kRealTime,
-                                                    MessageType::kHeartbeat, 1, 0);
+                                                     MessageType::kHeartbeat, 1, 0);
           std::array<std::uint8_t, 1> payload = {0x00};
 
           auto result = MessageParser::Decode(header, payload);
@@ -74,7 +93,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And empty payload") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0, 1);
+                                                       MessageType::kCommand, 0, 1);
 
             auto result = MessageParser::Decode(header, {});
 
@@ -85,7 +104,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And an AdcStart action") {
           SECTION("Should return AdcStart") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0, 1);
+                                                       MessageType::kCommand, 0, 1);
             std::array<std::uint8_t, 1> payload = {
                 static_cast<std::uint8_t>(CommandAction::kAdcStart)};
 
@@ -101,7 +120,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And an AdcStop action") {
           SECTION("Should return AdcStop") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0, 1);
+                                                       MessageType::kCommand, 0, 1);
             std::array<std::uint8_t, 1> payload = {
                 static_cast<std::uint8_t>(CommandAction::kAdcStop)};
 
@@ -118,7 +137,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
           SECTION("With valid payload") {
             SECTION("Should return CalibStart with correct mode") {
               auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                        MessageType::kCommand, 0, 1);
+                                                         MessageType::kCommand, 0, 1);
               std::array<std::uint8_t, 2> payload = {
                   static_cast<std::uint8_t>(CommandAction::kCalibStart),
                   static_cast<std::uint8_t>(CalibMode::kManual)};
@@ -137,7 +156,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
           SECTION("With undersized payload") {
             SECTION("Should return nullopt") {
               auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                        MessageType::kCommand, 0, 1);
+                                                         MessageType::kCommand, 0, 1);
               std::array<std::uint8_t, 1> payload = {
                   static_cast<std::uint8_t>(CommandAction::kCalibStart)};
 
@@ -150,7 +169,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
           SECTION("With invalid mode") {
             SECTION("Should return nullopt") {
               auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                        MessageType::kCommand, 0, 1);
+                                                         MessageType::kCommand, 0, 1);
               std::array<std::uint8_t, 2> payload = {
                   static_cast<std::uint8_t>(CommandAction::kCalibStart), 0xFF};
 
@@ -164,7 +183,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And a DumpRequest action") {
           SECTION("Should return DumpRequest") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0, 1);
+                                                       MessageType::kCommand, 0, 1);
             std::array<std::uint8_t, 1> payload = {
                 static_cast<std::uint8_t>(CommandAction::kDumpRequest)};
 
@@ -180,7 +199,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And a CalibrationLoadRequest action") {
           SECTION("Should return CalibrationLoadRequest") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 2, 0);
+                                                       MessageType::kCommand, 2, 0);
             std::array<std::uint8_t, 1> payload = {
                 static_cast<std::uint8_t>(CommandAction::kCalibrationLoadRequest)};
 
@@ -196,7 +215,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And an unknown action") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0, 1);
+                                                       MessageType::kCommand, 0, 1);
             std::array<std::uint8_t, 1> payload = {0xFF};
 
             auto result = MessageParser::Decode(header, payload);
@@ -208,8 +227,8 @@ TEST_CASE("The MessageParser class", "[protocol]") {
 
       SECTION("When given a broadcast Command") {
         SECTION("Should return the Command with broadcast routing") {
-          auto header = BroadcastTransportHeader::Make(MessageCategory::kControl,
-                                                      MessageType::kCommand, 0);
+          auto header =
+              BroadcastTransportHeader::Make(MessageCategory::kControl, MessageType::kCommand, 0);
           std::array<std::uint8_t, 1> payload = {
               static_cast<std::uint8_t>(CommandAction::kAdcStart)};
 
@@ -226,7 +245,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With an unsupported type") {
         SECTION("Should return nullopt") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kControl,
-                                                    MessageType::kHeartbeat, 0, 1);
+                                                     MessageType::kHeartbeat, 0, 1);
 
           auto result = MessageParser::Decode(header, {});
 
@@ -240,7 +259,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And valid payload") {
           SECTION("Should return Heartbeat") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kSystem,
-                                                      MessageType::kHeartbeat, 1, 0);
+                                                       MessageType::kHeartbeat, 1, 0);
             std::array<std::uint8_t, 1> payload = {
                 static_cast<std::uint8_t>(DeviceState::kRunning)};
 
@@ -256,7 +275,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And empty payload") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kSystem,
-                                                      MessageType::kHeartbeat, 1, 0);
+                                                       MessageType::kHeartbeat, 1, 0);
 
             auto result = MessageParser::Decode(header, {});
 
@@ -267,7 +286,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
         SECTION("And invalid state") {
           SECTION("Should return nullopt") {
             auto header = UnicastTransportHeader::Make(MessageCategory::kSystem,
-                                                      MessageType::kHeartbeat, 1, 0);
+                                                       MessageType::kHeartbeat, 1, 0);
             std::array<std::uint8_t, 1> payload = {0xFF};
 
             auto result = MessageParser::Decode(header, payload);
@@ -279,8 +298,8 @@ TEST_CASE("The MessageParser class", "[protocol]") {
 
       SECTION("With an unsupported type") {
         SECTION("Should return nullopt") {
-          auto header = UnicastTransportHeader::Make(MessageCategory::kSystem,
-                                                    MessageType::kCommand, 1, 0);
+          auto header =
+              UnicastTransportHeader::Make(MessageCategory::kSystem, MessageType::kCommand, 1, 0);
 
           auto result = MessageParser::Decode(header, {});
 
@@ -292,8 +311,8 @@ TEST_CASE("The MessageParser class", "[protocol]") {
     SECTION("When given a BulkData message") {
       SECTION("With an unsupported type") {
         SECTION("Should return nullopt") {
-          auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                    MessageType::kCommand, 1, 0);
+          auto header =
+              UnicastTransportHeader::Make(MessageCategory::kBulkData, MessageType::kCommand, 1, 0);
 
           auto result = MessageParser::Decode(header, {});
 
@@ -304,7 +323,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With a kDataSegment type and valid payload") {
         SECTION("Should return CalibrationDataSegment with correct fields") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                    MessageType::kDataSegment, 1, 0);
+                                                     MessageType::kDataSegment, 1, 0);
           std::array<std::uint8_t, CalibrationDataSegment::kSerializedSizeBytes> payload{};
           payload[0] = 2;
           payload[1] = 8;
@@ -324,7 +343,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With a kDataSegment type and undersized payload") {
         SECTION("Should return nullopt") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                    MessageType::kDataSegment, 1, 0);
+                                                     MessageType::kDataSegment, 1, 0);
           std::array<std::uint8_t, 1> payload{};
 
           auto result = MessageParser::Decode(header, payload);
@@ -336,7 +355,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With a kDataSegmentAck type and valid payload") {
         SECTION("Should return DataSegmentAck with correct fields") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                    MessageType::kDataSegmentAck, 0, 1);
+                                                     MessageType::kDataSegmentAck, 0, 1);
           std::array<std::uint8_t, 2> payload = {
               5, static_cast<std::uint8_t>(DataSegmentAckStatus::kCrcError)};
 
@@ -353,7 +372,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
       SECTION("With a kDataSegmentAck type and invalid status") {
         SECTION("Should return nullopt") {
           auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                    MessageType::kDataSegmentAck, 0, 1);
+                                                     MessageType::kDataSegmentAck, 0, 1);
           std::array<std::uint8_t, 2> payload = {0, 0xFF};
 
           auto result = MessageParser::Decode(header, payload);
@@ -366,7 +385,7 @@ TEST_CASE("The MessageParser class", "[protocol]") {
     SECTION("When given an unknown category") {
       SECTION("Should return nullopt") {
         auto header = UnicastTransportHeader::Make(static_cast<MessageCategory>(0xFF),
-                                                  MessageType::kCommand, 1, 0);
+                                                   MessageType::kCommand, 1, 0);
 
         auto result = MessageParser::Decode(header, {});
 

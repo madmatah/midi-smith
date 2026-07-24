@@ -1,9 +1,9 @@
 #if defined(UNIT_TESTS)
 #include "bsp-types/can/can_bus_stats_provider.hpp"
 
-#include <fakeit.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <fakeit.hpp>
 #include <string_view>
 
 #include "bsp-types/can/can_bus_stats_requirements.hpp"
@@ -12,10 +12,10 @@
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
@@ -56,24 +56,44 @@ TEST_CASE("The CanBusStatsProvider class", "[libs][bsp-types]") {
     const auto status = provider.ProvideStats(request, visitor_mock.get());
 
     REQUIRE(status == midismith::stats::StatsPublishStatus::kOk);
-    
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("tx_frames_sent", 12u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("tx_frames_failed", 1u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("rx_frames_received", 44u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("rx_queue_overflows", 2u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)).Using("bus_off", true)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)).Using("error_passive", true)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)).Using("warning", false)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)).Using("last_error_code", "crc")).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("transmit_error_count", 33u)).Once();
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)).Using("receive_error_count", 55u)).Once();
+
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("tx_frames_sent", 12u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("tx_frames_failed", 1u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("rx_frames_received", 44u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("rx_queue_overflows", 2u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool))
+               .Using("bus_off", true))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool))
+               .Using("error_passive", true))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool))
+               .Using("warning", false))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view))
+               .Using("last_error_code", "crc"))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("transmit_error_count", 33u))
+        .Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t))
+               .Using("receive_error_count", 55u))
+        .Once();
   }
 
   SECTION("ProvideStats should publish unknown code label for unsupported error code") {
     midismith::bsp::can::CanBusStatsSnapshot snapshot{};
     snapshot.last_error_code = 20u;
     When(fakeit_Method(can_stats_mock, CaptureSnapshot)).Return(snapshot);
-    
+
     Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::uint32_t)));
     Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, bool)));
     Fake(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)));
@@ -81,7 +101,9 @@ TEST_CASE("The CanBusStatsProvider class", "[libs][bsp-types]") {
     const auto status = provider.ProvideStats(request, visitor_mock.get());
 
     REQUIRE(status == midismith::stats::StatsPublishStatus::kOk);
-    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view)).Using("last_error_code", "unknown")).Once();
+    Verify(OverloadedMethod(visitor_mock, OnMetric, void(std::string_view, std::string_view))
+               .Using("last_error_code", "unknown"))
+        .Once();
   }
 }
 #endif

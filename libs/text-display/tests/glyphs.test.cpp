@@ -40,8 +40,8 @@ TEST_CASE("The IsCustomGlyph function") {
           midismith::text_display::glyphs::kBarFillBase));
       REQUIRE(midismith::text_display::glyphs::IsCustomGlyph(
           midismith::text_display::glyphs::kBarFillFull));
-      REQUIRE(
-          midismith::text_display::glyphs::IsCustomGlyph(midismith::text_display::glyphs::kArrowUp));
+      REQUIRE(midismith::text_display::glyphs::IsCustomGlyph(
+          midismith::text_display::glyphs::kArrowUp));
       REQUIRE(midismith::text_display::glyphs::IsCustomGlyph(
           midismith::text_display::glyphs::kScrollThumb));
     }

@@ -8,7 +8,15 @@
 #include "protocol/topology.hpp"
 #include "protocol/transport_header.hpp"
 
-using namespace midismith::protocol;
+using midismith::protocol::AdcMessageBuilder;
+using midismith::protocol::BroadcastTransportHeader;
+using midismith::protocol::CalibMode;
+using midismith::protocol::DeviceState;
+using midismith::protocol::kMainBoardNodeId;
+using midismith::protocol::MainBoardMessageBuilder;
+using midismith::protocol::MessageCategory;
+using midismith::protocol::MessageType;
+using midismith::protocol::UnicastTransportHeader;
 using midismith::protocol_can::CanIdentifierMapper;
 
 TEST_CASE("The CanIdentifierMapper class") {
@@ -70,7 +78,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kBulkData in DUMP direction") {
       SECTION("Should place the ADC source node ID in the 0x21x identifier range") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegment, 4, 0);
+                                                   MessageType::kDataSegment, 4, 0);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x214);
       }
@@ -79,7 +87,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kBulkData in LOAD direction") {
       SECTION("Should place the ADC destination node ID in the 0x21x identifier range") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegment, 0, 6);
+                                                   MessageType::kDataSegment, 0, 6);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x216);
       }
@@ -88,7 +96,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kBulkData ACK in DUMP direction") {
       SECTION("Should place the ADC source node ID in the 0x22x identifier range") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegmentAck, 3, 0);
+                                                   MessageType::kDataSegmentAck, 3, 0);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x223);
       }
@@ -97,7 +105,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When the header category is kBulkData ACK in LOAD direction") {
       SECTION("Should place the ADC destination node ID in the 0x22x identifier range") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegmentAck, 0, 8);
+                                                   MessageType::kDataSegmentAck, 0, 8);
 
         REQUIRE(CanIdentifierMapper::EncodeId(header) == 0x228);
       }
@@ -316,7 +324,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When encoding and then decoding a kBulkData DUMP header") {
       SECTION("Should recover the original header without loss") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegment, 4, 0);
+                                                   MessageType::kDataSegment, 4, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 
@@ -330,7 +338,7 @@ TEST_CASE("The CanIdentifierMapper class") {
     SECTION("When encoding and then decoding a kBulkData ACK DUMP header") {
       SECTION("Should recover the original header without loss") {
         auto header = UnicastTransportHeader::Make(MessageCategory::kBulkData,
-                                                  MessageType::kDataSegmentAck, 4, 0);
+                                                   MessageType::kDataSegmentAck, 4, 0);
 
         auto decoded = CanIdentifierMapper::DecodeId(CanIdentifierMapper::EncodeId(header));
 

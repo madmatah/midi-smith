@@ -3,7 +3,6 @@
 #include "calibration/calibration_segment_packer.hpp"
 
 #include <array>
-
 #include <catch2/catch_test_macros.hpp>
 
 namespace {
@@ -23,7 +22,7 @@ SensorCalibration MakeCalibration(float rest_current_ma, float strike_current_ma
   return calibration;
 }
 
-}
+}  // namespace
 
 TEST_CASE("The CalibrationSegmentPacker class", "[calibration][segment]") {
   SECTION("The ComputeTotalSegments() method") {

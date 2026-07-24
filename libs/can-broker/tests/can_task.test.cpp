@@ -3,6 +3,7 @@
 #include "can-broker/can_task.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -24,7 +25,9 @@ struct FixedQueueStub final
     return false;
   }
 
-  bool SendFromIsr(const midismith::bsp::can::FdcanFrame&) noexcept override { return false; }
+  bool SendFromIsr(const midismith::bsp::can::FdcanFrame&) noexcept override {
+    return false;
+  }
 
   bool Receive(midismith::bsp::can::FdcanFrame& item, std::uint32_t) noexcept override {
     if (next_index_ >= frames_.size()) {

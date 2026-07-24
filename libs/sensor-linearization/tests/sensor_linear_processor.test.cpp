@@ -91,8 +91,7 @@ TEST_CASE("The SensorLinearProcessor class") {
   }
 
   SECTION("CNY70 generator + processor maps strike to 0 and rest to 1") {
-    const auto master =
-        midismith::sensor_linearization::Cny70DatasheetSensorResponseCurve();
+    const auto master = midismith::sensor_linearization::Cny70DatasheetSensorResponseCurve();
     const midismith::calibration::SensorCalibration calibration{
         .rest_current_ma = 0.047f,
         .strike_current_ma = 1.000f,
@@ -101,9 +100,8 @@ TEST_CASE("The SensorLinearProcessor class") {
     };
 
     SensorLookupTable<kLookupTableSize> lookup_table{};
-    const auto result =
-        midismith::sensor_linearization::LookupTableGenerator::Generate(
-            master, calibration, lookup_table);
+    const auto result = midismith::sensor_linearization::LookupTableGenerator::Generate(
+        master, calibration, lookup_table);
 
     SensorLinearProcessor<kLookupTableSize>::Configuration configuration = result.configuration;
     processor.ApplyConfiguration(&configuration);

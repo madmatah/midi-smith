@@ -5,7 +5,20 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 
-using namespace midismith::protocol;
+using midismith::protocol::AdcStart;
+using midismith::protocol::AdcStop;
+using midismith::protocol::CalibMode;
+using midismith::protocol::CalibrationDataSegment;
+using midismith::protocol::CalibrationLoadRequest;
+using midismith::protocol::CalibStart;
+using midismith::protocol::Command;
+using midismith::protocol::DataSegmentAck;
+using midismith::protocol::DataSegmentAckStatus;
+using midismith::protocol::DeviceState;
+using midismith::protocol::DumpRequest;
+using midismith::protocol::Heartbeat;
+using midismith::protocol::SensorEvent;
+using midismith::protocol::SensorEventType;
 
 TEST_CASE("The SensorEvent struct") {
   SECTION("The Serialize() method") {
