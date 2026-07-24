@@ -33,6 +33,7 @@ midismith_add_firmware_test(NAME main
         app/ui/midi_activity_wake_source.test.cpp
         app/ui/slide_animation.test.cpp
         app/ui/glyph_scaler.test.cpp
+        app/ui/tft_text_display.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )

@@ -72,6 +72,8 @@ if(HOST_TESTS)
         app/src/app/ui/screens/calibration_progress_screen.cpp
         app/src/app/ui/screens/midi_monitor_screen.cpp
         app/src/app/ui/midi_activity_wake_source.cpp
+        app/src/app/ui/font_8x16.cpp
+        app/src/app/ui/tft_text_display.cpp
         app/src/shell/ui_command.cpp
     )
     target_include_directories(main_app_lib PUBLIC

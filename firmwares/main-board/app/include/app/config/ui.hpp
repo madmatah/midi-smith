@@ -20,6 +20,7 @@ constexpr std::uint16_t kUiButtonLongPressReads = 50;
 constexpr std::size_t kMenuStackMaxDepth = 6;
 constexpr std::size_t kLineBufferMaxLines = 256;
 constexpr std::size_t kLineBufferLineCapacity = 21;
+constexpr std::size_t kUiScrollTextCapacity = 48;
 constexpr std::uint8_t kTftTextColumns = 20;
 constexpr std::uint8_t kTftTextRows = 5;
 constexpr std::uint8_t kTftFontWidth = 8;
