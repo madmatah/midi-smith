@@ -10,12 +10,17 @@ enum class MidiActivitySource : std::uint8_t {
   kDinIn,
   kDinOut,
   kUsbOut,
+  kSourceCount,
 };
 
-inline constexpr std::size_t kMidiActivitySourceCount = 4;
+inline constexpr std::size_t kMidiActivitySourceCount =
+    static_cast<std::size_t>(MidiActivitySource::kSourceCount);
 
 constexpr std::size_t IndexOf(MidiActivitySource source) noexcept {
   return static_cast<std::size_t>(source);
 }
+
+static_assert(IndexOf(MidiActivitySource::kUsbOut) < kMidiActivitySourceCount,
+              "every declared source must index inside the per-source arrays");
 
 }  // namespace midismith::midi_monitor
