@@ -30,6 +30,7 @@ midismith_add_firmware_test(NAME main
         app/ui/screens/calibration_progress_screen.test.cpp
         app/ui/screens/midi_monitor_screen.test.cpp
         app/ui/idle_tracker.test.cpp
+        app/ui/midi_activity_wake_source.test.cpp
         app/ui/slide_animation.test.cpp
         app/ui/glyph_scaler.test.cpp
     LINK_LIBRARIES main_domain main_app_lib

@@ -7,6 +7,7 @@
 #include "app/shell/ui_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/ui/menu_tree.hpp"
+#include "app/ui/midi_activity_wake_source.hpp"
 #include "app/ui/tft_splash_player.hpp"
 #include "app/ui/tft_text_display.hpp"
 #include "app/ui/ui_task.hpp"
@@ -86,9 +87,12 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       injected_input_queue;
   static midismith::main_board::app::shell::UiCommand ui_command(injected_input_queue);
   (void) commands.task.RegisterCommand(ui_command);
+  static midismith::main_board::app::ui::MidiActivityWakeSource midi_activity_wake_source(
+      midi.activity, runtime, menu_tree.midi_monitor);
   static midismith::main_board::app::ui::UiTask ui_task(
       encoder, button, runtime, text_display, text_display, splash_player, injected_input_queue,
-      midismith::main_board::app::config::kUiTickPeriodMs, InitializeTftDisplay, &tft_display);
+      midi_activity_wake_source, midismith::main_board::app::config::kUiTickPeriodMs,
+      InitializeTftDisplay, &tft_display);
 
   (void) ui_task.start();
 }

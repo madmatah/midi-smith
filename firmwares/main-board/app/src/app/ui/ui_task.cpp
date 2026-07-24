@@ -16,8 +16,8 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
                midismith::text_display::TextDisplayRequirements& display,
                DisplayPowerRequirements& display_power, SplashRequirements& splash,
                midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
-               std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
-               void* initialize_context) noexcept
+               ActivitySourceRequirements& wake_activity, std::uint32_t tick_period_ms,
+               InitializeCallback initialize_callback, void* initialize_context) noexcept
     : encoder_(encoder),
       button_(button),
       runtime_(runtime),
@@ -25,6 +25,7 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
       display_power_(display_power),
       splash_(splash),
       injected_events_(injected_events),
+      wake_activity_(wake_activity),
       tick_period_ms_(tick_period_ms),
       initialize_callback_(initialize_callback),
       initialize_context_(initialize_context),
@@ -55,7 +56,8 @@ void UiTask::run() noexcept {
         rotation_detents != 0 ||
         button_event != midismith::main_board::bsp::RotaryButton::Event::kNone ||
         injected_event_received;
-    if (ProcessBacklightState(input_activity_detected)) {
+    const bool wake_activity_detected = wake_activity_.ConsumeActivity();
+    if (ProcessBacklightState(input_activity_detected || wake_activity_detected)) {
       continue;
     }
     DispatchRotation(rotation_detents);

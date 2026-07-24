@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "app/ui/activity_source_requirements.hpp"
 #include "app/ui/display_power_requirements.hpp"
 #include "app/ui/idle_tracker.hpp"
 #include "app/ui/splash_requirements.hpp"
@@ -22,8 +23,8 @@ class UiTask {
          midismith::text_display::TextDisplayRequirements& display,
          DisplayPowerRequirements& display_power, SplashRequirements& splash,
          midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
-         std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
-         void* initialize_context) noexcept;
+         ActivitySourceRequirements& wake_activity, std::uint32_t tick_period_ms,
+         InitializeCallback initialize_callback, void* initialize_context) noexcept;
 
   static void entry(void* context) noexcept;
   void run() noexcept;
@@ -42,6 +43,7 @@ class UiTask {
   DisplayPowerRequirements& display_power_;
   SplashRequirements& splash_;
   midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events_;
+  ActivitySourceRequirements& wake_activity_;
   std::uint32_t tick_period_ms_;
   InitializeCallback initialize_callback_;
   void* initialize_context_;
