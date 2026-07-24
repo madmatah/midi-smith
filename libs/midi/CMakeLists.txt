@@ -7,4 +7,5 @@ midismith_add_lib(NAME midi
     SOURCES
         src/midi_fanout_controller.cpp
         src/midi_input_parser.cpp
+        src/note_name.cpp
 )

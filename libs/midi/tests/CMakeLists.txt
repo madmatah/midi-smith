@@ -5,4 +5,5 @@ midismith_add_test(NAME midi
         message.test.cpp
         midi_fanout_controller.test.cpp
         midi_input_parser.test.cpp
+        note_name.test.cpp
 )
