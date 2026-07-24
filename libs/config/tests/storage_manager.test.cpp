@@ -38,9 +38,13 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
  public:
   static constexpr std::size_t kSectorSize = 4096;
 
-  FlashStorageStub() noexcept { std::memset(storage_, 0xFF, sizeof(storage_)); }
+  FlashStorageStub() noexcept {
+    std::memset(storage_, 0xFF, sizeof(storage_));
+  }
 
-  std::size_t SectorSizeBytes() const noexcept override { return kSectorSize; }
+  std::size_t SectorSizeBytes() const noexcept override {
+    return kSectorSize;
+  }
 
   midismith::bsp::storage::StorageOperationResult Read(
       std::size_t offset_bytes, std::uint8_t* buffer,
@@ -81,7 +85,9 @@ class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorag
     std::memcpy(storage_, &config, sizeof(config));
   }
 
-  const std::uint8_t* storage() const noexcept { return storage_; }
+  const std::uint8_t* storage() const noexcept {
+    return storage_;
+  }
 
   bool erase_should_fail = false;
   bool write_should_fail = false;

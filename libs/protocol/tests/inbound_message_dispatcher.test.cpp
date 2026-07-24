@@ -3,14 +3,15 @@
 #include "protocol/handlers/inbound_message_dispatcher.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <utility>
 
 namespace {
 
-using midismith::protocol::UnicastTransportHeader;
 using midismith::protocol::BroadcastTransportHeader;
+using midismith::protocol::IncomingMessage;
 using midismith::protocol::MessageCategory;
 using midismith::protocol::MessageType;
-using midismith::protocol::IncomingMessage;
+using midismith::protocol::UnicastTransportHeader;
 
 using MessageContent = decltype(IncomingMessage::content);
 
@@ -21,8 +22,8 @@ IncomingMessage MakeUnicastMessage(MessageContent content, std::uint8_t source_n
 }
 
 IncomingMessage MakeBroadcastMessage(MessageContent content) {
-  return {.routing = BroadcastTransportHeader::Make(MessageCategory::kSystem,
-                                                    MessageType::kHeartbeat, 0),
+  return {.routing =
+              BroadcastTransportHeader::Make(MessageCategory::kSystem, MessageType::kHeartbeat, 0),
           .content = std::move(content)};
 }
 
@@ -49,21 +50,28 @@ class RecordingHeartbeatHandler final {
 
 class RecordingAdcCommandHandler final {
  public:
-  void OnAdcStart(const midismith::protocol::AdcStart&) noexcept { ++start_calls; }
-  void OnAdcStop(const midismith::protocol::AdcStop&) noexcept { ++stop_calls; }
+  void OnAdcStart(const midismith::protocol::AdcStart&) noexcept {
+    ++start_calls;
+  }
+  void OnAdcStop(const midismith::protocol::AdcStop&) noexcept {
+    ++stop_calls;
+  }
   int start_calls = 0;
   int stop_calls = 0;
 };
 
 class RecordingCalibCommandHandler final {
  public:
-  void OnCalibStart(const midismith::protocol::CalibStart&) noexcept { ++calls; }
+  void OnCalibStart(const midismith::protocol::CalibStart&) noexcept {
+    ++calls;
+  }
   int calls = 0;
 };
 
 class RecordingDumpRequestHandler final {
  public:
-  void OnDumpRequest(const midismith::protocol::DumpRequest&, std::uint8_t source_node_id) noexcept {
+  void OnDumpRequest(const midismith::protocol::DumpRequest&,
+                     std::uint8_t source_node_id) noexcept {
     ++calls;
     last_source_node_id = source_node_id;
   }

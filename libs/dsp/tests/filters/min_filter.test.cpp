@@ -10,7 +10,8 @@ namespace {
 
 struct TestContext {};
 
-static_assert(midismith::dsp::concepts::SignalTransformer<midismith::dsp::filters::MinFilter, TestContext>);
+static_assert(
+    midismith::dsp::concepts::SignalTransformer<midismith::dsp::filters::MinFilter, TestContext>);
 static_assert(midismith::dsp::concepts::Resettable<midismith::dsp::filters::MinFilter>);
 
 }  // namespace

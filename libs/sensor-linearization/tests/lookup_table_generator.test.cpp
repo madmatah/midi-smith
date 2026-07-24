@@ -8,9 +8,13 @@
 #include "calibration/sensor_calibration.hpp"
 #include "sensor-linearization/sensor_response_curve.hpp"
 
-using namespace midismith::sensor_linearization;
-using midismith::calibration::SensorCalibration;
 using Catch::Matchers::WithinAbs;
+using midismith::calibration::SensorCalibration;
+using midismith::sensor_linearization::LookupTableGenerationStatus;
+using midismith::sensor_linearization::LookupTableGenerator;
+using midismith::sensor_linearization::SensorLookupTable;
+using midismith::sensor_linearization::SensorResponseCurve;
+using midismith::sensor_linearization::SensorResponsePoint;
 
 TEST_CASE("The LookupTableGenerator class", "[sensor][linearization]") {
   constexpr std::size_t kLutSize = 256u;

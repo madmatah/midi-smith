@@ -1,19 +1,19 @@
 #if defined(UNIT_TESTS)
 #include "stats/stats_provider_requirements.hpp"
 
-#include <fakeit.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <fakeit.hpp>
 #include <string_view>
 
 #include "stats/empty_stats_request.hpp"
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 

@@ -3,15 +3,14 @@
 #include "piano-sensing/midi_velocity_engine.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-
 #include <fakeit.hpp>
 
 namespace {
 
+using fakeit::Fake;
 using fakeit::Mock;
 using fakeit::Verify;
 using fakeit::When;
-using fakeit::Fake;
 
 #define fakeit_Method(mock, method) Method(mock, method)
 
@@ -68,7 +67,8 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        Verify(fakeit_Method(handler_mock, OnNoteOn).Using(static_cast<midismith::midi::Velocity>(64u)))
+        Verify(fakeit_Method(handler_mock, OnNoteOn)
+                   .Using(static_cast<midismith::midi::Velocity>(64u)))
             .Once();
         REQUIRE(ctx.sensor.last_midi_velocity == static_cast<std::uint8_t>(64u));
         REQUIRE(ctx.sensor.is_note_on == true);
@@ -146,7 +146,8 @@ TEST_CASE("The MidiVelocityEngine class") {
         engine.Execute(0.19f, ctx);
         engine.Execute(0.09f, ctx);
 
-        Verify(fakeit_Method(handler_mock, OnNoteOn).Using(static_cast<midismith::midi::Velocity>(23u)))
+        Verify(fakeit_Method(handler_mock, OnNoteOn)
+                   .Using(static_cast<midismith::midi::Velocity>(23u)))
             .Once();
         REQUIRE(RecordingVelocityMapper::map_calls == 1);
         REQUIRE(RecordingVelocityMapper::last_speed_m_per_s == 1.0f);

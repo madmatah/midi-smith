@@ -14,8 +14,7 @@ constexpr std::int32_t kTestAdcBits = 16;
 constexpr std::int32_t kTestRfOhms = 1800;
 
 using TestConverter =
-    midismith::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts, kTestAdcBits,
-                                                    kTestRfOhms>;
+    midismith::dsp::converters::TiaCurrentConverter<kTestVrefMilliVolts, kTestAdcBits, kTestRfOhms>;
 
 constexpr float kAdcMaxCounts = 65535.0f;
 constexpr float kExpectedSaturationCurrentMa =

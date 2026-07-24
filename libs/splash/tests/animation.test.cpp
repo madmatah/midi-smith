@@ -2,6 +2,7 @@
 
 #include "splash/animation.hpp"
 
+#include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
@@ -57,9 +58,9 @@ std::optional<PpmImage> LoadPpm(const std::string& path) {
 }
 
 std::string GoldenFramePath(double frame_time_seconds) {
-  const long milliseconds = std::lround(frame_time_seconds * 1000.0);
+  const auto milliseconds = static_cast<std::int32_t>(std::lround(frame_time_seconds * 1000.0));
   std::array<char, 32> file_name{};
-  std::snprintf(file_name.data(), file_name.size(), "frame_%04ldms.ppm", milliseconds);
+  std::snprintf(file_name.data(), file_name.size(), "frame_%04dms.ppm", milliseconds);
   return std::string(SPLASH_GOLDEN_DIRECTORY) + "/" + file_name.data();
 }
 
@@ -72,7 +73,7 @@ struct FrameComparison {
 FrameComparison CompareFrames(const std::vector<std::uint8_t>& rendered,
                               const std::vector<std::uint8_t>& reference) {
   FrameComparison comparison;
-  long difference_sum = 0;
+  std::int64_t difference_sum = 0;
   std::size_t near_exact_count = 0;
   for (std::size_t offset = 0; offset < rendered.size(); ++offset) {
     const int difference =

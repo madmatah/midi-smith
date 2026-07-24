@@ -22,9 +22,9 @@ class TransactionalConfigDictionaryStub final
     return {};
   }
 
-  midismith::config::ConfigGetStatus GetValue(
-      std::string_view key, char* value_buffer, std::size_t value_buffer_size,
-      std::size_t& value_length) const noexcept override {
+  midismith::config::ConfigGetStatus GetValue(std::string_view key, char* value_buffer,
+                                              std::size_t value_buffer_size,
+                                              std::size_t& value_length) const noexcept override {
     if (key != "can_board_id") {
       return midismith::config::ConfigGetStatus::kUnknownKey;
     }
@@ -37,8 +37,8 @@ class TransactionalConfigDictionaryStub final
     return midismith::config::ConfigGetStatus::kOk;
   }
 
-  midismith::config::ConfigSetStatus SetValue(
-      std::string_view key, std::string_view value) noexcept override {
+  midismith::config::ConfigSetStatus SetValue(std::string_view key,
+                                              std::string_view value) noexcept override {
     if (key != "can_board_id") {
       return midismith::config::ConfigSetStatus::kUnknownKey;
     }

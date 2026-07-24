@@ -1,10 +1,10 @@
 #if defined(UNIT_TESTS)
 
-#include <array>
-#include <cstdint>
-
 #include "byte-codec/little_endian.hpp"
+
+#include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 
 using midismith::byte_codec::ReadLittleEndian;
 using midismith::byte_codec::WriteLittleEndian;

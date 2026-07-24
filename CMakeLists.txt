@@ -64,6 +64,7 @@ file(GLOB_RECURSE MONOREPO_SOURCE_FILES CONFIGURE_DEPENDS
     "firmwares/*/tests/*.*"
     "libs/*/include/*.*"
     "libs/*/src/*.*"
+    "libs/*/tests/*.*"
 )
 set(FILES_TO_CHECK "")
 foreach(FILE_PATH ${MONOREPO_SOURCE_FILES})
