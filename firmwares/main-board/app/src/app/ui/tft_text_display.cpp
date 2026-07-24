@@ -53,8 +53,13 @@ constexpr CellColors ThemeColors(midismith::text_display::CellAttribute attribut
 
 }  // namespace
 
-TftTextDisplay::TftTextDisplay(midismith::main_board::bsp::TftDisplay& display) noexcept
-    : display_(display) {
+constexpr std::uint16_t SwapBytes(std::uint16_t value) noexcept {
+  return static_cast<std::uint16_t>((value << 8) | (value >> 8));
+}
+
+TftTextDisplay::TftTextDisplay(midismith::main_board::bsp::TftDisplay& display,
+                               std::uint16_t* framebuffer) noexcept
+    : display_(display), framebuffer_(framebuffer) {
   Clear();
 }
 
@@ -136,6 +141,9 @@ void TftTextDisplay::FillRow(std::uint8_t row,
 }
 
 void TftTextDisplay::Flush() noexcept {
+  bool any_cell_changed = false;
+  std::uint8_t first_dirty_row = 0;
+  std::uint8_t last_dirty_row = 0;
   for (std::uint8_t row = 0; row < rows(); row++) {
     for (std::uint8_t column = 0; column < columns(); column++) {
       const bool cell_changed =
@@ -143,55 +151,73 @@ void TftTextDisplay::Flush() noexcept {
           pending_attributes_[row][column] != displayed_attributes_[row][column] ||
           pending_quadrants_[row][column] != displayed_quadrants_[row][column];
       if (cell_changed) {
-        DrawCell(row, column);
+        RenderCellToFramebuffer(row, column);
         displayed_text_[row][column] = pending_text_[row][column];
         displayed_attributes_[row][column] = pending_attributes_[row][column];
         displayed_quadrants_[row][column] = pending_quadrants_[row][column];
+        if (!any_cell_changed) {
+          first_dirty_row = row;
+        }
+        last_dirty_row = row;
+        any_cell_changed = true;
       }
     }
   }
-}
-
-void TftTextDisplay::DrawCell(std::uint8_t row, std::uint8_t column) noexcept {
-  const auto colors = ThemeColors(pending_attributes_[row][column]);
-  const std::uint16_t x =
-      static_cast<std::uint16_t>(column * midismith::main_board::app::config::kTftFontWidth);
-  const std::uint16_t y =
-      static_cast<std::uint16_t>(row * midismith::main_board::app::config::kTftFontHeight);
-  const auto glyph = Font8x16Glyph(pending_text_[row][column]);
-  const auto quadrant = pending_quadrants_[row][column];
-  if (quadrant == GlyphQuadrant::kFull) {
-    display_.BlitBitmap(x, y, midismith::main_board::app::config::kTftFontWidth,
-                        midismith::main_board::app::config::kTftFontHeight, glyph.data(),
-                        colors.foreground, colors.background);
+  if (!any_cell_changed) {
     return;
   }
-  const bool bottom_half =
-      quadrant == GlyphQuadrant::kBottomLeft || quadrant == GlyphQuadrant::kBottomRight;
-  const bool right_half =
-      quadrant == GlyphQuadrant::kTopRight || quadrant == GlyphQuadrant::kBottomRight;
-  const std::uint8_t source_row_offset =
-      bottom_half ? midismith::main_board::app::config::kTftFontHeight / 2 : 0;
-  const std::uint8_t source_column_offset =
-      right_half ? midismith::main_board::app::config::kTftFontWidth / 2 : 0;
-  std::array<std::uint8_t, midismith::main_board::app::config::kTftFontHeight> scaled_bitmap{};
-  for (std::uint8_t target_row = 0; target_row < midismith::main_board::app::config::kTftFontHeight;
-       target_row++) {
-    const std::uint8_t source_bits = glyph[source_row_offset + target_row / 2];
-    std::uint8_t target_bits = 0;
-    for (std::uint8_t target_bit = 0;
-         target_bit < midismith::main_board::app::config::kTftFontWidth; target_bit++) {
-      const std::uint8_t source_bit =
-          static_cast<std::uint8_t>(source_column_offset + target_bit / 2);
-      if ((source_bits & (0x80 >> source_bit)) != 0) {
-        target_bits |= static_cast<std::uint8_t>(0x80 >> target_bit);
-      }
+  const std::uint16_t first_pixel_row = static_cast<std::uint16_t>(
+      first_dirty_row * midismith::main_board::app::config::kTftFontHeight);
+  const std::uint16_t dirty_pixel_rows = static_cast<std::uint16_t>(
+      (last_dirty_row - first_dirty_row + 1) * midismith::main_board::app::config::kTftFontHeight);
+  display_.BlitRows(
+      first_pixel_row, dirty_pixel_rows,
+      reinterpret_cast<const std::uint8_t*>(framebuffer_ + first_pixel_row * kPixelWidth));
+}
+
+void TftTextDisplay::RenderCellToFramebuffer(std::uint8_t row, std::uint8_t column) noexcept {
+  constexpr std::uint8_t kFontWidth = midismith::main_board::app::config::kTftFontWidth;
+  constexpr std::uint8_t kFontHeight = midismith::main_board::app::config::kTftFontHeight;
+  const auto colors = ThemeColors(pending_attributes_[row][column]);
+  const auto glyph = Font8x16Glyph(pending_text_[row][column]);
+  const auto quadrant = pending_quadrants_[row][column];
+  std::array<std::uint8_t, kFontHeight> cell_bitmap{};
+  if (quadrant == GlyphQuadrant::kFull) {
+    for (std::uint8_t glyph_row = 0; glyph_row < kFontHeight; glyph_row++) {
+      cell_bitmap[glyph_row] = glyph[glyph_row];
     }
-    scaled_bitmap[target_row] = target_bits;
+  } else {
+    const bool bottom_half =
+        quadrant == GlyphQuadrant::kBottomLeft || quadrant == GlyphQuadrant::kBottomRight;
+    const bool right_half =
+        quadrant == GlyphQuadrant::kTopRight || quadrant == GlyphQuadrant::kBottomRight;
+    const std::uint8_t source_row_offset = bottom_half ? kFontHeight / 2 : 0;
+    const std::uint8_t source_column_offset = right_half ? kFontWidth / 2 : 0;
+    for (std::uint8_t target_row = 0; target_row < kFontHeight; target_row++) {
+      const std::uint8_t source_bits = glyph[source_row_offset + target_row / 2];
+      std::uint8_t target_bits = 0;
+      for (std::uint8_t target_bit = 0; target_bit < kFontWidth; target_bit++) {
+        const std::uint8_t source_bit =
+            static_cast<std::uint8_t>(source_column_offset + target_bit / 2);
+        if ((source_bits & (0x80 >> source_bit)) != 0) {
+          target_bits |= static_cast<std::uint8_t>(0x80 >> target_bit);
+        }
+      }
+      cell_bitmap[target_row] = target_bits;
+    }
   }
-  display_.BlitBitmap(x, y, midismith::main_board::app::config::kTftFontWidth,
-                      midismith::main_board::app::config::kTftFontHeight, scaled_bitmap.data(),
-                      colors.foreground, colors.background);
+  const std::uint16_t swapped_foreground = SwapBytes(colors.foreground);
+  const std::uint16_t swapped_background = SwapBytes(colors.background);
+  const std::uint16_t origin_x = static_cast<std::uint16_t>(column * kFontWidth);
+  const std::uint16_t origin_y = static_cast<std::uint16_t>(row * kFontHeight);
+  for (std::uint8_t pixel_row = 0; pixel_row < kFontHeight; pixel_row++) {
+    std::uint16_t* row_pixels = framebuffer_ + (origin_y + pixel_row) * kPixelWidth + origin_x;
+    const std::uint8_t row_bits = cell_bitmap[pixel_row];
+    for (std::uint8_t pixel_column = 0; pixel_column < kFontWidth; pixel_column++) {
+      row_pixels[pixel_column] =
+          (row_bits & (0x80 >> pixel_column)) != 0 ? swapped_foreground : swapped_background;
+    }
+  }
 }
 
 }  // namespace midismith::main_board::app::ui
