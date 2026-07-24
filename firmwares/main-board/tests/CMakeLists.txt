@@ -36,6 +36,8 @@ midismith_add_firmware_test(NAME main
         app/ui/tft_text_display.test.cpp
         app/ui/ui_task.test.cpp
         app/ui/items/menu_flow_items.test.cpp
+        app/ui/screens/keymap_progress_screen.test.cpp
+    INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )

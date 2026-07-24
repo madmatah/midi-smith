@@ -11,6 +11,7 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
+#include "app/ui/recording_text_display.hpp"
 #include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -27,54 +28,7 @@ using midismith::main_board::app::ui::screens::CalibrationProgressScreen;
 using midismith::main_board::domain::calibration::CalibrationState;
 using midismith::main_board::domain::calibration::StrikeProgress;
 
-struct RecordingTextDisplay final : public midismith::text_display::TextDisplayRequirements {
-  static constexpr std::uint8_t kColumns = midismith::main_board::app::config::kTftTextColumns;
-  static constexpr std::uint8_t kRows = midismith::main_board::app::config::kTftTextRows;
-
-  RecordingTextDisplay() {
-    Clear();
-  }
-
-  std::uint8_t columns() const noexcept override {
-    return kColumns;
-  }
-  std::uint8_t rows() const noexcept override {
-    return kRows;
-  }
-
-  void Clear() noexcept override {
-    for (auto& row : cells) {
-      row.fill(' ');
-    }
-  }
-
-  void DrawText(std::uint8_t row, std::uint8_t column, std::string_view text,
-                midismith::text_display::CellAttribute) noexcept override {
-    if (row >= kRows || column >= kColumns) {
-      dropped_draw_count++;
-      return;
-    }
-    std::uint8_t target_column = column;
-    for (char character : text) {
-      if (target_column >= kColumns) {
-        break;
-      }
-      cells[row][target_column] = character;
-      target_column++;
-    }
-  }
-
-  void FillRow(std::uint8_t, midismith::text_display::CellAttribute) noexcept override {}
-
-  void Flush() noexcept override {}
-
-  std::string RowText(std::uint8_t row) const {
-    return std::string(cells[row].data(), cells[row].size());
-  }
-
-  std::array<std::array<char, kColumns>, kRows> cells{};
-  int dropped_draw_count = 0;
-};
+using midismith::main_board::test::RecordingTextDisplay;
 
 Mock<CalibrationCoordinatorRequirements> MakeStrikePhaseCoordinator() {
   Mock<CalibrationCoordinatorRequirements> coordinator;
