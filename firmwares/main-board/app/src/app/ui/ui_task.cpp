@@ -5,10 +5,10 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
+#include "menu/progress_bar.hpp"
 #include "menu/text_layout.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
-#include "text-display/glyphs.hpp"
 
 namespace midismith::main_board::app::ui {
 
@@ -41,7 +41,6 @@ void UiTask::run() noexcept {
   }
   encoder_.Start();
   RenderSplashScreen();
-  midismith::os::Clock::delay_ms(midismith::main_board::app::config::kUiSplashDurationMs);
   runtime_.Render(display_);
   display_.Flush();
   for (;;) {
@@ -102,21 +101,23 @@ bool UiTask::start() noexcept {
 }
 
 void UiTask::RenderSplashScreen() noexcept {
-  namespace glyphs = midismith::text_display::glyphs;
   constexpr std::string_view kProductName = "Midi Smith";
+  constexpr std::uint32_t kAnimationSteps = 30;
   const std::uint8_t title_row = static_cast<std::uint8_t>((display_.rows() - 3) / 2);
   const std::uint8_t divider_row = static_cast<std::uint8_t>(title_row + 3);
   display_.Clear();
   display_.DrawTextDoubleSize(
       title_row, midismith::menu::CenteredColumn(display_.columns(), kProductName.size() * 2),
       kProductName, midismith::text_display::CellAttribute::kAccent);
-  std::array<char, 32> divider{};
-  divider.fill(glyphs::BarFill(glyphs::kBarFillLevels));
-  const std::size_t divider_width =
-      display_.columns() < divider.size() ? display_.columns() : divider.size();
-  display_.DrawText(divider_row, 0, std::string_view(divider.data(), divider_width),
-                    midismith::text_display::CellAttribute::kDim);
   display_.Flush();
+  const std::uint32_t step_duration_ms =
+      midismith::main_board::app::config::kUiSplashDurationMs / kAnimationSteps;
+  for (std::uint32_t step = 0; step <= kAnimationSteps; step++) {
+    midismith::menu::RenderProgressBar(display_, divider_row, 0, display_.columns(), step,
+                                       kAnimationSteps);
+    display_.Flush();
+    midismith::os::Clock::delay_ms(step_duration_ms);
+  }
 }
 
 void UiTask::DispatchRotation(std::int16_t detents) noexcept {

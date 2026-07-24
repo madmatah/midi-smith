@@ -7,6 +7,7 @@
 #include "menu/menu_controller_requirements.hpp"
 #include "menu/progress_bar.hpp"
 #include "menu/text_layout.hpp"
+#include "text-display/glyphs.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::menu {
@@ -95,10 +96,22 @@ void NumericInputScreen::Render(
   display.FillRow(0, midismith::text_display::CellAttribute::kTitle);
   display.DrawText(0, CenteredColumn(display.columns(), title_.size()), title_,
                    midismith::text_display::CellAttribute::kTitle);
+  namespace glyphs = midismith::text_display::glyphs;
   const std::uint8_t value_row = static_cast<std::uint8_t>(display.rows() / 2 - 1);
-  display.DrawTextDoubleSize(value_row,
-                             CenteredColumn(display.columns(), rendered_value.size() * 2),
-                             rendered_value, midismith::text_display::CellAttribute::kAccent);
+  const std::uint8_t value_column = CenteredColumn(display.columns(), rendered_value.size() * 2);
+  display.DrawTextDoubleSize(value_row, value_column, rendered_value,
+                             midismith::text_display::CellAttribute::kAccent);
+  if (value_column >= 2) {
+    display.DrawText(value_row, static_cast<std::uint8_t>(value_column - 2),
+                     std::string_view(&glyphs::kArrowLeft, 1),
+                     midismith::text_display::CellAttribute::kDim);
+  }
+  const std::size_t value_width = rendered_value.size() * 2;
+  if (value_column + value_width + 1 < display.columns()) {
+    display.DrawText(value_row, static_cast<std::uint8_t>(value_column + value_width + 1),
+                     std::string_view(&glyphs::kChevronRight, 1),
+                     midismith::text_display::CellAttribute::kDim);
+  }
   const std::uint8_t gauge_row = static_cast<std::uint8_t>(display.rows() - 2);
   if (gauge_row > value_row + 1 && display.columns() > 2) {
     RenderProgressBar(display, gauge_row, 1, static_cast<std::uint8_t>(display.columns() - 2),
