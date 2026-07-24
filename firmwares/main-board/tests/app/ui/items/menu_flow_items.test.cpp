@@ -176,6 +176,32 @@ TEST_CASE("The StatsViewItem class") {
       }
     }
 
+    SECTION("When the argument is a view that is not null terminated") {
+      SECTION("Should pass exactly that argument to the command") {
+        const std::string_view backing("peersXXXXX");
+        StatsViewItem item("CAN", fixture.command, backing.substr(0, 5), fixture.line_buffer,
+                           fixture.text_view);
+
+        item.Activate(fixture.controller);
+
+        REQUIRE(fixture.command.invocations.size() == 1);
+        REQUIRE(fixture.command.invocations[0] == std::vector<std::string>{"stats", "peers"});
+      }
+    }
+
+    SECTION("When the argument is longer than the capacity") {
+      SECTION("Should truncate instead of overflowing") {
+        const std::string oversized(StatsViewItem::kArgumentCapacity * 4, 'z');
+        StatsViewItem item("CAN", fixture.command, oversized, fixture.line_buffer,
+                           fixture.text_view);
+
+        item.Activate(fixture.controller);
+
+        REQUIRE(fixture.command.invocations.size() == 1);
+        REQUIRE(fixture.command.invocations[0][1].size() == StatsViewItem::kArgumentCapacity - 1);
+      }
+    }
+
     SECTION("When the item is activated twice") {
       StatsViewItem item("System", fixture.command, "", fixture.line_buffer, fixture.text_view);
 
