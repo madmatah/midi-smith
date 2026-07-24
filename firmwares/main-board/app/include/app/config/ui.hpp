@@ -12,6 +12,7 @@ constexpr std::uint32_t kSplashFramePeriodMs = 33;
 constexpr int kSplashBandRows = 8;
 constexpr int kSplashSaturationPercent = 160;
 constexpr std::uint32_t kUiBacklightTimeoutMs = 120000;
+constexpr std::uint32_t kMidiMonitorActivityDecayMs = 180;
 constexpr bool kUiEncoderDebugOverlay = false;
 constexpr std::uint32_t kUiInjectedEventQueueDepth = 8;
 constexpr std::uint8_t kUiButtonDebounceReads = 3;

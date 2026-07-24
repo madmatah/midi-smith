@@ -28,6 +28,7 @@ midismith_add_firmware_test(NAME main
         app/calibration/calibration_coordinator.test.cpp
         app/storage/calibration_persistent_store.test.cpp
         app/ui/screens/calibration_progress_screen.test.cpp
+        app/ui/screens/midi_monitor_screen.test.cpp
         app/ui/idle_tracker.test.cpp
         app/ui/slide_animation.test.cpp
         app/ui/glyph_scaler.test.cpp
