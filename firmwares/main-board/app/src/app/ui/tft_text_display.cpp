@@ -97,6 +97,9 @@ void TftTextDisplay::Clear() noexcept {
   for (auto& row : pending_quadrants_) {
     row.fill(GlyphQuadrant::kFull);
   }
+  for (auto& row_scroll : pending_row_scrolls_) {
+    row_scroll.active = false;
+  }
 }
 
 void TftTextDisplay::SetCell(std::uint8_t row, std::uint8_t column, char character,
@@ -152,11 +155,32 @@ void TftTextDisplay::FillRow(std::uint8_t row,
   pending_attributes_[row].fill(attribute);
 }
 
+void TftTextDisplay::DrawTextScrolled(std::uint8_t row, std::uint8_t column,
+                                      std::uint8_t span_cells, std::string_view text,
+                                      midismith::text_display::CellAttribute attribute,
+                                      std::uint16_t pixel_shift) noexcept {
+  if (row >= rows() || column >= columns()) {
+    return;
+  }
+  const std::uint8_t available_cells = static_cast<std::uint8_t>(columns() - column);
+  const std::uint8_t clipped_span = span_cells < available_cells ? span_cells : available_cells;
+  pending_row_scrolls_[row] = RowScroll{true, text, column, clipped_span, attribute, pixel_shift};
+  const std::size_t character_shift = pixel_shift / midismith::text_display::kGlyphWidthPixels;
+  const std::size_t clamped_shift = character_shift < text.size() ? character_shift : text.size();
+  DrawText(row, column, text.substr(clamped_shift, clipped_span), attribute);
+}
+
 void TftTextDisplay::Flush() noexcept {
   const bool transition_requested =
       pending_transition_ != SlideDirection::kNone && transition_snapshot_ != nullptr;
   if (transition_requested) {
     std::memcpy(transition_snapshot_, framebuffer_, kPixelCount * sizeof(std::uint16_t));
+  }
+  for (std::uint8_t row = 0; row < rows(); row++) {
+    if (displayed_row_scrolls_[row] && !pending_row_scrolls_[row].active) {
+      displayed_text_[row].fill('\0');
+      displayed_row_scrolls_[row] = false;
+    }
   }
   bool any_cell_changed = false;
   std::uint8_t first_dirty_row = 0;
@@ -180,6 +204,21 @@ void TftTextDisplay::Flush() noexcept {
       }
     }
   }
+  for (std::uint8_t row = 0; row < rows(); row++) {
+    if (!pending_row_scrolls_[row].active) {
+      continue;
+    }
+    RenderScrolledSpanToFramebuffer(row);
+    displayed_row_scrolls_[row] = true;
+    if (!any_cell_changed) {
+      first_dirty_row = row;
+      last_dirty_row = row;
+      any_cell_changed = true;
+    } else {
+      first_dirty_row = row < first_dirty_row ? row : first_dirty_row;
+      last_dirty_row = row > last_dirty_row ? row : last_dirty_row;
+    }
+  }
   if (transition_requested) {
     RunSlideTransition();
     pending_transition_ = SlideDirection::kNone;
@@ -195,6 +234,36 @@ void TftTextDisplay::Flush() noexcept {
   display_.BlitRows(
       first_pixel_row, dirty_pixel_rows,
       reinterpret_cast<const std::uint8_t*>(framebuffer_ + first_pixel_row * kPixelWidth));
+}
+
+void TftTextDisplay::RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept {
+  constexpr std::uint8_t kFontWidth = midismith::main_board::app::config::kTftFontWidth;
+  constexpr std::uint8_t kFontHeight = midismith::main_board::app::config::kTftFontHeight;
+  const RowScroll& scroll = pending_row_scrolls_[row];
+  const auto colors = ThemeColors(scroll.attribute);
+  const std::uint16_t swapped_foreground = SwapBytes(colors.foreground);
+  const std::uint16_t swapped_background = SwapBytes(colors.background);
+  const std::uint16_t origin_x = static_cast<std::uint16_t>(scroll.column * kFontWidth);
+  const std::uint16_t origin_y = static_cast<std::uint16_t>(row * kFontHeight);
+  const std::uint16_t span_pixels = static_cast<std::uint16_t>(scroll.span_cells * kFontWidth);
+  std::span<const std::uint8_t, kFontHeight> glyph = Font8x16Glyph(' ');
+  std::size_t cached_character_index = scroll.text.size() + 1;
+  for (std::uint16_t x = 0; x < span_pixels; x++) {
+    const std::uint32_t source_pixel = static_cast<std::uint32_t>(scroll.pixel_shift) + x;
+    const std::size_t character_index = source_pixel / kFontWidth;
+    if (character_index != cached_character_index) {
+      const char character =
+          character_index < scroll.text.size() ? scroll.text[character_index] : ' ';
+      glyph = Font8x16Glyph(character);
+      cached_character_index = character_index;
+    }
+    const std::uint8_t glyph_column = static_cast<std::uint8_t>(source_pixel % kFontWidth);
+    for (std::uint8_t pixel_row = 0; pixel_row < kFontHeight; pixel_row++) {
+      const bool pixel_set = (glyph[pixel_row] & (0x80u >> glyph_column)) != 0;
+      framebuffer_[(origin_y + pixel_row) * kPixelWidth + origin_x + x] =
+          pixel_set ? swapped_foreground : swapped_background;
+    }
+  }
 }
 
 void TftTextDisplay::RunSlideTransition() noexcept {

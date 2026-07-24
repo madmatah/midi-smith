@@ -11,7 +11,7 @@ namespace midismith::menu {
 class ListScreen final : public MenuScreenRequirements {
  public:
   static constexpr std::uint16_t kMarqueePauseRenders = 50;
-  static constexpr std::uint16_t kMarqueeStepRenders = 8;
+  static constexpr std::uint16_t kMarqueeStepPixels = 2;
 
   ListScreen(std::string_view title, MenuItemRequirements* const* items, std::size_t item_count,
              bool wrap_navigation = true) noexcept;
