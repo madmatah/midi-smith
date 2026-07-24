@@ -145,9 +145,11 @@ TEST_CASE("The ListScreen class") {
         REQUIRE(display.CharAt(1, 18) == 'R');
         REQUIRE(screen.is_dirty());
 
-        for (std::uint16_t render_index = 0;
-             render_index < midismith::menu::ListScreen::kMarqueePauseRenders +
-                                midismith::menu::ListScreen::kMarqueeStepRenders;
+        constexpr std::uint16_t kRendersForOneCharacter =
+            midismith::menu::ListScreen::kMarqueePauseRenders +
+            midismith::text_display::kGlyphWidthPixels /
+                midismith::menu::ListScreen::kMarqueeStepPixels;
+        for (std::uint16_t render_index = 0; render_index < kRendersForOneCharacter;
              render_index++) {
           screen.Render(display);
         }

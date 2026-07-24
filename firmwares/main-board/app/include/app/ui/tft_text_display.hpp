@@ -37,6 +37,9 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
                 midismith::text_display::CellAttribute attribute) noexcept override;
   void DrawTextDoubleSize(std::uint8_t row, std::uint8_t column, std::string_view text,
                           midismith::text_display::CellAttribute attribute) noexcept override;
+  void DrawTextScrolled(std::uint8_t row, std::uint8_t column, std::uint8_t span_cells,
+                        std::string_view text, midismith::text_display::CellAttribute attribute,
+                        std::uint16_t pixel_shift) noexcept override;
   void FillRow(std::uint8_t row,
                midismith::text_display::CellAttribute attribute) noexcept override;
   void Flush() noexcept override;
@@ -56,9 +59,19 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
   using QuadrantRow =
       std::array<GlyphQuadrant, midismith::main_board::app::config::kTftTextColumns>;
 
+  struct RowScroll {
+    bool active;
+    std::string_view text;
+    std::uint8_t column;
+    std::uint8_t span_cells;
+    midismith::text_display::CellAttribute attribute;
+    std::uint16_t pixel_shift;
+  };
+
   void SetCell(std::uint8_t row, std::uint8_t column, char character,
                midismith::text_display::CellAttribute attribute, GlyphQuadrant quadrant) noexcept;
   void RenderCellToFramebuffer(std::uint8_t row, std::uint8_t column) noexcept;
+  void RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept;
   void RunSlideTransition() noexcept;
 
   midismith::main_board::bsp::TftDisplay& display_;
@@ -66,6 +79,8 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
   std::uint16_t* transition_snapshot_;
   SlideDirection pending_transition_ = SlideDirection::kNone;
   std::array<std::uint16_t, kPixelWidth> compose_row_{};
+  std::array<RowScroll, midismith::main_board::app::config::kTftTextRows> pending_row_scrolls_{};
+  std::array<bool, midismith::main_board::app::config::kTftTextRows> displayed_row_scrolls_{};
   std::array<TextRow, midismith::main_board::app::config::kTftTextRows> pending_text_{};
   std::array<AttributeRow, midismith::main_board::app::config::kTftTextRows> pending_attributes_{};
   std::array<QuadrantRow, midismith::main_board::app::config::kTftTextRows> pending_quadrants_{};

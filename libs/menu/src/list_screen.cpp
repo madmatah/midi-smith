@@ -55,14 +55,17 @@ void ListScreen::Render(midismith::text_display::TextDisplayRequirements& displa
     std::string_view label = items_[item_index]->label();
     const std::size_t label_width = static_cast<std::size_t>(
         display.columns() - 2 - (trailing_glyph != kNoTrailingGlyph ? 1 : 0));
+    display.FillRow(display_row, attribute);
     if (item_selected && label.size() > label_width) {
       marquee_visible = true;
-      label = label.substr(MarqueeOffset(label.size() - label_width), label_width);
+      const std::size_t overflow_pixels =
+          (label.size() - label_width) * midismith::text_display::kGlyphWidthPixels;
+      display.DrawTextScrolled(display_row, 1, static_cast<std::uint8_t>(label_width), label,
+                               attribute,
+                               static_cast<std::uint16_t>(MarqueeOffset(overflow_pixels)));
     } else {
-      label = label.substr(0, label_width);
+      display.DrawText(display_row, 1, label.substr(0, label_width), attribute);
     }
-    display.FillRow(display_row, attribute);
-    display.DrawText(display_row, 1, label, attribute);
     if (trailing_glyph != kNoTrailingGlyph && display.columns() >= 2) {
       display.DrawText(display_row, static_cast<std::uint8_t>(display.columns() - 2),
                        std::string_view(&trailing_glyph, 1), attribute);
@@ -89,15 +92,18 @@ void ListScreen::Render(midismith::text_display::TextDisplayRequirements& displa
   dirty_ = false;
 }
 
-std::size_t ListScreen::MarqueeOffset(std::size_t overflow) const noexcept {
-  const std::uint32_t cycle_renders = static_cast<std::uint32_t>(2 * kMarqueePauseRenders) +
-                                      static_cast<std::uint32_t>(overflow) * kMarqueeStepRenders;
+std::size_t ListScreen::MarqueeOffset(std::size_t overflow_pixels) const noexcept {
+  const std::uint32_t travel_renders =
+      static_cast<std::uint32_t>((overflow_pixels + kMarqueeStepPixels - 1) / kMarqueeStepPixels);
+  const std::uint32_t cycle_renders =
+      static_cast<std::uint32_t>(2 * kMarqueePauseRenders) + travel_renders;
   const std::uint32_t cycle_position = marquee_render_count_ % cycle_renders;
   if (cycle_position < kMarqueePauseRenders) {
     return 0;
   }
-  const std::size_t stepped_offset = (cycle_position - kMarqueePauseRenders) / kMarqueeStepRenders;
-  return stepped_offset < overflow ? stepped_offset : overflow;
+  const std::size_t travelled_pixels =
+      static_cast<std::size_t>(cycle_position - kMarqueePauseRenders) * kMarqueeStepPixels;
+  return travelled_pixels < overflow_pixels ? travelled_pixels : overflow_pixels;
 }
 
 bool ListScreen::is_dirty() const noexcept {
