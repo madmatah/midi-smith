@@ -188,6 +188,64 @@ TEST_CASE("The MenuRuntime class") {
     }
   }
 
+  SECTION("The current_screen() method") {
+    SECTION("When the runtime has just been built") {
+      SECTION("Should report the root screen") {
+        ScreenStub root_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 3> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+
+        REQUIRE(runtime.current_screen() == &root_screen);
+      }
+    }
+
+    SECTION("When a screen has been pushed") {
+      SECTION("Should report the pushed screen") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 3> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+
+        runtime.Push(child_screen);
+
+        REQUIRE(runtime.current_screen() == &child_screen);
+      }
+    }
+
+    SECTION("When the pushed screen has been popped") {
+      SECTION("Should report the screen underneath again") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 3> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+        runtime.Push(child_screen);
+
+        runtime.Pop();
+
+        REQUIRE(runtime.current_screen() == &root_screen);
+      }
+    }
+
+    SECTION("When screens are nested two deep") {
+      SECTION("Should follow the top of the stack") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        ScreenStub grandchild_screen;
+        std::array<midismith::menu::MenuScreenRequirements*, 3> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+
+        runtime.Push(child_screen);
+        runtime.Push(grandchild_screen);
+
+        REQUIRE(runtime.current_screen() == &grandchild_screen);
+
+        runtime.Pop();
+
+        REQUIRE(runtime.current_screen() == &child_screen);
+      }
+    }
+  }
+
   SECTION("The Push() method") {
     SECTION("When the stack has capacity") {
       SECTION("Should enter the pushed screen") {
