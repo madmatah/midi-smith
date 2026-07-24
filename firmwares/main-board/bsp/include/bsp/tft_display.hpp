@@ -4,11 +4,14 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "bsp-types/display/backlight_requirements.hpp"
+#include "bsp-types/display/pixel_surface_requirements.hpp"
 #include "bsp/gpio_requirements.hpp"
 
 namespace midismith::main_board::bsp {
 
-class TftDisplay {
+class TftDisplay final : public midismith::bsp::display::PixelSurfaceRequirements,
+                         public midismith::bsp::display::BacklightRequirements {
  public:
   using DelayMs = void (*)(void* context, std::uint32_t milliseconds) noexcept;
 
@@ -18,16 +21,17 @@ class TftDisplay {
              void* delay_context) noexcept;
 
   void Init() noexcept;
-  void SetBacklight(bool enabled) noexcept;
+  void SetBacklight(bool enabled) noexcept override;
   void FillRect(std::uint16_t x, std::uint16_t y, std::uint16_t width, std::uint16_t height,
                 std::uint16_t color565) noexcept;
   void BlitBitmap(std::uint16_t x, std::uint16_t y, std::uint16_t width, std::uint16_t height,
                   const std::uint8_t* mono_bitmap, std::uint16_t foreground565,
                   std::uint16_t background565) noexcept;
-  void BlitRows(std::uint16_t y, std::uint16_t row_count, const std::uint8_t* pixel_bytes) noexcept;
+  void BlitRows(std::uint16_t y, std::uint16_t row_count,
+                const std::uint8_t* pixel_bytes) noexcept override;
 
-  std::uint16_t width() const noexcept;
-  std::uint16_t height() const noexcept;
+  std::uint16_t width() const noexcept override;
+  std::uint16_t height() const noexcept override;
 
  private:
   static constexpr std::size_t kBurstBufferBytes = 512;
