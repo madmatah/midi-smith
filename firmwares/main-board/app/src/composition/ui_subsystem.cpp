@@ -17,7 +17,9 @@
 #include "bsp/rotary_encoder.hpp"
 #include "bsp/tft_display.hpp"
 #include "os/clock.hpp"
+#include "os/clock_delay.hpp"
 #include "os/queue.hpp"
+#include "os/task.hpp"
 #include "splash/animation.hpp"
 #include "splash/pixel_canvas.hpp"
 
@@ -89,12 +91,16 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
   (void) commands.task.RegisterCommand(ui_command);
   static midismith::main_board::app::ui::MidiActivityWakeSource midi_activity_wake_source(
       midi.activity, runtime, menu_tree.midi_monitor);
+  static midismith::os::ClockDelay ui_tick_delay;
   static midismith::main_board::app::ui::UiTask ui_task(
       encoder, button, runtime, text_display, text_display, splash_player, injected_input_queue,
-      midi_activity_wake_source, midismith::main_board::app::config::kUiTickPeriodMs,
+      midi_activity_wake_source, ui_tick_delay, midismith::main_board::app::config::kUiTickPeriodMs,
       InitializeTftDisplay, &tft_display);
 
-  (void) ui_task.start();
+  (void) midismith::os::Task::create("UiTask", midismith::main_board::app::ui::UiTask::entry,
+                                     &ui_task,
+                                     midismith::main_board::app::config::kUiTaskStackBytes,
+                                     midismith::main_board::app::config::kUiTaskPriority);
 }
 
 }  // namespace midismith::main_board::app::composition
