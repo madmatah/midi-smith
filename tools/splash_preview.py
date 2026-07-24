@@ -11,7 +11,7 @@ from pathlib import Path
 DISPLAY_WIDTH = 160
 DISPLAY_HEIGHT = 80
 FRAME_RATE_HZ = 30
-ANIMATION_DURATION_SECONDS = 4.75
+ANIMATION_DURATION_SECONDS = 4.95
 SUPERSAMPLING_SCALE = 4
 SPLASH_VERSION = "v3"
 
@@ -855,7 +855,7 @@ def MeasureWordmarkWidth():
     return (advance_sum + spacing_sum) * WORDMARK_SCALE
 
 
-def DrawFinalNote(canvas, time_seconds):
+def DrawFinalNote(canvas, time_seconds, exit_opacity=1.0):
     head_progress = SmoothStep(PhaseProgress(time_seconds, 3.33, 3.49))
     if head_progress <= 0.0:
         return
@@ -870,14 +870,14 @@ def DrawFinalNote(canvas, time_seconds):
         1.5 * scale * head_progress,
         NOTE_HEAD_TILT_RADIANS,
         WARM_IVORY,
-        Clamp(head_progress * 1.6, 0.0, 1.0),
+        Clamp(head_progress * 1.6, 0.0, 1.0) * exit_opacity,
     )
     stem_x = head_x + 1.6 * scale
     stem_bottom = head_y - 0.3 * scale
     stem_top_full = head_y - 11.3 * scale
     if stem_progress > 0.0:
         stem_top = stem_bottom - (stem_bottom - stem_top_full) * stem_progress
-        canvas.DrawLine(stem_x, stem_bottom, stem_x, stem_top, 1.8, WARM_IVORY, 1.0)
+        canvas.DrawLine(stem_x, stem_bottom, stem_x, stem_top, 1.8, WARM_IVORY, exit_opacity)
     if flag_progress > 0.0:
         outer_points = BezierPoints(
             (stem_x, stem_top_full),
@@ -895,10 +895,10 @@ def DrawFinalNote(canvas, time_seconds):
         )
         revealed_count = max(2, round(EaseOutCubic(flag_progress) * 16) + 1)
         flag_polygon = outer_points[:revealed_count] + inner_points[:revealed_count][::-1]
-        canvas.FillPolygon(flag_polygon, WARM_IVORY, 1.0)
+        canvas.FillPolygon(flag_polygon, WARM_IVORY, exit_opacity)
 
 
-def DrawWordmark(canvas, time_seconds):
+def DrawWordmark(canvas, time_seconds, exit_opacity=1.0):
     shine_progress = PhaseProgress(
         time_seconds,
         WORDMARK_SHINE_START_SECONDS,
@@ -941,20 +941,20 @@ def DrawWordmark(canvas, time_seconds):
                         placed,
                         WORDMARK_STROKE_WIDTH,
                         WARM_IVORY,
-                        reveal,
+                        reveal * exit_opacity,
                     )
                     if shine_weight > 0.02:
                         canvas.DrawPolyline(
                             placed,
                             WORDMARK_STROKE_WIDTH * 1.7,
                             BRIGHT_IVORY,
-                            reveal * 0.75 * shine_weight,
+                            reveal * 0.75 * shine_weight * exit_opacity,
                         )
             drawn_glyph_index += 1
         current_x += (advance + WORDMARK_LETTER_SPACING_UNITS) * WORDMARK_SCALE
 
 
-def DrawBaselineRule(canvas, time_seconds):
+def DrawBaselineRule(canvas, time_seconds, exit_opacity=1.0):
     sweep = EaseOutCubic(
         PhaseProgress(time_seconds, RULE_SWEEP_START_SECONDS, RULE_SWEEP_END_SECONDS)
     )
@@ -963,19 +963,28 @@ def DrawBaselineRule(canvas, time_seconds):
     rule_start_x = WORDMARK_ORIGIN_X
     rule_end_x = WORDMARK_ORIGIN_X + MeasureWordmarkWidth()
     tip_x = rule_start_x + (rule_end_x - rule_start_x) * sweep
-    canvas.DrawLine(rule_start_x, RULE_Y, tip_x, RULE_Y, 0.55, STRING_IVORY, 0.6)
+    canvas.DrawLine(rule_start_x, RULE_Y, tip_x, RULE_Y, 0.55, STRING_IVORY, 0.6 * exit_opacity)
     tip_fade = 1.0 - SmoothStep(
         PhaseProgress(time_seconds, RULE_TIP_FADE_START_SECONDS, RULE_TIP_FADE_END_SECONDS)
     )
     if tip_fade > 0.0:
-        canvas.DrawDisc(tip_x, RULE_Y, 2.4, BRIGHT_IVORY, 0.10 * tip_fade)
-        canvas.DrawDisc(tip_x, RULE_Y, 0.85, BRIGHT_IVORY, 0.85 * tip_fade)
+        canvas.DrawDisc(tip_x, RULE_Y, 2.4, BRIGHT_IVORY, 0.10 * tip_fade * exit_opacity)
+        canvas.DrawDisc(tip_x, RULE_Y, 0.85, BRIGHT_IVORY, 0.85 * tip_fade * exit_opacity)
+
+
+EXIT_FADE_START_SECONDS = 4.75
+EXIT_FADE_END_SECONDS = 4.93
 
 
 def DrawFinalIdentity(canvas, time_seconds):
-    DrawFinalNote(canvas, time_seconds)
-    DrawWordmark(canvas, time_seconds)
-    DrawBaselineRule(canvas, time_seconds)
+    exit_opacity = 1.0 - SmoothStep(
+        PhaseProgress(time_seconds, EXIT_FADE_START_SECONDS, EXIT_FADE_END_SECONDS)
+    )
+    if exit_opacity <= 0.0:
+        return
+    DrawFinalNote(canvas, time_seconds, exit_opacity)
+    DrawWordmark(canvas, time_seconds, exit_opacity)
+    DrawBaselineRule(canvas, time_seconds, exit_opacity)
 
 
 def RenderFrame(time_seconds):

@@ -536,7 +536,7 @@ constexpr double MeasureWordmarkWidth() {
   return (advance_sum + spacing_sum) * kWordmarkScale;
 }
 
-void DrawFinalNote(PixelCanvas& canvas, double time_seconds) {
+void DrawFinalNote(PixelCanvas& canvas, double time_seconds, double exit_opacity = 1.0) {
   const double head_progress = SmoothStep(PhaseProgress(time_seconds, 3.33, 3.49));
   if (head_progress <= 0.0) {
     return;
@@ -547,13 +547,14 @@ void DrawFinalNote(PixelCanvas& canvas, double time_seconds) {
   const double head_x = kFinalNoteHeadCenter.x;
   const double head_y = kFinalNoteHeadCenter.y;
   canvas.DrawEllipse(head_x, head_y, 2.0 * scale * head_progress, 1.5 * scale * head_progress,
-                     kNoteHeadTiltRadians, kWarmIvory, Clamp(head_progress * 1.6, 0.0, 1.0));
+                     kNoteHeadTiltRadians, kWarmIvory,
+                     Clamp(head_progress * 1.6, 0.0, 1.0) * exit_opacity);
   const double stem_x = head_x + 1.6 * scale;
   const double stem_bottom = head_y - 0.3 * scale;
   const double stem_top_full = head_y - 11.3 * scale;
   if (stem_progress > 0.0) {
     const double stem_top = stem_bottom - (stem_bottom - stem_top_full) * stem_progress;
-    canvas.DrawLine(stem_x, stem_bottom, stem_x, stem_top, 1.8, kWarmIvory, 1.0);
+    canvas.DrawLine(stem_x, stem_bottom, stem_x, stem_top, 1.8, kWarmIvory, exit_opacity);
   }
   if (flag_progress > 0.0) {
     const auto outer_points = BezierPoints<16>({stem_x, stem_top_full},
@@ -573,11 +574,11 @@ void DrawFinalNote(PixelCanvas& canvas, double time_seconds) {
       flag_polygon[revealed_count + point_index] = inner_points[revealed_count - 1 - point_index];
     }
     canvas.FillPolygon(std::span<const Point>(flag_polygon).first(2 * revealed_count), kWarmIvory,
-                       1.0);
+                       exit_opacity);
   }
 }
 
-void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
+void DrawWordmark(PixelCanvas& canvas, double time_seconds, double exit_opacity = 1.0) {
   const double shine_progress =
       PhaseProgress(time_seconds, kWordmarkShineStartSeconds, kWordmarkShineEndSeconds);
   const double shine_x = 40.0 + 110.0 * shine_progress;
@@ -608,11 +609,11 @@ void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
                 kWordmarkOriginY + settle_offset + stroke[point_index].y * kWordmarkScale};
           }
           canvas.DrawPolyline(std::span<const Point>(placed).first(stroke.size()),
-                              kWordmarkStrokeWidth, kWarmIvory, reveal);
+                              kWordmarkStrokeWidth, kWarmIvory, reveal * exit_opacity);
           if (shine_weight > 0.02) {
             canvas.DrawPolyline(std::span<const Point>(placed).first(stroke.size()),
                                 kWordmarkStrokeWidth * 1.7, kBrightIvory,
-                                reveal * 0.75 * shine_weight);
+                                reveal * 0.75 * shine_weight * exit_opacity);
           }
         }
       }
@@ -622,7 +623,7 @@ void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
   }
 }
 
-void DrawBaselineRule(PixelCanvas& canvas, double time_seconds) {
+void DrawBaselineRule(PixelCanvas& canvas, double time_seconds, double exit_opacity = 1.0) {
   const double sweep =
       EaseOutCubic(PhaseProgress(time_seconds, kRuleSweepStartSeconds, kRuleSweepEndSeconds));
   if (sweep <= 0.0) {
@@ -631,19 +632,27 @@ void DrawBaselineRule(PixelCanvas& canvas, double time_seconds) {
   const double rule_start_x = kWordmarkOriginX;
   const double rule_end_x = kWordmarkOriginX + MeasureWordmarkWidth();
   const double tip_x = rule_start_x + (rule_end_x - rule_start_x) * sweep;
-  canvas.DrawLine(rule_start_x, kRuleY, tip_x, kRuleY, 0.55, kStringIvory, 0.6);
+  canvas.DrawLine(rule_start_x, kRuleY, tip_x, kRuleY, 0.55, kStringIvory, 0.6 * exit_opacity);
   const double tip_fade = 1.0 - SmoothStep(PhaseProgress(time_seconds, kRuleTipFadeStartSeconds,
                                                          kRuleTipFadeEndSeconds));
   if (tip_fade > 0.0) {
-    canvas.DrawDisc(tip_x, kRuleY, 2.4, kBrightIvory, 0.10 * tip_fade);
-    canvas.DrawDisc(tip_x, kRuleY, 0.85, kBrightIvory, 0.85 * tip_fade);
+    canvas.DrawDisc(tip_x, kRuleY, 2.4, kBrightIvory, 0.10 * tip_fade * exit_opacity);
+    canvas.DrawDisc(tip_x, kRuleY, 0.85, kBrightIvory, 0.85 * tip_fade * exit_opacity);
   }
 }
 
+constexpr double kExitFadeStartSeconds = 4.75;
+constexpr double kExitFadeEndSeconds = 4.93;
+
 void DrawFinalIdentity(PixelCanvas& canvas, double time_seconds) {
-  DrawFinalNote(canvas, time_seconds);
-  DrawWordmark(canvas, time_seconds);
-  DrawBaselineRule(canvas, time_seconds);
+  const double exit_opacity =
+      1.0 - SmoothStep(PhaseProgress(time_seconds, kExitFadeStartSeconds, kExitFadeEndSeconds));
+  if (exit_opacity <= 0.0) {
+    return;
+  }
+  DrawFinalNote(canvas, time_seconds, exit_opacity);
+  DrawWordmark(canvas, time_seconds, exit_opacity);
+  DrawBaselineRule(canvas, time_seconds, exit_opacity);
 }
 
 }  // namespace
