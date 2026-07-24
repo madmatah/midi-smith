@@ -37,10 +37,14 @@ class UsartMidi : public midismith::midi::MidiTransportRequirements,
   UART_HandleTypeDef* handle() noexcept override;
   void HandleUartIrq() noexcept override;
   void HandleTxCompleteIrq() noexcept override;
+  void HandleRxHalfCompleteIrq() noexcept override;
+  void HandleRxCompleteIrq() noexcept override;
 
  private:
   static constexpr uint8_t kMaxMessageBytes = 3;
   static constexpr std::size_t kRxBufferSize = 64;
+
+  void NotifyBytesAvailable() noexcept;
 
   UART_HandleTypeDef& huart_;
 

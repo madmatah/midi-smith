@@ -81,6 +81,12 @@ UART_HandleTypeDef* UsartMidi::handle() noexcept {
   return &huart_;
 }
 
+void UsartMidi::NotifyBytesAvailable() noexcept {
+  if (byte_available_callback_ != nullptr) {
+    byte_available_callback_(byte_available_ctx_);
+  }
+}
+
 void UsartMidi::HandleUartIrq() noexcept {
   if (!__HAL_UART_GET_FLAG(&huart_, UART_FLAG_IDLE)) {
     return;
@@ -88,9 +94,15 @@ void UsartMidi::HandleUartIrq() noexcept {
 
   __HAL_UART_CLEAR_IDLEFLAG(&huart_);
 
-  if (byte_available_callback_ != nullptr) {
-    byte_available_callback_(byte_available_ctx_);
-  }
+  NotifyBytesAvailable();
+}
+
+void UsartMidi::HandleRxHalfCompleteIrq() noexcept {
+  NotifyBytesAvailable();
+}
+
+void UsartMidi::HandleRxCompleteIrq() noexcept {
+  NotifyBytesAvailable();
 }
 
 void UsartMidi::HandleTxCompleteIrq() noexcept {

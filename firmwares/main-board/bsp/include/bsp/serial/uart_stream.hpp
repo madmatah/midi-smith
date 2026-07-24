@@ -15,6 +15,8 @@ class UartStreamBase {
   virtual UART_HandleTypeDef* handle() noexcept = 0;
   virtual void HandleUartIrq() noexcept = 0;
   virtual void HandleTxCompleteIrq() noexcept = 0;
+  virtual void HandleRxHalfCompleteIrq() noexcept {}
+  virtual void HandleRxCompleteIrq() noexcept {}
 };
 
 void RegisterUartStream(UartStreamBase& stream) noexcept;

@@ -57,6 +57,20 @@ extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
   }
 }
 
+extern "C" void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* huart) {
+  midismith::main_board::bsp::serial::UartStreamBase* s = FindStream(huart);
+  if (s != nullptr) {
+    s->HandleRxHalfCompleteIrq();
+  }
+}
+
+extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
+  midismith::main_board::bsp::serial::UartStreamBase* s = FindStream(huart);
+  if (s != nullptr) {
+    s->HandleRxCompleteIrq();
+  }
+}
+
 namespace midismith::main_board::bsp::serial {
 
 void RegisterUartStream(UartStreamBase& stream) noexcept {
