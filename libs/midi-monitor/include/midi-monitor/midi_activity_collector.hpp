@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "midi-monitor/midi_activity_recorder_requirements.hpp"
 #include "midi-monitor/midi_activity_snapshot.hpp"
 #include "midi-monitor/midi_activity_snapshot_requirements.hpp"
 #include "midi-monitor/midi_activity_source.hpp"
@@ -13,10 +14,11 @@
 
 namespace midismith::midi_monitor {
 
-class MidiActivityCollector final : public MidiActivitySnapshotRequirements {
+class MidiActivityCollector final : public MidiActivityRecorderRequirements,
+                                    public MidiActivitySnapshotRequirements {
  public:
   void RecordMessage(MidiActivitySource source, const std::uint8_t* data,
-                     std::uint8_t length) noexcept;
+                     std::uint8_t length) noexcept override;
 
   MidiActivitySnapshot CaptureSnapshot() const noexcept override;
 
