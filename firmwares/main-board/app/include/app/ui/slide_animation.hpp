@@ -13,12 +13,13 @@ enum class SlideDirection : std::uint8_t {
   kRight,
 };
 
-// Quadratic ease-out in integer math: offset = width * t * (2 - t), t = (step + 1) / steps.
-constexpr std::uint16_t SlideOffset(std::uint16_t width, std::size_t step) noexcept {
-  const std::uint32_t step_index = static_cast<std::uint32_t>(step) + 1;
-  return static_cast<std::uint16_t>(static_cast<std::uint32_t>(width) * step_index *
-                                    (2 * kSlideAnimationSteps - step_index) /
-                                    (kSlideAnimationSteps * kSlideAnimationSteps));
+constexpr std::uint16_t EaseOutQuadraticSlideOffset(std::uint16_t width,
+                                                    std::size_t step) noexcept {
+  const std::uint32_t elapsed_steps = static_cast<std::uint32_t>(step) + 1;
+  const std::uint32_t deceleration_factor = 2 * kSlideAnimationSteps - elapsed_steps;
+  const std::uint32_t total_steps_squared = kSlideAnimationSteps * kSlideAnimationSteps;
+  return static_cast<std::uint16_t>(static_cast<std::uint32_t>(width) * elapsed_steps *
+                                    deceleration_factor / total_steps_squared);
 }
 
 inline void ComposeSlideRow(std::uint16_t* destination, const std::uint16_t* previous_row,

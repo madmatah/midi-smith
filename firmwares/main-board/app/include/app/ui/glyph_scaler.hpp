@@ -7,18 +7,18 @@ namespace midismith::main_board::app::ui {
 
 inline constexpr std::uint8_t kGlyphSourceWidth = 8;
 inline constexpr std::uint8_t kGlyphSourceHeight = 16;
+inline constexpr std::uint8_t kLeftmostPixelMask = 0x80;
 
 inline bool GlyphPixel(std::span<const std::uint8_t, kGlyphSourceHeight> glyph, int x,
                        int y) noexcept {
   if (x < 0 || x >= kGlyphSourceWidth || y < 0 || y >= kGlyphSourceHeight) {
     return false;
   }
-  return (glyph[static_cast<std::size_t>(y)] & (0x80u >> x)) != 0;
+  return (glyph[static_cast<std::size_t>(y)] & (kLeftmostPixelMask >> x)) != 0;
 }
 
-// Scale2x (EPX): doubles the glyph while rounding staircase diagonals.
-inline bool SampleScaledGlyphPixel(std::span<const std::uint8_t, kGlyphSourceHeight> glyph,
-                                   std::uint8_t target_x, std::uint8_t target_y) noexcept {
+inline bool SampleScale2xGlyphPixel(std::span<const std::uint8_t, kGlyphSourceHeight> glyph,
+                                    std::uint8_t target_x, std::uint8_t target_y) noexcept {
   const int source_x = target_x / 2;
   const int source_y = target_y / 2;
   const bool center = GlyphPixel(glyph, source_x, source_y);
@@ -31,6 +31,7 @@ inline bool SampleScaledGlyphPixel(std::span<const std::uint8_t, kGlyphSourceHei
   }
   const bool right_half = (target_x % 2) != 0;
   const bool bottom_half = (target_y % 2) != 0;
+
   if (!right_half && !bottom_half) {
     return left == up ? left : center;
   }

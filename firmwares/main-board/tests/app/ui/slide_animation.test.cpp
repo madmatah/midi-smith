@@ -8,9 +8,9 @@
 namespace {
 
 using midismith::main_board::app::ui::ComposeSlideRow;
+using midismith::main_board::app::ui::EaseOutQuadraticSlideOffset;
 using midismith::main_board::app::ui::kSlideAnimationSteps;
 using midismith::main_board::app::ui::SlideDirection;
-using midismith::main_board::app::ui::SlideOffset;
 
 constexpr std::uint16_t kRowWidth = 8;
 
@@ -24,20 +24,20 @@ std::array<std::uint16_t, kRowWidth> MakeRow(std::uint16_t first_value) {
 
 }  // namespace
 
-TEST_CASE("The SlideOffset function") {
+TEST_CASE("The EaseOutQuadraticSlideOffset function") {
   SECTION("When stepping through the animation") {
     SECTION("Should grow monotonically and finish at the full width") {
       constexpr std::uint16_t kWidth = 160;
       std::uint16_t previous_offset = 0;
 
       for (std::size_t step = 0; step < kSlideAnimationSteps; step++) {
-        const std::uint16_t offset = SlideOffset(kWidth, step);
+        const std::uint16_t offset = EaseOutQuadraticSlideOffset(kWidth, step);
         REQUIRE(offset >= previous_offset);
         previous_offset = offset;
       }
 
-      REQUIRE(SlideOffset(kWidth, 0) > 0);
-      REQUIRE(SlideOffset(kWidth, kSlideAnimationSteps - 1) == kWidth);
+      REQUIRE(EaseOutQuadraticSlideOffset(kWidth, 0) > 0);
+      REQUIRE(EaseOutQuadraticSlideOffset(kWidth, kSlideAnimationSteps - 1) == kWidth);
     }
   }
 }

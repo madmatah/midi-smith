@@ -275,7 +275,7 @@ void TftTextDisplay::RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept 
     }
     const std::uint8_t glyph_column = static_cast<std::uint8_t>(source_pixel % kFontWidth);
     for (std::uint8_t pixel_row = 0; pixel_row < kFontHeight; pixel_row++) {
-      const bool pixel_set = (glyph[pixel_row] & (0x80u >> glyph_column)) != 0;
+      const bool pixel_set = (glyph[pixel_row] & (kLeftmostPixelMask >> glyph_column)) != 0;
       framebuffer_[(origin_y + pixel_row) * kPixelWidth + origin_x + x] =
           pixel_set ? swapped_foreground : swapped_background;
     }
@@ -284,7 +284,7 @@ void TftTextDisplay::RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept 
 
 void TftTextDisplay::RunSlideTransition() noexcept {
   for (std::size_t step = 0; step < kSlideAnimationSteps; step++) {
-    const std::uint16_t offset = SlideOffset(kPixelWidth, step);
+    const std::uint16_t offset = EaseOutQuadraticSlideOffset(kPixelWidth, step);
     for (std::uint16_t pixel_row = 0; pixel_row < kPixelHeight; pixel_row++) {
       ComposeSlideRow(compose_row_.data(), transition_snapshot_ + pixel_row * kPixelWidth,
                       framebuffer_ + pixel_row * kPixelWidth, kPixelWidth, offset,
@@ -315,9 +315,9 @@ void TftTextDisplay::RenderCellToFramebuffer(std::uint8_t row, std::uint8_t colu
     for (std::uint8_t target_row = 0; target_row < kFontHeight; target_row++) {
       std::uint8_t target_bits = 0;
       for (std::uint8_t target_bit = 0; target_bit < kFontWidth; target_bit++) {
-        if (SampleScaledGlyphPixel(glyph, static_cast<std::uint8_t>(target_x_offset + target_bit),
-                                   static_cast<std::uint8_t>(target_y_offset + target_row))) {
-          target_bits |= static_cast<std::uint8_t>(0x80 >> target_bit);
+        if (SampleScale2xGlyphPixel(glyph, static_cast<std::uint8_t>(target_x_offset + target_bit),
+                                    static_cast<std::uint8_t>(target_y_offset + target_row))) {
+          target_bits |= static_cast<std::uint8_t>(kLeftmostPixelMask >> target_bit);
         }
       }
       cell_bitmap[target_row] = target_bits;
@@ -331,8 +331,9 @@ void TftTextDisplay::RenderCellToFramebuffer(std::uint8_t row, std::uint8_t colu
     std::uint16_t* row_pixels = framebuffer_ + (origin_y + pixel_row) * kPixelWidth + origin_x;
     const std::uint8_t row_bits = cell_bitmap[pixel_row];
     for (std::uint8_t pixel_column = 0; pixel_column < kFontWidth; pixel_column++) {
-      row_pixels[pixel_column] =
-          (row_bits & (0x80 >> pixel_column)) != 0 ? swapped_foreground : swapped_background;
+      row_pixels[pixel_column] = (row_bits & (kLeftmostPixelMask >> pixel_column)) != 0
+                                     ? swapped_foreground
+                                     : swapped_background;
     }
   }
 }

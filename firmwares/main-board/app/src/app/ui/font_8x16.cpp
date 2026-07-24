@@ -18,7 +18,6 @@ constexpr char kFirstPrintableCharacter = ' ';
 constexpr char kLastPrintableCharacter = '~';
 constexpr std::size_t kPrintableGlyphCount = 95;
 
-// VGA-style 8x16 bitmap font, one byte per pixel row, MSB = leftmost pixel.
 constexpr std::array<GlyphBitmap, kPrintableGlyphCount> kPrintableGlyphs{{
     // ' '
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
