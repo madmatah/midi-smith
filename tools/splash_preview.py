@@ -11,7 +11,7 @@ from pathlib import Path
 DISPLAY_WIDTH = 160
 DISPLAY_HEIGHT = 80
 FRAME_RATE_HZ = 30
-ANIMATION_DURATION_SECONDS = 3.55
+ANIMATION_DURATION_SECONDS = 4.45
 SUPERSAMPLING_SCALE = 4
 SPLASH_VERSION = "v3"
 
@@ -492,21 +492,10 @@ def DrawHammer(canvas, angle_degrees, opacity, squash_amount=0.0):
     )
 
 
-def DrawHammerWithMotionBlur(canvas, time_seconds):
+def DrawHammerScene(canvas, time_seconds):
     opacity = HammerOpacity(time_seconds)
     if opacity <= 0.0:
         return
-    if 0.30 <= time_seconds <= 0.69:
-        DrawHammer(
-            canvas,
-            HammerAngleDegrees(max(0.0, time_seconds - 0.075)),
-            opacity * 0.07,
-        )
-        DrawHammer(
-            canvas,
-            HammerAngleDegrees(max(0.0, time_seconds - 0.04)),
-            opacity * 0.13,
-        )
     DrawHammer(
         canvas,
         HammerAngleDegrees(time_seconds),
@@ -531,7 +520,7 @@ def DrawSignal(canvas, time_seconds):
         return
 
     scroll_offset_x = ScrollOffsetX(time_seconds)
-    narrative_fade = 1.0 - SmoothStep(PhaseProgress(time_seconds, 2.18, 2.36))
+    narrative_fade = 1.0 - SmoothStep(PhaseProgress(time_seconds, 3.05, 3.25))
     signal_progress = PhaseProgress(time_seconds, 0.64, 1.95)
     waveform_fade = (
         1.0
@@ -556,8 +545,15 @@ def DrawSignal(canvas, time_seconds):
     digital_progress = SmoothStep(PhaseProgress(time_seconds, 1.18, 1.96))
     digital_fade = (
         1.0
-        - SmoothStep(PhaseProgress(time_seconds, 2.14, 2.34))
+        - SmoothStep(PhaseProgress(time_seconds, 3.02, 3.22))
     ) * narrative_fade
+    playhead_progress = PhaseProgress(
+        time_seconds,
+        PLAYHEAD_SWEEP_START_SECONDS,
+        PLAYHEAD_SWEEP_END_SECONDS,
+    )
+    playhead_world_x = 45.0 + 117.0 * playhead_progress
+    playhead_active = 0.0 < playhead_progress < 1.0
     block_positions = [
         (57.0, -1.4, 5.5),
         (69.0, 1.4, 6.0),
@@ -578,16 +574,21 @@ def DrawSignal(canvas, time_seconds):
         else:
             block_color = WARM_IVORY
             block_opacity = (0.58 + 0.42 * digital_progress) * digital_fade
+        block_pulse = 0.0
+        if playhead_active:
+            playhead_distance = block_x + block_width / 2.0 - playhead_world_x
+            block_pulse = math.exp(-(playhead_distance * playhead_distance) / 72.0)
+        block_opacity = block_opacity + (digital_fade - block_opacity) * block_pulse
+        block_lift = 1.2 * block_pulse
         canvas.DrawLine(
             block_x + scroll_offset_x,
-            baseline_y + vertical_offset,
+            baseline_y + vertical_offset - block_lift,
             block_x + block_width + scroll_offset_x,
-            baseline_y + vertical_offset,
+            baseline_y + vertical_offset - block_lift,
             1.4,
             block_color,
             block_opacity,
         )
-
 
 def DrawImpact(canvas, time_seconds):
     flash_progress = PhaseProgress(time_seconds, 0.635, 0.765)
@@ -734,16 +735,19 @@ def DrawBeamedEighthPair(canvas, head_x, head_y, scale, progress, opacity):
         )
 
 
+PLAYHEAD_SWEEP_START_SECONDS = 2.10
+PLAYHEAD_SWEEP_END_SECONDS = 3.00
+
 EMERGING_NOTE_SPECS = [
     ("eighth", 82.0, 1.60, 0.95, 8.0, 0.0),
-    ("quarter", 108.0, 1.72, 1.18, 13.0, 2.1),
-    ("beamed", 131.0, 1.84, 0.78, 5.5, 4.2),
+    ("quarter", 108.0, 1.78, 1.18, 13.0, 2.1),
+    ("beamed", 131.0, 1.96, 0.78, 5.5, 4.2),
 ]
-NOTE_EMERGENCE_DURATION_SECONDS = 0.40
+NOTE_EMERGENCE_DURATION_SECONDS = 0.45
 
 
 def DrawEmergingNotes(canvas, time_seconds):
-    narrative_opacity = 1.0 - SmoothStep(PhaseProgress(time_seconds, 2.18, 2.36))
+    narrative_opacity = 1.0 - SmoothStep(PhaseProgress(time_seconds, 3.05, 3.25))
     if narrative_opacity <= 0.0:
         return
     baseline_y = 35.0
@@ -812,7 +816,7 @@ WORDMARK_LETTER_SPACING_UNITS = 1.5
 WORDMARK_ORIGIN_X = 45.5
 WORDMARK_ORIGIN_Y = 30.0
 WORDMARK_STROKE_WIDTH = 0.62 * WORDMARK_SCALE
-WORDMARK_REVEAL_START_SECONDS = 2.64
+WORDMARK_REVEAL_START_SECONDS = 3.51
 WORDMARK_LETTER_STAGGER_SECONDS = 0.05
 WORDMARK_LETTER_FADE_SECONDS = 0.12
 
@@ -820,10 +824,10 @@ FINAL_NOTE_HEAD_CENTER = (25.0, 51.0)
 FINAL_NOTE_SCALE = 2.7
 
 RULE_Y = 51.0
-RULE_SWEEP_START_SECONDS = 3.06
-RULE_SWEEP_END_SECONDS = 3.32
-RULE_TIP_FADE_START_SECONDS = 3.32
-RULE_TIP_FADE_END_SECONDS = 3.46
+RULE_SWEEP_START_SECONDS = 3.93
+RULE_SWEEP_END_SECONDS = 4.19
+RULE_TIP_FADE_START_SECONDS = 4.19
+RULE_TIP_FADE_END_SECONDS = 4.33
 
 
 def MeasureWordmarkWidth():
@@ -833,11 +837,11 @@ def MeasureWordmarkWidth():
 
 
 def DrawFinalNote(canvas, time_seconds):
-    head_progress = SmoothStep(PhaseProgress(time_seconds, 2.46, 2.62))
+    head_progress = SmoothStep(PhaseProgress(time_seconds, 3.33, 3.49))
     if head_progress <= 0.0:
         return
-    stem_progress = SmoothStep(PhaseProgress(time_seconds, 2.50, 2.70))
-    flag_progress = PhaseProgress(time_seconds, 2.66, 2.88)
+    stem_progress = SmoothStep(PhaseProgress(time_seconds, 3.37, 3.57))
+    flag_progress = PhaseProgress(time_seconds, 3.53, 3.75)
     scale = FINAL_NOTE_SCALE
     head_x, head_y = FINAL_NOTE_HEAD_CENTER
     canvas.DrawEllipse(
@@ -939,7 +943,7 @@ def DrawFinalIdentity(canvas, time_seconds):
 def RenderFrame(time_seconds):
     canvas = Canvas(DISPLAY_WIDTH, DISPLAY_HEIGHT)
     DrawSignal(canvas, time_seconds)
-    DrawHammerWithMotionBlur(canvas, time_seconds)
+    DrawHammerScene(canvas, time_seconds)
     DrawImpact(canvas, time_seconds)
     DrawEmergingNotes(canvas, time_seconds)
     DrawFinalIdentity(canvas, time_seconds)
@@ -1054,7 +1058,7 @@ def ExportPreviews(output_directory):
             ]
         )
 
-        keyframe_times = [0.42, 0.66, 1.32, 1.92, 2.20, 3.50]
+        keyframe_times = [0.42, 0.66, 1.32, 2.20, 2.60, 4.40]
         storyboard_frames = [RenderFrame(keyframe_time) for keyframe_time in keyframe_times]
         storyboard_width, storyboard_height, storyboard = ComposeStoryboard(
             storyboard_frames,
@@ -1088,7 +1092,7 @@ def ExportPreviews(output_directory):
     ]
 
 
-GOLDEN_FRAME_TIMES_SECONDS = [0.42, 0.66, 1.32, 1.92, 2.20, 2.85, 3.50]
+GOLDEN_FRAME_TIMES_SECONDS = [0.42, 0.66, 1.32, 1.92, 2.60, 3.70, 4.40]
 
 
 def ExportGoldenFrames(output_directory):
