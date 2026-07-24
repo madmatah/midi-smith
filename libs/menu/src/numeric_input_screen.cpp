@@ -101,16 +101,16 @@ void NumericInputScreen::Render(
   const std::uint8_t value_column = CenteredColumn(display.columns(), rendered_value.size() * 2);
   display.DrawTextDoubleSize(value_row, value_column, rendered_value,
                              midismith::text_display::CellAttribute::kAccent);
-  if (value_column >= 2) {
-    display.DrawText(value_row, static_cast<std::uint8_t>(value_column - 2),
-                     std::string_view(&glyphs::kArrowLeft, 1),
-                     midismith::text_display::CellAttribute::kDim);
+  if (value_column >= 3) {
+    display.DrawTextDoubleSize(value_row, static_cast<std::uint8_t>(value_column - 3),
+                               std::string_view(&glyphs::kArrowLeft, 1),
+                               midismith::text_display::CellAttribute::kDim);
   }
   const std::size_t value_width = rendered_value.size() * 2;
-  if (value_column + value_width + 1 < display.columns()) {
-    display.DrawText(value_row, static_cast<std::uint8_t>(value_column + value_width + 1),
-                     std::string_view(&glyphs::kChevronRight, 1),
-                     midismith::text_display::CellAttribute::kDim);
+  if (value_column + value_width + 2 <= display.columns()) {
+    display.DrawTextDoubleSize(value_row, static_cast<std::uint8_t>(value_column + value_width + 1),
+                               std::string_view(&glyphs::kChevronRight, 1),
+                               midismith::text_display::CellAttribute::kDim);
   }
   const std::uint8_t gauge_row = static_cast<std::uint8_t>(display.rows() - 2);
   if (gauge_row > value_row + 1 && display.columns() > 2) {
