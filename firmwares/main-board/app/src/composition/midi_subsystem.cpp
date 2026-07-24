@@ -20,22 +20,22 @@ namespace midismith::main_board::app::composition {
 
 namespace {
 
-void midi_output_task_entry(void* ctx) noexcept {
-  auto* task = reinterpret_cast<midismith::main_board::app::midi::MidiOutputTask*>(ctx);
+void RunMidiOutputTask(void* context) noexcept {
+  auto* task = reinterpret_cast<midismith::main_board::app::midi::MidiOutputTask*>(context);
   if (task != nullptr) {
     task->Run();
   }
 }
 
-void midi_input_task_entry(void* ctx) noexcept {
-  auto* task = reinterpret_cast<midismith::main_board::app::midi::MidiInputTask*>(ctx);
+void RunMidiInputTask(void* context) noexcept {
+  auto* task = reinterpret_cast<midismith::main_board::app::midi::MidiInputTask*>(context);
   if (task != nullptr) {
     task->Run();
   }
 }
 
-void release_semaphore_from_isr(void* ctx) noexcept {
-  static_cast<midismith::os::BinarySemaphoreRequirements*>(ctx)->Release();
+void ReleaseSemaphoreFromIsr(void* context) noexcept {
+  static_cast<midismith::os::BinarySemaphoreRequirements*>(context)->Release();
 }
 
 }  // namespace
@@ -80,21 +80,21 @@ MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) 
   static midismith::piano_controller::MidiPiano piano(keys_tap, piano_config);
 
   static midismith::os::BinarySemaphore din_midi_input_wake;
-  din_midi.SetByteAvailableCallback(release_semaphore_from_isr, &din_midi_input_wake);
+  din_midi.SetByteAvailableCallback(ReleaseSemaphoreFromIsr, &din_midi_input_wake);
   (void) din_midi.StartReception();
   static midismith::midi_monitor::MidiActivityTap din_input_tap(
       midi_fanout, midi_activity_collector, midismith::midi_monitor::MidiActivitySource::kDinIn);
   static midismith::main_board::app::midi::MidiInputTask midi_input_task(din_midi, din_input_tap,
                                                                          din_midi_input_wake);
 
-  (void) midismith::os::Task::create("UsbMidiOutput", midi_output_task_entry, &usb_midi_task,
+  (void) midismith::os::Task::create("UsbMidiOutput", RunMidiOutputTask, &usb_midi_task,
                                      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
                                      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
-  (void) midismith::os::Task::create("DinMidiOutput", midi_output_task_entry, &din_midi_task,
+  (void) midismith::os::Task::create("DinMidiOutput", RunMidiOutputTask, &din_midi_task,
                                      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
                                      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
   (void) midismith::os::Task::create(
-      "DinMidiInput", midi_input_task_entry, &midi_input_task,
+      "DinMidiInput", RunMidiInputTask, &midi_input_task,
       midismith::main_board::app::config::MIDI_INPUT_TASK_STACK_BYTES,
       midismith::main_board::app::config::MIDI_INPUT_TASK_PRIORITY);
 
