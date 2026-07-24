@@ -8,7 +8,7 @@
 #include <cstring>
 #include <vector>
 
-#include "app/storage/config_storage_control_requirements.hpp"
+#include "app/storage/persistent_config_stubs.hpp"
 #include "app/ui/recording_text_display.hpp"
 #include "menu/menu_controller_requirements.hpp"
 
@@ -33,58 +33,9 @@ class NavigationSpy final : public midismith::menu::MenuControllerRequirements {
   int pop_count = 0;
 };
 
-class ConfigStorageControlStub final
-    : public midismith::main_board::app::storage::ConfigStorageControlRequirements {
- public:
-  void RequestPersist() noexcept override {}
-};
-
-class MutexStub final : public midismith::os::MutexRequirements {
- public:
-  void Lock() noexcept override {}
-  void Unlock() noexcept override {}
-};
-
-class FlashStorageStub final : public midismith::bsp::storage::FlashSectorStorageRequirements {
- public:
-  static constexpr std::size_t kSectorSize = 4096;
-
-  FlashStorageStub() noexcept {
-    std::memset(storage_, 0xFF, sizeof(storage_));
-  }
-
-  std::size_t SectorSizeBytes() const noexcept override {
-    return kSectorSize;
-  }
-
-  midismith::bsp::storage::StorageOperationResult Read(
-      std::size_t offset_bytes, std::uint8_t* buffer,
-      std::size_t length_bytes) const noexcept override {
-    if (offset_bytes + length_bytes > kSectorSize) {
-      return midismith::bsp::storage::StorageOperationResult::kError;
-    }
-    std::memcpy(buffer, storage_ + offset_bytes, length_bytes);
-    return midismith::bsp::storage::StorageOperationResult::kSuccess;
-  }
-
-  midismith::bsp::storage::StorageOperationResult EraseSector() noexcept override {
-    std::memset(storage_, 0xFF, sizeof(storage_));
-    return midismith::bsp::storage::StorageOperationResult::kSuccess;
-  }
-
-  midismith::bsp::storage::StorageOperationResult Write(
-      std::size_t offset_bytes, const std::uint8_t* data,
-      std::size_t length_bytes) noexcept override {
-    if (offset_bytes + length_bytes > kSectorSize) {
-      return midismith::bsp::storage::StorageOperationResult::kError;
-    }
-    std::memcpy(storage_ + offset_bytes, data, length_bytes);
-    return midismith::bsp::storage::StorageOperationResult::kSuccess;
-  }
-
- private:
-  alignas(32) std::uint8_t storage_[kSectorSize]{};
-};
+using midismith::main_board::test::ConfigStorageControlStub;
+using midismith::main_board::test::FlashStorageStub;
+using midismith::main_board::test::MutexStub;
 
 struct ScreenFixture {
   FlashStorageStub flash;
