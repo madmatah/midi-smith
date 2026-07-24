@@ -15,41 +15,40 @@ struct CellColors {
   std::uint16_t background;
 };
 
-constexpr std::uint16_t kBackground = Rgb565(0, 0, 0);
-constexpr std::uint16_t kTextPrimary = Rgb565(235, 235, 235);
-constexpr std::uint16_t kTextMuted = Rgb565(124, 124, 128);
-constexpr std::uint16_t kCyanAccent = Rgb565(0, 190, 255);
-constexpr std::uint16_t kInkOnAccent = Rgb565(0, 20, 32);
-constexpr std::uint16_t kTitleBackground = Rgb565(16, 64, 152);
-constexpr std::uint16_t kTitleForeground = Rgb565(240, 244, 248);
+constexpr std::uint16_t kEbonyBackground = Rgb565(0, 0, 0);
+constexpr std::uint16_t kIvoryText = Rgb565(240, 236, 224);
+constexpr std::uint16_t kIvoryBright = Rgb565(255, 252, 244);
+constexpr std::uint16_t kInkOnIvory = Rgb565(16, 16, 14);
+constexpr std::uint16_t kTextMuted = Rgb565(122, 120, 114);
+constexpr std::uint16_t kCharcoalBar = Rgb565(38, 38, 40);
 constexpr std::uint16_t kSuccessGreen = Rgb565(64, 216, 96);
 constexpr std::uint16_t kWarningYellow = Rgb565(255, 204, 32);
 constexpr std::uint16_t kErrorRed = Rgb565(255, 72, 56);
-constexpr std::uint16_t kFooterBackground = Rgb565(36, 40, 44);
-constexpr std::uint16_t kFooterForeground = Rgb565(172, 176, 180);
+constexpr std::uint16_t kFooterBackground = Rgb565(24, 24, 26);
+constexpr std::uint16_t kFooterForeground = Rgb565(148, 146, 140);
 
 constexpr CellColors ThemeColors(midismith::text_display::CellAttribute attribute) noexcept {
   switch (attribute) {
     case midismith::text_display::CellAttribute::kNormal:
-      return {kTextPrimary, kBackground};
+      return {kIvoryText, kEbonyBackground};
     case midismith::text_display::CellAttribute::kHighlight:
-      return {kInkOnAccent, kCyanAccent};
+      return {kInkOnIvory, kIvoryBright};
     case midismith::text_display::CellAttribute::kDim:
-      return {kTextMuted, kBackground};
+      return {kTextMuted, kEbonyBackground};
     case midismith::text_display::CellAttribute::kTitle:
-      return {kTitleForeground, kTitleBackground};
+      return {kIvoryText, kCharcoalBar};
     case midismith::text_display::CellAttribute::kAccent:
-      return {kCyanAccent, kBackground};
+      return {kIvoryBright, kEbonyBackground};
     case midismith::text_display::CellAttribute::kSuccess:
-      return {kSuccessGreen, kBackground};
+      return {kSuccessGreen, kEbonyBackground};
     case midismith::text_display::CellAttribute::kWarning:
-      return {kWarningYellow, kBackground};
+      return {kWarningYellow, kEbonyBackground};
     case midismith::text_display::CellAttribute::kError:
-      return {kErrorRed, kBackground};
+      return {kErrorRed, kEbonyBackground};
     case midismith::text_display::CellAttribute::kFooter:
       return {kFooterForeground, kFooterBackground};
   }
-  return {kTextPrimary, kBackground};
+  return {kIvoryText, kEbonyBackground};
 }
 
 }  // namespace
