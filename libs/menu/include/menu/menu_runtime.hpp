@@ -10,6 +10,8 @@ class TextDisplayRequirements;
 
 namespace midismith::menu {
 
+class MenuNavigationObserverRequirements;
+
 class MenuRuntime final : public MenuControllerRequirements {
  public:
   MenuRuntime(MenuScreenRequirements& root_screen, MenuScreenRequirements** stack_storage,
@@ -18,12 +20,14 @@ class MenuRuntime final : public MenuControllerRequirements {
   void HandleInput(InputEvent event) noexcept;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept;
   bool is_dirty() const noexcept;
+  void set_navigation_observer(MenuNavigationObserverRequirements& observer) noexcept;
 
   bool Push(MenuScreenRequirements& screen) noexcept override;
   bool Pop() noexcept override;
 
  private:
   MenuStack stack_;
+  MenuNavigationObserverRequirements* navigation_observer_ = nullptr;
   bool dirty_ = true;
 };
 

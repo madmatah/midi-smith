@@ -1,6 +1,7 @@
 #include "menu/menu_runtime.hpp"
 
 #include "menu/input_event.hpp"
+#include "menu/menu_navigation_observer_requirements.hpp"
 #include "menu/menu_screen_requirements.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -41,11 +42,18 @@ bool MenuRuntime::is_dirty() const noexcept {
   return dirty_ || (current_screen != nullptr && current_screen->is_dirty());
 }
 
+void MenuRuntime::set_navigation_observer(MenuNavigationObserverRequirements& observer) noexcept {
+  navigation_observer_ = &observer;
+}
+
 bool MenuRuntime::Push(MenuScreenRequirements& screen) noexcept {
   if (!stack_.Push(screen)) {
     return false;
   }
   screen.OnEnter(*this);
+  if (navigation_observer_ != nullptr) {
+    navigation_observer_->OnScreenPushed();
+  }
   dirty_ = true;
   return true;
 }
@@ -60,6 +68,9 @@ bool MenuRuntime::Pop() noexcept {
   MenuScreenRequirements* current_screen = stack_.top();
   if (current_screen != nullptr) {
     current_screen->OnEnter(*this);
+  }
+  if (navigation_observer_ != nullptr) {
+    navigation_observer_->OnScreenPopped();
   }
   dirty_ = true;
   return true;

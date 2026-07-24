@@ -5,6 +5,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 
+#include "menu/menu_navigation_observer_requirements.hpp"
 #include "menu/menu_screen_requirements.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -66,6 +67,20 @@ class DisplayStub final : public midismith::text_display::TextDisplayRequirement
     static_cast<void>(attribute);
   }
   void Flush() noexcept override {}
+};
+
+class NavigationObserverStub final : public midismith::menu::MenuNavigationObserverRequirements {
+ public:
+  void OnScreenPushed() noexcept override {
+    push_count++;
+  }
+
+  void OnScreenPopped() noexcept override {
+    pop_count++;
+  }
+
+  int push_count = 0;
+  int pop_count = 0;
 };
 
 }  // namespace
@@ -138,6 +153,37 @@ TEST_CASE("The MenuRuntime class") {
         runtime.Render(display);
 
         REQUIRE(root_screen.render_count == 1);
+      }
+    }
+  }
+
+  SECTION("The set_navigation_observer() method") {
+    SECTION("When screens are pushed and popped") {
+      SECTION("Should notify the observer of each navigation") {
+        ScreenStub root_screen;
+        ScreenStub child_screen;
+        NavigationObserverStub observer;
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+        runtime.set_navigation_observer(observer);
+
+        runtime.Push(child_screen);
+        runtime.Pop();
+
+        REQUIRE(observer.push_count == 1);
+        REQUIRE(observer.pop_count == 1);
+      }
+
+      SECTION("Should not notify a pop refused at the root") {
+        ScreenStub root_screen;
+        NavigationObserverStub observer;
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+        runtime.set_navigation_observer(observer);
+
+        runtime.Pop();
+
+        REQUIRE(observer.pop_count == 0);
       }
     }
   }
