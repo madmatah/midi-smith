@@ -16,6 +16,7 @@ class ListScreen final : public MenuScreenRequirements {
   ListScreen(std::string_view title, MenuItemRequirements* const* items, std::size_t item_count,
              bool wrap_navigation = true) noexcept;
 
+  std::string_view title() const noexcept override;
   void OnEnter(MenuControllerRequirements& controller) noexcept override;
   bool HandleInput(InputEvent event, MenuControllerRequirements& controller) noexcept override;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept override;
@@ -30,6 +31,7 @@ class ListScreen final : public MenuScreenRequirements {
   std::size_t MarqueeOffset(std::size_t overflow) const noexcept;
 
   std::string_view title_;
+  std::string_view parent_title_{};
   MenuItemRequirements* const* items_;
   std::size_t item_count_;
   bool wrap_navigation_;

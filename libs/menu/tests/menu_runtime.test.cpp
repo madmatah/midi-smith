@@ -12,6 +12,10 @@ namespace {
 
 class ScreenStub final : public midismith::menu::MenuScreenRequirements {
  public:
+  std::string_view title() const noexcept override {
+    return stub_title;
+  }
+
   void OnEnter(midismith::menu::MenuControllerRequirements& controller) noexcept override {
     static_cast<void>(controller);
     enter_count++;
@@ -37,6 +41,7 @@ class ScreenStub final : public midismith::menu::MenuScreenRequirements {
     return dirty;
   }
 
+  std::string_view stub_title{};
   int enter_count = 0;
   int input_count = 0;
   int render_count = 0;
@@ -138,6 +143,25 @@ TEST_CASE("The MenuRuntime class") {
         runtime.Render(display);
 
         REQUIRE(root_screen.render_count == 1);
+      }
+    }
+  }
+
+  SECTION("The parent_title() method") {
+    SECTION("When a child screen is on top") {
+      SECTION("Should expose the title of the screen below") {
+        ScreenStub root_screen;
+        root_screen.stub_title = "Root";
+        ScreenStub child_screen;
+        child_screen.stub_title = "Child";
+        std::array<midismith::menu::MenuScreenRequirements*, 2> storage{};
+        midismith::menu::MenuRuntime runtime(root_screen, storage.data(), storage.size());
+
+        REQUIRE(runtime.parent_title().empty());
+
+        runtime.Push(child_screen);
+
+        REQUIRE(runtime.parent_title() == "Root");
       }
     }
   }
