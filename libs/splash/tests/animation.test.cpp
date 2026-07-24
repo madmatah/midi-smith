@@ -21,7 +21,7 @@ using midismith::splash::RenderFrame;
 
 namespace {
 
-constexpr std::array<double, 7> kGoldenFrameTimesSeconds{0.42, 0.66, 1.32, 1.92, 2.20, 2.85, 3.50};
+constexpr std::array<double, 7> kGoldenFrameTimesSeconds{0.42, 0.66, 1.32, 1.92, 2.60, 3.70, 4.40};
 constexpr int kMaxChannelDifference = 24;
 constexpr double kMaxMeanChannelDifference = 0.05;
 constexpr double kMinExactChannelRatio = 0.995;

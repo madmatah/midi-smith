@@ -159,14 +159,10 @@ void DrawHammer(PixelCanvas& canvas, double angle_degrees, double opacity,
   canvas.DrawPolyline(Place(crown_highlight), PlaceWidth(0.6), kWarmIvory, opacity * 0.7);
 }
 
-void DrawHammerWithMotionBlur(PixelCanvas& canvas, double time_seconds) {
+void DrawHammerScene(PixelCanvas& canvas, double time_seconds) {
   const double opacity = HammerOpacity(time_seconds);
   if (opacity <= 0.0) {
     return;
-  }
-  if (0.30 <= time_seconds && time_seconds <= 0.69) {
-    DrawHammer(canvas, HammerAngleDegrees(std::max(0.0, time_seconds - 0.075)), opacity * 0.07);
-    DrawHammer(canvas, HammerAngleDegrees(std::max(0.0, time_seconds - 0.04)), opacity * 0.13);
   }
   DrawHammer(canvas, HammerAngleDegrees(time_seconds), opacity, ImpactSquashAmount(time_seconds));
 }
@@ -197,6 +193,9 @@ constexpr std::array<MidiBlock, 8> kMidiBlocks{{
     {147.0, 0.9, 3.5},
 }};
 
+constexpr double kPlayheadSweepStartSeconds = 2.10;
+constexpr double kPlayheadSweepEndSeconds = 3.00;
+
 void DrawSignal(PixelCanvas& canvas, double time_seconds) {
   const double baseline_y = SignalBaselineY(time_seconds);
   if (time_seconds < 0.64) {
@@ -206,7 +205,7 @@ void DrawSignal(PixelCanvas& canvas, double time_seconds) {
   }
 
   const double scroll_offset_x = ScrollOffsetX(time_seconds);
-  const double narrative_fade = 1.0 - SmoothStep(PhaseProgress(time_seconds, 2.18, 2.36));
+  const double narrative_fade = 1.0 - SmoothStep(PhaseProgress(time_seconds, 3.05, 3.25));
   const double signal_progress = PhaseProgress(time_seconds, 0.64, 1.95);
   const double waveform_fade =
       (1.0 - SmoothStep(PhaseProgress(time_seconds, 1.62, 2.08))) * narrative_fade;
@@ -226,7 +225,11 @@ void DrawSignal(PixelCanvas& canvas, double time_seconds) {
 
   const double digital_progress = SmoothStep(PhaseProgress(time_seconds, 1.18, 1.96));
   const double digital_fade =
-      (1.0 - SmoothStep(PhaseProgress(time_seconds, 2.14, 2.34))) * narrative_fade;
+      (1.0 - SmoothStep(PhaseProgress(time_seconds, 3.02, 3.22))) * narrative_fade;
+  const double playhead_progress =
+      PhaseProgress(time_seconds, kPlayheadSweepStartSeconds, kPlayheadSweepEndSeconds);
+  const double playhead_world_x = 45.0 + 117.0 * playhead_progress;
+  const bool playhead_active = 0.0 < playhead_progress && playhead_progress < 1.0;
   const int visible_block_count =
       static_cast<int>(std::ceil(static_cast<double>(kMidiBlocks.size()) * digital_progress));
   for (std::size_t block_index = 0; block_index < kMidiBlocks.size(); ++block_index) {
@@ -236,11 +239,19 @@ void DrawSignal(PixelCanvas& canvas, double time_seconds) {
     const MidiBlock& block = kMidiBlocks[block_index];
     const bool is_accent_block = block_index == 2 || block_index == 5;
     const Color block_color = is_accent_block ? kBrightIvory : kWarmIvory;
-    const double block_opacity =
+    double block_opacity =
         is_accent_block ? digital_fade : (0.58 + 0.42 * digital_progress) * digital_fade;
-    canvas.DrawLine(block.x + scroll_offset_x, baseline_y + block.vertical_offset,
-                    block.x + block.width + scroll_offset_x, baseline_y + block.vertical_offset,
-                    1.4, block_color, block_opacity);
+    double block_pulse = 0.0;
+    if (playhead_active) {
+      const double playhead_distance = block.x + block.width / 2.0 - playhead_world_x;
+      block_pulse = std::exp(-(playhead_distance * playhead_distance) / 72.0);
+    }
+    block_opacity = block_opacity + (digital_fade - block_opacity) * block_pulse;
+    const double block_lift = 1.2 * block_pulse;
+    canvas.DrawLine(block.x + scroll_offset_x, baseline_y + block.vertical_offset - block_lift,
+                    block.x + block.width + scroll_offset_x,
+                    baseline_y + block.vertical_offset - block_lift, 1.4, block_color,
+                    block_opacity);
   }
 }
 
@@ -365,14 +376,14 @@ struct EmergingNoteSpec {
 
 constexpr std::array<EmergingNoteSpec, 3> kEmergingNoteSpecs{{
     {EmergingNoteKind::kEighth, 82.0, 1.60, 0.95, 8.0, 0.0},
-    {EmergingNoteKind::kQuarterStemDown, 108.0, 1.72, 1.18, 13.0, 2.1},
-    {EmergingNoteKind::kBeamedPair, 131.0, 1.84, 0.78, 5.5, 4.2},
+    {EmergingNoteKind::kQuarterStemDown, 108.0, 1.78, 1.18, 13.0, 2.1},
+    {EmergingNoteKind::kBeamedPair, 131.0, 1.96, 0.78, 5.5, 4.2},
 }};
 
-constexpr double kNoteEmergenceDurationSeconds = 0.40;
+constexpr double kNoteEmergenceDurationSeconds = 0.45;
 
 void DrawEmergingNotes(PixelCanvas& canvas, double time_seconds) {
-  const double narrative_opacity = 1.0 - SmoothStep(PhaseProgress(time_seconds, 2.18, 2.36));
+  const double narrative_opacity = 1.0 - SmoothStep(PhaseProgress(time_seconds, 3.05, 3.25));
   if (narrative_opacity <= 0.0) {
     return;
   }
@@ -491,7 +502,7 @@ constexpr double kWordmarkLetterSpacingUnits = 1.5;
 constexpr double kWordmarkOriginX = 45.5;
 constexpr double kWordmarkOriginY = 30.0;
 constexpr double kWordmarkStrokeWidth = 0.62 * kWordmarkScale;
-constexpr double kWordmarkRevealStartSeconds = 2.64;
+constexpr double kWordmarkRevealStartSeconds = 3.51;
 constexpr double kWordmarkLetterStaggerSeconds = 0.05;
 constexpr double kWordmarkLetterFadeSeconds = 0.12;
 
@@ -499,10 +510,10 @@ constexpr Point kFinalNoteHeadCenter{25.0, 51.0};
 constexpr double kFinalNoteScale = 2.7;
 
 constexpr double kRuleY = 51.0;
-constexpr double kRuleSweepStartSeconds = 3.06;
-constexpr double kRuleSweepEndSeconds = 3.32;
-constexpr double kRuleTipFadeStartSeconds = 3.32;
-constexpr double kRuleTipFadeEndSeconds = 3.46;
+constexpr double kRuleSweepStartSeconds = 3.93;
+constexpr double kRuleSweepEndSeconds = 4.19;
+constexpr double kRuleTipFadeStartSeconds = 4.19;
+constexpr double kRuleTipFadeEndSeconds = 4.33;
 
 constexpr double MeasureWordmarkWidth() {
   double advance_sum = 0.0;
@@ -515,12 +526,12 @@ constexpr double MeasureWordmarkWidth() {
 }
 
 void DrawFinalNote(PixelCanvas& canvas, double time_seconds) {
-  const double head_progress = SmoothStep(PhaseProgress(time_seconds, 2.46, 2.62));
+  const double head_progress = SmoothStep(PhaseProgress(time_seconds, 3.33, 3.49));
   if (head_progress <= 0.0) {
     return;
   }
-  const double stem_progress = SmoothStep(PhaseProgress(time_seconds, 2.50, 2.70));
-  const double flag_progress = PhaseProgress(time_seconds, 2.66, 2.88);
+  const double stem_progress = SmoothStep(PhaseProgress(time_seconds, 3.37, 3.57));
+  const double flag_progress = PhaseProgress(time_seconds, 3.53, 3.75);
   const double scale = kFinalNoteScale;
   const double head_x = kFinalNoteHeadCenter.x;
   const double head_y = kFinalNoteHeadCenter.y;
@@ -614,7 +625,7 @@ void DrawFinalIdentity(PixelCanvas& canvas, double time_seconds) {
 void RenderFrame(double time_seconds, PixelCanvas& canvas) noexcept {
   canvas.Clear();
   DrawSignal(canvas, time_seconds);
-  DrawHammerWithMotionBlur(canvas, time_seconds);
+  DrawHammerScene(canvas, time_seconds);
   DrawImpact(canvas, time_seconds);
   DrawEmergingNotes(canvas, time_seconds);
   DrawFinalIdentity(canvas, time_seconds);
