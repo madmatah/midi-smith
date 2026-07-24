@@ -514,6 +514,8 @@ constexpr double kWordmarkStrokeWidth = 0.62 * kWordmarkScale;
 constexpr double kWordmarkRevealStartSeconds = 3.51;
 constexpr double kWordmarkLetterStaggerSeconds = 0.05;
 constexpr double kWordmarkLetterFadeSeconds = 0.12;
+constexpr double kWordmarkShineStartSeconds = 4.20;
+constexpr double kWordmarkShineEndSeconds = 4.55;
 
 constexpr Point kFinalNoteHeadCenter{25.0, 51.0};
 constexpr double kFinalNoteScale = 2.7;
@@ -576,6 +578,10 @@ void DrawFinalNote(PixelCanvas& canvas, double time_seconds) {
 }
 
 void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
+  const double shine_progress =
+      PhaseProgress(time_seconds, kWordmarkShineStartSeconds, kWordmarkShineEndSeconds);
+  const double shine_x = 40.0 + 110.0 * shine_progress;
+  const bool shine_active = 0.0 < shine_progress && shine_progress < 1.0;
   double current_x = kWordmarkOriginX;
   int drawn_glyph_index = 0;
   for (const char character : kWordmarkText) {
@@ -588,6 +594,12 @@ void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
           PhaseProgress(time_seconds, reveal_start, reveal_start + kWordmarkLetterFadeSeconds));
       if (reveal > 0.0) {
         const double settle_offset = 1.4 * (1.0 - EaseOutCubic(reveal));
+        double shine_weight = 0.0;
+        if (shine_active) {
+          const double glyph_center_x = current_x + glyph.advance * kWordmarkScale / 2.0;
+          const double shine_distance = glyph_center_x - shine_x;
+          shine_weight = std::exp(-(shine_distance * shine_distance) / 50.0);
+        }
         for (const std::span<const Point> stroke : glyph.strokes) {
           std::array<Point, 16> placed{};
           for (std::size_t point_index = 0; point_index < stroke.size(); ++point_index) {
@@ -597,6 +609,11 @@ void DrawWordmark(PixelCanvas& canvas, double time_seconds) {
           }
           canvas.DrawPolyline(std::span<const Point>(placed).first(stroke.size()),
                               kWordmarkStrokeWidth, kWarmIvory, reveal);
+          if (shine_weight > 0.02) {
+            canvas.DrawPolyline(std::span<const Point>(placed).first(stroke.size()),
+                                kWordmarkStrokeWidth * 1.7, kBrightIvory,
+                                reveal * 0.75 * shine_weight);
+          }
         }
       }
       ++drawn_glyph_index;
