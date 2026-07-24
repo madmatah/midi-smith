@@ -87,14 +87,14 @@ MidiContext CreateMidiSubsystem(midismith::logging::LoggerRequirements& logger) 
   static midismith::main_board::app::midi::MidiInputTask midi_input_task(din_midi, din_input_tap,
                                                                          din_midi_input_wake);
 
-  (void) midismith::os::Task::create("UsbMidiInputTask", midi_output_task_entry, &usb_midi_task,
+  (void) midismith::os::Task::create("UsbMidiOutput", midi_output_task_entry, &usb_midi_task,
                                      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
                                      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
-  (void) midismith::os::Task::create("DinMidiInputTask", midi_output_task_entry, &din_midi_task,
+  (void) midismith::os::Task::create("DinMidiOutput", midi_output_task_entry, &din_midi_task,
                                      midismith::main_board::app::config::MIDI_TASK_STACK_BYTES,
                                      midismith::main_board::app::config::MIDI_TASK_PRIORITY);
   (void) midismith::os::Task::create(
-      "MidiInputTask", midi_input_task_entry, &midi_input_task,
+      "DinMidiInput", midi_input_task_entry, &midi_input_task,
       midismith::main_board::app::config::MIDI_INPUT_TASK_STACK_BYTES,
       midismith::main_board::app::config::MIDI_INPUT_TASK_PRIORITY);
 
