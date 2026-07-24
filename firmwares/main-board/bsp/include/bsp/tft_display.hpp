@@ -24,6 +24,7 @@ class TftDisplay {
   void BlitBitmap(std::uint16_t x, std::uint16_t y, std::uint16_t width, std::uint16_t height,
                   const std::uint8_t* mono_bitmap, std::uint16_t foreground565,
                   std::uint16_t background565) noexcept;
+  void BlitRows(std::uint16_t y, std::uint16_t row_count, const std::uint8_t* pixel_bytes) noexcept;
 
   std::uint16_t width() const noexcept;
   std::uint16_t height() const noexcept;

@@ -121,6 +121,19 @@ void TftDisplay::BlitBitmap(std::uint16_t x, std::uint16_t y, std::uint16_t widt
   }
 }
 
+void TftDisplay::BlitRows(std::uint16_t y, std::uint16_t row_count,
+                          const std::uint8_t* pixel_bytes) noexcept {
+  if (pixel_bytes == nullptr || row_count == 0 || y >= kDisplayHeight) {
+    return;
+  }
+  const std::uint16_t clipped_row_count =
+      y + row_count > kDisplayHeight ? static_cast<std::uint16_t>(kDisplayHeight - y) : row_count;
+  SetAddressWindow(0, y, kDisplayWidth, clipped_row_count);
+  const std::uint32_t total_bytes =
+      static_cast<std::uint32_t>(clipped_row_count) * kDisplayWidth * 2;
+  WriteData(pixel_bytes, static_cast<std::uint16_t>(total_bytes));
+}
+
 std::uint16_t TftDisplay::width() const noexcept {
   return kDisplayWidth;
 }

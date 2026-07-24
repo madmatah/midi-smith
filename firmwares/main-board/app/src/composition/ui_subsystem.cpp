@@ -37,7 +37,10 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       midismith::main_board::bsp::Board::lcd_chip_select(),
       midismith::main_board::bsp::Board::lcd_data_command(),
       midismith::main_board::bsp::Board::lcd_backlight(), DelayMs, nullptr);
-  static midismith::main_board::app::ui::TftTextDisplay text_display(tft_display);
+  static std::array<std::uint16_t, midismith::main_board::app::ui::TftTextDisplay::kPixelCount>
+      ui_framebuffer{};
+  static midismith::main_board::app::ui::TftTextDisplay text_display(tft_display,
+                                                                     ui_framebuffer.data());
   static midismith::main_board::bsp::RotaryEncoder encoder(
       midismith::main_board::bsp::Board::tim2_handle());
   static midismith::main_board::bsp::RotaryButton button(
