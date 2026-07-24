@@ -763,19 +763,36 @@ def DrawEmergingNotes(canvas, time_seconds):
         settled = SmoothStep(progress)
         float_drift = 2.5 * Clamp(time_seconds - start_seconds, 0.0, 1.0)
         bob = 0.7 * math.sin(5.0 * time_seconds + sway_phase) * settled
-        head_y = baseline_y - 3.0 - rise * EaseOutCubic(progress) - float_drift + bob
+        playhead_progress = PhaseProgress(
+            time_seconds,
+            PLAYHEAD_SWEEP_START_SECONDS,
+            PLAYHEAD_SWEEP_END_SECONDS,
+        )
+        note_pop = 0.0
+        if 0.0 < playhead_progress < 1.0:
+            playhead_distance = note_x - (45.0 + 117.0 * playhead_progress)
+            note_pop = math.exp(-(playhead_distance * playhead_distance) / 72.0)
+        head_y = (
+            baseline_y
+            - 3.0
+            - rise * EaseOutCubic(progress)
+            - float_drift
+            + bob
+            - 1.0 * note_pop
+        )
         sway = 1.1 * math.sin(2.4 * time_seconds + sway_phase) * settled
         screen_x = note_x + scroll_offset_x + sway
+        popped_scale = scale * (1.0 + 0.15 * note_pop)
         opacity = narrative_opacity * SmoothStep(Clamp(progress * 3.0, 0.0, 1.0))
         if kind == "eighth":
-            DrawEighthNote(canvas, screen_x, head_y, scale, progress, opacity)
+            DrawEighthNote(canvas, screen_x, head_y, popped_scale, progress, opacity)
         elif kind == "quarter":
             DrawQuarterNoteStemDown(
-                canvas, screen_x, head_y, scale, progress, opacity
+                canvas, screen_x, head_y, popped_scale, progress, opacity
             )
         else:
             DrawBeamedEighthPair(
-                canvas, screen_x, head_y, scale, progress, opacity
+                canvas, screen_x, head_y, popped_scale, progress, opacity
             )
 
 

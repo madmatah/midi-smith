@@ -398,19 +398,28 @@ void DrawEmergingNotes(PixelCanvas& canvas, double time_seconds) {
     const double settled = SmoothStep(progress);
     const double float_drift = 2.5 * Clamp(time_seconds - spec.start_seconds, 0.0, 1.0);
     const double bob = 0.7 * std::sin(5.0 * time_seconds + spec.sway_phase) * settled;
-    const double head_y = baseline_y - 3.0 - spec.rise * EaseOutCubic(progress) - float_drift + bob;
+    const double playhead_progress =
+        PhaseProgress(time_seconds, kPlayheadSweepStartSeconds, kPlayheadSweepEndSeconds);
+    double note_pop = 0.0;
+    if (0.0 < playhead_progress && playhead_progress < 1.0) {
+      const double playhead_distance = spec.x - (45.0 + 117.0 * playhead_progress);
+      note_pop = std::exp(-(playhead_distance * playhead_distance) / 72.0);
+    }
+    const double head_y =
+        baseline_y - 3.0 - spec.rise * EaseOutCubic(progress) - float_drift + bob - 1.0 * note_pop;
     const double sway = 1.1 * std::sin(2.4 * time_seconds + spec.sway_phase) * settled;
     const double screen_x = spec.x + scroll_offset_x + sway;
+    const double popped_scale = spec.scale * (1.0 + 0.15 * note_pop);
     const double opacity = narrative_opacity * SmoothStep(Clamp(progress * 3.0, 0.0, 1.0));
     switch (spec.kind) {
       case EmergingNoteKind::kEighth:
-        DrawEighthNote(canvas, screen_x, head_y, spec.scale, progress, opacity);
+        DrawEighthNote(canvas, screen_x, head_y, popped_scale, progress, opacity);
         break;
       case EmergingNoteKind::kQuarterStemDown:
-        DrawQuarterNoteStemDown(canvas, screen_x, head_y, spec.scale, progress, opacity);
+        DrawQuarterNoteStemDown(canvas, screen_x, head_y, popped_scale, progress, opacity);
         break;
       case EmergingNoteKind::kBeamedPair:
-        DrawBeamedEighthPair(canvas, screen_x, head_y, spec.scale, progress, opacity);
+        DrawBeamedEighthPair(canvas, screen_x, head_y, popped_scale, progress, opacity);
         break;
     }
   }
