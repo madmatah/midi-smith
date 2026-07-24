@@ -7,6 +7,7 @@ midismith_add_test(NAME menu
         numeric_input_screen.test.cpp
         text_view_screen.test.cpp
         menu_runtime.test.cpp
+        line_buffer.test.cpp
         line_buffer_stream.test.cpp
         progress_bar.test.cpp
 )
