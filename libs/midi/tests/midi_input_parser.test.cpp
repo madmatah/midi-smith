@@ -16,8 +16,7 @@ struct RecordingMidiController final : public midismith::midi::MidiControllerReq
   }
 };
 
-void FeedAll(midismith::midi::MidiInputParser& parser,
-             std::initializer_list<std::uint8_t> bytes) {
+void FeedAll(midismith::midi::MidiInputParser& parser, std::initializer_list<std::uint8_t> bytes) {
   for (auto byte : bytes) {
     parser.Feed(byte);
   }
@@ -163,6 +162,31 @@ TEST_CASE("MidiInputParser") {
         REQUIRE(sink.received_messages.size() == 2);
         REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0x90, 0x3C, 0x7F});
         REQUIRE(sink.received_messages[1] == std::vector<std::uint8_t>{0xF1, 0x05});
+      }
+    }
+
+    SECTION("When a stray EOX (F7) lands in the middle of a channel message") {
+      SECTION("Should abort the pending message instead of completing it across the EOX") {
+        FeedAll(parser, {0x90, 0x3C, 0xF7, 0x40});
+
+        REQUIRE(sink.received_messages.empty());
+      }
+
+      SECTION("Should also drop the running status") {
+        FeedAll(parser, {0x90, 0x3C, 0x7F});
+        FeedAll(parser, {0xF7});
+        FeedAll(parser, {0x3D, 0x7F});
+
+        REQUIRE(sink.received_messages.size() == 1);
+        REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0x90, 0x3C, 0x7F});
+      }
+
+      SECTION("Should let a fresh message parse normally afterwards") {
+        FeedAll(parser, {0x90, 0x3C, 0xF7});
+        FeedAll(parser, {0x90, 0x3E, 0x64});
+
+        REQUIRE(sink.received_messages.size() == 1);
+        REQUIRE(sink.received_messages[0] == std::vector<std::uint8_t>{0x90, 0x3E, 0x64});
       }
     }
   }
