@@ -1,5 +1,7 @@
 #include "app/ui/tft_text_display.hpp"
 
+#include <cstring>
+
 #include "app/ui/font_8x16.hpp"
 
 namespace midismith::main_board::app::ui {
@@ -58,13 +60,22 @@ constexpr std::uint16_t SwapBytes(std::uint16_t value) noexcept {
 }
 
 TftTextDisplay::TftTextDisplay(midismith::main_board::bsp::TftDisplay& display,
-                               std::uint16_t* framebuffer) noexcept
-    : display_(display), framebuffer_(framebuffer) {
+                               std::uint16_t* framebuffer,
+                               std::uint16_t* transition_snapshot) noexcept
+    : display_(display), framebuffer_(framebuffer), transition_snapshot_(transition_snapshot) {
   Clear();
 }
 
 void TftTextDisplay::SetBacklight(bool enabled) noexcept {
   display_.SetBacklight(enabled);
+}
+
+void TftTextDisplay::OnScreenPushed() noexcept {
+  pending_transition_ = SlideDirection::kLeft;
+}
+
+void TftTextDisplay::OnScreenPopped() noexcept {
+  pending_transition_ = SlideDirection::kRight;
 }
 
 std::uint8_t TftTextDisplay::columns() const noexcept {
@@ -141,6 +152,11 @@ void TftTextDisplay::FillRow(std::uint8_t row,
 }
 
 void TftTextDisplay::Flush() noexcept {
+  const bool transition_requested =
+      pending_transition_ != SlideDirection::kNone && transition_snapshot_ != nullptr;
+  if (transition_requested) {
+    std::memcpy(transition_snapshot_, framebuffer_, kPixelCount * sizeof(std::uint16_t));
+  }
   bool any_cell_changed = false;
   std::uint8_t first_dirty_row = 0;
   std::uint8_t last_dirty_row = 0;
@@ -163,6 +179,11 @@ void TftTextDisplay::Flush() noexcept {
       }
     }
   }
+  if (transition_requested) {
+    RunSlideTransition();
+    pending_transition_ = SlideDirection::kNone;
+    return;
+  }
   if (!any_cell_changed) {
     return;
   }
@@ -173,6 +194,18 @@ void TftTextDisplay::Flush() noexcept {
   display_.BlitRows(
       first_pixel_row, dirty_pixel_rows,
       reinterpret_cast<const std::uint8_t*>(framebuffer_ + first_pixel_row * kPixelWidth));
+}
+
+void TftTextDisplay::RunSlideTransition() noexcept {
+  for (std::size_t step = 0; step < kSlideAnimationSteps; step++) {
+    const std::uint16_t offset = SlideOffset(kPixelWidth, step);
+    for (std::uint16_t pixel_row = 0; pixel_row < kPixelHeight; pixel_row++) {
+      ComposeSlideRow(compose_row_.data(), transition_snapshot_ + pixel_row * kPixelWidth,
+                      framebuffer_ + pixel_row * kPixelWidth, kPixelWidth, offset,
+                      pending_transition_);
+      display_.BlitRows(pixel_row, 1, reinterpret_cast<const std::uint8_t*>(compose_row_.data()));
+    }
+  }
 }
 
 void TftTextDisplay::RenderCellToFramebuffer(std::uint8_t row, std::uint8_t column) noexcept {

@@ -9,6 +9,7 @@
 #include "app/ui/tft_text_display.hpp"
 #include "app/ui/ui_task.hpp"
 #include "bsp/board.hpp"
+#include "bsp/memory_sections.hpp"
 #include "bsp/rotary_button.hpp"
 #include "bsp/rotary_encoder.hpp"
 #include "bsp/tft_display.hpp"
@@ -39,8 +40,11 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       midismith::main_board::bsp::Board::lcd_backlight(), DelayMs, nullptr);
   static std::array<std::uint16_t, midismith::main_board::app::ui::TftTextDisplay::kPixelCount>
       ui_framebuffer{};
-  static midismith::main_board::app::ui::TftTextDisplay text_display(tft_display,
-                                                                     ui_framebuffer.data());
+  BSP_AXI_SRAM static std::array<std::uint16_t,
+                                 midismith::main_board::app::ui::TftTextDisplay::kPixelCount>
+      ui_transition_snapshot;
+  static midismith::main_board::app::ui::TftTextDisplay text_display(
+      tft_display, ui_framebuffer.data(), ui_transition_snapshot.data());
   static midismith::main_board::bsp::RotaryEncoder encoder(
       midismith::main_board::bsp::Board::tim2_handle());
   static midismith::main_board::bsp::RotaryButton button(
@@ -54,6 +58,7 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       menu_stack_storage{};
   static midismith::menu::MenuRuntime runtime(root_screen, menu_stack_storage.data(),
                                               menu_stack_storage.size());
+  runtime.set_navigation_observer(text_display);
   static midismith::os::Queue<midismith::menu::InputEvent,
                               midismith::main_board::app::config::kUiInjectedEventQueueDepth>
       injected_input_queue;

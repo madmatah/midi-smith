@@ -4,13 +4,16 @@
 
 #include "app/config/ui.hpp"
 #include "app/ui/display_power_requirements.hpp"
+#include "app/ui/slide_animation.hpp"
 #include "bsp/tft_display.hpp"
+#include "menu/menu_navigation_observer_requirements.hpp"
 #include "text-display/text_display_requirements.hpp"
 
 namespace midismith::main_board::app::ui {
 
 class TftTextDisplay final : public midismith::text_display::TextDisplayRequirements,
-                             public DisplayPowerRequirements {
+                             public DisplayPowerRequirements,
+                             public midismith::menu::MenuNavigationObserverRequirements {
  public:
   static constexpr std::uint16_t kPixelWidth =
       static_cast<std::uint16_t>(midismith::main_board::app::config::kTftTextColumns *
@@ -20,10 +23,12 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
                                  midismith::main_board::app::config::kTftFontHeight);
   static constexpr std::size_t kPixelCount = static_cast<std::size_t>(kPixelWidth) * kPixelHeight;
 
-  TftTextDisplay(midismith::main_board::bsp::TftDisplay& display,
-                 std::uint16_t* framebuffer) noexcept;
+  TftTextDisplay(midismith::main_board::bsp::TftDisplay& display, std::uint16_t* framebuffer,
+                 std::uint16_t* transition_snapshot) noexcept;
 
   void SetBacklight(bool enabled) noexcept override;
+  void OnScreenPushed() noexcept override;
+  void OnScreenPopped() noexcept override;
 
   std::uint8_t columns() const noexcept override;
   std::uint8_t rows() const noexcept override;
@@ -54,9 +59,13 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
   void SetCell(std::uint8_t row, std::uint8_t column, char character,
                midismith::text_display::CellAttribute attribute, GlyphQuadrant quadrant) noexcept;
   void RenderCellToFramebuffer(std::uint8_t row, std::uint8_t column) noexcept;
+  void RunSlideTransition() noexcept;
 
   midismith::main_board::bsp::TftDisplay& display_;
   std::uint16_t* framebuffer_;
+  std::uint16_t* transition_snapshot_;
+  SlideDirection pending_transition_ = SlideDirection::kNone;
+  std::array<std::uint16_t, kPixelWidth> compose_row_{};
   std::array<TextRow, midismith::main_board::app::config::kTftTextRows> pending_text_{};
   std::array<AttributeRow, midismith::main_board::app::config::kTftTextRows> pending_attributes_{};
   std::array<QuadrantRow, midismith::main_board::app::config::kTftTextRows> pending_quadrants_{};
