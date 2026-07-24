@@ -34,6 +34,7 @@ midismith_add_firmware_test(NAME main
         app/ui/slide_animation.test.cpp
         app/ui/glyph_scaler.test.cpp
         app/ui/tft_text_display.test.cpp
+        app/ui/tft_splash_player.test.cpp
         app/ui/ui_task.test.cpp
         app/ui/items/menu_flow_items.test.cpp
         app/ui/screens/keymap_progress_screen.test.cpp

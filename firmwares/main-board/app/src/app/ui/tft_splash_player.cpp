@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "os/clock.hpp"
 #include "splash/animation.hpp"
 #include "splash/pixel_canvas.hpp"
 
@@ -55,28 +54,32 @@ TftSplashPlayer::TftSplashPlayer(midismith::bsp::display::PixelSurfaceRequiremen
                                  int band_row_count, std::span<std::uint8_t> band_pixels,
                                  std::span<std::uint8_t> band_row_pixels,
                                  std::span<std::uint16_t> band_row_colors,
+                                 midismith::os::DelayRequirements& delay,
+                                 midismith::os::UptimeProviderRequirements& uptime,
                                  std::uint32_t frame_period_ms, int saturation_percent) noexcept
     : surface_(surface),
       band_row_count_(band_row_count),
       band_pixels_(band_pixels),
       band_row_pixels_(band_row_pixels),
       band_row_colors_(band_row_colors),
+      delay_(delay),
+      uptime_(uptime),
       frame_period_ms_(frame_period_ms),
       saturation_percent_(saturation_percent) {}
 
 void TftSplashPlayer::Play() noexcept {
   const auto duration_ms =
       static_cast<std::uint32_t>(midismith::splash::kAnimationDurationSeconds * 1000.0);
-  const std::uint32_t start_ms = midismith::os::Clock::now_ms();
+  const std::uint32_t start_ms = uptime_.GetUptimeMs();
   std::uint32_t elapsed_ms = 0;
   while (elapsed_ms < duration_ms) {
     RenderFrameToDisplay(static_cast<double>(elapsed_ms) / 1000.0);
-    const std::uint32_t frame_elapsed_ms = midismith::os::Clock::now_ms() - start_ms;
+    const std::uint32_t frame_elapsed_ms = uptime_.GetUptimeMs() - start_ms;
     const std::uint32_t next_frame_ms = elapsed_ms + frame_period_ms_;
     if (frame_elapsed_ms < next_frame_ms) {
-      midismith::os::Clock::delay_ms(next_frame_ms - frame_elapsed_ms);
+      delay_.DelayMs(next_frame_ms - frame_elapsed_ms);
     }
-    elapsed_ms = midismith::os::Clock::now_ms() - start_ms;
+    elapsed_ms = uptime_.GetUptimeMs() - start_ms;
   }
   RenderFrameToDisplay(static_cast<double>(duration_ms) / 1000.0);
 }
