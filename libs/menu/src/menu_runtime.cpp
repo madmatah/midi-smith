@@ -42,6 +42,10 @@ bool MenuRuntime::is_dirty() const noexcept {
   return dirty_ || (current_screen != nullptr && current_screen->is_dirty());
 }
 
+const MenuScreenRequirements* MenuRuntime::current_screen() const noexcept {
+  return stack_.top();
+}
+
 void MenuRuntime::set_navigation_observer(MenuNavigationObserverRequirements& observer) noexcept {
   navigation_observer_ = &observer;
 }

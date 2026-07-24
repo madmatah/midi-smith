@@ -20,6 +20,7 @@ class MenuRuntime final : public MenuControllerRequirements {
   void HandleInput(InputEvent event) noexcept;
   void Render(midismith::text_display::TextDisplayRequirements& display) noexcept;
   bool is_dirty() const noexcept;
+  const MenuScreenRequirements* current_screen() const noexcept;
   void set_navigation_observer(MenuNavigationObserverRequirements& observer) noexcept;
 
   bool Push(MenuScreenRequirements& screen) noexcept override;
