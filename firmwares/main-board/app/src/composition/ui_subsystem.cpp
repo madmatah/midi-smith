@@ -3,6 +3,8 @@
 #include <array>
 
 #include "app/config/ui.hpp"
+#include "app/shell/ui_command.hpp"
+#include "app/tasks/shell_task.hpp"
 #include "app/ui/menu_tree.hpp"
 #include "app/ui/tft_text_display.hpp"
 #include "app/ui/ui_task.hpp"
@@ -11,6 +13,7 @@
 #include "bsp/rotary_encoder.hpp"
 #include "bsp/tft_display.hpp"
 #include "os/clock.hpp"
+#include "os/queue.hpp"
 
 namespace midismith::main_board::app::composition {
 
@@ -48,8 +51,13 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       menu_stack_storage{};
   static midismith::menu::MenuRuntime runtime(root_screen, menu_stack_storage.data(),
                                               menu_stack_storage.size());
+  static midismith::os::Queue<midismith::menu::InputEvent,
+                              midismith::main_board::app::config::kUiInjectedEventQueueDepth>
+      injected_input_queue;
+  static midismith::main_board::app::shell::UiCommand ui_command(injected_input_queue);
+  (void) commands.task.RegisterCommand(ui_command);
   static midismith::main_board::app::ui::UiTask ui_task(
-      encoder, button, runtime, text_display, text_display,
+      encoder, button, runtime, text_display, text_display, injected_input_queue,
       midismith::main_board::app::config::kUiTickPeriodMs, InitializeTftDisplay, &tft_display);
 
   (void) ui_task.start();

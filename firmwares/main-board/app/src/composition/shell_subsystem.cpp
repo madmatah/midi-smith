@@ -71,8 +71,6 @@ ShellCommandsContext CreateShellSubsystem(
 
   shell_task_ptr->RegisterCommand(calibration_ctx.command);
 
-  (void) shell_task_ptr->start();
-
   return ShellCommandsContext{
       .status = status_cmd,
       .can = can_cmd,
@@ -80,6 +78,7 @@ ShellCommandsContext CreateShellSubsystem(
       .keymap = keymap_cmd,
       .version = version_cmd,
       .calibration = calibration_ctx.command,
+      .task = *shell_task_ptr,
   };
 }
 

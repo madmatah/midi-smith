@@ -13,6 +13,7 @@ midismith_add_firmware_test(NAME main
         app/shell/adc_command.test.cpp
         app/shell/keymap_command.test.cpp
         app/shell/calibration_command.test.cpp
+        app/shell/ui_command.test.cpp
         app/supervisor/network_supervisor_task.test.cpp
         app/adc/adc_board_state.test.cpp
         app/adc/adc_board_controller.test.cpp

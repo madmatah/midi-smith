@@ -16,13 +16,16 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
                midismith::main_board::bsp::RotaryButton& button,
                midismith::menu::MenuRuntime& runtime,
                midismith::text_display::TextDisplayRequirements& display,
-               DisplayPowerRequirements& display_power, std::uint32_t tick_period_ms,
-               InitializeCallback initialize_callback, void* initialize_context) noexcept
+               DisplayPowerRequirements& display_power,
+               midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
+               std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
+               void* initialize_context) noexcept
     : encoder_(encoder),
       button_(button),
       runtime_(runtime),
       display_(display),
       display_power_(display_power),
+      injected_events_(injected_events),
       tick_period_ms_(tick_period_ms),
       initialize_callback_(initialize_callback),
       initialize_context_(initialize_context),
@@ -47,14 +50,21 @@ void UiTask::run() noexcept {
     midismith::os::Clock::delay_ms(tick_period_ms_);
     const std::int16_t rotation_detents = encoder_.ReadDeltaDetents();
     const auto button_event = button_.Poll();
+    midismith::menu::InputEvent injected_event{};
+    bool injected_event_received = injected_events_.Receive(injected_event, 0);
     const bool input_activity_detected =
         rotation_detents != 0 ||
-        button_event != midismith::main_board::bsp::RotaryButton::Event::kNone;
+        button_event != midismith::main_board::bsp::RotaryButton::Event::kNone ||
+        injected_event_received;
     if (ProcessBacklightState(input_activity_detected)) {
       continue;
     }
     DispatchRotation(rotation_detents);
     DispatchButton(button_event);
+    while (injected_event_received) {
+      runtime_.HandleInput(injected_event);
+      injected_event_received = injected_events_.Receive(injected_event, 0);
+    }
     if (runtime_.is_dirty()) {
       runtime_.Render(display_);
       display_.Flush();

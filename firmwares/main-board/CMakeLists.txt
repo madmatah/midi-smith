@@ -68,6 +68,7 @@ if(HOST_TESTS)
         app/src/calibration/calibration_coordinator.cpp
         app/src/storage/calibration_persistent_store.cpp
         app/src/app/ui/screens/calibration_progress_screen.cpp
+        app/src/shell/ui_command.cpp
     )
     target_include_directories(main_app_lib PUBLIC
         app/include
@@ -138,6 +139,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/adc_command.cpp
     app/src/shell/keymap_command.cpp
     app/src/shell/calibration_command.cpp
+    app/src/shell/ui_command.cpp
     app/src/shell/os_clock_blocking_delay.cpp
     app/src/adc/adc_board_controller.cpp
     app/src/storage/main_board_persistent_configuration.cpp
