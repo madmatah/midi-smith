@@ -11,7 +11,7 @@ from pathlib import Path
 DISPLAY_WIDTH = 160
 DISPLAY_HEIGHT = 80
 FRAME_RATE_HZ = 30
-ANIMATION_DURATION_SECONDS = 4.45
+ANIMATION_DURATION_SECONDS = 4.75
 SUPERSAMPLING_SCALE = 4
 SPLASH_VERSION = "v3"
 
@@ -836,6 +836,8 @@ WORDMARK_STROKE_WIDTH = 0.62 * WORDMARK_SCALE
 WORDMARK_REVEAL_START_SECONDS = 3.51
 WORDMARK_LETTER_STAGGER_SECONDS = 0.05
 WORDMARK_LETTER_FADE_SECONDS = 0.12
+WORDMARK_SHINE_START_SECONDS = 4.20
+WORDMARK_SHINE_END_SECONDS = 4.55
 
 FINAL_NOTE_HEAD_CENTER = (25.0, 51.0)
 FINAL_NOTE_SCALE = 2.7
@@ -897,6 +899,13 @@ def DrawFinalNote(canvas, time_seconds):
 
 
 def DrawWordmark(canvas, time_seconds):
+    shine_progress = PhaseProgress(
+        time_seconds,
+        WORDMARK_SHINE_START_SECONDS,
+        WORDMARK_SHINE_END_SECONDS,
+    )
+    shine_x = 40.0 + 110.0 * shine_progress
+    shine_active = 0.0 < shine_progress < 1.0
     current_x = WORDMARK_ORIGIN_X
     drawn_glyph_index = 0
     for character in WORDMARK_TEXT:
@@ -915,6 +924,11 @@ def DrawWordmark(canvas, time_seconds):
             )
             if reveal > 0.0:
                 settle_offset = 1.4 * (1.0 - EaseOutCubic(reveal))
+                shine_weight = 0.0
+                if shine_active:
+                    glyph_center_x = current_x + advance * WORDMARK_SCALE / 2.0
+                    shine_distance = glyph_center_x - shine_x
+                    shine_weight = math.exp(-(shine_distance * shine_distance) / 50.0)
                 for stroke in strokes:
                     placed = [
                         (
@@ -929,6 +943,13 @@ def DrawWordmark(canvas, time_seconds):
                         WARM_IVORY,
                         reveal,
                     )
+                    if shine_weight > 0.02:
+                        canvas.DrawPolyline(
+                            placed,
+                            WORDMARK_STROKE_WIDTH * 1.7,
+                            BRIGHT_IVORY,
+                            reveal * 0.75 * shine_weight,
+                        )
             drawn_glyph_index += 1
         current_x += (advance + WORDMARK_LETTER_SPACING_UNITS) * WORDMARK_SCALE
 
