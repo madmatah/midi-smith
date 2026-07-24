@@ -35,6 +35,7 @@ midismith_add_firmware_test(NAME main
         app/ui/glyph_scaler.test.cpp
         app/ui/tft_text_display.test.cpp
         app/ui/ui_task.test.cpp
+        app/ui/items/menu_flow_items.test.cpp
     LINK_LIBRARIES main_domain main_app_lib
     USE_FAKEIT
 )
