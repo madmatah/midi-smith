@@ -19,6 +19,7 @@ midismith_require_lib(telemetry)
 midismith_require_lib(io)
 midismith_require_lib(text-display)
 midismith_require_lib(menu)
+midismith_require_lib(splash)
 midismith_require_lib(shell)
 midismith_require_lib(shell-cmd-version)
 midismith_require_lib(shell-cmd-os-stats)
@@ -73,7 +74,7 @@ if(HOST_TESTS)
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display splash)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -123,6 +124,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/app/midi/midi_output_task.cpp
     app/src/app/midi/midi_input_task.cpp
     app/src/app/ui/font_8x16.cpp
+    app/src/app/ui/tft_splash_player.cpp
     app/src/app/ui/tft_text_display.cpp
     app/src/app/ui/ui_task.cpp
     app/src/app/ui/menu_tree.cpp
@@ -179,6 +181,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     io
     text_display
     menu
+    splash
     shell
     shell_cmd_version
     shell_cmd_os_stats

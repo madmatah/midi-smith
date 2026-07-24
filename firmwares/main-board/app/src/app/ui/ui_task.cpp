@@ -5,8 +5,6 @@
 #include <string_view>
 
 #include "app/config/ui.hpp"
-#include "menu/progress_bar.hpp"
-#include "menu/text_layout.hpp"
 #include "os/clock.hpp"
 #include "os/task.hpp"
 
@@ -16,7 +14,7 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
                midismith::main_board::bsp::RotaryButton& button,
                midismith::menu::MenuRuntime& runtime,
                midismith::text_display::TextDisplayRequirements& display,
-               DisplayPowerRequirements& display_power,
+               DisplayPowerRequirements& display_power, SplashRequirements& splash,
                midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
                std::uint32_t tick_period_ms, InitializeCallback initialize_callback,
                void* initialize_context) noexcept
@@ -25,6 +23,7 @@ UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
       runtime_(runtime),
       display_(display),
       display_power_(display_power),
+      splash_(splash),
       injected_events_(injected_events),
       tick_period_ms_(tick_period_ms),
       initialize_callback_(initialize_callback),
@@ -43,7 +42,7 @@ void UiTask::run() noexcept {
     initialize_callback_(initialize_context_);
   }
   encoder_.Start();
-  RenderSplashScreen();
+  splash_.Play();
   runtime_.Render(display_);
   display_.Flush();
   for (;;) {
@@ -108,26 +107,6 @@ bool UiTask::start() noexcept {
   return midismith::os::Task::create("UiTask", UiTask::entry, this,
                                      midismith::main_board::app::config::kUiTaskStackBytes,
                                      midismith::main_board::app::config::kUiTaskPriority);
-}
-
-void UiTask::RenderSplashScreen() noexcept {
-  constexpr std::string_view kProductName = "Midi Smith";
-  constexpr std::uint32_t kAnimationSteps = 30;
-  const std::uint8_t title_row = static_cast<std::uint8_t>((display_.rows() - 3) / 2);
-  const std::uint8_t divider_row = static_cast<std::uint8_t>(title_row + 3);
-  display_.Clear();
-  display_.DrawTextDoubleSize(
-      title_row, midismith::menu::CenteredColumn(display_.columns(), kProductName.size() * 2),
-      kProductName, midismith::text_display::CellAttribute::kAccent);
-  display_.Flush();
-  const std::uint32_t step_duration_ms =
-      midismith::main_board::app::config::kUiSplashDurationMs / kAnimationSteps;
-  for (std::uint32_t step = 0; step <= kAnimationSteps; step++) {
-    midismith::menu::RenderProgressBar(display_, divider_row, 0, display_.columns(), step,
-                                       kAnimationSteps);
-    display_.Flush();
-    midismith::os::Clock::delay_ms(step_duration_ms);
-  }
 }
 
 void UiTask::DispatchRotation(std::int16_t detents) noexcept {

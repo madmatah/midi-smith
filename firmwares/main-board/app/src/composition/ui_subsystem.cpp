@@ -3,9 +3,11 @@
 #include <array>
 
 #include "app/config/ui.hpp"
+#include "app/config/ui_validation.hpp"
 #include "app/shell/ui_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/ui/menu_tree.hpp"
+#include "app/ui/tft_splash_player.hpp"
 #include "app/ui/tft_text_display.hpp"
 #include "app/ui/ui_task.hpp"
 #include "bsp/board.hpp"
@@ -15,6 +17,8 @@
 #include "bsp/tft_display.hpp"
 #include "os/clock.hpp"
 #include "os/queue.hpp"
+#include "splash/animation.hpp"
+#include "splash/pixel_canvas.hpp"
 
 namespace midismith::main_board::app::composition {
 
@@ -45,6 +49,24 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
       ui_transition_snapshot;
   static midismith::main_board::app::ui::TftTextDisplay text_display(
       tft_display, ui_framebuffer.data(), ui_transition_snapshot.data());
+  BSP_AXI_SRAM static std::array<std::uint8_t,
+                                 midismith::splash::PixelCanvas::BandBufferBytes(
+                                     midismith::splash::kDisplayWidth,
+                                     midismith::main_board::app::config::kSplashBandRows)>
+      splash_band_pixels;
+  BSP_AXI_SRAM static std::array<std::uint8_t,
+                                 static_cast<std::size_t>(midismith::splash::kDisplayWidth) *
+                                     midismith::main_board::app::config::kSplashBandRows * 3>
+      splash_band_row_pixels;
+  BSP_AXI_SRAM static std::array<std::uint16_t,
+                                 static_cast<std::size_t>(midismith::splash::kDisplayWidth) *
+                                     midismith::main_board::app::config::kSplashBandRows>
+      splash_band_row_colors;
+  static midismith::main_board::app::ui::TftSplashPlayer splash_player(
+      tft_display, midismith::main_board::app::config::kSplashBandRows, splash_band_pixels,
+      splash_band_row_pixels, splash_band_row_colors,
+      midismith::main_board::app::config::kSplashFramePeriodMs,
+      midismith::main_board::app::config::kSplashSaturationPercent);
   static midismith::main_board::bsp::RotaryEncoder encoder(
       midismith::main_board::bsp::Board::tim2_handle());
   static midismith::main_board::bsp::RotaryButton button(
@@ -65,7 +87,7 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
   static midismith::main_board::app::shell::UiCommand ui_command(injected_input_queue);
   (void) commands.task.RegisterCommand(ui_command);
   static midismith::main_board::app::ui::UiTask ui_task(
-      encoder, button, runtime, text_display, text_display, injected_input_queue,
+      encoder, button, runtime, text_display, text_display, splash_player, injected_input_queue,
       midismith::main_board::app::config::kUiTickPeriodMs, InitializeTftDisplay, &tft_display);
 
   (void) ui_task.start();

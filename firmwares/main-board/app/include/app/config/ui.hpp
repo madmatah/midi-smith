@@ -5,10 +5,12 @@
 
 namespace midismith::main_board::app::config {
 
-constexpr std::uint32_t kUiTaskStackBytes = 2048;
+constexpr std::uint32_t kUiTaskStackBytes = 6144;
 constexpr std::uint32_t kUiTaskPriority = 1;
 constexpr std::uint32_t kUiTickPeriodMs = 20;
-constexpr std::uint32_t kUiSplashDurationMs = 1500;
+constexpr std::uint32_t kSplashFramePeriodMs = 33;
+constexpr int kSplashBandRows = 8;
+constexpr int kSplashSaturationPercent = 160;
 constexpr std::uint32_t kUiBacklightTimeoutMs = 120000;
 constexpr bool kUiEncoderDebugOverlay = false;
 constexpr std::uint32_t kUiInjectedEventQueueDepth = 8;
