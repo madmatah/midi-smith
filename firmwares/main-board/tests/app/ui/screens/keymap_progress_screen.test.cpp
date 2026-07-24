@@ -10,6 +10,7 @@
 
 #include "app/storage/persistent_config_stubs.hpp"
 #include "app/ui/recording_text_display.hpp"
+#include "domain/config/main_board_config.hpp"
 #include "menu/menu_controller_requirements.hpp"
 
 using Catch::Matchers::ContainsSubstring;
@@ -98,6 +99,19 @@ TEST_CASE("The KeymapProgressScreen class") {
         REQUIRE(fixture.display.dropped_draw_count == 0);
         REQUIRE_THAT(fixture.display.RowText(1), ContainsSubstring("Done"));
         REQUIRE_THAT(fixture.display.RowText(4), ContainsSubstring("Btn exit"));
+      }
+    }
+
+    SECTION("When the counter reaches its widest rendering") {
+      SECTION("Should render it without running past the counter buffer") {
+        fixture.coordinator.StartSetup(midismith::main_board::domain::config::kMaxKeymapEntries,
+                                       21);
+        fixture.CaptureKeys(midismith::main_board::domain::config::kMaxKeymapEntries - 1);
+
+        fixture.screen.Render(fixture.display);
+
+        REQUIRE(fixture.display.dropped_draw_count == 0);
+        REQUIRE_THAT(fixture.display.RowText(3), ContainsSubstring("175/176"));
       }
     }
 
