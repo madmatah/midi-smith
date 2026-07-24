@@ -6,8 +6,8 @@
 #include "app/ui/display_power_requirements.hpp"
 #include "app/ui/idle_tracker.hpp"
 #include "app/ui/splash_requirements.hpp"
-#include "bsp/rotary_button.hpp"
-#include "bsp/rotary_encoder.hpp"
+#include "bsp-types/input/button_source_requirements.hpp"
+#include "bsp-types/input/rotation_source_requirements.hpp"
 #include "menu/menu_runtime.hpp"
 #include "os/queue_requirements.hpp"
 #include "text-display/text_display_requirements.hpp"
@@ -18,8 +18,9 @@ class UiTask {
  public:
   using InitializeCallback = void (*)(void* context) noexcept;
 
-  UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
-         midismith::main_board::bsp::RotaryButton& button, midismith::menu::MenuRuntime& runtime,
+  UiTask(midismith::bsp::input::RotationSourceRequirements& encoder,
+         midismith::bsp::input::ButtonSourceRequirements& button,
+         midismith::menu::MenuRuntime& runtime,
          midismith::text_display::TextDisplayRequirements& display,
          DisplayPowerRequirements& display_power, SplashRequirements& splash,
          midismith::os::QueueRequirements<midismith::menu::InputEvent>& injected_events,
@@ -34,10 +35,10 @@ class UiTask {
   void RenderEncoderDebugOverlay() noexcept;
   bool ProcessBacklightState(bool input_activity_detected) noexcept;
   void DispatchRotation(std::int16_t detents) noexcept;
-  void DispatchButton(midismith::main_board::bsp::RotaryButton::Event event) noexcept;
+  void DispatchButton(midismith::bsp::input::ButtonEvent event) noexcept;
 
-  midismith::main_board::bsp::RotaryEncoder& encoder_;
-  midismith::main_board::bsp::RotaryButton& button_;
+  midismith::bsp::input::RotationSourceRequirements& encoder_;
+  midismith::bsp::input::ButtonSourceRequirements& button_;
   midismith::menu::MenuRuntime& runtime_;
   midismith::text_display::TextDisplayRequirements& display_;
   DisplayPowerRequirements& display_power_;

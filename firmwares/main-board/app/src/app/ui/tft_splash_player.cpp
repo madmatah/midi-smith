@@ -51,12 +51,12 @@ constexpr std::uint16_t PackVibrantPanelPixel(std::uint8_t red, std::uint8_t gre
 
 }  // namespace
 
-TftSplashPlayer::TftSplashPlayer(midismith::main_board::bsp::TftDisplay& display,
+TftSplashPlayer::TftSplashPlayer(midismith::bsp::display::PixelSurfaceRequirements& surface,
                                  int band_row_count, std::span<std::uint8_t> band_pixels,
                                  std::span<std::uint8_t> band_row_pixels,
                                  std::span<std::uint16_t> band_row_colors,
                                  std::uint32_t frame_period_ms, int saturation_percent) noexcept
-    : display_(display),
+    : surface_(surface),
       band_row_count_(band_row_count),
       band_pixels_(band_pixels),
       band_row_pixels_(band_row_pixels),
@@ -95,7 +95,7 @@ void TftSplashPlayer::RenderFrameToDisplay(double time_seconds) noexcept {
           band_row_pixels_[source_offset], band_row_pixels_[source_offset + 1],
           band_row_pixels_[source_offset + 2], saturation_percent_);
     }
-    display_.BlitRows(static_cast<std::uint16_t>(band_first_row),
+    surface_.BlitRows(static_cast<std::uint16_t>(band_first_row),
                       static_cast<std::uint16_t>(band_row_count_),
                       reinterpret_cast<const std::uint8_t*>(band_row_colors_.data()));
   }

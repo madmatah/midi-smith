@@ -49,7 +49,7 @@ void CreateUiSubsystem(ConfigContext& config, CalibrationContext& calibration,
                                  midismith::main_board::app::ui::TftTextDisplay::kPixelCount>
       ui_transition_snapshot;
   static midismith::main_board::app::ui::TftTextDisplay text_display(
-      tft_display, ui_framebuffer.data(), ui_transition_snapshot.data());
+      tft_display, tft_display, ui_framebuffer.data(), ui_transition_snapshot.data());
   BSP_AXI_SRAM static std::array<std::uint8_t,
                                  midismith::splash::PixelCanvas::BandBufferBytes(
                                      midismith::splash::kDisplayWidth,

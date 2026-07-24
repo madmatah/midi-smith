@@ -2,23 +2,19 @@
 
 #include <cstdint>
 
+#include "bsp-types/input/button_source_requirements.hpp"
 #include "bsp/gpio_requirements.hpp"
 
 namespace midismith::main_board::bsp {
 
-class RotaryButton {
+class RotaryButton final : public midismith::bsp::input::ButtonSourceRequirements {
  public:
-  enum class Event : std::uint8_t {
-    kNone,
-    kPressed,
-    kReleased,
-    kLongPressed,
-  };
+  using Event = midismith::bsp::input::ButtonEvent;
 
   RotaryButton(midismith::bsp::GpioRequirements& gpio, std::uint8_t debounce_reads,
                std::uint16_t long_press_reads) noexcept;
 
-  Event Poll() noexcept;
+  Event Poll() noexcept override;
 
  private:
   midismith::bsp::GpioRequirements& gpio_;

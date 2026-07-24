@@ -10,8 +10,8 @@
 
 namespace midismith::main_board::app::ui {
 
-UiTask::UiTask(midismith::main_board::bsp::RotaryEncoder& encoder,
-               midismith::main_board::bsp::RotaryButton& button,
+UiTask::UiTask(midismith::bsp::input::RotationSourceRequirements& encoder,
+               midismith::bsp::input::ButtonSourceRequirements& button,
                midismith::menu::MenuRuntime& runtime,
                midismith::text_display::TextDisplayRequirements& display,
                DisplayPowerRequirements& display_power, SplashRequirements& splash,
@@ -53,8 +53,7 @@ void UiTask::run() noexcept {
     midismith::menu::InputEvent injected_event{};
     bool injected_event_received = injected_events_.Receive(injected_event, 0);
     const bool input_activity_detected =
-        rotation_detents != 0 ||
-        button_event != midismith::main_board::bsp::RotaryButton::Event::kNone ||
+        rotation_detents != 0 || button_event != midismith::bsp::input::ButtonEvent::kNone ||
         injected_event_received;
     const bool wake_activity_detected = wake_activity_.ConsumeActivity();
     if (ProcessBacklightState(input_activity_detected || wake_activity_detected)) {
@@ -117,10 +116,10 @@ void UiTask::DispatchRotation(std::int16_t detents) noexcept {
   }
 }
 
-void UiTask::DispatchButton(midismith::main_board::bsp::RotaryButton::Event event) noexcept {
-  if (event == midismith::main_board::bsp::RotaryButton::Event::kPressed) {
+void UiTask::DispatchButton(midismith::bsp::input::ButtonEvent event) noexcept {
+  if (event == midismith::bsp::input::ButtonEvent::kPressed) {
     runtime_.HandleInput(midismith::menu::InputEvent::ButtonPress());
-  } else if (event == midismith::main_board::bsp::RotaryButton::Event::kLongPressed) {
+  } else if (event == midismith::bsp::input::ButtonEvent::kLongPressed) {
     runtime_.HandleInput(midismith::menu::InputEvent::ButtonLongPress());
   }
 }

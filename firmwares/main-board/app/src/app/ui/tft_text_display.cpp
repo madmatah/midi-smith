@@ -60,15 +60,19 @@ constexpr std::uint16_t SwapBytes(std::uint16_t value) noexcept {
   return static_cast<std::uint16_t>((value << 8) | (value >> 8));
 }
 
-TftTextDisplay::TftTextDisplay(midismith::main_board::bsp::TftDisplay& display,
+TftTextDisplay::TftTextDisplay(midismith::bsp::display::PixelSurfaceRequirements& surface,
+                               midismith::bsp::display::BacklightRequirements& backlight,
                                std::uint16_t* framebuffer,
                                std::uint16_t* transition_snapshot) noexcept
-    : display_(display), framebuffer_(framebuffer), transition_snapshot_(transition_snapshot) {
+    : surface_(surface),
+      backlight_(backlight),
+      framebuffer_(framebuffer),
+      transition_snapshot_(transition_snapshot) {
   Clear();
 }
 
 void TftTextDisplay::SetBacklight(bool enabled) noexcept {
-  display_.SetBacklight(enabled);
+  backlight_.SetBacklight(enabled);
 }
 
 void TftTextDisplay::OnScreenPushed() noexcept {
@@ -231,7 +235,7 @@ void TftTextDisplay::Flush() noexcept {
       first_dirty_row * midismith::main_board::app::config::kTftFontHeight);
   const std::uint16_t dirty_pixel_rows = static_cast<std::uint16_t>(
       (last_dirty_row - first_dirty_row + 1) * midismith::main_board::app::config::kTftFontHeight);
-  display_.BlitRows(
+  surface_.BlitRows(
       first_pixel_row, dirty_pixel_rows,
       reinterpret_cast<const std::uint8_t*>(framebuffer_ + first_pixel_row * kPixelWidth));
 }
@@ -273,7 +277,7 @@ void TftTextDisplay::RunSlideTransition() noexcept {
       ComposeSlideRow(compose_row_.data(), transition_snapshot_ + pixel_row * kPixelWidth,
                       framebuffer_ + pixel_row * kPixelWidth, kPixelWidth, offset,
                       pending_transition_);
-      display_.BlitRows(pixel_row, 1, reinterpret_cast<const std::uint8_t*>(compose_row_.data()));
+      surface_.BlitRows(pixel_row, 1, reinterpret_cast<const std::uint8_t*>(compose_row_.data()));
     }
   }
 }

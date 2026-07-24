@@ -5,7 +5,8 @@
 #include "app/config/ui.hpp"
 #include "app/ui/display_power_requirements.hpp"
 #include "app/ui/slide_animation.hpp"
-#include "bsp/tft_display.hpp"
+#include "bsp-types/display/backlight_requirements.hpp"
+#include "bsp-types/display/pixel_surface_requirements.hpp"
 #include "menu/menu_navigation_observer_requirements.hpp"
 #include "text-display/text_display_requirements.hpp"
 
@@ -23,8 +24,9 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
                                  midismith::main_board::app::config::kTftFontHeight);
   static constexpr std::size_t kPixelCount = static_cast<std::size_t>(kPixelWidth) * kPixelHeight;
 
-  TftTextDisplay(midismith::main_board::bsp::TftDisplay& display, std::uint16_t* framebuffer,
-                 std::uint16_t* transition_snapshot) noexcept;
+  TftTextDisplay(midismith::bsp::display::PixelSurfaceRequirements& surface,
+                 midismith::bsp::display::BacklightRequirements& backlight,
+                 std::uint16_t* framebuffer, std::uint16_t* transition_snapshot) noexcept;
 
   void SetBacklight(bool enabled) noexcept override;
   void OnScreenPushed() noexcept override;
@@ -74,7 +76,8 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
   void RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept;
   void RunSlideTransition() noexcept;
 
-  midismith::main_board::bsp::TftDisplay& display_;
+  midismith::bsp::display::PixelSurfaceRequirements& surface_;
+  midismith::bsp::display::BacklightRequirements& backlight_;
   std::uint16_t* framebuffer_;
   std::uint16_t* transition_snapshot_;
   SlideDirection pending_transition_ = SlideDirection::kNone;
