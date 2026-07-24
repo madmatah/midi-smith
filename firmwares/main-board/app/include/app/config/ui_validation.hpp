@@ -11,5 +11,6 @@ static_assert(midismith::splash::kDisplayHeight % kSplashBandRows == 0);
 static_assert(kSplashFramePeriodMs > 0);
 static_assert(kUiTickPeriodMs > 0);
 static_assert(kMidiMonitorActivityDecayMs >= kUiTickPeriodMs);
+static_assert(kUiScrollTextCapacity > kTftTextColumns);
 
 }  // namespace midismith::main_board::app::config

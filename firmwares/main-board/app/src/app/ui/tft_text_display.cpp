@@ -30,6 +30,8 @@ constexpr std::uint16_t kErrorRed = Rgb565(255, 72, 56);
 constexpr std::uint16_t kFooterBackground = Rgb565(24, 24, 26);
 constexpr std::uint16_t kFooterForeground = Rgb565(148, 146, 140);
 
+constexpr std::size_t kNoCachedCharacterIndex = static_cast<std::size_t>(-1);
+
 constexpr CellColors ThemeColors(midismith::text_display::CellAttribute attribute) noexcept {
   switch (attribute) {
     case midismith::text_display::CellAttribute::kNormal:
@@ -168,7 +170,17 @@ void TftTextDisplay::DrawTextScrolled(std::uint8_t row, std::uint8_t column,
   }
   const std::uint8_t available_cells = static_cast<std::uint8_t>(columns() - column);
   const std::uint8_t clipped_span = span_cells < available_cells ? span_cells : available_cells;
-  pending_row_scrolls_[row] = RowScroll{true, text, column, clipped_span, attribute, pixel_shift};
+  RowScroll& scroll = pending_row_scrolls_[row];
+  scroll.text_length = static_cast<std::uint8_t>(
+      text.size() < scroll.text.size() ? text.size() : scroll.text.size());
+  for (std::size_t index = 0; index < scroll.text_length; index++) {
+    scroll.text[index] = text[index];
+  }
+  scroll.active = true;
+  scroll.column = column;
+  scroll.span_cells = clipped_span;
+  scroll.attribute = attribute;
+  scroll.pixel_shift = pixel_shift;
   const std::size_t character_shift = pixel_shift / midismith::text_display::kGlyphWidthPixels;
   const std::size_t clamped_shift = character_shift < text.size() ? character_shift : text.size();
   DrawText(row, column, text.substr(clamped_shift, clipped_span), attribute);
@@ -251,13 +263,13 @@ void TftTextDisplay::RenderScrolledSpanToFramebuffer(std::uint8_t row) noexcept 
   const std::uint16_t origin_y = static_cast<std::uint16_t>(row * kFontHeight);
   const std::uint16_t span_pixels = static_cast<std::uint16_t>(scroll.span_cells * kFontWidth);
   std::span<const std::uint8_t, kFontHeight> glyph = Font8x16Glyph(' ');
-  std::size_t cached_character_index = scroll.text.size() + 1;
+  std::size_t cached_character_index = kNoCachedCharacterIndex;
   for (std::uint16_t x = 0; x < span_pixels; x++) {
     const std::uint32_t source_pixel = static_cast<std::uint32_t>(scroll.pixel_shift) + x;
     const std::size_t character_index = source_pixel / kFontWidth;
     if (character_index != cached_character_index) {
       const char character =
-          character_index < scroll.text.size() ? scroll.text[character_index] : ' ';
+          character_index < scroll.text_length ? scroll.text[character_index] : ' ';
       glyph = Font8x16Glyph(character);
       cached_character_index = character_index;
     }

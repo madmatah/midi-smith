@@ -63,7 +63,8 @@ class TftTextDisplay final : public midismith::text_display::TextDisplayRequirem
 
   struct RowScroll {
     bool active;
-    std::string_view text;
+    std::array<char, midismith::main_board::app::config::kUiScrollTextCapacity> text;
+    std::uint8_t text_length;
     std::uint8_t column;
     std::uint8_t span_cells;
     midismith::text_display::CellAttribute attribute;
