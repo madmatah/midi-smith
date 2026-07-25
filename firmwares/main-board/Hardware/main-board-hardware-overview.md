@@ -279,7 +279,7 @@ The core board connects to the carrier board through:
 
 | Signal | MCU Pin | STM32 Function | Notes |
 | :--- | :--- | :--- | :--- |
-| `USER_LED` | `PE3` | `GPIO_Output` | Active low |
+| `USER_LED` | `PE3` | `GPIO_Output` | Active high |
 
 ### SPI Flash
 - **Board Side:** core board.
