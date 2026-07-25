@@ -42,13 +42,23 @@ cmake --preset main-Release && cmake --build --preset main-Release
 ```
 
 Run the firmware builds AFTER the host tests: they switch the active preset. Report every red
-result. If the floor is red, fix that first and re-run it; do not dispatch reviewers over a broken
-tree.
+result, then sort it: a build or test failure blocks the review (do not dispatch reviewers over a
+broken tree), while a format failure is mechanical — fix it and carry on in the same pass.
 
-`architecture_check` failures cite the rule they break. The fix goes in the code. The guard carries
-no per-file allowlist, so the only other legitimate outcome is amending the RULE — a named constant
-in the check plus its line in the owning AGENTS.md — and that is the user's call, not yours
-(`AGENTS.md` 5).
+Fixing each kind of red:
+
+- **`format_check`** — run `cmake --build --preset Host-Debug --target format`. clang-format is
+  idempotent, so it rewrites exactly the files `format_check` just named and leaves the rest
+  untouched. Then read `git status`: on a branch off a green `main` the rewritten files are your
+  own, but any file this change never touched is pre-existing drift (usually a local clang-format
+  older or newer than the CI container). Do not fold that into the branch silently — report it and
+  let the user decide whether it belongs here or in its own commit.
+- **`lint`** — cpplint has no auto-fix; each violation is edited by hand. A line over 100 columns
+  is usually clang-format's job, so run the format fix first and re-check.
+- **`architecture_check`** — cites the rule it breaks. The fix goes in the code. The guard carries
+  no per-file allowlist, so the only other legitimate outcome is amending the RULE — a named
+  constant in the check plus its line in the owning AGENTS.md — and that is the user's call, not
+  yours (`AGENTS.md` 5).
 
 ## 3. Dispatch the reviewers the diff calls for
 
