@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "bsp/cortex/mpu_memory_attributes.hpp"
 #include "flash-layout/flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
@@ -30,7 +31,7 @@ void FlashConfigNoCacheMpu::ConfigureRegion() noexcept {
   region.BaseAddress = kRegionBaseAddress;
   region.Size = MPU_REGION_SIZE_128KB;
   region.SubRegionDisable = 0x00;
-  region.TypeExtField = MPU_TEX_LEVEL0;
+  region.TypeExtField = midismith::bsp::cortex::kTypeExtensionForNormalNonCacheable;
   region.AccessPermission = MPU_REGION_FULL_ACCESS;
   region.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
   region.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
