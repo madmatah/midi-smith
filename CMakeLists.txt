@@ -89,6 +89,15 @@ add_custom_target(format_check
     COMMENT "Format check (monorepo, dry-run)"
 )
 
+# Monorepo-wide architecture guard: the mechanically checkable rules of the AGENTS.md files
+# (layer purity, composition-root confinement, domain purity, namespace mirroring, test contract).
+# Its own scanned scope lives in the script, mirroring the FILES_TO_CHECK globs above.
+add_custom_target(architecture_check
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/architecture_check.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Architecture check (monorepo)"
+)
+
 # Keep a stable compilation database location for clangd.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
     file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/build")

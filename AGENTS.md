@@ -95,7 +95,7 @@ monorepo-root/
 
 **— Vendored external code lives in `third_party/`**: never modified, not subject to project style rules. Updates by replacing the vendored subtree.
 
-**— Root `CMakeLists.txt` is an orchestrator and tooling host**: no application logic. Routes firmware builds; defines monorepo-wide tooling targets (`lint`, `format`, `format_check`). See §4.1 for details.
+**— Root `CMakeLists.txt` is an orchestrator and tooling host**: no application logic. Routes firmware builds; defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`). See §4.1 for details.
 
 **— Shared tooling at the repository root**: `.clang-format`, `.clang-format-ignore`, `.clangd`, `CPPLINT.cfg` are shared across all packages. A package may override locally.
 
@@ -182,7 +182,7 @@ All packages comply with these constraints, since all code is ultimately compile
 
 CMake is the source of truth for the build; no critical setting depends on the IDE.
 
-- Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`) covering all project-owned code. No application logic.
+- Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`) covering all project-owned code. No application logic.
 - Package-level CMake rules: see @firmwares/AGENTS.md §F.7 and @libs/AGENTS.md §L.1.
 
 **Presets** (`CMakePresets.json` at root):
@@ -195,6 +195,7 @@ CMake is the source of truth for the build; no critical setting depends on the I
 ## 5. Quality & Maintainability
 
 - Any rule violation must be explicitly documented; no implicit exceptions.
+- The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, namespace mirroring, per-package test contract. A violation is fixed, never waived — the guard carries no exception list.
 
 ---
 

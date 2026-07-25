@@ -14,7 +14,7 @@ env:
 
 jobs:
   lint_and_format_check:
-    name: Lint + format-check
+    name: Lint + format-check + architecture
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/ci:latest
@@ -30,6 +30,9 @@ jobs:
 
       - name: Format check (clang-format)
         run: cmake --build --preset Host-Debug --target format_check
+
+      - name: Architecture check (AGENTS.md rules)
+        run: cmake --build --preset Host-Debug --target architecture_check
 
   firmware_build:
     name: Build firmware (${{ matrix.name }})
