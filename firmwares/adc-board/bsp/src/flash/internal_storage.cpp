@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
 extern "C" {
@@ -14,9 +15,13 @@ namespace midismith::adc_board::bsp::flash {
 using StorageOperationResult = midismith::bsp::storage::StorageOperationResult;
 
 namespace {
-constexpr std::uintptr_t kConfigBaseAddress = 0x081E0000u;
-constexpr std::uint32_t kConfigSectorNumber = 7;
-constexpr std::size_t kSectorSizeBytes = 128 * 1024;
+constexpr std::uintptr_t kConfigBaseAddress = midismith::flash_layout::kApplicationConfigAddress;
+constexpr std::uint32_t kConfigSectorNumber = midismith::flash_layout::kApplicationConfigSector;
+constexpr std::size_t kSectorSizeBytes = midismith::flash_layout::kApplicationConfigSizeBytes;
+constexpr std::uint32_t kConfigBank = FLASH_BANK_1;
+
+static_assert(midismith::flash_layout::kApplicationConfigBank == 1,
+              "the erase below names bank 1 and the application executes from bank 2");
 
 bool HasExpectedBaseAddress(const void* base_address) noexcept {
   return reinterpret_cast<std::uintptr_t>(base_address) == kConfigBaseAddress;
@@ -43,7 +48,7 @@ bool HasValidProgramParameters(std::size_t offset_bytes, const std::uint8_t* dat
 }
 
 void ClearBank2ErrorFlags() noexcept {
-  __HAL_FLASH_CLEAR_FLAG_BANK2(FLASH_FLAG_ALL_ERRORS_BANK2);
+  __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_ALL_ERRORS_BANK1);
 }
 }  // namespace
 
@@ -84,7 +89,7 @@ StorageOperationResult InternalStorage::EraseSector() noexcept {
 
   FLASH_EraseInitTypeDef erase_config{};
   erase_config.TypeErase = FLASH_TYPEERASE_SECTORS;
-  erase_config.Banks = FLASH_BANK_2;
+  erase_config.Banks = kConfigBank;
   erase_config.Sector = kConfigSectorNumber;
   erase_config.NbSectors = 1;
   erase_config.VoltageRange = FLASH_VOLTAGE_RANGE_3;

@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_coverage.cmake)
-
 set(MAIN_FIRMWARE_TARGET "main-board")
 set(MAIN_TARGET_PREFIX "main")
 set(MAIN_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
@@ -99,6 +98,9 @@ if(HOST_TESTS)
 else()
 # Create an executable object type
 add_executable(${MAIN_FIRMWARE_TARGET})
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake)
+midismith_flash_layout_header(${MAIN_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
 midismith_firmware_versioning(${MAIN_FIRMWARE_TARGET})
@@ -212,6 +214,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
 
     # Add user defined libraries
 )
+
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_package.cmake)
 midismith_firmware_package(${MAIN_FIRMWARE_TARGET} PRODUCT main-board)

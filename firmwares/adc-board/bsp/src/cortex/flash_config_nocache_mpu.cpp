@@ -1,8 +1,23 @@
 #include "bsp/cortex/flash_config_nocache_mpu.hpp"
 
+#include <cstddef>
+#include <cstdint>
+
+#include "flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
 namespace midismith::adc_board::bsp::cortex {
+
+namespace {
+
+constexpr std::uint32_t kBaseAddress = midismith::flash_layout::kApplicationConfigAddress;
+constexpr std::size_t kOneHundredTwentyEightKilobytes = 128U * 1024U;
+
+static_assert(midismith::flash_layout::kApplicationConfigSizeBytes ==
+                  kOneHundredTwentyEightKilobytes,
+              "the region size below is spelled MPU_REGION_SIZE_128KB");
+
+}  // namespace
 
 void FlashConfigNoCacheMpu::ConfigureRegion() noexcept {
   HAL_MPU_Disable();

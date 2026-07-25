@@ -1,6 +1,9 @@
-if(NOT DEFINED MAP_FILE)
-  message(FATAL_ERROR "MAP_FILE must be provided to check_flash_layout.cmake")
-endif()
+foreach(required_variable MAP_FILE EXPECTED_CONFIG_ORIGIN EXPECTED_CONFIG_SIZE
+                          EXPECTED_APPLICATION_ORIGIN EXPECTED_APPLICATION_SIZE)
+  if(NOT DEFINED ${required_variable})
+    message(FATAL_ERROR "${required_variable} must be provided to check_flash_layout.cmake")
+  endif()
+endforeach()
 
 if(NOT EXISTS "${MAP_FILE}")
   message(FATAL_ERROR "Map file not found: ${MAP_FILE}")
@@ -18,67 +21,61 @@ function(extract_output_section section_name out_address out_size)
   set(${out_size} "0x${CMAKE_MATCH_2}" PARENT_SCOPE)
 endfunction()
 
-string(REGEX MATCH "\nFLASH_CONFIG[ \t]+0x([0-9A-Fa-f]+)[ \t]+0x([0-9A-Fa-f]+)[ \t]+r"
-                   flash_config_region_match "\n${map_contents}")
-if(NOT flash_config_region_match)
-  message(FATAL_ERROR "Unable to find FLASH_CONFIG memory region in map file: ${MAP_FILE}")
-endif()
+function(extract_memory_region region_name out_origin out_size)
+  string(REGEX MATCH "\n${region_name}[ \t]+0x([0-9A-Fa-f]+)[ \t]+0x([0-9A-Fa-f]+)"
+                     region_match "\n${map_contents}")
+  if(NOT region_match)
+    message(FATAL_ERROR "Unable to find memory region ${region_name} in map file: ${MAP_FILE}")
+  endif()
+  set(${out_origin} "0x${CMAKE_MATCH_1}" PARENT_SCOPE)
+  set(${out_size} "0x${CMAKE_MATCH_2}" PARENT_SCOPE)
+endfunction()
 
-set(flash_config_region_origin "0x${CMAKE_MATCH_1}")
-set(flash_config_region_size "0x${CMAKE_MATCH_2}")
+function(require_equal what actual expected)
+  math(EXPR actual_value "${actual}")
+  math(EXPR expected_value "${expected}")
+  if(NOT actual_value EQUAL expected_value)
+    message(FATAL_ERROR "${what} mismatch: expected ${expected}, got ${actual}")
+  endif()
+endfunction()
 
+extract_memory_region("FLASH_CONFIG" flash_config_origin flash_config_region_size)
+extract_memory_region("FLASH" flash_origin flash_region_size)
+extract_output_section("flash_config" flash_config_start flash_config_size)
+extract_output_section("isr_vector" isr_vector_start isr_vector_size)
 extract_output_section("text" text_start text_size)
 extract_output_section("rodata" rodata_start rodata_size)
-extract_output_section("flash_config" flash_config_start flash_config_size)
 
-set(expected_flash_config_origin 0x081E0000)
-set(expected_flash_config_size 0x00020000)
+require_equal("FLASH_CONFIG origin" "${flash_config_origin}" "${EXPECTED_CONFIG_ORIGIN}")
+require_equal("FLASH_CONFIG size" "${flash_config_region_size}" "${EXPECTED_CONFIG_SIZE}")
+require_equal(".flash_config start" "${flash_config_start}" "${EXPECTED_CONFIG_ORIGIN}")
+require_equal("FLASH origin" "${flash_origin}" "${EXPECTED_APPLICATION_ORIGIN}")
+require_equal("FLASH size" "${flash_region_size}" "${EXPECTED_APPLICATION_SIZE}")
+require_equal(".isr_vector start" "${isr_vector_start}" "${EXPECTED_APPLICATION_ORIGIN}")
 
-math(EXPR flash_config_region_origin_value "${flash_config_region_origin}")
-math(EXPR flash_config_region_size_value "${flash_config_region_size}")
-math(EXPR flash_config_start_value "${flash_config_start}")
 math(EXPR flash_config_size_value "${flash_config_size}")
-math(EXPR text_start_value "${text_start}")
-math(EXPR text_size_value "${text_size}")
-math(EXPR rodata_start_value "${rodata_start}")
-math(EXPR rodata_size_value "${rodata_size}")
-math(EXPR expected_flash_config_origin_value "${expected_flash_config_origin}")
-math(EXPR expected_flash_config_size_value "${expected_flash_config_size}")
-
-if(NOT flash_config_region_origin_value EQUAL expected_flash_config_origin_value)
-  message(FATAL_ERROR
-          "FLASH_CONFIG origin mismatch: expected 0x081E0000, got ${flash_config_region_origin}")
+math(EXPR expected_config_size_value "${EXPECTED_CONFIG_SIZE}")
+if(flash_config_size_value GREATER expected_config_size_value)
+  message(FATAL_ERROR ".flash_config size exceeds FLASH_CONFIG region: ${flash_config_size}")
 endif()
 
-if(NOT flash_config_region_size_value EQUAL expected_flash_config_size_value)
-  message(FATAL_ERROR
-          "FLASH_CONFIG size mismatch: expected 0x00020000, got ${flash_config_region_size}")
-endif()
+math(EXPR application_origin_value "${EXPECTED_APPLICATION_ORIGIN}")
+math(EXPR application_size_value "${EXPECTED_APPLICATION_SIZE}")
+math(EXPR application_end_value "${application_origin_value} + ${application_size_value}")
 
-if(NOT flash_config_start_value EQUAL expected_flash_config_origin_value)
-  message(FATAL_ERROR
-          ".flash_config start mismatch: expected 0x081E0000, got ${flash_config_start}")
-endif()
-
-if(flash_config_size_value GREATER expected_flash_config_size_value)
-  message(FATAL_ERROR
-          ".flash_config size exceeds FLASH_CONFIG region: ${flash_config_size} > 0x00020000")
-endif()
-
-math(EXPR text_end_value "${text_start_value} + ${text_size_value}")
-math(EXPR rodata_end_value "${rodata_start_value} + ${rodata_size_value}")
-math(EXPR text_end_hex "${text_end_value}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR rodata_end_hex "${rodata_end_value}" OUTPUT_FORMAT HEXADECIMAL)
-
-if(text_end_value GREATER expected_flash_config_origin_value)
-  message(FATAL_ERROR
-          ".text overlaps FLASH_CONFIG region: end=${text_end_hex}, start=0x081E0000")
-endif()
-
-if(rodata_end_value GREATER expected_flash_config_origin_value)
-  message(FATAL_ERROR
-          ".rodata overlaps FLASH_CONFIG region: end=${rodata_end_hex}, start=0x081E0000")
-endif()
+foreach(section_name text rodata)
+  math(EXPR section_start_value "${${section_name}_start}")
+  math(EXPR section_size_value "${${section_name}_size}")
+  math(EXPR section_end_value "${section_start_value} + ${section_size_value}")
+  if(section_start_value LESS application_origin_value OR
+     section_end_value GREATER application_end_value)
+    math(EXPR section_end_hex "${section_end_value}" OUTPUT_FORMAT HEXADECIMAL)
+    message(FATAL_ERROR
+            ".${section_name} escapes the application slot: "
+            "${${section_name}_start}..${section_end_hex}")
+  endif()
+endforeach()
 
 message(STATUS
-        "Flash layout validated: FLASH_CONFIG at 0x081E0000, no overlap with .text/.rodata")
+        "Flash layout validated: application at ${EXPECTED_APPLICATION_ORIGIN}, "
+        "configuration at ${EXPECTED_CONFIG_ORIGIN}")
