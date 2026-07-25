@@ -1,21 +1,23 @@
 #include "bsp/cortex/flash_config_nocache_mpu.hpp"
 
-#include <cstddef>
 #include <cstdint>
 
-#include "flash_layout.hpp"
+#include "flash-layout/flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
 namespace midismith::adc_board::bsp::cortex {
 
 namespace {
 
-constexpr std::uint32_t kBaseAddress = midismith::flash_layout::kApplicationConfigAddress;
-constexpr std::size_t kOneHundredTwentyEightKilobytes = 128U * 1024U;
+constexpr std::uint32_t kRegionBaseAddress = midismith::flash_layout::kApplicationConfigAddress;
+constexpr std::uint32_t kMpuRegionSize128KbInBytes = 128U * 1024U;
 
-static_assert(midismith::flash_layout::kApplicationConfigSizeBytes ==
-                  kOneHundredTwentyEightKilobytes,
+static_assert(midismith::flash_layout::kApplicationConfigSizeBytes == kMpuRegionSize128KbInBytes,
               "the region size below is spelled MPU_REGION_SIZE_128KB");
+
+static_assert(kRegionBaseAddress % kMpuRegionSize128KbInBytes == 0,
+              "a Cortex-M7 MPU region must be aligned to its own size, or it covers the wrong "
+              "128 KB and the configuration sector stays cached across an erase");
 
 }  // namespace
 
@@ -25,7 +27,7 @@ void FlashConfigNoCacheMpu::ConfigureRegion() noexcept {
   MPU_Region_InitTypeDef region = {};
   region.Enable = MPU_REGION_ENABLE;
   region.Number = MPU_REGION_NUMBER3;
-  region.BaseAddress = kBaseAddress;
+  region.BaseAddress = kRegionBaseAddress;
   region.Size = MPU_REGION_SIZE_128KB;
   region.SubRegionDisable = 0x00;
   region.TypeExtField = MPU_TEX_LEVEL0;

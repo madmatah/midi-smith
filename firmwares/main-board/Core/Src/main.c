@@ -76,6 +76,8 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   SCB->VTOR = MIDISMITH_APPLICATION_LOAD_ADDRESS;
+  __DSB();
+  __ISB();
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/

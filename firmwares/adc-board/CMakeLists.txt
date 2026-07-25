@@ -28,6 +28,7 @@ midismith_require_lib(shell-cmd-reboot)
 midismith_require_lib(shell-cmd-stats)
 midismith_require_lib(stats)
 midismith_require_lib(bsp-types)
+midismith_require_lib(flash-layout)
 midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
@@ -98,7 +99,7 @@ else()
 add_executable(${ADC_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake)
-midismith_flash_layout_header(${ADC_FIRMWARE_TARGET})
+midismith_firmware_load_address(${ADC_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
 midismith_firmware_versioning(${ADC_FIRMWARE_TARGET})
@@ -193,23 +194,13 @@ target_link_libraries(${ADC_FIRMWARE_TARGET}
     can_broker
     protocol
     protocol_can
+    flash_layout
 
     # Add user defined libraries
     "${CMSIS_DSP_LIB}"
 )
 
-set(FLASH_LAYOUT_CHECK_SCRIPT "${ADC_PROJECT_ROOT}/cmake/check_flash_layout.cmake")
-add_custom_command(TARGET ${ADC_FIRMWARE_TARGET} POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-            -DMAP_FILE=${CMAKE_BINARY_DIR}/${ADC_FIRMWARE_TARGET}.map
-            -DEXPECTED_CONFIG_ORIGIN=${MIDISMITH_APPLICATION_CONFIG_ADDRESS}
-            -DEXPECTED_CONFIG_SIZE=${MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES}
-            -DEXPECTED_APPLICATION_ORIGIN=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
-            -DEXPECTED_APPLICATION_SIZE=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
-            -P ${FLASH_LAYOUT_CHECK_SCRIPT}
-    COMMENT "Validate flash layout for persistent configuration"
-    VERBATIM
-)
+midismith_check_flash_layout(${ADC_FIRMWARE_TARGET} WITH_CONFIG_REGION)
 
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_package.cmake)

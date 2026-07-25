@@ -28,6 +28,7 @@ midismith_require_lib(shell-cmd-stats)
 midismith_require_lib(stats)
 midismith_require_lib(os-types)
 midismith_require_lib(bsp-types)
+midismith_require_lib(flash-layout)
 midismith_require_lib(can-broker)
 midismith_require_lib(protocol)
 midismith_require_lib(protocol-can)
@@ -100,7 +101,7 @@ else()
 add_executable(${MAIN_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake)
-midismith_flash_layout_header(${MAIN_FIRMWARE_TARGET})
+midismith_firmware_load_address(${MAIN_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
 midismith_firmware_versioning(${MAIN_FIRMWARE_TARGET})
@@ -211,10 +212,13 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     config
     sensor_linearization
     calibration
+    flash_layout
 
     # Add user defined libraries
 )
 
+
+midismith_check_flash_layout(${MAIN_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_package.cmake)
 midismith_firmware_package(${MAIN_FIRMWARE_TARGET} PRODUCT main-board)

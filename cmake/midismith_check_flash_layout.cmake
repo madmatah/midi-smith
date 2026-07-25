@@ -1,9 +1,15 @@
-foreach(required_variable MAP_FILE EXPECTED_CONFIG_ORIGIN EXPECTED_CONFIG_SIZE
-                          EXPECTED_APPLICATION_ORIGIN EXPECTED_APPLICATION_SIZE)
-  if(NOT DEFINED ${required_variable})
-    message(FATAL_ERROR "${required_variable} must be provided to check_flash_layout.cmake")
+foreach(required_variable MAP_FILE EXPECTED_APPLICATION_ORIGIN EXPECTED_APPLICATION_SIZE)
+  if("${${required_variable}}" STREQUAL "")
+    message(FATAL_ERROR
+            "${required_variable} must be provided to midismith_check_flash_layout, non-empty")
   endif()
 endforeach()
+
+# Only the boards that keep a configuration region declare one.
+set(checks_config_region FALSE)
+if(NOT "${EXPECTED_CONFIG_ORIGIN}" STREQUAL "")
+  set(checks_config_region TRUE)
+endif()
 
 if(NOT EXISTS "${MAP_FILE}")
   message(FATAL_ERROR "Map file not found: ${MAP_FILE}")
@@ -39,24 +45,26 @@ function(require_equal what actual expected)
   endif()
 endfunction()
 
-extract_memory_region("FLASH_CONFIG" flash_config_origin flash_config_region_size)
 extract_memory_region("FLASH" flash_origin flash_region_size)
-extract_output_section("flash_config" flash_config_start flash_config_size)
 extract_output_section("isr_vector" isr_vector_start isr_vector_size)
 extract_output_section("text" text_start text_size)
 extract_output_section("rodata" rodata_start rodata_size)
 
-require_equal("FLASH_CONFIG origin" "${flash_config_origin}" "${EXPECTED_CONFIG_ORIGIN}")
-require_equal("FLASH_CONFIG size" "${flash_config_region_size}" "${EXPECTED_CONFIG_SIZE}")
-require_equal(".flash_config start" "${flash_config_start}" "${EXPECTED_CONFIG_ORIGIN}")
 require_equal("FLASH origin" "${flash_origin}" "${EXPECTED_APPLICATION_ORIGIN}")
 require_equal("FLASH size" "${flash_region_size}" "${EXPECTED_APPLICATION_SIZE}")
 require_equal(".isr_vector start" "${isr_vector_start}" "${EXPECTED_APPLICATION_ORIGIN}")
 
-math(EXPR flash_config_size_value "${flash_config_size}")
-math(EXPR expected_config_size_value "${EXPECTED_CONFIG_SIZE}")
-if(flash_config_size_value GREATER expected_config_size_value)
-  message(FATAL_ERROR ".flash_config size exceeds FLASH_CONFIG region: ${flash_config_size}")
+if(checks_config_region)
+  extract_memory_region("FLASH_CONFIG" flash_config_origin flash_config_region_size)
+  extract_output_section("flash_config" flash_config_start flash_config_size)
+  require_equal("FLASH_CONFIG origin" "${flash_config_origin}" "${EXPECTED_CONFIG_ORIGIN}")
+  require_equal("FLASH_CONFIG size" "${flash_config_region_size}" "${EXPECTED_CONFIG_SIZE}")
+  require_equal(".flash_config start" "${flash_config_start}" "${EXPECTED_CONFIG_ORIGIN}")
+  math(EXPR flash_config_size_value "${flash_config_size}")
+  math(EXPR expected_config_size_value "${EXPECTED_CONFIG_SIZE}")
+  if(flash_config_size_value GREATER expected_config_size_value)
+    message(FATAL_ERROR ".flash_config size exceeds FLASH_CONFIG region: ${flash_config_size}")
+  endif()
 endif()
 
 math(EXPR application_origin_value "${EXPECTED_APPLICATION_ORIGIN}")
@@ -76,6 +84,4 @@ foreach(section_name text rodata)
   endif()
 endforeach()
 
-message(STATUS
-        "Flash layout validated: application at ${EXPECTED_APPLICATION_ORIGIN}, "
-        "configuration at ${EXPECTED_CONFIG_ORIGIN}")
+message(STATUS "Flash layout validated: application at ${EXPECTED_APPLICATION_ORIGIN}")
