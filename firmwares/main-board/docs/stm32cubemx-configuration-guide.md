@@ -300,13 +300,23 @@ raise it for speed alone, an instrument that vibrates is not the place to run a 
 2. **Platform Settings** : `SD_Detect_Pin` → **Not used**. SB2 is open, so there is no card-detect
    signal to bind; mounting simply fails when no card is present.
 3. **Set Defines** :
-   - **USE_LFN** : `Enabled with static working buffer on the BSS`.
+   - **USE_LFN** : `Enabled with dynamic working buffer on the STACK`.
+   - **MAX_LFN** : `255`.
    - **MAX_SS** : `512`.
    - **FS_EXFAT** : `Disabled` (the card is FAT32).
    - **_VOLUMES** : `1`.
 
 `USE_LFN` is not optional here: `main-board.msfw` is neither an 8-character name nor a
 3-character extension, so a short-name-only build cannot see the files at all.
+
+It goes on the **stack**, not the heap: on the heap FATFS allocates and frees on every `f_open`
+and `f_readdir`, which is the runtime allocation `AGENTS.md` section 3 rules out. On the stack it
+costs `(MAX_LFN + 1) × 2` = 512 bytes in the calling task's frame, which is accounted for in that
+task's stack size.
+
+`MAX_LFN` stays at `255`. Lowering it saves a few hundred bytes of stack but makes `f_readdir`
+fail on any longer name the card happens to carry — a backup folder, an editor's dotfile, anything
+dropped there alongside the images.
 
 #### The two H7 traps
 
