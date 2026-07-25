@@ -37,7 +37,7 @@ CalibrationInboundContext CreateCalibrationInboundContext() noexcept {
 CanContext CreateCanSubsystem(
     midismith::logging::LoggerRequirements& logger,
     midismith::piano_controller::PianoRequirements& piano,
-    const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup,
+    const midismith::main_board::domain::keymap::KeymapLookupRequirements& keymap_lookup,
     midismith::main_board::app::keymap::KeymapSetupCoordinator& keymap_setup_coordinator,
     SupervisorContext& supervisor_ctx,
     CalibrationInboundContext& calibration_inbound_ctx) noexcept {

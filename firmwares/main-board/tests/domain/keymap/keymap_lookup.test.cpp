@@ -10,7 +10,7 @@ TEST_CASE("The KeymapLookup class") {
   data.start_note = 21;
   data.entry_count = 0;
 
-  midismith::main_board::domain::config::KeymapLookup lookup(data);
+  midismith::main_board::domain::keymap::KeymapLookup lookup(data);
 
   SECTION("When the keymap is empty") {
     REQUIRE_FALSE(lookup.FindMidiNote(1, 0).has_value());

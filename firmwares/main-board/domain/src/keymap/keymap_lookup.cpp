@@ -1,6 +1,6 @@
 #include "domain/keymap/keymap_lookup.hpp"
 
-namespace midismith::main_board::domain::config {
+namespace midismith::main_board::domain::keymap {
 
 std::optional<std::uint8_t> KeymapLookup::FindMidiNote(std::uint8_t board_id,
                                                        std::uint8_t sensor_id) const noexcept {
@@ -13,4 +13,4 @@ std::optional<std::uint8_t> KeymapLookup::FindMidiNote(std::uint8_t board_id,
   return std::nullopt;
 }
 
-}  // namespace midismith::main_board::domain::config
+}  // namespace midismith::main_board::domain::keymap
