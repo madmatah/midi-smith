@@ -11,6 +11,9 @@ extern "C" DMA_HandleTypeDef hdma_adc2;
 
 namespace midismith::adc_board::bsp::adc {
 
+using midismith::adc_board::app::analog::AdcFrameDescriptor;
+using midismith::adc_board::app::analog::AdcGroup;
+
 namespace {
 
 alignas(32) BSP_AXI_SRAM_NOCACHE

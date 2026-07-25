@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "app/analog/acquisition_sequencer.hpp"
+#include "app/analog/adc_frame.hpp"
 #include "app/analog/delay_requirements.hpp"
 #include "app/config/config.hpp"
 #include "domain/sensors/calibration_state_utils.hpp"
@@ -79,7 +80,7 @@ class TimestampCounterDelay final : public midismith::adc_board::app::analog::De
 }  // namespace
 
 AnalogAcquisitionTask::AnalogAcquisitionTask(
-    midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>& queue,
+    midismith::os::Queue<midismith::adc_board::app::analog::AdcFrameDescriptor, 8>& queue,
     midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& control_queue,
     midismith::bsp::GpioRequirements& tia_shutdown, midismith::adc_board::bsp::adc::AdcDma& adc_dma,
     midismith::bsp::time::TimestampCounterRequirements& timestamp_counter,
@@ -119,7 +120,7 @@ void AnalogAcquisitionTask::ResetDecodingState() noexcept {
 
 void AnalogAcquisitionTask::DrainFrameQueue() noexcept {
   for (;;) {
-    midismith::adc_board::bsp::adc::AdcFrameDescriptor desc{};
+    midismith::adc_board::app::analog::AdcFrameDescriptor desc{};
     if (!queue_.Receive(desc, midismith::os::kNoWait)) {
       return;
     }
@@ -201,7 +202,7 @@ void AnalogAcquisitionTask::HandleCollectCalibrationData() noexcept {
 }
 
 void AnalogAcquisitionTask::ProcessAdc1Frame(
-    const midismith::adc_board::bsp::adc::AdcFrameDescriptor& desc) noexcept {
+    const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
       desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
@@ -221,7 +222,7 @@ void AnalogAcquisitionTask::ProcessAdc1Frame(
 }
 
 void AnalogAcquisitionTask::ProcessAdc2Frame(
-    const midismith::adc_board::bsp::adc::AdcFrameDescriptor& desc) noexcept {
+    const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
       desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
@@ -241,7 +242,7 @@ void AnalogAcquisitionTask::ProcessAdc2Frame(
 }
 
 void AnalogAcquisitionTask::ProcessAdc3Frame(
-    const midismith::adc_board::bsp::adc::AdcFrameDescriptor& desc) noexcept {
+    const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
       desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
@@ -261,16 +262,16 @@ void AnalogAcquisitionTask::ProcessAdc3Frame(
 }
 
 void AnalogAcquisitionTask::ProcessFrame(
-    const midismith::adc_board::bsp::adc::AdcFrameDescriptor& desc) noexcept {
-  if (desc.group == midismith::adc_board::bsp::adc::AdcGroup::kAdc1) {
+    const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
+  if (desc.group == midismith::adc_board::app::analog::AdcGroup::kAdc1) {
     ProcessAdc1Frame(desc);
     return;
   }
-  if (desc.group == midismith::adc_board::bsp::adc::AdcGroup::kAdc2) {
+  if (desc.group == midismith::adc_board::app::analog::AdcGroup::kAdc2) {
     ProcessAdc2Frame(desc);
     return;
   }
-  if (desc.group == midismith::adc_board::bsp::adc::AdcGroup::kAdc3) {
+  if (desc.group == midismith::adc_board::app::analog::AdcGroup::kAdc3) {
     ProcessAdc3Frame(desc);
   }
 }
@@ -280,7 +281,7 @@ void AnalogAcquisitionTask::HandleEnabledState() noexcept {
     return;
   }
 
-  midismith::adc_board::bsp::adc::AdcFrameDescriptor desc{};
+  midismith::adc_board::app::analog::AdcFrameDescriptor desc{};
   if (!queue_.Receive(desc, 1)) {
     return;
   }
