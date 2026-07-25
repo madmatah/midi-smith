@@ -8,5 +8,6 @@ midismith_add_lib(NAME boot_control
         src/boot_decision.cpp
         src/boot_journal.cpp
         src/boot_journal_record.cpp
+        src/boot_journal_writer.cpp
     DEPENDS byte-codec checksum product-id
 )

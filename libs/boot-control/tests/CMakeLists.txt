@@ -5,4 +5,5 @@ midismith_add_test(NAME boot_control
         boot_decision.test.cpp
         boot_journal.test.cpp
         boot_journal_record.test.cpp
+        boot_journal_writer.test.cpp
 )
