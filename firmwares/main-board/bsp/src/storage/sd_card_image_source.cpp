@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "bsp/memory_sections.hpp"
+#include "bsp_driver_sd.h"
 #include "fatfs.h"
 
 namespace midismith::main_board::bsp::storage {
@@ -52,9 +53,16 @@ class OpenFileGuard {
 
 }  // namespace
 
+bool SdCardImageSource::IsCardPresent() const noexcept {
+  return BSP_SD_IsDetected() == SD_PRESENT;
+}
+
 bool SdCardImageSource::Mount() noexcept {
   if (mounted_) {
     return true;
+  }
+  if (!IsCardPresent()) {
+    return false;
   }
   mounted_ = f_mount(&file_system, SDPath, 1) == FR_OK;
   return mounted_;

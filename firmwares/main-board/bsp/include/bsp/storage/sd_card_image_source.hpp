@@ -15,6 +15,8 @@ class SdCardImageSource final
     : public midismith::update_catalogue::ImageSourceRequirements,
       public midismith::main_board::app::shell::RemovableStorageRequirements {
  public:
+  [[nodiscard]] bool IsCardPresent() const noexcept override;
+
   [[nodiscard]] bool Mount() noexcept override;
 
   void Unmount() noexcept override;
