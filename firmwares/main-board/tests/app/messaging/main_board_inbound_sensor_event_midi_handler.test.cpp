@@ -14,7 +14,7 @@ using fakeit::When;
 namespace {
 
 class StubKeymapLookup final
-    : public midismith::main_board::domain::config::KeymapLookupRequirements {
+    : public midismith::main_board::domain::keymap::KeymapLookupRequirements {
  public:
   std::optional<std::uint8_t> FindMidiNote(std::uint8_t board_id,
                                            std::uint8_t sensor_id) const noexcept override {

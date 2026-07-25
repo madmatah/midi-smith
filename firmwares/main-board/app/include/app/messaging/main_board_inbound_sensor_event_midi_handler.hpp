@@ -12,7 +12,7 @@ class MainBoardInboundSensorEventMidiHandler final {
  public:
   MainBoardInboundSensorEventMidiHandler(
       midismith::piano_controller::PianoRequirements& piano,
-      const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup) noexcept
+      const midismith::main_board::domain::keymap::KeymapLookupRequirements& keymap_lookup) noexcept
       : piano_(piano), keymap_lookup_(keymap_lookup) {}
 
   void OnSensorEvent(const midismith::protocol::SensorEvent& event,
@@ -20,7 +20,7 @@ class MainBoardInboundSensorEventMidiHandler final {
 
  private:
   midismith::piano_controller::PianoRequirements& piano_;
-  const midismith::main_board::domain::config::KeymapLookupRequirements& keymap_lookup_;
+  const midismith::main_board::domain::keymap::KeymapLookupRequirements& keymap_lookup_;
 };
 
 }  // namespace midismith::main_board::app::messaging

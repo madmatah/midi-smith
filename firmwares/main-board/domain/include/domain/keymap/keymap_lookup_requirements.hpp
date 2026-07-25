@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace midismith::main_board::domain::config {
+namespace midismith::main_board::domain::keymap {
 
 class KeymapLookupRequirements {
  public:
@@ -12,4 +12,4 @@ class KeymapLookupRequirements {
                                                    std::uint8_t sensor_id) const noexcept = 0;
 };
 
-}  // namespace midismith::main_board::domain::config
+}  // namespace midismith::main_board::domain::keymap

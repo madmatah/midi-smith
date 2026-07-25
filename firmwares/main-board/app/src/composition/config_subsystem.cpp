@@ -16,7 +16,7 @@ ConfigContext CreateConfigSubsystem() noexcept {
   static midismith::main_board::app::storage::MainBoardPersistentConfiguration persistent_config(
       config_flash_storage);
   persistent_config.Load();
-  static midismith::main_board::domain::config::KeymapLookup keymap_lookup(
+  static midismith::main_board::domain::keymap::KeymapLookup keymap_lookup(
       persistent_config.active_config().data);
   static midismith::os::Mutex keymap_mutex;
   static midismith::main_board::app::tasks::ConfigStorageTask config_storage_task(
