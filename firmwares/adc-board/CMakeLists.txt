@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.22)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_require_lib.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_coverage.cmake)
-
 set(ADC_FIRMWARE_TARGET "adc-board")
 set(ADC_TARGET_PREFIX "adc")
 set(ADC_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
@@ -97,6 +96,9 @@ else()
 
 # Create an executable object type
 add_executable(${ADC_FIRMWARE_TARGET})
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake)
+midismith_flash_layout_header(${ADC_FIRMWARE_TARGET})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_versioning.cmake)
 midismith_firmware_versioning(${ADC_FIRMWARE_TARGET})
@@ -200,10 +202,15 @@ set(FLASH_LAYOUT_CHECK_SCRIPT "${ADC_PROJECT_ROOT}/cmake/check_flash_layout.cmak
 add_custom_command(TARGET ${ADC_FIRMWARE_TARGET} POST_BUILD
     COMMAND ${CMAKE_COMMAND}
             -DMAP_FILE=${CMAKE_BINARY_DIR}/${ADC_FIRMWARE_TARGET}.map
+            -DEXPECTED_CONFIG_ORIGIN=${MIDISMITH_APPLICATION_CONFIG_ADDRESS}
+            -DEXPECTED_CONFIG_SIZE=${MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES}
+            -DEXPECTED_APPLICATION_ORIGIN=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
+            -DEXPECTED_APPLICATION_SIZE=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
             -P ${FLASH_LAYOUT_CHECK_SCRIPT}
     COMMENT "Validate flash layout for persistent configuration"
     VERBATIM
 )
+
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_package.cmake)
 midismith_firmware_package(${ADC_FIRMWARE_TARGET} PRODUCT adc-board)
