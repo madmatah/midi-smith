@@ -1,9 +1,10 @@
 include_guard(GLOBAL)
 
-# The flash map both STM32H743 firmware packages share. They carry the same part and will be
-# installed by the same bootloader, so the map is a monorepo level fact rather than a per-package
-# one. This file is the single source of truth: the linker scripts are checked against it at
-# build time, and the C++ constants are generated from it.
+# The flash map both STM32H743 firmware packages share. They carry the same part and are installed
+# by the same bootloader, so the map is a monorepo level fact rather than a per-package one.
+#
+# libs/flash-layout turns these values into C++ constants; the linker scripts are checked against
+# them at build time. Nothing else may restate an address.
 #
 # Every region an application writes lives in the bank the application does NOT execute from.
 # An H743 stalls the CPU for the whole duration of an erase on the bank it is fetching from, so a
@@ -21,60 +22,53 @@ include_guard(GLOBAL)
 #     S3-S5 0x0816_0000  384K  reserved for the rollback image
 #     S6-S7 0x081C_0000  256K  free
 
-set(MIDISMITH_FLASH_SECTOR_SIZE_BYTES 131072)
+set(MIDISMITH_FLASH_SECTOR_SIZE_BYTES 131072 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_FLASH_BANK_SIZE_BYTES 1048576 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_FLASH_BANK_ONE_ADDRESS 0x08000000 CACHE INTERNAL "midi-smith flash map")
 
-set(MIDISMITH_BOOTLOADER_ADDRESS 0x08000000)
-set(MIDISMITH_BOOTLOADER_SIZE_BYTES 131072)
+set(MIDISMITH_BOOTLOADER_ADDRESS 0x08000000 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_BOOTLOADER_SIZE_BYTES 131072 CACHE INTERNAL "midi-smith flash map")
 
-set(MIDISMITH_STAGING_ADDRESS 0x08020000)
-set(MIDISMITH_STAGING_SIZE_BYTES 393216)
+set(MIDISMITH_STAGING_ADDRESS 0x08020000 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_STAGING_SIZE_BYTES 393216 CACHE INTERNAL "midi-smith flash map")
 
-set(MIDISMITH_BOOT_JOURNAL_ADDRESS 0x080C0000)
-set(MIDISMITH_BOOT_JOURNAL_SIZE_BYTES 131072)
+set(MIDISMITH_BOOT_JOURNAL_ADDRESS 0x080C0000 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_BOOT_JOURNAL_SIZE_BYTES 131072 CACHE INTERNAL "midi-smith flash map")
 
-set(MIDISMITH_APPLICATION_CONFIG_ADDRESS 0x080E0000)
-set(MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES 131072)
-set(MIDISMITH_APPLICATION_CONFIG_BANK 1)
-set(MIDISMITH_APPLICATION_CONFIG_SECTOR 7)
+set(MIDISMITH_APPLICATION_CONFIG_ADDRESS 0x080E0000 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES 131072 CACHE INTERNAL "midi-smith flash map")
 
-set(MIDISMITH_APPLICATION_LOAD_ADDRESS 0x08100000)
-set(MIDISMITH_APPLICATION_SLOT_SIZE_BYTES 393216)
+set(MIDISMITH_APPLICATION_LOAD_ADDRESS 0x08100000 CACHE INTERNAL "midi-smith flash map")
+set(MIDISMITH_APPLICATION_SLOT_SIZE_BYTES 393216 CACHE INTERNAL "midi-smith flash map")
 
-function(midismith_flash_layout_header TARGET)
-    set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
-    set(GENERATED_HEADER "${GENERATED_DIR}/flash-layout/flash_layout.hpp")
-    set(GENERATOR_SCRIPT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/generate_flash_layout_header.cmake")
-
-    add_custom_command(
-        OUTPUT "${GENERATED_HEADER}"
-        COMMAND "${CMAKE_COMMAND}"
-                -DOUTPUT_HEADER=${GENERATED_HEADER}
-                -DFLASH_SECTOR_SIZE_BYTES=${MIDISMITH_FLASH_SECTOR_SIZE_BYTES}
-                -DBOOTLOADER_ADDRESS=${MIDISMITH_BOOTLOADER_ADDRESS}
-                -DBOOTLOADER_SIZE_BYTES=${MIDISMITH_BOOTLOADER_SIZE_BYTES}
-                -DSTAGING_ADDRESS=${MIDISMITH_STAGING_ADDRESS}
-                -DSTAGING_SIZE_BYTES=${MIDISMITH_STAGING_SIZE_BYTES}
-                -DBOOT_JOURNAL_ADDRESS=${MIDISMITH_BOOT_JOURNAL_ADDRESS}
-                -DBOOT_JOURNAL_SIZE_BYTES=${MIDISMITH_BOOT_JOURNAL_SIZE_BYTES}
-                -DAPPLICATION_CONFIG_ADDRESS=${MIDISMITH_APPLICATION_CONFIG_ADDRESS}
-                -DAPPLICATION_CONFIG_SIZE_BYTES=${MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES}
-                -DAPPLICATION_CONFIG_BANK=${MIDISMITH_APPLICATION_CONFIG_BANK}
-                -DAPPLICATION_CONFIG_SECTOR=${MIDISMITH_APPLICATION_CONFIG_SECTOR}
-                -DAPPLICATION_LOAD_ADDRESS=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
-                -DAPPLICATION_SLOT_SIZE_BYTES=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
-                -P ${GENERATOR_SCRIPT}
-        DEPENDS ${GENERATOR_SCRIPT} ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
-        COMMENT "Generating flash_layout.hpp"
-        VERBATIM
-    )
-
-    add_custom_target(${TARGET}_flash_layout DEPENDS "${GENERATED_HEADER}")
-    add_dependencies(${TARGET} ${TARGET}_flash_layout)
-    target_include_directories(${TARGET} PRIVATE ${GENERATED_DIR}/flash-layout)
-
-    # main.c relocates the vector table before HAL_Init inside its USER CODE zone, and C cannot
-    # include the generated C++ header.
+# main.c relocates the vector table before HAL_Init inside its USER CODE zone, and C cannot include
+# the generated C++ header.
+function(midismith_firmware_load_address TARGET)
     target_compile_definitions(${TARGET} PRIVATE
         MIDISMITH_APPLICATION_LOAD_ADDRESS=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
+    )
+endfunction()
+
+# Reconciles the linker script with the map declared above, by reading the emitted .map.
+function(midismith_check_flash_layout TARGET)
+    cmake_parse_arguments(_MSCHECK "WITH_CONFIG_REGION" "" "" ${ARGN})
+
+    set(CONFIG_ARGUMENTS "")
+    if(_MSCHECK_WITH_CONFIG_REGION)
+        set(CONFIG_ARGUMENTS
+            -DEXPECTED_CONFIG_ORIGIN=${MIDISMITH_APPLICATION_CONFIG_ADDRESS}
+            -DEXPECTED_CONFIG_SIZE=${MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES}
+        )
+    endif()
+
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+                -DMAP_FILE=${CMAKE_BINARY_DIR}/${TARGET}.map
+                -DEXPECTED_APPLICATION_ORIGIN=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
+                -DEXPECTED_APPLICATION_SIZE=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
+                ${CONFIG_ARGUMENTS}
+                -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/midismith_check_flash_layout.cmake
+        COMMENT "Validating the flash layout of ${TARGET}"
+        VERBATIM
     )
 endfunction()

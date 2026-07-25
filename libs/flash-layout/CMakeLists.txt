@@ -1,0 +1,45 @@
+cmake_minimum_required(VERSION 3.22)
+project(flash_layout LANGUAGES CXX)
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake)
+
+set(FLASH_LAYOUT_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(FLASH_LAYOUT_GENERATED_HEADER "${FLASH_LAYOUT_GENERATED_DIR}/flash-layout/flash_layout.hpp")
+set(FLASH_LAYOUT_VALUES "${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_flash_layout.cmake")
+set(FLASH_LAYOUT_GENERATOR
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake/generate_flash_layout_header.cmake")
+
+add_custom_command(
+    OUTPUT "${FLASH_LAYOUT_GENERATED_HEADER}"
+    COMMAND ${CMAKE_COMMAND}
+            -DOUTPUT_HEADER=${FLASH_LAYOUT_GENERATED_HEADER}
+            -DFLASH_SECTOR_SIZE_BYTES=${MIDISMITH_FLASH_SECTOR_SIZE_BYTES}
+            -DFLASH_BANK_SIZE_BYTES=${MIDISMITH_FLASH_BANK_SIZE_BYTES}
+            -DFLASH_BANK_ONE_ADDRESS=${MIDISMITH_FLASH_BANK_ONE_ADDRESS}
+            -DBOOTLOADER_ADDRESS=${MIDISMITH_BOOTLOADER_ADDRESS}
+            -DBOOTLOADER_SIZE_BYTES=${MIDISMITH_BOOTLOADER_SIZE_BYTES}
+            -DSTAGING_ADDRESS=${MIDISMITH_STAGING_ADDRESS}
+            -DSTAGING_SIZE_BYTES=${MIDISMITH_STAGING_SIZE_BYTES}
+            -DBOOT_JOURNAL_ADDRESS=${MIDISMITH_BOOT_JOURNAL_ADDRESS}
+            -DBOOT_JOURNAL_SIZE_BYTES=${MIDISMITH_BOOT_JOURNAL_SIZE_BYTES}
+            -DAPPLICATION_CONFIG_ADDRESS=${MIDISMITH_APPLICATION_CONFIG_ADDRESS}
+            -DAPPLICATION_CONFIG_SIZE_BYTES=${MIDISMITH_APPLICATION_CONFIG_SIZE_BYTES}
+            -DAPPLICATION_LOAD_ADDRESS=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
+            -DAPPLICATION_SLOT_SIZE_BYTES=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
+            -P ${FLASH_LAYOUT_GENERATOR}
+    DEPENDS "${FLASH_LAYOUT_GENERATOR}" "${FLASH_LAYOUT_VALUES}"
+    COMMENT "Generating flash-layout/flash_layout.hpp"
+    VERBATIM
+)
+
+add_custom_target(flash_layout_generated_header DEPENDS "${FLASH_LAYOUT_GENERATED_HEADER}")
+
+add_library(flash_layout INTERFACE)
+target_compile_features(flash_layout INTERFACE cxx_std_20)
+target_include_directories(flash_layout INTERFACE "${FLASH_LAYOUT_GENERATED_DIR}")
+add_dependencies(flash_layout flash_layout_generated_header)
+
+if(HOST_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

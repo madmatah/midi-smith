@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "flash_layout.hpp"
+#include "flash-layout/flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
 extern "C" {
@@ -21,7 +21,8 @@ constexpr std::size_t kSectorSizeBytes = midismith::flash_layout::kApplicationCo
 constexpr std::uint32_t kConfigBank = FLASH_BANK_1;
 
 static_assert(midismith::flash_layout::kApplicationConfigBank == 1,
-              "the erase below names bank 1 and the application executes from bank 2");
+              "the erase below names FLASH_BANK_1 and clears the bank 1 error flags, and the "
+              "application executes from bank 2 so the erase never stalls it");
 
 bool HasExpectedBaseAddress(const void* base_address) noexcept {
   return reinterpret_cast<std::uintptr_t>(base_address) == kConfigBaseAddress;
@@ -47,7 +48,7 @@ bool HasValidProgramParameters(std::size_t offset_bytes, const std::uint8_t* dat
   return true;
 }
 
-void ClearBank2ErrorFlags() noexcept {
+void ClearConfigBankErrorFlags() noexcept {
   __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_ALL_ERRORS_BANK1);
 }
 }  // namespace
@@ -85,7 +86,7 @@ StorageOperationResult InternalStorage::EraseSector() noexcept {
   }
 
   HAL_FLASH_Unlock();
-  ClearBank2ErrorFlags();
+  ClearConfigBankErrorFlags();
 
   FLASH_EraseInitTypeDef erase_config{};
   erase_config.TypeErase = FLASH_TYPEERASE_SECTORS;
@@ -119,7 +120,7 @@ StorageOperationResult InternalStorage::Write(std::size_t offset_bytes, const st
   const auto base_address = reinterpret_cast<std::uintptr_t>(base_address_ptr);
 
   HAL_FLASH_Unlock();
-  ClearBank2ErrorFlags();
+  ClearConfigBankErrorFlags();
 
   StorageOperationResult result = StorageOperationResult::kSuccess;
   std::size_t bytes_written = 0;
