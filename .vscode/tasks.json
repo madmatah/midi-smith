@@ -79,31 +79,21 @@
     },
     {
       "label": "Main: build bootloader (Release) + application (Debug)",
-      "type": "shell",
-      "problemMatcher": [
-        "$gcc"
-      ],
       "group": "build",
       "dependsOn": [
         "Boot: configure+build Release",
         "Main: configure+build Debug"
       ],
-      "dependsOrder": "sequence",
-      "command": "echo built"
+      "dependsOrder": "sequence"
     },
     {
       "label": "ADC: build bootloader (Release) + application (Debug)",
-      "type": "shell",
-      "problemMatcher": [
-        "$gcc"
-      ],
       "group": "build",
       "dependsOn": [
         "Boot: configure+build Release",
         "ADC: configure+build Debug"
       ],
-      "dependsOrder": "sequence",
-      "command": "echo built"
+      "dependsOrder": "sequence"
     },
     {
       "label": "Flash: provision a new board (bootloader + main-board, Release)",

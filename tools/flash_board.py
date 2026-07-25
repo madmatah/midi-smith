@@ -168,6 +168,31 @@ def resolve_probe_serial(programmer: str, board: str, explicit_serial: str) -> s
     )
 
 
+SLOTS_TO_REPORT = (
+    ("bootloader", 0x08000000),
+    ("application", 0x08100000),
+)
+
+
+def report_slot_contents(programmer: str, serial: str) -> None:
+    connect = f"port=SWD mode=UR sn={serial}" if serial else "port=SWD mode=UR"
+    for name, address in SLOTS_TO_REPORT:
+        command = [programmer, "-c"] + connect.split() + ["-r32", hex(address), "8"]
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        words = re.findall(r"0x[0-9A-Fa-f]{8}\s*:\s*(.+)", result.stdout)
+        print(f"\n{name} slot at {address:#010x}")
+        if not words:
+            print("    unreadable — is the board powered and the probe connected?")
+            continue
+        first_line = words[0].split()
+        stack_pointer = first_line[0] if first_line else "?"
+        entry_point = first_line[1] if len(first_line) > 1 else "?"
+        print(f"    initial stack pointer : {stack_pointer}")
+        print(f"    reset handler         : {entry_point}")
+        if stack_pointer.upper().endswith("FFFFFFFF"):
+            print("    -> erased, nothing is programmed here")
+
+
 def flash(programmer: str, images: list[Path], serial: str, mass_erase: bool) -> None:
     connect = "port=SWD mode=UR"
     if serial:
@@ -201,12 +226,23 @@ def main(argv: list[str]) -> int:
         action="store_true",
         help="erase the whole flash before writing; use on first provisioning only",
     )
+    parser.add_argument(
+        "--read-vectors",
+        action="store_true",
+        help="report what each slot currently holds, without writing anything",
+    )
     arguments = parser.parse_args(argv)
 
     programmer = find_programmer()
 
     if arguments.list_probes:
         run([programmer, "-l"], "list connected probes")
+        return 0
+
+    if arguments.read_vectors:
+        serial = resolve_probe_serial(programmer, arguments.board or "bootloader",
+                                      arguments.serial)
+        report_slot_contents(programmer, serial)
         return 0
 
     if not arguments.board and not arguments.with_bootloader:
