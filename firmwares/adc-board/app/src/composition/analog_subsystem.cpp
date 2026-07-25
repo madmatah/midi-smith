@@ -311,15 +311,6 @@ AdcControlContext CreateAnalogSubsystem(
                 "Sensor count must be > 0");
   static_assert(midismith::adc_board::app::config::sensors::kSensorCount == 22u,
                 "Expected 22 sensors");
-  static_assert(midismith::adc_board::app::config::sensors::kAdc1RankCount ==
-                    midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence,
-                "ADC1 rank count must match AdcDma ranks");
-  static_assert(midismith::adc_board::app::config::sensors::kAdc2RankCount ==
-                    midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence,
-                "ADC2 rank count must match AdcDma ranks");
-  static_assert(midismith::adc_board::app::config::sensors::kAdc3RankCount ==
-                    midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence,
-                "ADC3 rank count must match AdcDma ranks");
 
   auto& processors = ProcessorsArray();
   AttachSensorRttStreamCaptureToProcessors(processors, capture);

@@ -122,11 +122,11 @@ bool AdcDma::Start() noexcept {
                 static_cast<unsigned>(sequences_per_half_buffer));
 
   adc1_halfwords_per_half_buffer_ =
-      static_cast<std::uint16_t>(sequences_per_half_buffer * kAdc1RanksPerSequence);
+      static_cast<std::uint16_t>(sequences_per_half_buffer * app::config::sensors::kAdc1RankCount);
   adc2_halfwords_per_half_buffer_ =
-      static_cast<std::uint16_t>(sequences_per_half_buffer * kAdc2RanksPerSequence);
+      static_cast<std::uint16_t>(sequences_per_half_buffer * app::config::sensors::kAdc2RankCount);
   adc3_halfwords_per_half_buffer_ =
-      static_cast<std::uint16_t>(sequences_per_half_buffer * kAdc3RanksPerSequence);
+      static_cast<std::uint16_t>(sequences_per_half_buffer * app::config::sensors::kAdc3RankCount);
 
   __disable_irq();
   running_ = true;

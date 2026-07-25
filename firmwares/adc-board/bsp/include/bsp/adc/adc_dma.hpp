@@ -5,6 +5,7 @@
 
 #include "app/analog/adc_dma_control_requirements.hpp"
 #include "app/analog/adc_frame.hpp"
+#include "app/config/sensors.hpp"
 #include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 
@@ -15,17 +16,13 @@ class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequ
   using AdcFrameDescriptor = midismith::adc_board::app::analog::AdcFrameDescriptor;
   using AdcGroup = midismith::adc_board::app::analog::AdcGroup;
 
-  static constexpr std::size_t kAdc1RanksPerSequence = 7;
-  static constexpr std::size_t kAdc2RanksPerSequence = 7;
-  static constexpr std::size_t kAdc3RanksPerSequence = 8;
-
   static constexpr std::size_t kMaxSequencesPerHalfBuffer = 32;
   static constexpr std::size_t kMaxAdc1HalfwordsPerHalfBuffer =
-      kMaxSequencesPerHalfBuffer * kAdc1RanksPerSequence;
+      kMaxSequencesPerHalfBuffer * midismith::adc_board::app::config::sensors::kAdc1RankCount;
   static constexpr std::size_t kMaxAdc2HalfwordsPerHalfBuffer =
-      kMaxSequencesPerHalfBuffer * kAdc2RanksPerSequence;
+      kMaxSequencesPerHalfBuffer * midismith::adc_board::app::config::sensors::kAdc2RankCount;
   static constexpr std::size_t kMaxAdc3HalfwordsPerHalfBuffer =
-      kMaxSequencesPerHalfBuffer * kAdc3RanksPerSequence;
+      kMaxSequencesPerHalfBuffer * midismith::adc_board::app::config::sensors::kAdc3RankCount;
 
   static constexpr std::size_t kMaxAdc1HalfwordsPerBuffer = 2 * kMaxAdc1HalfwordsPerHalfBuffer;
   static constexpr std::size_t kMaxAdc2HalfwordsPerBuffer = 2 * kMaxAdc2HalfwordsPerHalfBuffer;

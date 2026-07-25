@@ -204,7 +204,7 @@ void AnalogAcquisitionTask::HandleCollectCalibrationData() noexcept {
 void AnalogAcquisitionTask::ProcessAdc1Frame(
     const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
-      desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence);
+      desc.element_count / midismith::adc_board::app::config::sensors::kAdc1RankCount);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
       desc.timestamp_ticks,
       ::midismith::adc_board::app::config::ANALOG_ADC12_TICKS_PER_SEQUENCE_ESTIMATE,
@@ -212,19 +212,19 @@ void AnalogAcquisitionTask::ProcessAdc1Frame(
 
   const auto* values = static_cast<const std::uint16_t*>(desc.data);
   ForEachTimestampedSequenceInHalfBuffer<
-      std::uint16_t, midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence>(
+      std::uint16_t, midismith::adc_board::app::config::sensors::kAdc1RankCount>(
       values, desc.timestamp_ticks, ticks_per_sequence, sequences_per_half_buffer,
       [this](const std::uint16_t* seq_ptr, std::uint32_t ts) noexcept {
-        decoder_.ApplySequence(
-            seq_ptr, midismith::adc_board::bsp::adc::AdcDma::kAdc1RanksPerSequence,
-            ::midismith::adc_board::app::config::sensors::kAdc1SensorIdByRank, analog_group_, ts);
+        decoder_.ApplySequence(seq_ptr, midismith::adc_board::app::config::sensors::kAdc1RankCount,
+                               ::midismith::adc_board::app::config::sensors::kAdc1SensorIdByRank,
+                               analog_group_, ts);
       });
 }
 
 void AnalogAcquisitionTask::ProcessAdc2Frame(
     const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
-      desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence);
+      desc.element_count / midismith::adc_board::app::config::sensors::kAdc2RankCount);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
       desc.timestamp_ticks,
       ::midismith::adc_board::app::config::ANALOG_ADC12_TICKS_PER_SEQUENCE_ESTIMATE,
@@ -232,19 +232,19 @@ void AnalogAcquisitionTask::ProcessAdc2Frame(
 
   const auto* values = static_cast<const std::uint16_t*>(desc.data);
   ForEachTimestampedSequenceInHalfBuffer<
-      std::uint16_t, midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence>(
+      std::uint16_t, midismith::adc_board::app::config::sensors::kAdc2RankCount>(
       values, desc.timestamp_ticks, ticks_per_sequence, sequences_per_half_buffer,
       [this](const std::uint16_t* seq_ptr, std::uint32_t ts) noexcept {
-        decoder_.ApplySequence(
-            seq_ptr, midismith::adc_board::bsp::adc::AdcDma::kAdc2RanksPerSequence,
-            ::midismith::adc_board::app::config::sensors::kAdc2SensorIdByRank, analog_group_, ts);
+        decoder_.ApplySequence(seq_ptr, midismith::adc_board::app::config::sensors::kAdc2RankCount,
+                               ::midismith::adc_board::app::config::sensors::kAdc2SensorIdByRank,
+                               analog_group_, ts);
       });
 }
 
 void AnalogAcquisitionTask::ProcessAdc3Frame(
     const midismith::adc_board::app::analog::AdcFrameDescriptor& desc) noexcept {
   const std::uint16_t sequences_per_half_buffer = static_cast<std::uint16_t>(
-      desc.element_count / midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence);
+      desc.element_count / midismith::adc_board::app::config::sensors::kAdc3RankCount);
   const std::uint32_t ticks_per_sequence = ComputeTicksPerSequence(
       desc.timestamp_ticks,
       ::midismith::adc_board::app::config::ANALOG_ADC3_TICKS_PER_SEQUENCE_ESTIMATE,
@@ -252,12 +252,12 @@ void AnalogAcquisitionTask::ProcessAdc3Frame(
 
   const auto* values = static_cast<const std::uint16_t*>(desc.data);
   ForEachTimestampedSequenceInHalfBuffer<
-      std::uint16_t, midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence>(
+      std::uint16_t, midismith::adc_board::app::config::sensors::kAdc3RankCount>(
       values, desc.timestamp_ticks, ticks_per_sequence, sequences_per_half_buffer,
       [this](const std::uint16_t* seq_ptr, std::uint32_t ts) noexcept {
-        decoder_.ApplySequence(
-            seq_ptr, midismith::adc_board::bsp::adc::AdcDma::kAdc3RanksPerSequence,
-            ::midismith::adc_board::app::config::sensors::kAdc3SensorIdByRank, analog_group_, ts);
+        decoder_.ApplySequence(seq_ptr, midismith::adc_board::app::config::sensors::kAdc3RankCount,
+                               ::midismith::adc_board::app::config::sensors::kAdc3SensorIdByRank,
+                               analog_group_, ts);
       });
 }
 
