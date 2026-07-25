@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
-project(config LANGUAGES CXX)
+project(checksum LANGUAGES CXX)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
-midismith_add_lib(NAME config
-    DEPENDS
-        bsp-types
-        checksum
-)
+midismith_add_lib(NAME checksum)

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "config/crc32.hpp"
+#include "checksum/crc32.hpp"
 
 namespace midismith::config {
 
@@ -29,7 +29,7 @@ class ConfigValidator {
       return ConfigStatus::kInvalidMagic;
     }
 
-    std::uint32_t computed_crc = midismith::config::ComputeCrc32(
+    std::uint32_t computed_crc = midismith::checksum::ComputeCrc32(
         reinterpret_cast<const std::uint8_t*>(&config), offsetof(TConfig, crc32));
     if (computed_crc != config.crc32) {
       return ConfigStatus::kInvalidCrc;
@@ -47,8 +47,8 @@ class ConfigValidator {
   }
 
   static void StampCrc(TConfig& config) noexcept {
-    config.crc32 = midismith::config::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
-                                                   offsetof(TConfig, crc32));
+    config.crc32 = midismith::checksum::ComputeCrc32(reinterpret_cast<const std::uint8_t*>(&config),
+                                                     offsetof(TConfig, crc32));
   }
 };
 
