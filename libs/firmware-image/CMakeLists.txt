@@ -5,7 +5,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_add_lib.cmake)
 
 midismith_add_lib(NAME firmware_image
     SOURCES
-        src/image_acceptance.cpp
+        src/image_installability.cpp
         src/image_header.cpp
-    DEPENDS byte-codec
+    DEPENDS byte-codec checksum
 )

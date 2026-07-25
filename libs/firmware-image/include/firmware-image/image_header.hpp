@@ -54,6 +54,9 @@ struct ImageHeaderParseResult {
 };
 
 [[nodiscard]] ImageHeaderParseResult ParseImageHeader(
-    std::span<const std::uint8_t> buffer) noexcept;
+    std::span<const std::uint8_t> container) noexcept;
+
+[[nodiscard]] std::optional<std::span<const std::uint8_t>> ContainerPayload(
+    const ImageHeader& header, std::span<const std::uint8_t> container) noexcept;
 
 }  // namespace midismith::firmware_image
