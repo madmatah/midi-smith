@@ -1,5 +1,6 @@
 #include "bsp/cortex/axi_sram_nocache_mpu.hpp"
 
+#include "bsp/cortex/mpu_memory_attributes.hpp"
 #include "stm32h7xx_hal.h"
 
 namespace midismith::adc_board::bsp::cortex {
@@ -13,7 +14,7 @@ void AxiSramNoCacheMpu::ConfigureRegion() noexcept {
   region.BaseAddress = kBaseAddress;
   region.Size = MPU_REGION_SIZE_8KB;
   region.SubRegionDisable = 0x00;
-  region.TypeExtField = MPU_TEX_LEVEL0;
+  region.TypeExtField = midismith::bsp::cortex::kTypeExtensionForNormalNonCacheable;
   region.AccessPermission = MPU_REGION_FULL_ACCESS;
   region.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
   region.IsShareable = MPU_ACCESS_SHAREABLE;
