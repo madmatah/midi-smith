@@ -126,6 +126,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/spi.cpp
     bsp/src/stm32_spi_flash.cpp
     bsp/src/storage/spi_flash_sector_storage.cpp
+    bsp/src/storage/sd_card_bring_up.cpp
     bsp/src/storage/sd_card_image_source.cpp
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
