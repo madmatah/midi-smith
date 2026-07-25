@@ -40,10 +40,8 @@ This guide describes how to configure the STM32H743VIT6 as the central controlle
 - **PC11** : `SDMMC1_D3`
 - **PC12** : `SDMMC1_CK`
 - **PD2**  : `SDMMC1_CMD`
-
-The socket's card-detect contact reaches `PD4` through solder bridge **SB2**, which is open on
-this board. `PD4` is therefore left unassigned and the firmware mounts the card on demand rather
-than on insertion.
+- **PD4**  : `SD_SW` — the socket's card-detect contact, which reaches the MCU only through solder
+  bridge **SB2**. Section 9.C covers what to configure once that bridge is closed.
 
 ### External Storage (SPI Flash (U8) & QSPI (U7))
 - **PB2** : `QUADSPI_CLK` (QUADSPI_CLK)
@@ -293,9 +291,18 @@ time instead, and reports failure rather than halting).
 
 **[`Middleware and Software Packs` > `FATFS`]**
 1. **Mode** : `SD Card`.
-2. **Platform Settings** : leave `Detect_SDIO` on `Undefined` — **SB2 is open** on this board, so
-   the socket's detect contact never reaches `PD4` and a bound pin would report "no card" forever.
-   Generating with it unset warns rather than errors: answer **Yes**.
+2. **Platform Settings** : set `Detect_SDIO` to `PD4`, and configure `PD4` as `GPIO_Input` with
+   **pull-up** in section 10. This requires **SB2 to be soldered**: the detect contact reaches the
+   MCU only through that bridge, and with it open the firmware would read a floating pin.
+
+   Without detection the firmware cannot tell an empty slot from an unresponsive card, and only
+   finds out by exhausting a 30-second timeout inside the SD driver — a busy-wait that freezes the
+   task doing the mount. If the bridge is left open, set this back to `Undefined` (generating warns
+   rather than errors: answer **Yes**) and accept that cost.
+
+   The generated `BSP_SD_IsDetected()` reads the pin as **low = card present**. Confirm that
+   against the schematic; if the switch is wired the other way, override the `__weak` function
+   rather than inverting anything in CubeMX.
 3. **Set Defines** :
    - **USE_LFN** : `Enabled with dynamic working buffer on the STACK` — `main-board.msfw` is not an
      8.3 name, and the heap would mean runtime allocation (`AGENTS.md` §3). Costs
@@ -324,7 +331,8 @@ time instead, and reports failure rather than halting).
 12. **LOAD7** (P7) : Output level `Low`
 13. **LOAD8** (P8) : Output level `Low`
 14. **ROTARY_BTN (PB15)** : Input, Pull-up (button reads active-low; the line floats when released without it)
-15.  **USER_LED (PE3)** : Output Level `Low`, mode `Output Push Pull`, `No pull-up and no pull-down` (the LED is active-high through a transistor base; an open-drain output could never light it)
+15. **SD_SW (PD4)** : Input, Pull-up (the detect switch closes to ground when a card is seated; requires SB2 soldered)
+16.  **USER_LED (PE3)** : Output Level `Low`, mode `Output Push Pull`, `No pull-up and no pull-down` (the LED is active-high through a transistor base; an open-drain output could never light it)
 
 ---
 
