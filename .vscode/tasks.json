@@ -58,6 +58,97 @@
       "group": "build",
       "problemMatcher": [],
       "detail": "Lint code"
+    },
+    {
+      "label": "Boot: configure+build Debug",
+      "type": "shell",
+      "command": "cmake --preset boot-Debug && cmake --build --preset boot-Debug --target bootloader",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Boot: configure+build Release",
+      "type": "shell",
+      "command": "cmake --preset boot-Release && cmake --build --preset boot-Release --target bootloader",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Main: build bootloader (Release) + application (Debug)",
+      "type": "shell",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build",
+      "dependsOn": [
+        "Boot: configure+build Release",
+        "Main: configure+build Debug"
+      ],
+      "dependsOrder": "sequence",
+      "command": "echo built"
+    },
+    {
+      "label": "ADC: build bootloader (Release) + application (Debug)",
+      "type": "shell",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build",
+      "dependsOn": [
+        "Boot: configure+build Release",
+        "ADC: configure+build Debug"
+      ],
+      "dependsOrder": "sequence",
+      "command": "echo built"
+    },
+    {
+      "label": "Flash: provision a new board (bootloader + main-board, Release)",
+      "type": "shell",
+      "command": "python3 tools/flash_board.py --board main --with-bootloader",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Flash: provision a new board (bootloader + adc-board, Release)",
+      "type": "shell",
+      "command": "python3 tools/flash_board.py --board adc --with-bootloader",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Flash: main-board Release",
+      "type": "shell",
+      "command": "python3 tools/flash_board.py --board main",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Flash: adc-board Release",
+      "type": "shell",
+      "command": "python3 tools/flash_board.py --board adc",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Flash: list ST-LINK probes",
+      "type": "shell",
+      "command": "python3 tools/flash_board.py --list-probes",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
     }
   ]
 }

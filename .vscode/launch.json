@@ -103,7 +103,8 @@
       "executable": "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
       "device": "STM32H743VITx",
       "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
-      "runToEntryPoint": "main"
+      "runToEntryPoint": "main",
+      "preLaunchTask": "Boot: configure+build Debug"
     },
     {
       "name": "Flash bootloader + main-board (debug application)",
@@ -122,12 +123,13 @@
       "cwd": "${workspaceFolder}",
       "executable": "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf",
       "loadFiles": [
-        "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
+        "${workspaceFolder}/build/boot-Release/firmwares/bootloader/bootloader.elf",
         "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf"
       ],
       "device": "STM32H743VITx",
       "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
-      "runToEntryPoint": "main"
+      "runToEntryPoint": "main",
+      "preLaunchTask": "Main: build bootloader (Release) + application (Debug)"
     },
     {
       "name": "Flash bootloader + adc-board (debug application)",
@@ -146,12 +148,13 @@
       "cwd": "${workspaceFolder}",
       "executable": "${workspaceFolder}/build/adc-Debug/firmwares/adc-board/adc-board.elf",
       "loadFiles": [
-        "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
+        "${workspaceFolder}/build/boot-Release/firmwares/bootloader/bootloader.elf",
         "${workspaceFolder}/build/adc-Debug/firmwares/adc-board/adc-board.elf"
       ],
       "device": "STM32H743VITx",
       "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
-      "runToEntryPoint": "main"
+      "runToEntryPoint": "main",
+      "preLaunchTask": "ADC: build bootloader (Release) + application (Debug)"
     }
   ]
 }
