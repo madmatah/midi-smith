@@ -6,15 +6,18 @@
 #include <span>
 #include <string_view>
 
+#include "app/shell/removable_storage_requirements.hpp"
 #include "update-catalogue/image_source_requirements.hpp"
 
 namespace midismith::main_board::bsp::storage {
 
-class SdCardImageSource final : public midismith::update_catalogue::ImageSourceRequirements {
+class SdCardImageSource final
+    : public midismith::update_catalogue::ImageSourceRequirements,
+      public midismith::main_board::app::shell::RemovableStorageRequirements {
  public:
-  [[nodiscard]] bool Mount() noexcept;
+  [[nodiscard]] bool Mount() noexcept override;
 
-  void Unmount() noexcept;
+  void Unmount() noexcept override;
 
   [[nodiscard]] bool is_mounted() const noexcept {
     return mounted_;

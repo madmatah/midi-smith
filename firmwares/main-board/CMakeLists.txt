@@ -159,6 +159,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/can_command.cpp
     app/src/shell/adc_command.cpp
     app/src/shell/keymap_command.cpp
+    app/src/shell/sdcard_command.cpp
     app/src/shell/calibration_command.cpp
     app/src/shell/ui_command.cpp
     app/src/shell/os_clock_blocking_delay.cpp

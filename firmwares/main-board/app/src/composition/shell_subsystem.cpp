@@ -4,10 +4,12 @@
 #include "app/shell/adc_command.hpp"
 #include "app/shell/can_command.hpp"
 #include "app/shell/keymap_command.hpp"
+#include "app/shell/sdcard_command.hpp"
 #include "app/tasks/shell_task.hpp"
 #include "app/version.hpp"
 #include "bsp-types/can/can_bus_stats_provider.hpp"
 #include "bsp/stm32_board_reset.hpp"
+#include "bsp/storage/sd_card_image_source.hpp"
 #include "os/runtime_stats.hpp"
 #include "protocol-can/can_inbound_decode_stats_provider.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
@@ -64,6 +66,11 @@ ShellCommandsContext CreateShellSubsystem(
 
   static midismith::main_board::app::shell::KeymapCommand keymap_cmd(keymap_setup_coordinator);
   shell_task_ptr->RegisterCommand(keymap_cmd);
+
+  static midismith::main_board::bsp::storage::SdCardImageSource sd_card;
+  static midismith::main_board::app::shell::SdCardCommand sdcard_cmd(
+      sd_card, sd_card, midismith::main_board::app::version::kFullVersion);
+  shell_task_ptr->RegisterCommand(sdcard_cmd);
 
   static midismith::bsp::Stm32BoardReset board_reset;
   static midismith::shell_cmd_reboot::RebootCommand reboot_cmd(board_reset);
