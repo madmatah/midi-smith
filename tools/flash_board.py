@@ -12,11 +12,61 @@ A board holds two independent programs, each carrying its own load address in it
 
 Writing one never touches the other, so `--board main` on a board that already has a bootloader
 leaves it alone.
+
+RECIPES
+-------
+
+Provision a board that has never carried a bootloader. The mass erase clears the leftovers of the
+pre-bootloader layout, whose application occupied the address the bootloader now takes:
+
+    python3 tools/flash_board.py --board main --with-bootloader --mass-erase
+    python3 tools/flash_board.py --board adc  --with-bootloader --mass-erase
+
+Write a Release application onto a board that is already provisioned. The bootloader is left
+untouched:
+
+    python3 tools/flash_board.py --board main
+    python3 tools/flash_board.py --board adc
+
+Write a Debug application, for bench work without the debugger attached:
+
+    python3 tools/flash_board.py --board main --build-type Debug
+
+Flash what is already built, without re-running CMake:
+
+    python3 tools/flash_board.py --board main --no-build
+
+Reinstall only the bootloader, leaving the application in place:
+
+    python3 tools/flash_board.py --board bootloader
+
+CHOOSING THE PROBE
+------------------
+
+With several ST-LINK probes connected, the board a command reaches must never be a guess. The
+probe is resolved in this order, and the tool refuses to run rather than pick one arbitrarily:
+
+    1. --serial <sn>
+    2. $MIDISMITH_STLINK_SERIAL_MAIN   for --board main
+       $MIDISMITH_STLINK_SERIAL_ADC    for --board adc
+    3. the only probe connected, when there is exactly one
+
+The same two environment variables select the probe for the debugger configurations in
+.vscode/launch.json, so exporting them once covers both workflows:
+
+    export MIDISMITH_STLINK_SERIAL_MAIN=<sn>
+    export MIDISMITH_STLINK_SERIAL_ADC=<sn>
+
+List what is connected:
+
+    python3 tools/flash_board.py --list-probes
 """
 
 from __future__ import annotations
 
 import argparse
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -31,10 +81,24 @@ PROGRAMMER_SEARCH_PATHS = [
 ]
 
 BOARDS = {
-    "bootloader": {"preset": "boot", "artefact": "firmwares/bootloader/bootloader.elf"},
-    "main": {"preset": "main", "artefact": "firmwares/main-board/main-board.elf"},
-    "adc": {"preset": "adc", "artefact": "firmwares/adc-board/adc-board.elf"},
+    "bootloader": {
+        "preset": "boot",
+        "artefact": "firmwares/bootloader/bootloader.elf",
+        "probe_variable": "",
+    },
+    "main": {
+        "preset": "main",
+        "artefact": "firmwares/main-board/main-board.elf",
+        "probe_variable": "MIDISMITH_STLINK_SERIAL_MAIN",
+    },
+    "adc": {
+        "preset": "adc",
+        "artefact": "firmwares/adc-board/adc-board.elf",
+        "probe_variable": "MIDISMITH_STLINK_SERIAL_ADC",
+    },
 }
+
+PROBE_SERIAL_PATTERN = re.compile(r"ST-LINK SN\s*:\s*(\S+)")
 
 # Erased flash reads as 0xFF, which the bootloader treats as an empty journal and an absent
 # staged image — the state a freshly provisioned board should start from.
@@ -70,6 +134,38 @@ def artefact_of(board: str, build_type: str) -> Path:
     if not path.is_file():
         raise SystemExit(f"error: {path} not found; build it first or drop --no-build")
     return path
+
+
+def connected_probes(programmer: str) -> list[str]:
+    listing = subprocess.run([programmer, "-l"], capture_output=True, text=True, check=False)
+    # STM32_Programmer_CLI prints each serial twice, once in the probe list and once in the
+    # detail block below it.
+    return list(dict.fromkeys(PROBE_SERIAL_PATTERN.findall(listing.stdout)))
+
+
+def resolve_probe_serial(programmer: str, board: str, explicit_serial: str) -> str:
+    if explicit_serial:
+        return explicit_serial
+
+    probe_variable = BOARDS.get(board, {}).get("probe_variable", "")
+    from_environment = os.environ.get(probe_variable, "") if probe_variable else ""
+    if from_environment:
+        print(f"    probe from ${probe_variable}: {from_environment}")
+        return from_environment
+
+    probes = connected_probes(programmer)
+    if len(probes) == 1:
+        return probes[0]
+    if not probes:
+        raise SystemExit("error: no ST-LINK probe connected")
+
+    hint = f" or export {probe_variable}" if probe_variable else ""
+    raise SystemExit(
+        f"error: {len(probes)} ST-LINK probes connected and no mapping for '{board}'.\n"
+        f"       Flashing the wrong board is not a risk worth taking, so pick one explicitly.\n"
+        f"       Connected: {', '.join(probes)}\n"
+        f"       Pass --serial <sn>{hint}."
+    )
 
 
 def flash(programmer: str, images: list[Path], serial: str, mass_erase: bool) -> None:
@@ -132,7 +228,10 @@ def main(argv: list[str]) -> int:
             build("boot", arguments.build_type)
         images.append(artefact_of("bootloader", arguments.build_type))
 
-    flash(programmer, images, arguments.serial, arguments.mass_erase)
+    probe_serial = resolve_probe_serial(programmer, arguments.board or "bootloader",
+                                        arguments.serial)
+
+    flash(programmer, images, probe_serial, arguments.mass_erase)
 
     print("\nDone. The board resets into the bootloader, which hands over to the application.")
     return 0
