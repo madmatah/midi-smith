@@ -68,6 +68,27 @@ TEST_CASE("The ClassName class") {
 
 Inside the leaf `SECTION`: Arrange, then Act, then Assert. No comments on these phases.
 
+### Free functions: 3 levels
+
+A free function has no method to name, so the `SECTION` L1 level is dropped. Repeating the
+function name under a `TEST_CASE` already named for it carries no information.
+
+| Level | Pattern | Example |
+|---|---|---|
+| `TEST_CASE` | `"The <Name> function"` | `"The ComputeCrc32 function"` |
+| `SECTION` L1 | `"When <context>"` | `"When given no data"` |
+| `SECTION` L2 | `"Should <outcome>"` | `"Should produce zero"` |
+
+This applies to the whole function, not file by file: a type that genuinely has several methods
+keeps all 4 levels even when it sits next to free functions in the same file.
+
+### Cross-cutting contracts
+
+A `TEST_CASE` may name a contract rather than a symbol when what is under test is an agreement
+between two implementations — a wire format, a file layout, a container written by one tool and
+read by another. Name the contract and its other side, then keep the `When`/`Should` levels:
+`"The .msfw container produced by tools/firmware_packager.py"`.
+
 ## Stubs and mocks
 
 Two strategies are available. **Use FakeIt by default**; fall back to manual stubs when FakeIt doesn't fit.
