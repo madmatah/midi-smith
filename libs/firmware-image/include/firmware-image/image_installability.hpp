@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 
 #include "firmware-image/image_header.hpp"
 #include "firmware-image/product_id.hpp"
@@ -14,16 +15,20 @@ struct TargetConstraints {
   std::uint16_t supported_protocol_version = 0;
 };
 
-enum class ImageAcceptance : std::uint8_t {
-  kAccepted = 0,
+enum class ImageInstallability : std::uint8_t {
+  kInstallable = 0,
   kProductMismatch,
   kLoadAddressMismatch,
   kPayloadEmpty,
   kPayloadTooLarge,
+  kPayloadMisaligned,
+  kPayloadTruncated,
   kProtocolTooRecent,
+  kPayloadChecksumMismatch,
 };
 
-[[nodiscard]] ImageAcceptance EvaluateImageAcceptance(
-    const ImageHeader& header, const TargetConstraints& constraints) noexcept;
+[[nodiscard]] ImageInstallability EvaluateImageInstallability(
+    const ImageHeader& header, std::span<const std::uint8_t> payload,
+    const TargetConstraints& constraints) noexcept;
 
 }  // namespace midismith::firmware_image

@@ -15,10 +15,14 @@ section of libs/firmware-image/tests/image_header.test.cpp fails when they diver
     0x14     2    min_compatible_protocol_version
     0x16     2    reserved
     0x18    32    version_string       NUL padded, last byte always NUL
-    0x38    20    build_date           NUL padded, last byte always NUL
-    0x4C    16    reserved
+    0x38    32    build_date           NUL padded, last byte always NUL
+    0x58     4    reserved
     0x5C     4    header_crc32         CRC-32 over bytes 0x00..0x5B
-    0x60   ...    payload
+    0x60   ...    payload              padded with 0xFF to a whole flash word
+
+The payload is padded because the STM32H743 programs flash 256 bits at a time and cannot
+write a partial word. 0xFF is the erased-flash value, so the padding costs nothing and the
+declared payload_size_bytes is always a whole number of flash words.
 """
 
 from __future__ import annotations
@@ -46,6 +50,7 @@ PRODUCT_IDS = {
 PRODUCT_NAMES = {value: key for key, value in PRODUCT_IDS.items()}
 
 FLASH_WORD_SIZE_BYTES = 32
+ERASED_FLASH_BYTE = 0xFF
 
 assert HEADER_STRUCT.size == HEADER_SIZE_BYTES
 assert HEADER_SIZE_BYTES % FLASH_WORD_SIZE_BYTES == 0
@@ -167,7 +172,8 @@ def describe(header: ImageHeader, container_size_bytes: int) -> str:
             f"  product           {product}",
             f"  version           {header.version_string}",
             f"  build date        {header.build_date}",
-            f"  payload           {header.payload_size_bytes} bytes (crc32 0x{header.payload_crc32:08X})",
+            f"  payload           {header.payload_size_bytes} bytes "
+            f"(crc32 0x{header.payload_crc32:08X})",
             f"  load address      0x{header.load_address:08X}",
             f"  min protocol      {header.min_compatible_protocol_version}",
             f"  container         {container_size_bytes} bytes",
@@ -175,11 +181,20 @@ def describe(header: ImageHeader, container_size_bytes: int) -> str:
     )
 
 
+def pad_to_flash_word(payload: bytes) -> bytes:
+    remainder = len(payload) % FLASH_WORD_SIZE_BYTES
+    if remainder == 0:
+        return payload
+    return payload + bytes([ERASED_FLASH_BYTE]) * (FLASH_WORD_SIZE_BYTES - remainder)
+
+
 def pack(arguments: argparse.Namespace) -> int:
-    payload = Path(arguments.input).read_bytes()
-    if not payload:
+    raw_payload = Path(arguments.input).read_bytes()
+    if not raw_payload:
         print(f"error: {arguments.input} is empty", file=sys.stderr)
         return 1
+
+    payload = pad_to_flash_word(raw_payload)
 
     if arguments.elf:
         try:
@@ -249,6 +264,14 @@ def inspect(arguments: argparse.Namespace) -> int:
 
     if (zlib.crc32(payload) & 0xFFFFFFFF) != header.payload_crc32:
         print("error: payload checksum mismatch", file=sys.stderr)
+        return 1
+
+    if header.payload_size_bytes % FLASH_WORD_SIZE_BYTES != 0:
+        print(
+            f"error: payload is {header.payload_size_bytes} bytes, not a whole "
+            f"{FLASH_WORD_SIZE_BYTES}-byte flash word",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"{arguments.input}")
