@@ -4,12 +4,12 @@
 
 #include "app/analog/acquisition_command.hpp"
 #include "app/analog/acquisition_state.hpp"
+#include "app/analog/adc_dma_control_requirements.hpp"
 #include "app/analog/adc_frame.hpp"
 #include "app/analog/adc_rank_mapped_frame_decoder.hpp"
 #include "app/analog/signal_context.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
 #include "app/config/sensors.hpp"
-#include "bsp/adc/adc_dma.hpp"
 #include "bsp/gpio_requirements.hpp"
 #include "bsp/time/timestamp_counter_requirements.hpp"
 #include "calibration/calibration_validator_requirements.hpp"
@@ -32,7 +32,7 @@ class AnalogAcquisitionTask {
   using AdcFrameDescriptor = midismith::adc_board::app::analog::AdcFrameDescriptor;
   using AcquisitionCommand = midismith::adc_board::app::analog::AcquisitionCommand;
   using AcquisitionSequencer = midismith::adc_board::app::analog::AcquisitionSequencer;
-  using AdcDma = midismith::adc_board::bsp::adc::AdcDma;
+  using AdcDmaControlRequirements = midismith::adc_board::app::analog::AdcDmaControlRequirements;
   using AdcRankMappedFrameDecoder = midismith::adc_board::app::analog::AdcRankMappedFrameDecoder;
   using AnalogAcquisitionState = midismith::adc_board::app::analog::AcquisitionState;
   using GpioRequirements = midismith::bsp::GpioRequirements;
@@ -46,7 +46,7 @@ class AnalogAcquisitionTask {
   AnalogAcquisitionTask(
       midismith::os::Queue<AdcFrameDescriptor, 8>& queue,
       midismith::os::Queue<AcquisitionCommand, 4>& control_queue, GpioRequirements& tia_shutdown,
-      AdcDma& adc_dma, TimestampCounterRequirements& timestamp_counter,
+      AdcDmaControlRequirements& adc_dma, TimestampCounterRequirements& timestamp_counter,
       volatile AnalogAcquisitionState& state, ProcessedSensorGroup& analog_group,
       midismith::os::QueueRequirements<CalibrationArray>& calibration_result_queue,
       SensorRegistry& sensor_registry,
@@ -74,7 +74,7 @@ class AnalogAcquisitionTask {
   midismith::os::Queue<AdcFrameDescriptor, 8>& queue_;
   midismith::os::Queue<AcquisitionCommand, 4>& control_queue_;
   GpioRequirements& tia_shutdown_;
-  AdcDma& adc_dma_;
+  AdcDmaControlRequirements& adc_dma_;
   TimestampCounterRequirements& timestamp_counter_;
   volatile AnalogAcquisitionState& state_;
   ProcessedSensorGroup& analog_group_;

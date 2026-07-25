@@ -82,7 +82,8 @@ class TimestampCounterDelay final : public midismith::adc_board::app::analog::De
 AnalogAcquisitionTask::AnalogAcquisitionTask(
     midismith::os::Queue<midismith::adc_board::app::analog::AdcFrameDescriptor, 8>& queue,
     midismith::os::Queue<midismith::adc_board::app::analog::AcquisitionCommand, 4>& control_queue,
-    midismith::bsp::GpioRequirements& tia_shutdown, midismith::adc_board::bsp::adc::AdcDma& adc_dma,
+    midismith::bsp::GpioRequirements& tia_shutdown,
+    midismith::adc_board::app::analog::AdcDmaControlRequirements& adc_dma,
     midismith::bsp::time::TimestampCounterRequirements& timestamp_counter,
     volatile midismith::adc_board::app::analog::AcquisitionState& state,
     ProcessedSensorGroup& analog_group,
