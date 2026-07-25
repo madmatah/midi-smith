@@ -272,74 +272,39 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 
 ### C. MicroSD Card (Firmware Images)
 
-The card is the transport that carries firmware images from the workstation to the instrument.
-The main board reads `.msfw` containers from it, stages its own and forwards the ADC boards' over
-CAN. It is read-only from the firmware's point of view.
+The card carries `.msfw` firmware images from the workstation to the instrument: the main board
+reads its own, stages it, and forwards the ADC boards' over CAN. Read-only from the firmware's
+point of view.
 
 **[`Connectivity` > `SDMMC1`]**
-
-1. **Mode** : `SD 4 bits Wide bus`.
-2. **Parameter Settings** :
-   - **Clock transition on which edge** : `Rising Transition`.
-   - **Clock divide factor** : `2`.
-   - **Hardware flow control** : `Enable` (prevents FIFO underrun on the H7 at 4-bit width).
-   - **Power save** : `Disable`.
-
-`SDMMC_CK = sdmmc_ker_ck / (2 × ClockDiv)`. The kernel clock already arrives at **80 MHz** from
-`PLL1Q` (see section 2), so a divider of `2` gives **20 MHz**, inside the 25 MHz default-speed
-limit of every SD card. At 4 bits that is far more throughput than a 130 KB image needs; do not
-raise it for speed alone, an instrument that vibrates is not the place to run a card at its limit.
+1. **Mode** : `SD 4 bits Wide bus` (this is what assigns `PC8`–`PC12` and `PD2`).
+2. **Parameter Settings** : leave the defaults. They feed only the generated init, which the
+   `Project Manager` step below switches off; the firmware sets the bus up itself in
+   `bsp/src/storage/sd_card_bring_up.cpp`.
 
 **[`Clock Configuration` tab]** — confirm `SDMMC` is fed from `PLL1Q` and reads `80 MHz`.
 
 **[`System Core` > `NVIC`]** — enable **SDMMC1 global interrupt**.
 
-**[`Project Manager` > `Advanced Settings`]** — in the **Generated Function Calls** list, tick
-**Do Not Generate Function Call** for `MX_SDMMC1_SD_Init`.
-
-The card is removable, so bringing it up must never be a condition of booting. The generated
-`MX_SDMMC1_SD_Init()` calls `HAL_SD_Init()` unconditionally and sends any failure to
-`Error_Handler()`, which halts the CPU: an empty slot would stop the instrument from playing.
-FATFS already owns SD bring-up at mount time — `f_mount` reaches `BSP_SD_Init()`, which reports an
-error instead of halting. Unticking the call leaves `MX_SDMMC1_SD_Init()` defined in `sdmmc.c` and
-uncalled; nothing else is lost, because the pin, clock and NVIC setup lives in `HAL_SD_MspInit()`,
-which `HAL_SD_Init()` invokes on its own.
-
-The parameters above therefore take effect through
-`firmwares/main-board/bsp/src/storage/sd_card_bring_up.cpp`, which provides the strong
-`BSP_SD_Init()` that replaces ST's `__weak` one. It is the only copy the running firmware reads:
-change a value here and it must change there too, or the `.ioc` will be describing a bus the board
-does not use.
+**[`Project Manager` > `Advanced Settings`]** — in **Generated Function Calls**, tick **Do Not
+Generate Function Call** for `MX_SDMMC1_SD_Init` (it routes a failed `HAL_SD_Init()` to
+`Error_Handler()`, so an empty slot would halt the CPU at boot; FATFS brings the card up at mount
+time instead, and reports failure rather than halting).
 
 **[`Middleware and Software Packs` > `FATFS`]**
-
 1. **Mode** : `SD Card`.
-2. **Platform Settings** : leave `Detect_SDIO` on `Undefined`. Generating with it unset raises a
-   warning, not an error — answer **Yes**.
-
-   Binding it to a pin would be worse than leaving it empty. The generated `BSP_SD_IsDetected()`
-   reads that pin and FATFS refuses to mount when it reports no card; with **SB2 open** on this
-   board the socket's detect contact never reaches `PD4`, so the firmware would conclude "no card"
-   forever, card inserted or not. Left undefined, the driver assumes a card is present and the
-   mount itself is what fails when there is none.
+2. **Platform Settings** : leave `Detect_SDIO` on `Undefined` — **SB2 is open** on this board, so
+   the socket's detect contact never reaches `PD4` and a bound pin would report "no card" forever.
+   Generating with it unset warns rather than errors: answer **Yes**.
 3. **Set Defines** :
-   - **USE_LFN** : `Enabled with dynamic working buffer on the STACK`.
-   - **MAX_LFN** : `255`.
+   - **USE_LFN** : `Enabled with dynamic working buffer on the STACK` — `main-board.msfw` is not an
+     8.3 name, and the heap would mean runtime allocation (`AGENTS.md` §3). Costs
+     `(MAX_LFN + 1) × 2` = 512 bytes in the calling task's frame.
+   - **MAX_LFN** : `255` (lower it and `f_readdir` fails on any longer name the card happens to
+     carry, alongside the images).
    - **MAX_SS** : `512`.
    - **FS_EXFAT** : `Disabled` (the card is FAT32).
    - **_VOLUMES** : `1`.
-
-`USE_LFN` is not optional here: `main-board.msfw` is neither an 8-character name nor a
-3-character extension, so a short-name-only build cannot see the files at all.
-
-It goes on the **stack**, not the heap: on the heap FATFS allocates and frees on every `f_open`
-and `f_readdir`, which is the runtime allocation `AGENTS.md` section 3 rules out. On the stack it
-costs `(MAX_LFN + 1) × 2` = 512 bytes in the calling task's frame, which is accounted for in that
-task's stack size.
-
-`MAX_LFN` stays at `255`. Lowering it saves a few hundred bytes of stack but makes `f_readdir`
-fail on any longer name the card happens to carry — a backup folder, an editor's dotfile, anything
-dropped there alongside the images.
 
 ---
 

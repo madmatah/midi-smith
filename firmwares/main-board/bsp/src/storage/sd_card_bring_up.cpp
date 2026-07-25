@@ -6,7 +6,19 @@
 namespace midismith::main_board::bsp::storage {
 namespace {
 
-constexpr std::uint32_t kSdmmc1ClockDivider = 2;
+constexpr std::uint32_t kSdmmcKernelClockHz = 80'000'000;
+constexpr std::uint32_t kDefaultSpeedCardClockLimitHz = 25'000'000;
+constexpr std::uint32_t kSdCardBusClockHz = 20'000'000;
+constexpr std::uint32_t kSdmmc1ClockDivider = kSdmmcKernelClockHz / (2 * kSdCardBusClockHz);
+
+static_assert(kSdCardBusClockHz <= kDefaultSpeedCardClockLimitHz,
+              "an instrument that vibrates is no place to run a card at its limit: stay inside the "
+              "default-speed ceiling every SD card honours, a firmware image is far too small for "
+              "the extra throughput to be worth the margin");
+
+static_assert(kSdmmcKernelClockHz == 2 * kSdCardBusClockHz * kSdmmc1ClockDivider,
+              "the divider must divide the PLL1Q kernel clock exactly, or the bus runs at a "
+              "different rate than the one this file claims");
 
 void ApplyBusConfiguration(SD_HandleTypeDef& sd_card) noexcept {
   sd_card.Instance = SDMMC1;
