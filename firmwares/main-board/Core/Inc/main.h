@@ -91,6 +91,8 @@ void Error_Handler(void);
 #define LOAD_8_GPIO_Port GPIOB
 #define ROTARY_BTN_Pin GPIO_PIN_15
 #define ROTARY_BTN_GPIO_Port GPIOB
+#define SD_SW_Pin GPIO_PIN_4
+#define SD_SW_GPIO_Port GPIOD
 #define FLASH_CS_Pin GPIO_PIN_6
 #define FLASH_CS_GPIO_Port GPIOD
 #define FDCAN_STANDBY_Pin GPIO_PIN_5

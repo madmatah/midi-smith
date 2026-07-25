@@ -91,6 +91,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(ROTARY_BTN_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SD_SW_Pin */
+  GPIO_InitStruct.Pin = SD_SW_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(SD_SW_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : FLASH_CS_Pin */
   GPIO_InitStruct.Pin = FLASH_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
