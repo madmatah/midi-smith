@@ -6,9 +6,12 @@
 #include <optional>
 #include <span>
 
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace midismith::firmware_image {
+
+using product_id::MakeProductId;
+using product_id::ProductId;
 
 inline constexpr std::size_t kImageHeaderSizeBytes = 96;
 inline constexpr std::size_t kVersionStringCapacity = 32;

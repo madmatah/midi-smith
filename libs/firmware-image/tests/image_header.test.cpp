@@ -9,8 +9,8 @@
 #include <span>
 #include <vector>
 
-#include "firmware-image/product_id.hpp"
 #include "image_fixtures.hpp"
+#include "product-id/product_id.hpp"
 
 namespace {
 
@@ -22,9 +22,9 @@ using midismith::firmware_image::kImageHeaderSizeBytes;
 using midismith::firmware_image::kSupportedFormatVersion;
 using midismith::firmware_image::kVersionStringCapacity;
 using midismith::firmware_image::ParseImageHeader;
-using midismith::firmware_image::ProductId;
 using midismith::firmware_image::test::MakeAdcBoardHeader;
 using midismith::firmware_image::test::MakePayload;
+using midismith::product_id::ProductId;
 
 using HeaderBuffer = std::array<std::uint8_t, kImageHeaderSizeBytes>;
 

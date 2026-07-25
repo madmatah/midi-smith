@@ -91,7 +91,7 @@ std::optional<BootJournalRecord> BootJournalRecord::Deserialize(
   BootJournalRecord record;
   record.sequence_number = ReadLittleEndian<std::uint32_t>(record_bytes, kSequenceNumberOffset);
   record.state = static_cast<UpdateState>(raw_state);
-  record.staged_product_id = firmware_image::MakeProductId(
+  record.staged_product_id = product_id::MakeProductId(
       ReadLittleEndian<std::uint16_t>(record_bytes, kStagedProductIdOffset));
   record.staged_payload_crc32 =
       ReadLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadChecksumOffset);

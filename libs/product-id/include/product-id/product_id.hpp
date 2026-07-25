@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace midismith::firmware_image {
+namespace midismith::product_id {
 
 enum class ProductId : std::uint16_t {
   kUnknown = 0,
@@ -22,4 +22,4 @@ enum class ProductId : std::uint16_t {
   }
 }
 
-}  // namespace midismith::firmware_image
+}  // namespace midismith::product_id

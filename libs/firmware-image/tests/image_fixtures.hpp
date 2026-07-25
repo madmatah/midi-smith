@@ -11,7 +11,7 @@
 #include "checksum/crc32.hpp"
 #include "firmware-image/image_header.hpp"
 #include "firmware-image/image_installability.hpp"
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace midismith::firmware_image::test {
 

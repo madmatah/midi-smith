@@ -9,8 +9,8 @@
 
 #include "firmware-image/image_header.hpp"
 #include "firmware-image/image_installability.hpp"
-#include "firmware-image/product_id.hpp"
 #include "image_fixtures.hpp"
+#include "product-id/product_id.hpp"
 
 namespace {
 
@@ -21,11 +21,11 @@ using midismith::firmware_image::ImageHeaderStatus;
 using midismith::firmware_image::ImageInstallability;
 using midismith::firmware_image::kImageHeaderSizeBytes;
 using midismith::firmware_image::ParseImageHeader;
-using midismith::firmware_image::ProductId;
 using midismith::firmware_image::test::kSampleBuildDate;
 using midismith::firmware_image::test::kSampleVersionString;
 using midismith::firmware_image::test::MakeAdcBoardConstraints;
 using midismith::firmware_image::test::MakeTextField;
+using midismith::product_id::ProductId;
 
 constexpr std::size_t kGoldenContainerSizeBytes = 160;
 constexpr std::string_view kGoldenPayloadText = "midi-smith firmware payload golden vector";
