@@ -4,6 +4,7 @@
 #include <functional>
 #include <utility>
 
+#include "app/analog/adc_frame.hpp"
 #include "app/analog/lookup_table_regeneration_requirements.hpp"
 #include "app/analog/queue_acquisition_control.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
@@ -245,7 +246,7 @@ void StartAnalogAcquisitionTask(
     midismith::os::QueueRequirements<
         midismith::adc_board::app::tasks::AnalogAcquisitionTask::CalibrationArray>&
         calibration_result_queue) noexcept {
-  static midismith::os::Queue<midismith::adc_board::bsp::adc::AdcFrameDescriptor, 8>
+  static midismith::os::Queue<midismith::adc_board::app::analog::AdcFrameDescriptor, 8>
       adc_frame_queue;
   static midismith::adc_board::bsp::adc::AdcDma adc_dma(adc_frame_queue, logger);
   static midismith::bsp::time::TimestampCounter timestamp_counter =

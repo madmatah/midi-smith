@@ -4,29 +4,17 @@
 #include <cstdint>
 
 #include "app/analog/adc_dma_control_requirements.hpp"
+#include "app/analog/adc_frame.hpp"
 #include "logging/logger_requirements.hpp"
 #include "os/queue.hpp"
 
 namespace midismith::adc_board::bsp::adc {
 
-enum class AdcGroup : std::uint8_t {
-  kAdc1 = 0,
-  kAdc2 = 1,
-  kAdc3 = 2,
-};
-
-struct AdcFrameDescriptor {
-  AdcGroup group;
-  std::uint8_t half;
-  std::uint32_t sequence_id;
-  std::uint32_t timestamp_ticks;
-  const void* data;
-  std::uint16_t element_count;
-  std::uint8_t element_size_bytes;
-};
-
 class AdcDma final : public midismith::adc_board::app::analog::AdcDmaControlRequirements {
  public:
+  using AdcFrameDescriptor = midismith::adc_board::app::analog::AdcFrameDescriptor;
+  using AdcGroup = midismith::adc_board::app::analog::AdcGroup;
+
   static constexpr std::size_t kAdc1RanksPerSequence = 7;
   static constexpr std::size_t kAdc2RanksPerSequence = 7;
   static constexpr std::size_t kAdc3RanksPerSequence = 8;

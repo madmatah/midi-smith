@@ -19,17 +19,20 @@ extern "C" void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
   }
 
   if (hadc->Instance == ADC1) {
-    adc_dma->HandleHalfComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc1, timestamp_ticks);
+    adc_dma->HandleHalfComplete(midismith::adc_board::app::analog::AdcGroup::kAdc1,
+                                timestamp_ticks);
     return;
   }
 
   if (hadc->Instance == ADC2) {
-    adc_dma->HandleHalfComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc2, timestamp_ticks);
+    adc_dma->HandleHalfComplete(midismith::adc_board::app::analog::AdcGroup::kAdc2,
+                                timestamp_ticks);
     return;
   }
 
   if (hadc->Instance == ADC3) {
-    adc_dma->HandleHalfComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc3, timestamp_ticks);
+    adc_dma->HandleHalfComplete(midismith::adc_board::app::analog::AdcGroup::kAdc3,
+                                timestamp_ticks);
   }
 }
 
@@ -50,16 +53,19 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
   }
 
   if (hadc->Instance == ADC1) {
-    adc_dma->HandleFullComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc1, timestamp_ticks);
+    adc_dma->HandleFullComplete(midismith::adc_board::app::analog::AdcGroup::kAdc1,
+                                timestamp_ticks);
     return;
   }
 
   if (hadc->Instance == ADC2) {
-    adc_dma->HandleFullComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc2, timestamp_ticks);
+    adc_dma->HandleFullComplete(midismith::adc_board::app::analog::AdcGroup::kAdc2,
+                                timestamp_ticks);
     return;
   }
 
   if (hadc->Instance == ADC3) {
-    adc_dma->HandleFullComplete(midismith::adc_board::bsp::adc::AdcGroup::kAdc3, timestamp_ticks);
+    adc_dma->HandleFullComplete(midismith::adc_board::app::analog::AdcGroup::kAdc3,
+                                timestamp_ticks);
   }
 }

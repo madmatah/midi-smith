@@ -4,6 +4,7 @@
 
 #include "app/analog/acquisition_command.hpp"
 #include "app/analog/acquisition_state.hpp"
+#include "app/analog/adc_frame.hpp"
 #include "app/analog/adc_rank_mapped_frame_decoder.hpp"
 #include "app/analog/signal_context.hpp"
 #include "app/analog/signal_processing/analog_sensor_processor.hpp"
@@ -28,7 +29,7 @@ class AnalogAcquisitionTask {
   using Processor = midismith::adc_board::app::analog::signal_processing::AnalogSensorProcessor;
   using ProcessedSensorGroup = midismith::adc_board::domain::sensors::ProcessedSensorGroup<
       Processor, midismith::adc_board::app::analog::SignalContext>;
-  using AdcFrameDescriptor = midismith::adc_board::bsp::adc::AdcFrameDescriptor;
+  using AdcFrameDescriptor = midismith::adc_board::app::analog::AdcFrameDescriptor;
   using AcquisitionCommand = midismith::adc_board::app::analog::AcquisitionCommand;
   using AcquisitionSequencer = midismith::adc_board::app::analog::AcquisitionSequencer;
   using AdcDma = midismith::adc_board::bsp::adc::AdcDma;
