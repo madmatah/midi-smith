@@ -35,6 +35,7 @@ midismith_require_lib(protocol-can)
 midismith_require_lib(config)
 midismith_require_lib(sensor-linearization)
 midismith_require_lib(calibration)
+midismith_require_lib(update-catalogue)
 
 if(HOST_TESTS)
     enable_testing()
@@ -125,6 +126,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/spi.cpp
     bsp/src/stm32_spi_flash.cpp
     bsp/src/storage/spi_flash_sector_storage.cpp
+    bsp/src/storage/sd_card_image_source.cpp
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
     bsp/src/usart_midi.cpp
@@ -213,6 +215,7 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     sensor_linearization
     calibration
     flash_layout
+    update_catalogue
 
     # Add user defined libraries
 )
