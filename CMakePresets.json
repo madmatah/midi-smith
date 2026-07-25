@@ -57,6 +57,26 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "HOST_TESTS": "ON"
       }
+    },
+    {
+      "name": "boot-Debug",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/firmwares/bootloader/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MIDISMITH_ACTIVE_FIRMWARE": "boot",
+        "HOST_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "boot-Release",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/firmwares/bootloader/cmake/gcc-arm-none-eabi.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MIDISMITH_ACTIVE_FIRMWARE": "boot",
+        "HOST_TESTS": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -79,6 +99,14 @@
     {
       "name": "Host-Debug",
       "configurePreset": "Host-Debug"
+    },
+    {
+      "name": "boot-Debug",
+      "configurePreset": "boot-Debug"
+    },
+    {
+      "name": "boot-Release",
+      "configurePreset": "boot-Release"
     }
   ],
   "testPresets": [

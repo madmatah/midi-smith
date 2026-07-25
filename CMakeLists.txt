@@ -4,7 +4,7 @@ project(midi-smith-monorepo LANGUAGES NONE)
 
 option(HOST_TESTS "Build host-only tests for all firmwares" OFF)
 set(MIDISMITH_ACTIVE_FIRMWARE "adc" CACHE STRING "Firmware to build when HOST_TESTS=OFF")
-set_property(CACHE MIDISMITH_ACTIVE_FIRMWARE PROPERTY STRINGS adc master)
+set_property(CACHE MIDISMITH_ACTIVE_FIRMWARE PROPERTY STRINGS adc master boot)
 
 # Enable compile_commands.json at monorepo level for clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -29,6 +29,7 @@ if(HOST_TESTS)
     endforeach()
     add_subdirectory(firmwares/adc-board)
     add_subdirectory(firmwares/main-board)
+    add_subdirectory(firmwares/bootloader)
 
     get_property(MIDISMITH_TEST_EXECUTABLE_TARGETS GLOBAL PROPERTY MIDISMITH_TEST_EXECUTABLE_TARGETS)
     add_custom_target(coverage
@@ -47,9 +48,11 @@ else()
         add_subdirectory(firmwares/adc-board)
     elseif(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "master")
         add_subdirectory(firmwares/main-board)
+    elseif(MIDISMITH_ACTIVE_FIRMWARE STREQUAL "boot")
+        add_subdirectory(firmwares/bootloader)
     else()
         message(FATAL_ERROR
-            "MIDISMITH_ACTIVE_FIRMWARE must be one of: adc, master. Got: ${MIDISMITH_ACTIVE_FIRMWARE}")
+            "MIDISMITH_ACTIVE_FIRMWARE must be one of: adc, master, boot. Got: ${MIDISMITH_ACTIVE_FIRMWARE}")
     endif()
 endif()
 

@@ -84,6 +84,74 @@
         ]
       },
       "preLaunchTask": "Main: configure+build Debug"
+    },
+    {
+      "name": "Debug bootloader",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "openOCDPreConfigLaunchCommands": [
+        "if {[info exists env(MIDISMITH_STLINK_SERIAL_MAIN)]} { adapter serial $env(MIDISMITH_STLINK_SERIAL_MAIN) }",
+        "if {\"${config:midismith.stlinkSerialMain}\" != \"\"} { adapter serial \"${config:midismith.stlinkSerialMain}\" }"
+      ],
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32h7x.cfg",
+        "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
+      ],
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
+      "device": "STM32H743VITx",
+      "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
+      "runToEntryPoint": "main"
+    },
+    {
+      "name": "Flash bootloader + main-board (debug application)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "openOCDPreConfigLaunchCommands": [
+        "if {[info exists env(MIDISMITH_STLINK_SERIAL_MAIN)]} { adapter serial $env(MIDISMITH_STLINK_SERIAL_MAIN) }",
+        "if {\"${config:midismith.stlinkSerialMain}\" != \"\"} { adapter serial \"${config:midismith.stlinkSerialMain}\" }"
+      ],
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32h7x.cfg",
+        "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
+      ],
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf",
+      "loadFiles": [
+        "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
+        "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf"
+      ],
+      "device": "STM32H743VITx",
+      "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
+      "runToEntryPoint": "main"
+    },
+    {
+      "name": "Flash bootloader + adc-board (debug application)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "openOCDPreConfigLaunchCommands": [
+        "if {[info exists env(MIDISMITH_STLINK_SERIAL_MAIN)]} { adapter serial $env(MIDISMITH_STLINK_SERIAL_MAIN) }",
+        "if {\"${config:midismith.stlinkSerialMain}\" != \"\"} { adapter serial \"${config:midismith.stlinkSerialMain}\" }"
+      ],
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32h7x.cfg",
+        "${workspaceFolder}/.vscode/openocd-gdb-detach-resume.cfg"
+      ],
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/adc-Debug/firmwares/adc-board/adc-board.elf",
+      "loadFiles": [
+        "${workspaceFolder}/build/boot-Debug/firmwares/bootloader/bootloader.elf",
+        "${workspaceFolder}/build/adc-Debug/firmwares/adc-board/adc-board.elf"
+      ],
+      "device": "STM32H743VITx",
+      "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
+      "runToEntryPoint": "main"
     }
   ]
 }

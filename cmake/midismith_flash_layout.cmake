@@ -49,9 +49,24 @@ function(midismith_firmware_load_address TARGET)
     )
 endfunction()
 
-# Reconciles the linker script with the map declared above, by reading the emitted .map.
+# Reconciles the linker script with the map declared above, by reading the emitted .map. This is
+# also what catches a CubeMX regeneration silently restoring the default 2048 KB FLASH region.
 function(midismith_check_flash_layout TARGET)
-    cmake_parse_arguments(_MSCHECK "WITH_CONFIG_REGION" "" "" ${ARGN})
+    cmake_parse_arguments(_MSCHECK "WITH_CONFIG_REGION" "SLOT" "" ${ARGN})
+
+    if(NOT _MSCHECK_SLOT)
+        set(_MSCHECK_SLOT APPLICATION)
+    endif()
+
+    if(_MSCHECK_SLOT STREQUAL "BOOTLOADER")
+        set(EXPECTED_ORIGIN ${MIDISMITH_BOOTLOADER_ADDRESS})
+        set(EXPECTED_SIZE ${MIDISMITH_BOOTLOADER_SIZE_BYTES})
+    elseif(_MSCHECK_SLOT STREQUAL "APPLICATION")
+        set(EXPECTED_ORIGIN ${MIDISMITH_APPLICATION_LOAD_ADDRESS})
+        set(EXPECTED_SIZE ${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES})
+    else()
+        message(FATAL_ERROR "midismith_check_flash_layout: unknown SLOT ${_MSCHECK_SLOT}")
+    endif()
 
     set(CONFIG_ARGUMENTS "")
     if(_MSCHECK_WITH_CONFIG_REGION)
@@ -64,8 +79,8 @@ function(midismith_check_flash_layout TARGET)
     add_custom_command(TARGET ${TARGET} POST_BUILD
         COMMAND ${CMAKE_COMMAND}
                 -DMAP_FILE=${CMAKE_BINARY_DIR}/${TARGET}.map
-                -DEXPECTED_APPLICATION_ORIGIN=${MIDISMITH_APPLICATION_LOAD_ADDRESS}
-                -DEXPECTED_APPLICATION_SIZE=${MIDISMITH_APPLICATION_SLOT_SIZE_BYTES}
+                -DEXPECTED_APPLICATION_ORIGIN=${EXPECTED_ORIGIN}
+                -DEXPECTED_APPLICATION_SIZE=${EXPECTED_SIZE}
                 ${CONFIG_ARGUMENTS}
                 -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/midismith_check_flash_layout.cmake
         COMMENT "Validating the flash layout of ${TARGET}"
