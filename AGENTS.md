@@ -195,7 +195,7 @@ CMake is the source of truth for the build; no critical setting depends on the I
 ## 5. Quality & Maintainability
 
 - Any rule violation must be explicitly documented; no implicit exceptions.
-- The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, namespace mirroring, per-package test contract. A violation is fixed, never waived — the guard carries no exception list.
+- The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, data-type header purity, namespace mirroring, per-package test contract.
 - The rules needing judgement (naming intent, dependency inversion quality, embedded hazards, test decisiveness) are reviewed by the `/qa` gate and its specialist agents in `.claude/agents/`.
 
 ---

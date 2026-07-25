@@ -41,7 +41,10 @@ FREERTOS_INCLUDE_PATTERN = re.compile(
 )
 
 INFRASTRUCTURE_LIBS = ("bsp", "os")
+INFRASTRUCTURE_LAYERS = ("bsp", "os")
 INTERFACE_HEADER_SUFFIX = "_requirements.hpp"
+DATA_TYPES_HEADER_SUFFIX = "_types.hpp"
+VIRTUAL_PATTERN = re.compile(r"\bvirtual\b")
 
 # libs/AGENTS.md maps a library directory to a namespace scope; the two interface-only libs
 # publish the namespace of the layer they describe rather than their own directory name.
@@ -104,6 +107,10 @@ def IsInterfaceHeader(include: str) -> bool:
     return include.endswith(INTERFACE_HEADER_SUFFIX)
 
 
+def IsDataTypesHeader(include: str) -> bool:
+    return include.endswith(DATA_TYPES_HEADER_SUFFIX)
+
+
 def FirmwareLayerOf(relative_path: str) -> tuple[str, str] | None:
     parts = relative_path.split("/")
     if len(parts) < 3 or parts[0] != "firmwares":
@@ -124,6 +131,13 @@ def IsCompositionRoot(relative_path: str) -> bool:
         or "/app/include/app/composition/" in relative_path
         or relative_path.endswith("/app/src/application.cpp")
     )
+
+
+def IsInfrastructureFile(relative_path: str) -> bool:
+    firmware_layer = FirmwareLayerOf(relative_path)
+    return (
+        firmware_layer is not None and firmware_layer[1] in INFRASTRUCTURE_LAYERS
+    ) or LibraryOf(relative_path) in INFRASTRUCTURE_LIBS
 
 
 def CheckHalConfinement(source: SourceFile) -> list[Violation]:
@@ -186,18 +200,16 @@ def CheckDomainPurity(source: SourceFile) -> list[Violation]:
     for line, include in source.includes():
         if IsHalInclude(include) or IsFreertosInclude(include):
             continue
-        includes_concrete_infrastructure = (
-            include.startswith("bsp/") or include.startswith("os/")
-        ) and not IsInterfaceHeader(include)
-        if includes_concrete_infrastructure:
+        if include.startswith(("bsp/", "os/")):
             violations.append(
                 Violation(
                     check="domain-purity",
                     path=source.relative_path,
                     line=line,
                     message=(
-                        f'includes the concrete infrastructure header "{include}"; domain code '
-                        "depends on interfaces only (AGENTS.md 2.3)"
+                        f'includes the infrastructure header "{include}"; domain code takes its '
+                        "interfaces and types from the bsp-types and os-types packages "
+                        "(AGENTS.md 2.3, libs/AGENTS.md L.1)"
                     ),
                 )
             )
@@ -217,13 +229,52 @@ def CheckCompositionRootConfinement(source: SourceFile) -> list[Violation]:
             line=line,
             message=(
                 f'includes the concrete BSP header "{include}"; app code depends on '
-                "*_requirements.hpp interfaces, concrete BSP belongs to the composition root "
-                "(firmwares/AGENTS.md F.3.1, F.4)"
+                "*_requirements.hpp interfaces and *_types.hpp data headers, concrete BSP "
+                "belongs to the composition root (firmwares/AGENTS.md F.3.1, F.4)"
             ),
         )
         for line, include in source.includes()
-        if include.startswith("bsp/") and not IsInterfaceHeader(include)
+        if include.startswith("bsp/")
+        and not IsInterfaceHeader(include)
+        and not IsDataTypesHeader(include)
     ]
+
+
+def CheckDataTypesHeaderPurity(source: SourceFile) -> list[Violation]:
+    if not IsDataTypesHeader(source.relative_path) or not IsInfrastructureFile(
+        source.relative_path
+    ):
+        return []
+
+    violations = [
+        Violation(
+            check="types-header-purity",
+            path=source.relative_path,
+            line=line,
+            message=(
+                f'includes "{include}"; a *_types.hpp header is the data contract app and domain '
+                "code may include, so it stays free of HAL and FreeRTOS "
+                "(firmwares/AGENTS.md F.3.2)"
+            ),
+        )
+        for line, include in source.includes()
+        if IsHalInclude(include) or IsFreertosInclude(include)
+    ]
+
+    virtual_match = VIRTUAL_PATTERN.search(source.text)
+    if virtual_match is not None:
+        violations.append(
+            Violation(
+                check="types-header-purity",
+                path=source.relative_path,
+                line=source.text.count("\n", 0, virtual_match.start()) + 1,
+                message=(
+                    "declares a virtual member in a *_types.hpp header; polymorphism belongs to "
+                    "a *_requirements.hpp interface (firmwares/AGENTS.md F.3.2)"
+                ),
+            )
+        )
+    return violations
 
 
 def ExpectedNamespaceOf(relative_path: str) -> str | None:
@@ -308,6 +359,7 @@ PER_FILE_CHECKS = (
     CheckFreertosConfinement,
     CheckDomainPurity,
     CheckCompositionRootConfinement,
+    CheckDataTypesHeaderPurity,
     CheckNamespaceMirrorsDirectory,
 )
 
