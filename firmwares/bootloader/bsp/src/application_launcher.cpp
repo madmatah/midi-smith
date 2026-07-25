@@ -28,8 +28,6 @@ void ApplicationLauncher::LaunchAt(std::uint32_t application_address) noexcept {
   const auto application_entry_point =
       reinterpret_cast<ApplicationEntryPoint>(vector_table[kResetHandlerWordOffset]);
 
-  HAL_RCC_DeInit();
-  HAL_DeInit();
   HAL_MPU_Disable();
 
   SysTick->CTRL = 0;
