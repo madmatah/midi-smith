@@ -34,6 +34,11 @@ bool WasBroughtUpBefore(const SD_HandleTypeDef& sd_card) noexcept {
   return sd_card.Instance != nullptr;
 }
 
+void ReturnPeripheralToItsResetState() noexcept {
+  __HAL_RCC_SDMMC1_FORCE_RESET();
+  __HAL_RCC_SDMMC1_RELEASE_RESET();
+}
+
 constexpr GPIO_PinState kDetectPinLevelWhenSlotIsEmpty = GPIO_PIN_RESET;
 
 }  // namespace
@@ -55,6 +60,7 @@ extern "C" std::uint8_t BSP_SD_Init() {
 
   if (storage::WasBroughtUpBefore(hsd1)) {
     HAL_SD_DeInit(&hsd1);
+    storage::ReturnPeripheralToItsResetState();
   }
   storage::ApplyBusConfiguration(hsd1);
 
