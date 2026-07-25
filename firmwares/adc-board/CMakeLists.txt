@@ -205,4 +205,7 @@ add_custom_command(TARGET ${ADC_FIRMWARE_TARGET} POST_BUILD
     VERBATIM
 )
 
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/midismith_firmware_package.cmake)
+midismith_firmware_package(${ADC_FIRMWARE_TARGET} PRODUCT adc-board)
+
 endif()

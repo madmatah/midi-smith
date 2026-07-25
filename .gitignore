@@ -5,6 +5,7 @@ bin/
 obj/
 *.elf
 *.bin
+*.msfw
 *.hex
 *.map
 *.lst
