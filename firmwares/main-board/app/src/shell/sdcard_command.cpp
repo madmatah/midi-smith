@@ -116,8 +116,13 @@ void SdCardCommand::Run(int argc, char** argv,
     return;
   }
 
+  if (!storage_.IsCardPresent()) {
+    out.Write("sdcard: no card in the slot\r\n");
+    return;
+  }
+
   if (!storage_.Mount()) {
-    out.Write("sdcard: no card, or the card could not be mounted\r\n");
+    out.Write("sdcard: could not mount the card, is it FAT32?\r\n");
     return;
   }
 

@@ -60,6 +60,7 @@ if(HOST_TESTS)
         app/src/shell/can_command.cpp
         app/src/shell/adc_command.cpp
         app/src/shell/keymap_command.cpp
+        app/src/shell/sdcard_command.cpp
         app/src/shell/calibration_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
@@ -87,7 +88,7 @@ if(HOST_TESTS)
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display splash midi_monitor)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display splash midi_monitor update_catalogue)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
