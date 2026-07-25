@@ -33,6 +33,18 @@ This guide describes how to configure the STM32H743VIT6 as the central controlle
 ### User LED
 - **PE3**  : `USER_LED` (GPIO_Output)
 
+### MicroSD Card (SDMMC1)
+- **PC8**  : `SDMMC1_D0`
+- **PC9**  : `SDMMC1_D1`
+- **PC10** : `SDMMC1_D2`
+- **PC11** : `SDMMC1_D3`
+- **PC12** : `SDMMC1_CK`
+- **PD2**  : `SDMMC1_CMD`
+
+The socket's card-detect contact reaches `PD4` through solder bridge **SB2**, which is open on
+this board. `PD4` is therefore left unassigned and the firmware mounts the card on demand rather
+than on insertion.
+
 ### External Storage (SPI Flash (U8) & QSPI (U7))
 - **PB2** : `QUADSPI_CLK` (QUADSPI_CLK)
 - **PB6** : `QUADSPI_BK1_NCS` (QUADSPI_BK1_NCS)
@@ -255,6 +267,60 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 5. **Baud Rate** : Prescaler for ~20–40 MHz.
 6. **Clock Polarity (CPOL)**: Low (0)
 7. **Clock Phase (CPHA)**:  1 Edge (0)
+
+---
+
+### C. MicroSD Card (Firmware Images)
+
+The card is the transport that carries firmware images from the workstation to the instrument.
+The main board reads `.msfw` containers from it, stages its own and forwards the ADC boards' over
+CAN. It is read-only from the firmware's point of view.
+
+**[`Connectivity` > `SDMMC1`]**
+
+1. **Mode** : `SD 4 bits Wide bus`.
+2. **Parameter Settings** :
+   - **Clock transition on which edge** : `Rising Transition`.
+   - **Clock divide factor** : `2`.
+   - **Hardware flow control** : `Enable` (prevents FIFO underrun on the H7 at 4-bit width).
+   - **Power save** : `Disable`.
+
+`SDMMC_CK = sdmmc_ker_ck / (2 × ClockDiv)`. The kernel clock already arrives at **80 MHz** from
+`PLL1Q` (see section 2), so a divider of `2` gives **20 MHz**, inside the 25 MHz default-speed
+limit of every SD card. At 4 bits that is far more throughput than a 130 KB image needs; do not
+raise it for speed alone, an instrument that vibrates is not the place to run a card at its limit.
+
+**[`Clock Configuration` tab]** — confirm `SDMMC` is fed from `PLL1Q` and reads `80 MHz`.
+
+**[`System Core` > `NVIC`]** — enable **SDMMC1 global interrupt**.
+
+**[`Middleware and Software Packs` > `FATFS`]**
+
+1. **Mode** : `SD Card`.
+2. **Platform Settings** : `SD_Detect_Pin` → **Not used**. SB2 is open, so there is no card-detect
+   signal to bind; mounting simply fails when no card is present.
+3. **Set Defines** :
+   - **USE_LFN** : `Enabled with static working buffer on the BSS`.
+   - **MAX_SS** : `512`.
+   - **FS_EXFAT** : `Disabled` (the card is FAT32).
+   - **_VOLUMES** : `1`.
+
+`USE_LFN` is not optional here: `main-board.msfw` is neither an 8-character name nor a
+3-character extension, so a short-name-only build cannot see the files at all.
+
+#### The two H7 traps
+
+Both are about where the buffers live, and both are silent when you get them wrong — the card
+reads garbage, or the first sector read hangs.
+
+- **SDMMC1's IDMA cannot reach DTCM.** The DTCM at `0x20000000` is not on the AXI bus, so a
+  transfer targeting it never completes. Every buffer the SD driver touches must live in AXI SRAM.
+- **The L1 data cache does not see IDMA writes.** A buffer that is cacheable returns whatever the
+  cache held, not what the card sent.
+
+Both are solved by the region section 14 already sets up: the 8 KB non-cacheable window at
+`0x24000000`. Place the FATFS scratch buffer there with `BSP_AXI_SRAM_NOCACHE`
+(`bsp/memory_sections.hpp`), which maps to the `.axi_sram_nocache` section of the linker script.
 
 ---
 
