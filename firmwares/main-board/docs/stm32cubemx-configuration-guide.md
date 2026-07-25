@@ -294,6 +294,23 @@ raise it for speed alone, an instrument that vibrates is not the place to run a 
 
 **[`System Core` > `NVIC`]** — enable **SDMMC1 global interrupt**.
 
+**[`Project Manager` > `Advanced Settings`]** — in the **Generated Function Calls** list, tick
+**Do Not Generate Function Call** for `MX_SDMMC1_SD_Init`.
+
+The card is removable, so bringing it up must never be a condition of booting. The generated
+`MX_SDMMC1_SD_Init()` calls `HAL_SD_Init()` unconditionally and sends any failure to
+`Error_Handler()`, which halts the CPU: an empty slot would stop the instrument from playing.
+FATFS already owns SD bring-up at mount time — `f_mount` reaches `BSP_SD_Init()`, which reports an
+error instead of halting. Unticking the call leaves `MX_SDMMC1_SD_Init()` defined in `sdmmc.c` and
+uncalled; nothing else is lost, because the pin, clock and NVIC setup lives in `HAL_SD_MspInit()`,
+which `HAL_SD_Init()` invokes on its own.
+
+The parameters above therefore take effect through
+`firmwares/main-board/bsp/src/storage/sd_card_bring_up.cpp`, which provides the strong
+`BSP_SD_Init()` that replaces ST's `__weak` one. It is the only copy the running firmware reads:
+change a value here and it must change there too, or the `.ioc` will be describing a bus the board
+does not use.
+
 **[`Middleware and Software Packs` > `FATFS`]**
 
 1. **Mode** : `SD Card`.
