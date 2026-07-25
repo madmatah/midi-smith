@@ -88,8 +88,11 @@ consume. Do not read whole subsystems you were not pointed at.
 
 ## How to work
 
-- Run `python3 tools/architecture_check.py` first and report its result. It has no exception list,
-  so any violation it prints is live debt the diff either introduced or left standing.
+- Run `python3 tools/architecture_check.py` first and report its result. It has no per-file
+  allowlist, so any violation it prints is live debt the diff either introduced or left standing.
+  Its rule-level exceptions (the `*_types.hpp` data headers, the `bsp-types`/`os-types` namespace
+  scopes) are named constants in the script: check a diff that relies on one against the AGENTS.md
+  line that grants it, and flag a `*_types.hpp` that has grown behavior.
 - Grep for the actual implementers and consumers of any interface in the diff before judging it.
 - Do not run the firmware builds or the test suite; the /qa gate owns the deterministic floor.
 

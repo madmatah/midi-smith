@@ -195,6 +195,7 @@ CMake is the source of truth for the build; no critical setting depends on the I
 ## 5. Quality & Maintainability
 
 - Any rule violation must be explicitly documented; no implicit exceptions.
+- An exception is expressed as a rule, never as a per-file allowlist: it is a named constant in the checking tool plus the line stating it in the AGENTS.md that owns the rule (the `*_types.hpp` data headers of @firmwares/AGENTS.md §F.3.2, the `bsp-types`/`os-types` namespace scopes of @libs/AGENTS.md §L.0). It then applies uniformly to every file that qualifies, and it is auditable in one place. A case that fits no rule is either code to fix or a rule to amend — never a suppression entry, which would make a green check meaningless.
 - The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, data-type header purity, namespace mirroring, per-package test contract.
 - The rules needing judgement (naming intent, dependency inversion quality, embedded hazards, test decisiveness) are reviewed by the `/qa` gate and its specialist agents in `.claude/agents/`.
 

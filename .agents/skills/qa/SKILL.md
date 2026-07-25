@@ -45,8 +45,10 @@ Run the firmware builds AFTER the host tests: they switch the active preset. Rep
 result. If the floor is red, fix that first and re-run it; do not dispatch reviewers over a broken
 tree.
 
-`architecture_check` failures cite the rule they break, and the guard carries no exception list:
-the fix goes in the code, never in the check.
+`architecture_check` failures cite the rule they break. The fix goes in the code. The guard carries
+no per-file allowlist, so the only other legitimate outcome is amending the RULE — a named constant
+in the check plus its line in the owning AGENTS.md — and that is the user's call, not yours
+(`AGENTS.md` 5).
 
 ## 3. Dispatch the reviewers the diff calls for
 
