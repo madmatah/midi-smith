@@ -274,7 +274,7 @@ The QSPI is not used yet, but might be used to store graphical resources for the
 12. **LOAD7** (P7) : Output level `Low`
 13. **LOAD8** (P8) : Output level `Low`
 14. **ROTARY_BTN (PB15)** : Input, Pull-up (button reads active-low; the line floats when released without it)
-15.  **USER_LED (PE3)** : Output Level `Low`
+15.  **USER_LED (PE3)** : Output Level `Low`, mode `Output Push Pull`, `No pull-up and no pull-down` (the LED is active-high through a transistor base; an open-drain output could never light it)
 
 ---
 
