@@ -21,6 +21,9 @@ using midismith::boot_control::UpdateState;
 using midismith::product_id::ProductId;
 
 constexpr std::size_t kSampleSlotCount = 8;
+constexpr std::uint32_t kSampleStagedPayloadCrc32 = 0x8EF2C0F5;
+constexpr std::uint32_t kSampleStagedPayloadSizeBytes = 125344;
+constexpr std::uint32_t kLargestSequenceNumber = 0xFFFFFFFF;
 
 std::vector<std::uint8_t> MakeErasedSector(std::size_t slot_count = kSampleSlotCount) {
   return std::vector<std::uint8_t>(slot_count * kBootJournalRecordSizeBytes, kErasedFlashByte);
@@ -30,8 +33,8 @@ BootJournalRecord MakeRecord(std::uint32_t sequence_number, UpdateState state) {
   BootJournalRecord record;
   record.sequence_number = sequence_number;
   record.state = state;
-  record.staged_payload_crc32 = 0x8EF2C0F5;
-  record.staged_payload_size_bytes = 125344;
+  record.staged_payload_crc32 = kSampleStagedPayloadCrc32;
+  record.staged_payload_size_bytes = kSampleStagedPayloadSizeBytes;
   record.staged_product_id = ProductId::kAdcBoard;
   return record;
 }
@@ -44,9 +47,15 @@ void AppendRecord(std::vector<std::uint8_t>& sector, std::size_t slot_index,
 }
 
 void ProgramGarbageInto(std::vector<std::uint8_t>& sector, std::size_t slot_index) {
-  const std::size_t slot_offset = slot_index * kBootJournalRecordSizeBytes;
-  std::fill_n(sector.begin() + static_cast<std::ptrdiff_t>(slot_offset),
+  const std::size_t slot_offset_bytes = slot_index * kBootJournalRecordSizeBytes;
+  std::fill_n(sector.begin() + static_cast<std::ptrdiff_t>(slot_offset_bytes),
               kBootJournalRecordSizeBytes / 2, std::uint8_t{0x00});
+}
+
+void EraseSlot(std::vector<std::uint8_t>& sector, std::size_t slot_index) {
+  const std::size_t slot_offset_bytes = slot_index * kBootJournalRecordSizeBytes;
+  std::fill_n(sector.begin() + static_cast<std::ptrdiff_t>(slot_offset_bytes),
+              kBootJournalRecordSizeBytes, kErasedFlashByte);
 }
 
 }  // namespace
@@ -62,7 +71,7 @@ TEST_CASE("The AppendOnlyBootJournal class") {
     }
 
     SECTION("When several records were appended in order") {
-      SECTION("Should return the newest one, which is the decision that still applies") {
+      SECTION("Should return the one written last in flash order") {
         std::vector<std::uint8_t> sector = MakeErasedSector();
         AppendRecord(sector, 0, MakeRecord(1, UpdateState::kIdle));
         AppendRecord(sector, 1, MakeRecord(2, UpdateState::kUpdatePending));
@@ -71,8 +80,21 @@ TEST_CASE("The AppendOnlyBootJournal class") {
         const auto record = AppendOnlyBootJournal{sector}.LastValidRecord();
 
         REQUIRE(record.has_value());
-        REQUIRE(record->sequence_number == 3);
         REQUIRE(record->state == UpdateState::kUpdateInProgress);
+      }
+    }
+
+    SECTION("When a later slot carries a lower sequence number than an earlier one") {
+      SECTION("Should still return the later slot, because position is the order, not sequence") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        AppendRecord(sector, 0, MakeRecord(kLargestSequenceNumber, UpdateState::kUpdatePending));
+        AppendRecord(sector, 1, MakeRecord(0, UpdateState::kIdle));
+
+        const auto record = AppendOnlyBootJournal{sector}.LastValidRecord();
+
+        REQUIRE(record.has_value());
+        REQUIRE(record->sequence_number == 0);
+        REQUIRE(record->state == UpdateState::kIdle);
       }
     }
 
@@ -85,8 +107,20 @@ TEST_CASE("The AppendOnlyBootJournal class") {
         const auto record = AppendOnlyBootJournal{sector}.LastValidRecord();
 
         REQUIRE(record.has_value());
-        REQUIRE(record->sequence_number == 1);
         REQUIRE(record->state == UpdateState::kUpdatePending);
+      }
+    }
+
+    SECTION("When power was cut during the erase that makes room for new records") {
+      SECTION("Should ignore every record past the first erased slot, they are stale remnants") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        for (std::size_t slot_index = 0; slot_index < kSampleSlotCount; ++slot_index) {
+          AppendRecord(sector, slot_index,
+                       MakeRecord(static_cast<std::uint32_t>(slot_index), UpdateState::kIdle));
+        }
+        EraseSlot(sector, 0);
+
+        REQUIRE_FALSE(AppendOnlyBootJournal{sector}.LastValidRecord().has_value());
       }
     }
 
@@ -110,12 +144,15 @@ TEST_CASE("The AppendOnlyBootJournal class") {
     }
 
     SECTION("When records were appended") {
-      SECTION("Should point just past them") {
+      SECTION("Should point just past them and report the journal as usable") {
         std::vector<std::uint8_t> sector = MakeErasedSector();
         AppendRecord(sector, 0, MakeRecord(1, UpdateState::kIdle));
         AppendRecord(sector, 1, MakeRecord(2, UpdateState::kIdle));
 
-        REQUIRE(AppendOnlyBootJournal{sector}.FirstErasedSlotIndex() == 2);
+        const AppendOnlyBootJournal journal{sector};
+
+        REQUIRE(journal.FirstErasedSlotIndex() == 2);
+        REQUIRE_FALSE(journal.IsExhausted());
       }
     }
 
@@ -143,6 +180,57 @@ TEST_CASE("The AppendOnlyBootJournal class") {
         REQUIRE(journal.IsExhausted());
       }
     }
+
+    SECTION("When the sector cannot hold a single record") {
+      SECTION("Should report itself exhausted rather than offer a slot that does not exist") {
+        const std::vector<std::uint8_t> sector(kBootJournalRecordSizeBytes / 2, kErasedFlashByte);
+
+        const AppendOnlyBootJournal journal{sector};
+
+        REQUIRE(journal.record_slot_count() == 0);
+        REQUIRE(journal.IsExhausted());
+      }
+    }
+  }
+
+  SECTION("The IsCoherent() method") {
+    SECTION("When records fill the sector from the first slot onwards") {
+      SECTION("Should accept it, which is what an append-only journal always looks like") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        AppendRecord(sector, 0, MakeRecord(1, UpdateState::kIdle));
+        AppendRecord(sector, 1, MakeRecord(2, UpdateState::kIdle));
+
+        REQUIRE(AppendOnlyBootJournal{sector}.IsCoherent());
+      }
+    }
+
+    SECTION("When the sector has never been written or is completely full") {
+      SECTION("Should accept both, they are the empty and the exhausted journal") {
+        std::vector<std::uint8_t> full_sector = MakeErasedSector();
+        for (std::size_t slot_index = 0; slot_index < kSampleSlotCount; ++slot_index) {
+          AppendRecord(full_sector, slot_index,
+                       MakeRecord(static_cast<std::uint32_t>(slot_index), UpdateState::kIdle));
+        }
+
+        REQUIRE(AppendOnlyBootJournal{MakeErasedSector()}.IsCoherent());
+        REQUIRE(AppendOnlyBootJournal{full_sector}.IsCoherent());
+      }
+    }
+
+    SECTION("When power was cut during the erase that makes room for new records") {
+      SECTION(
+          "Should reject it, so the caller finishes the erase instead of appending into the "
+          "hole where a stale record would outrank the new one") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        for (std::size_t slot_index = 0; slot_index < kSampleSlotCount; ++slot_index) {
+          AppendRecord(sector, slot_index,
+                       MakeRecord(static_cast<std::uint32_t>(slot_index), UpdateState::kIdle));
+        }
+        EraseSlot(sector, 0);
+
+        REQUIRE_FALSE(AppendOnlyBootJournal{sector}.IsCoherent());
+      }
+    }
   }
 
   SECTION("The FirstErasedSlotOffsetBytes() method") {
@@ -168,7 +256,9 @@ TEST_CASE("The AppendOnlyBootJournal class") {
 
   SECTION("The MakeSuccessorRecord() method") {
     SECTION("When the journal is empty") {
-      SECTION("Should start the sequence at zero") {
+      SECTION(
+          "Should start a fresh sequence and carry no staged image, so an erased journal "
+          "forgets a pending update") {
         const std::vector<std::uint8_t> sector = MakeErasedSector();
 
         const auto successor =
@@ -176,6 +266,9 @@ TEST_CASE("The AppendOnlyBootJournal class") {
 
         REQUIRE(successor.sequence_number == 0);
         REQUIRE(successor.state == UpdateState::kUpdatePending);
+        REQUIRE(successor.staged_payload_crc32 == 0);
+        REQUIRE(successor.staged_payload_size_bytes == 0);
+        REQUIRE(successor.staged_product_id == ProductId::kUnknown);
       }
     }
 
@@ -191,7 +284,7 @@ TEST_CASE("The AppendOnlyBootJournal class") {
         REQUIRE(successor.state == UpdateState::kUpdateInProgress);
       }
 
-      SECTION("Should carry the staged image description forward, so only the state changes") {
+      SECTION("Should carry the staged image forward while the update is still under way") {
         std::vector<std::uint8_t> sector = MakeErasedSector();
         const BootJournalRecord pending = MakeRecord(7, UpdateState::kUpdatePending);
         AppendRecord(sector, 0, pending);
@@ -202,6 +295,34 @@ TEST_CASE("The AppendOnlyBootJournal class") {
         REQUIRE(successor.staged_payload_crc32 == pending.staged_payload_crc32);
         REQUIRE(successor.staged_payload_size_bytes == pending.staged_payload_size_bytes);
         REQUIRE(successor.staged_product_id == pending.staged_product_id);
+      }
+    }
+
+    SECTION("When the update reaches a state that no longer refers to a staged image") {
+      SECTION("Should clear the staged description, so an idle record never advertises one") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        AppendRecord(sector, 0, MakeRecord(7, UpdateState::kUpdateInProgress));
+        const AppendOnlyBootJournal journal{sector};
+
+        for (const UpdateState state : {UpdateState::kIdle, UpdateState::kUpdateFailed}) {
+          const auto successor = journal.MakeSuccessorRecord(state);
+
+          REQUIRE(successor.staged_payload_crc32 == 0);
+          REQUIRE(successor.staged_payload_size_bytes == 0);
+          REQUIRE(successor.staged_product_id == ProductId::kUnknown);
+        }
+      }
+    }
+
+    SECTION("When the newest record already holds the largest sequence number") {
+      SECTION("Should wrap to zero, which is safe because the journal is ordered by position") {
+        std::vector<std::uint8_t> sector = MakeErasedSector();
+        AppendRecord(sector, 0, MakeRecord(kLargestSequenceNumber, UpdateState::kUpdatePending));
+
+        const auto successor =
+            AppendOnlyBootJournal{sector}.MakeSuccessorRecord(UpdateState::kUpdateInProgress);
+
+        REQUIRE(successor.sequence_number == 0);
       }
     }
   }

@@ -27,6 +27,8 @@ class AppendOnlyBootJournal {
     return !FirstErasedSlotIndex().has_value();
   }
 
+  [[nodiscard]] bool IsCoherent() const noexcept;
+
   [[nodiscard]] BootJournalRecord MakeSuccessorRecord(UpdateState state) const noexcept;
 
  private:

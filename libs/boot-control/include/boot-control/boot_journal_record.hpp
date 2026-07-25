@@ -14,6 +14,10 @@ inline constexpr std::size_t kBootJournalRecordSizeBytes = 32;
 inline constexpr std::array<std::uint8_t, 4> kBootJournalMagic = {'M', 'S', 'B', 'C'};
 inline constexpr std::uint8_t kErasedFlashByte = 0xFF;
 
+static_assert(kBootJournalRecordSizeBytes == 32,
+              "a record is one STM32H7 flash word: the smallest unit that can be programmed, and "
+              "one that ECC forbids programming a second time between erases");
+
 enum class UpdateState : std::uint8_t {
   kIdle = 0x00,
   kUpdatePending = 0x01,
@@ -22,7 +26,15 @@ enum class UpdateState : std::uint8_t {
 };
 
 [[nodiscard]] constexpr bool IsKnownUpdateState(std::uint8_t raw_value) noexcept {
-  return raw_value <= static_cast<std::uint8_t>(UpdateState::kUpdateFailed);
+  switch (static_cast<UpdateState>(raw_value)) {
+    case UpdateState::kIdle:
+    case UpdateState::kUpdatePending:
+    case UpdateState::kUpdateInProgress:
+    case UpdateState::kUpdateFailed:
+      return true;
+    default:
+      return false;
+  }
 }
 
 struct BootJournalRecord {
