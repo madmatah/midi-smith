@@ -7,5 +7,5 @@ midismith_add_lib(NAME firmware_image
     SOURCES
         src/image_installability.cpp
         src/image_header.cpp
-    DEPENDS byte-codec checksum
+    DEPENDS byte-codec checksum product-id
 )

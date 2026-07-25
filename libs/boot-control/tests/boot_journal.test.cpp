@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "boot-control/boot_journal_record.hpp"
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace {
 
@@ -18,7 +18,7 @@ using midismith::boot_control::BootJournalRecord;
 using midismith::boot_control::kBootJournalRecordSizeBytes;
 using midismith::boot_control::kErasedFlashByte;
 using midismith::boot_control::UpdateState;
-using midismith::firmware_image::ProductId;
+using midismith::product_id::ProductId;
 
 constexpr std::size_t kSampleSlotCount = 8;
 

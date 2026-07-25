@@ -4,9 +4,11 @@
 #include <span>
 
 #include "firmware-image/image_header.hpp"
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace midismith::firmware_image {
+
+using product_id::ProductId;
 
 struct TargetConstraints {
   ProductId expected_product_id = ProductId::kUnknown;

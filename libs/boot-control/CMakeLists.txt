@@ -8,5 +8,5 @@ midismith_add_lib(NAME boot_control
         src/boot_decision.cpp
         src/boot_journal.cpp
         src/boot_journal_record.cpp
-    DEPENDS byte-codec checksum firmware-image
+    DEPENDS byte-codec checksum product-id
 )

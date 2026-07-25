@@ -10,7 +10,7 @@
 
 #include "byte-codec/little_endian.hpp"
 #include "checksum/crc32.hpp"
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace {
 
@@ -19,7 +19,7 @@ using midismith::boot_control::IsErasedRecordSlot;
 using midismith::boot_control::kBootJournalRecordSizeBytes;
 using midismith::boot_control::kErasedFlashByte;
 using midismith::boot_control::UpdateState;
-using midismith::firmware_image::ProductId;
+using midismith::product_id::ProductId;
 
 using RecordBuffer = std::array<std::uint8_t, kBootJournalRecordSizeBytes>;
 

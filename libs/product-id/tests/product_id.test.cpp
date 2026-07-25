@@ -1,14 +1,14 @@
 #if defined(UNIT_TESTS)
 
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 
 namespace {
 
-using midismith::firmware_image::MakeProductId;
-using midismith::firmware_image::ProductId;
+using midismith::product_id::MakeProductId;
+using midismith::product_id::ProductId;
 
 constexpr std::uint16_t kMainBoardRawValue = 1;
 constexpr std::uint16_t kAdcBoardRawValue = 2;

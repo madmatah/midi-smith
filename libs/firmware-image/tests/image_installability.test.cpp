@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "firmware-image/image_header.hpp"
-#include "firmware-image/product_id.hpp"
 #include "image_fixtures.hpp"
+#include "product-id/product_id.hpp"
 
 namespace {
 
@@ -17,13 +17,13 @@ using midismith::firmware_image::EvaluateImageInstallability;
 using midismith::firmware_image::ImageHeader;
 using midismith::firmware_image::ImageInstallability;
 using midismith::firmware_image::kFlashWordSizeBytes;
-using midismith::firmware_image::ProductId;
 using midismith::firmware_image::TargetConstraints;
 using midismith::firmware_image::test::kApplicationSlotSizeBytes;
 using midismith::firmware_image::test::kSupportedProtocolVersion;
 using midismith::firmware_image::test::MakeAdcBoardConstraints;
 using midismith::firmware_image::test::MakeHeaderDescribing;
 using midismith::firmware_image::test::MakePayload;
+using midismith::product_id::ProductId;
 
 constexpr std::size_t kSamplePayloadFlashWordCount = 4;
 

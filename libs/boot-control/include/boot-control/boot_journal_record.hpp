@@ -6,7 +6,7 @@
 #include <optional>
 #include <span>
 
-#include "firmware-image/product_id.hpp"
+#include "product-id/product_id.hpp"
 
 namespace midismith::boot_control {
 
@@ -30,7 +30,7 @@ struct BootJournalRecord {
   UpdateState state = UpdateState::kIdle;
   std::uint32_t staged_payload_crc32 = 0;
   std::uint32_t staged_payload_size_bytes = 0;
-  firmware_image::ProductId staged_product_id = firmware_image::ProductId::kUnknown;
+  product_id::ProductId staged_product_id = product_id::ProductId::kUnknown;
 
   bool operator==(const BootJournalRecord&) const = default;
 
