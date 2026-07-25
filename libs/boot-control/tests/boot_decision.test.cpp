@@ -3,6 +3,7 @@
 #include "boot-control/boot_decision.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <optional>
 
 #include "boot-control/boot_journal_record.hpp"
 
@@ -53,6 +54,16 @@ TEST_CASE("The DecideBootAction function") {
     }
   }
 
+  SECTION("When power was cut during an install and the staged image is no longer installable") {
+    SECTION("Should record the failure, so the half copied slot is reported instead of retried") {
+      const BootInputs inputs{.last_record = MakeRecord(UpdateState::kUpdateInProgress),
+                              .staged_image_installable = false,
+                              .application_slot_valid = false};
+
+      REQUIRE(DecideBootAction(inputs) == BootAction::kMarkUpdateFailed);
+    }
+  }
+
   SECTION("When a previous update was already recorded as failed") {
     SECTION("Should boot the application that is still in place") {
       const BootInputs inputs{.last_record = MakeRecord(UpdateState::kUpdateFailed),
@@ -60,6 +71,16 @@ TEST_CASE("The DecideBootAction function") {
                               .application_slot_valid = true};
 
       REQUIRE(DecideBootAction(inputs) == BootAction::kBootApplication);
+    }
+  }
+
+  SECTION("When a failed update is the last word and nothing else can boot") {
+    SECTION("Should still wait for recovery, because a failure is terminal and never retried") {
+      const BootInputs inputs{.last_record = MakeRecord(UpdateState::kUpdateFailed),
+                              .staged_image_installable = true,
+                              .application_slot_valid = false};
+
+      REQUIRE(DecideBootAction(inputs) == BootAction::kWaitForRecovery);
     }
   }
 
@@ -103,19 +124,27 @@ TEST_CASE("The DecideBootAction function") {
     }
   }
 
-  SECTION("When nothing is bootable and the announced update cannot be installed") {
-    SECTION("Should record the failure first, so the next boot reports a board needing recovery") {
-      const BootInputs inputs{.last_record = MakeRecord(UpdateState::kUpdatePending),
-                              .staged_image_installable = false,
-                              .application_slot_valid = false};
+  SECTION("When a staged image is installable, nothing announced it, and nothing else can boot") {
+    SECTION("Should wait for recovery, because leftover staging is still not an instruction") {
+      const BootInputs idle_inputs{.last_record = MakeRecord(UpdateState::kIdle),
+                                   .staged_image_installable = true,
+                                   .application_slot_valid = false};
+      const BootInputs journal_less_inputs{.last_record = std::nullopt,
+                                           .staged_image_installable = true,
+                                           .application_slot_valid = false};
 
-      REQUIRE(DecideBootAction(inputs) == BootAction::kMarkUpdateFailed);
+      REQUIRE(DecideBootAction(idle_inputs) == BootAction::kWaitForRecovery);
+      REQUIRE(DecideBootAction(journal_less_inputs) == BootAction::kWaitForRecovery);
+    }
+  }
 
-      const BootInputs after_recording{.last_record = MakeRecord(UpdateState::kUpdateFailed),
-                                       .staged_image_installable = false,
-                                       .application_slot_valid = false};
+  SECTION("When a journal-less board carries an installable staged image and a valid application") {
+    SECTION("Should boot the application, because only the journal may order an install") {
+      const BootInputs inputs{.last_record = std::nullopt,
+                              .staged_image_installable = true,
+                              .application_slot_valid = true};
 
-      REQUIRE(DecideBootAction(after_recording) == BootAction::kWaitForRecovery);
+      REQUIRE(DecideBootAction(inputs) == BootAction::kBootApplication);
     }
   }
 }

@@ -13,29 +13,31 @@ using midismith::byte_codec::ReadLittleEndian;
 using midismith::byte_codec::WriteLittleEndian;
 using midismith::checksum::ComputeCrc32;
 
-constexpr std::size_t kMagicOffset = 0x00;
-constexpr std::size_t kSequenceNumberOffset = 0x04;
-constexpr std::size_t kStateOffset = 0x08;
-constexpr std::size_t kStagedProductIdOffset = 0x0A;
-constexpr std::size_t kStagedPayloadChecksumOffset = 0x0C;
-constexpr std::size_t kStagedPayloadSizeOffset = 0x10;
-constexpr std::size_t kRecordChecksumOffset = 0x1C;
+constexpr std::size_t kMagicOffsetBytes = 0x00;
+constexpr std::size_t kSequenceNumberOffsetBytes = 0x04;
+constexpr std::size_t kStateOffsetBytes = 0x08;
+constexpr std::size_t kStagedProductIdOffsetBytes = 0x0A;
+constexpr std::size_t kStagedPayloadChecksumOffsetBytes = 0x0C;
+constexpr std::size_t kStagedPayloadSizeOffsetBytes = 0x10;
+constexpr std::size_t kRecordChecksumOffsetBytes = 0x1C;
 
-static_assert(kMagicOffset + kBootJournalMagic.size() <= kSequenceNumberOffset);
-static_assert(kSequenceNumberOffset + sizeof(std::uint32_t) <= kStateOffset);
-static_assert(kStateOffset + sizeof(std::uint8_t) <= kStagedProductIdOffset);
-static_assert(kStagedProductIdOffset + sizeof(std::uint16_t) <= kStagedPayloadChecksumOffset);
-static_assert(kStagedPayloadChecksumOffset + sizeof(std::uint32_t) <= kStagedPayloadSizeOffset);
-static_assert(kStagedPayloadSizeOffset + sizeof(std::uint32_t) <= kRecordChecksumOffset);
-static_assert(kRecordChecksumOffset + sizeof(std::uint32_t) == kBootJournalRecordSizeBytes);
+static_assert(kMagicOffsetBytes + kBootJournalMagic.size() <= kSequenceNumberOffsetBytes);
+static_assert(kSequenceNumberOffsetBytes + sizeof(std::uint32_t) <= kStateOffsetBytes);
+static_assert(kStateOffsetBytes + sizeof(std::uint8_t) <= kStagedProductIdOffsetBytes);
+static_assert(kStagedProductIdOffsetBytes + sizeof(std::uint16_t) <=
+              kStagedPayloadChecksumOffsetBytes);
+static_assert(kStagedPayloadChecksumOffsetBytes + sizeof(std::uint32_t) <=
+              kStagedPayloadSizeOffsetBytes);
+static_assert(kStagedPayloadSizeOffsetBytes + sizeof(std::uint32_t) <= kRecordChecksumOffsetBytes);
+static_assert(kRecordChecksumOffsetBytes + sizeof(std::uint32_t) == kBootJournalRecordSizeBytes);
 
 bool HasExpectedMagic(std::span<const std::uint8_t> record_bytes) noexcept {
   return std::equal(kBootJournalMagic.begin(), kBootJournalMagic.end(),
-                    record_bytes.begin() + static_cast<std::ptrdiff_t>(kMagicOffset));
+                    record_bytes.begin() + static_cast<std::ptrdiff_t>(kMagicOffsetBytes));
 }
 
 std::uint32_t ComputeRecordChecksum(std::span<const std::uint8_t> record_bytes) noexcept {
-  return ComputeCrc32(record_bytes.first(kRecordChecksumOffset));
+  return ComputeCrc32(record_bytes.first(kRecordChecksumOffsetBytes));
 }
 
 }  // namespace
@@ -50,17 +52,17 @@ std::optional<std::size_t> BootJournalRecord::Serialize(
   std::fill(record_bytes.begin(), record_bytes.end(), std::uint8_t{0});
 
   std::copy(kBootJournalMagic.begin(), kBootJournalMagic.end(),
-            record_bytes.begin() + static_cast<std::ptrdiff_t>(kMagicOffset));
-  WriteLittleEndian<std::uint32_t>(record_bytes, kSequenceNumberOffset, sequence_number);
-  record_bytes[kStateOffset] = static_cast<std::uint8_t>(state);
-  WriteLittleEndian<std::uint16_t>(record_bytes, kStagedProductIdOffset,
+            record_bytes.begin() + static_cast<std::ptrdiff_t>(kMagicOffsetBytes));
+  WriteLittleEndian<std::uint32_t>(record_bytes, kSequenceNumberOffsetBytes, sequence_number);
+  record_bytes[kStateOffsetBytes] = static_cast<std::uint8_t>(state);
+  WriteLittleEndian<std::uint16_t>(record_bytes, kStagedProductIdOffsetBytes,
                                    static_cast<std::uint16_t>(staged_product_id));
-  WriteLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadChecksumOffset,
+  WriteLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadChecksumOffsetBytes,
                                    staged_payload_crc32);
-  WriteLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadSizeOffset,
+  WriteLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadSizeOffsetBytes,
                                    staged_payload_size_bytes);
 
-  WriteLittleEndian<std::uint32_t>(record_bytes, kRecordChecksumOffset,
+  WriteLittleEndian<std::uint32_t>(record_bytes, kRecordChecksumOffsetBytes,
                                    ComputeRecordChecksum(record_bytes));
 
   return kBootJournalRecordSizeBytes;
@@ -78,25 +80,27 @@ std::optional<BootJournalRecord> BootJournalRecord::Deserialize(
     return std::nullopt;
   }
 
-  const auto stored_checksum = ReadLittleEndian<std::uint32_t>(record_bytes, kRecordChecksumOffset);
+  const auto stored_checksum =
+      ReadLittleEndian<std::uint32_t>(record_bytes, kRecordChecksumOffsetBytes);
   if (stored_checksum != ComputeRecordChecksum(record_bytes)) {
     return std::nullopt;
   }
 
-  const std::uint8_t raw_state = record_bytes[kStateOffset];
+  const std::uint8_t raw_state = record_bytes[kStateOffsetBytes];
   if (!IsKnownUpdateState(raw_state)) {
     return std::nullopt;
   }
 
   BootJournalRecord record;
-  record.sequence_number = ReadLittleEndian<std::uint32_t>(record_bytes, kSequenceNumberOffset);
+  record.sequence_number =
+      ReadLittleEndian<std::uint32_t>(record_bytes, kSequenceNumberOffsetBytes);
   record.state = static_cast<UpdateState>(raw_state);
   record.staged_product_id = product_id::MakeProductId(
-      ReadLittleEndian<std::uint16_t>(record_bytes, kStagedProductIdOffset));
+      ReadLittleEndian<std::uint16_t>(record_bytes, kStagedProductIdOffsetBytes));
   record.staged_payload_crc32 =
-      ReadLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadChecksumOffset);
+      ReadLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadChecksumOffsetBytes);
   record.staged_payload_size_bytes =
-      ReadLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadSizeOffset);
+      ReadLittleEndian<std::uint32_t>(record_bytes, kStagedPayloadSizeOffsetBytes);
   return record;
 }
 
