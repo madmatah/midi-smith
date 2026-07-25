@@ -329,5 +329,5 @@ The core board connects to the carrier board through:
 | `SD_D3` | `PC11` | `SDMMC1_D3` | Data line |
 | `SD_CK` | `PC12` | `SDMMC1_CK` | Clock |
 | `SD_CMD` | `PD2` | `SDMMC1_CMD` | Command |
-| `SD_SW` | `PD4` | `GPIO_Input` | Card detect switch |
+| `SD_SW` | `PD4` | `GPIO_Input` | Card detect switch, closed when the slot is empty; reaches `PD4` only through solder bridge SB2 |
 

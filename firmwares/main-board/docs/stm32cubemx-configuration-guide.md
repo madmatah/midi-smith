@@ -300,9 +300,11 @@ time instead, and reports failure rather than halting).
    task doing the mount. If the bridge is left open, set this back to `Undefined` (generating warns
    rather than errors: answer **Yes**) and accept that cost.
 
-   The generated `BSP_SD_IsDetected()` reads the pin as **low = card present**. Confirm that
-   against the schematic; if the switch is wired the other way, override the `__weak` function
-   rather than inverting anything in CubeMX.
+   This socket's detect switch **rests closed and is opened by the card**, so the pin reads low on
+   an empty slot — the opposite of what the generated `BSP_PlatformIsDetected()` assumes. CubeMX
+   offers no polarity setting, so `bsp/src/storage/sd_card_bring_up.cpp` provides the strong
+   `BSP_SD_IsDetected()` that replaces ST's `__weak` one. Nothing to click here; it is named in
+   case a future socket behaves the other way.
 3. **Set Defines** :
    - **USE_LFN** : `Enabled with dynamic working buffer on the STACK` — `main-board.msfw` is not an
      8.3 name, and the heap would mean runtime allocation (`AGENTS.md` §3). Costs
@@ -331,7 +333,7 @@ time instead, and reports failure rather than halting).
 12. **LOAD7** (P7) : Output level `Low`
 13. **LOAD8** (P8) : Output level `Low`
 14. **ROTARY_BTN (PB15)** : Input, Pull-up (button reads active-low; the line floats when released without it)
-15. **SD_SW (PD4)** : Input, Pull-up (the detect switch closes to ground when a card is seated; requires SB2 soldered)
+15. **SD_SW (PD4)** : Input, Pull-up (the detect switch rests closed to ground and the card opens it, so the pull-up is what makes an inserted card read high; requires SB2 soldered)
 16.  **USER_LED (PE3)** : Output Level `Low`, mode `Output Push Pull`, `No pull-up and no pull-down` (the LED is active-high through a transistor base; an open-drain output could never light it)
 
 ---

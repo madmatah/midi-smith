@@ -1,6 +1,7 @@
 #include <cstdint>
 
 #include "bsp_driver_sd.h"
+#include "fatfs_platform.h"
 #include "sdmmc.h"
 
 namespace midismith::main_board::bsp::storage {
@@ -33,8 +34,17 @@ bool WasBroughtUpBefore(const SD_HandleTypeDef& sd_card) noexcept {
   return sd_card.Instance != nullptr;
 }
 
+constexpr GPIO_PinState kDetectPinLevelWhenSlotIsEmpty = GPIO_PIN_RESET;
+
 }  // namespace
 }  // namespace midismith::main_board::bsp::storage
+
+extern "C" std::uint8_t BSP_SD_IsDetected() {
+  namespace storage = midismith::main_board::bsp::storage;
+
+  const GPIO_PinState detect_pin_level = HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN);
+  return detect_pin_level == storage::kDetectPinLevelWhenSlotIsEmpty ? SD_NOT_PRESENT : SD_PRESENT;
+}
 
 extern "C" std::uint8_t BSP_SD_Init() {
   namespace storage = midismith::main_board::bsp::storage;
