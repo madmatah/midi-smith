@@ -20,8 +20,10 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "fdcan.h"
 #include "quadspi.h"
+#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -109,6 +111,8 @@ int main(void)
   MX_SPI1_Init();
   MX_USART3_UART_Init();
   MX_TIM2_Init();
+  MX_SDMMC1_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   AppEntry_Init();
   /* USER CODE END 2 */
