@@ -297,8 +297,14 @@ raise it for speed alone, an instrument that vibrates is not the place to run a 
 **[`Middleware and Software Packs` > `FATFS`]**
 
 1. **Mode** : `SD Card`.
-2. **Platform Settings** : `SD_Detect_Pin` → **Not used**. SB2 is open, so there is no card-detect
-   signal to bind; mounting simply fails when no card is present.
+2. **Platform Settings** : leave `Detect_SDIO` on `Undefined`. Generating with it unset raises a
+   warning, not an error — answer **Yes**.
+
+   Binding it to a pin would be worse than leaving it empty. The generated `BSP_SD_IsDetected()`
+   reads that pin and FATFS refuses to mount when it reports no card; with **SB2 open** on this
+   board the socket's detect contact never reaches `PD4`, so the firmware would conclude "no card"
+   forever, card inserted or not. Left undefined, the driver assumes a card is present and the
+   mount itself is what fails when there is none.
 3. **Set Defines** :
    - **USE_LFN** : `Enabled with dynamic working buffer on the STACK`.
    - **MAX_LFN** : `255`.
@@ -317,20 +323,6 @@ task's stack size.
 `MAX_LFN` stays at `255`. Lowering it saves a few hundred bytes of stack but makes `f_readdir`
 fail on any longer name the card happens to carry — a backup folder, an editor's dotfile, anything
 dropped there alongside the images.
-
-#### The two H7 traps
-
-Both are about where the buffers live, and both are silent when you get them wrong — the card
-reads garbage, or the first sector read hangs.
-
-- **SDMMC1's IDMA cannot reach DTCM.** The DTCM at `0x20000000` is not on the AXI bus, so a
-  transfer targeting it never completes. Every buffer the SD driver touches must live in AXI SRAM.
-- **The L1 data cache does not see IDMA writes.** A buffer that is cacheable returns whatever the
-  cache held, not what the card sent.
-
-Both are solved by the region section 14 already sets up: the 8 KB non-cacheable window at
-`0x24000000`. Place the FATFS scratch buffer there with `BSP_AXI_SRAM_NOCACHE`
-(`bsp/memory_sections.hpp`), which maps to the `.axi_sram_nocache` section of the linker script.
 
 ---
 
