@@ -75,13 +75,14 @@ Namespaces mirror the directory structure. Scope names use underscores (`adc-boa
 ### F.3.1 Application Layer (App/)
 - Never depends on the HAL.
 - Contains FreeRTOS tasks and synchronization logic.
-- Depends only on BSP/OS interfaces; never includes concrete BSP (except in `Application.cpp`).
+- Depends only on BSP/OS interfaces and data-type headers (`*_requirements.hpp`, `*_types.hpp`); never includes concrete BSP (except in `Application.cpp`).
 
 ### F.3.2 BSP Layer (Board Support Package)
 - Only layer allowed to depend on the HAL.
 - Thread-safe; concurrent accesses explicitly protected.
 - No business logic; no blocking FreeRTOS calls.
 - Each peripheral encapsulated in a dedicated C++ class.
+- Data shared with the layers above lives in a `*_types.hpp` header: PODs, enums and constants only, no HAL/FreeRTOS include and no `virtual` (polymorphism belongs to `*_requirements.hpp`). That header is the only BSP file app and domain code may include besides the interfaces.
 
 ### F.3.3 OS Layer (FreeRTOS Abstraction)
 - FreeRTOS is never used directly in the application.
