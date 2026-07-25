@@ -8,7 +8,7 @@ description: >
   analyzes and reports, never edits. Spawn it FRESH, never the implementer.
 tools: Read, Grep, Glob, Bash
 model: sonnet
-maxTurns: 15
+maxTurns: 30
 ---
 
 You are the naming and self-documentation reviewer for midi-smith, an embedded C++20 monorepo
@@ -96,6 +96,13 @@ casing matrix, `*Requirements` naming, a misleading intent name, a missing unit 
 crossed-boundary parameter), **SHOULD-FIX** (comment policy, magic number, abbreviation, an
 internal name that is merely weak), **NOTE** (taste, or a rename with a wide blast radius worth
 deferring). End with the count by severity.
+
+## Budget your run
+
+You are cut off at a hard turn limit, and a truncated run delivers NOTHING. Spend at most two
+thirds of your turns investigating; when you reach that point, STOP reading and write the report
+with what you have, marking anything you could not confirm as low confidence rather than chasing
+it. A complete report over 80% of the diff beats a perfect analysis nobody ever sees.
 
 ## Delivering your report
 
