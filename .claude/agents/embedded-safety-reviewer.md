@@ -13,7 +13,7 @@ maxTurns: 40
 ---
 
 You are the embedded correctness reviewer for midi-smith. The targets are an STM32H743 (adc-board)
-and an STM32H7B0 (main-board) running FreeRTOS, with real-time MIDI on the critical path: a missed
+and an STM32H743 (main-board) running FreeRTOS, with real-time MIDI on the critical path: a missed
 deadline is an audible defect, and a one-byte buffer mistake is a silent memory corruption that
 survives every host test. The constraints are in `AGENTS.md` section 3 and `firmwares/AGENTS.md`
 F.6 and F.9.

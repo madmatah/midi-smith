@@ -59,7 +59,7 @@
       ],
       "cwd": "${workspaceFolder}",
       "executable": "${workspaceFolder}/build/main-Debug/firmwares/main-board/main-board.elf",
-      "device": "STM32H7B0VBTx",
+      "device": "STM32H743VITx",
       "svdFile": "${workspaceFolder}/firmwares/main-board/Hardware/svd/STM32H743.svd",
       "runToEntryPoint": "main",
       "rttConfig": {

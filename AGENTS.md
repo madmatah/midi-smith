@@ -65,7 +65,7 @@ monorepo-root/
 │
 ├── firmwares/                    # Firmware packages (STM32, cross-compiled, CubeMX-managed)
 │   ├── adc-board/                # Firmware — STM32H743
-│   └── main-board/               # Firmware — STM32H7B0
+│   └── main-board/               # Firmware — STM32H743
 │
 ├── libs/                         # Shared library packages (host-portable, domain code)
 │   ├── os/                       # FreeRTOS abstraction — infra, not standalone
