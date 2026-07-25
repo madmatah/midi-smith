@@ -1,6 +1,7 @@
 include_guard(GLOBAL)
 
 include(${CMAKE_CURRENT_LIST_DIR}/midismith_flash_layout.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/midismith_update_protocol.cmake)
 
 # Produces the field-updatable .msfw container next to the firmware ELF. The container is what
 # lands on the SD card and what travels over CAN; the ELF stays the STLINK/debug artefact.

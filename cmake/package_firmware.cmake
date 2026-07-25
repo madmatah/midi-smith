@@ -12,13 +12,14 @@ if(NOT EXISTS "${ELF_FILE}")
     message(FATAL_ERROR "ELF not found: ${ELF_FILE}")
 endif()
 
-set(firmware_version "unknown")
-set(firmware_commit_date "unknown")
-if(EXISTS "${VERSION_CMAKE_FILE}")
-    include("${VERSION_CMAKE_FILE}")
-    set(firmware_version "${MIDISMITH_VERSION_FULL}")
-    set(firmware_commit_date "${MIDISMITH_VERSION_COMMIT_DATE}")
+# A container that passes every integrity check while lying about which build it carries is
+# worse than a build failure: it is the artefact that reaches the field.
+if(NOT EXISTS "${VERSION_CMAKE_FILE}")
+    message(FATAL_ERROR "Version file not found: ${VERSION_CMAKE_FILE}")
 endif()
+include("${VERSION_CMAKE_FILE}")
+set(firmware_version "${MIDISMITH_VERSION_FULL}")
+set(firmware_commit_date "${MIDISMITH_VERSION_COMMIT_DATE}")
 
 execute_process(
     COMMAND "${OBJCOPY}" -O binary "${ELF_FILE}" "${BIN_FILE}"
