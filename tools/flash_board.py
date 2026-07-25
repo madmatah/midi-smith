@@ -40,6 +40,23 @@ Reinstall only the bootloader, leaving the application in place:
 
     python3 tools/flash_board.py --board bootloader
 
+Report what each slot currently holds, writing nothing:
+
+    python3 tools/flash_board.py --read-vectors
+
+WHERE THIS TOOL FITS
+--------------------
+
+Provisioning a board is this tool's job, not the debugger's. The debugger configurations in
+.vscode/launch.json each write one image:
+
+    Debug main-board             the application, leaving the bootloader alone
+    Debug adc-board              the application, leaving the bootloader alone
+    Debug bootloader (main|adc)  the bootloader, leaving the application alone
+
+So the loop is: provision a board once with this tool, then use the debugger for everything
+after that.
+
 CHOOSING THE PROBE
 ------------------
 
@@ -198,15 +215,21 @@ def flash(programmer: str, images: list[Path], serial: str, mass_erase: bool) ->
     if serial:
         connect += f" sn={serial}"
 
-    command = [programmer, "-c"] + connect.split()
     if mass_erase:
         print(f"\n!!! mass erase: this clears {REGIONS_A_MASS_ERASE_CLEARS}", flush=True)
-        command += ["-e", "all"]
-    for image in images:
-        command += ["-w", str(image)]
-    command += ["-v", "-rst"]
+        run([programmer, "-c"] + connect.split() + ["-e", "all"], "mass erase")
 
-    run(command, f"flash {', '.join(image.name for image in images)}")
+    # One invocation per image, each verified on its own. Batching several writes into a single
+    # command makes a silently skipped image indistinguishable from a successful run, which is
+    # exactly how an empty application slot went unnoticed once.
+    for index, image in enumerate(images):
+        is_last = index == len(images) - 1
+        command = [programmer, "-c"] + connect.split() + ["-w", str(image), "-v"]
+        if is_last:
+            command.append("-rst")
+        run(command, f"write and verify {image.name}")
+
+    report_slot_contents(programmer, serial)
 
 
 def main(argv: list[str]) -> int:
