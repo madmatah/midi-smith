@@ -12,6 +12,7 @@ midismith_require_lib(boot-control)
 midismith_require_lib(byte-codec)
 midismith_require_lib(checksum)
 midismith_require_lib(firmware-image)
+midismith_require_lib(image-installer)
 midismith_require_lib(flash-layout)
 midismith_require_lib(product-id)
 
@@ -29,6 +30,7 @@ target_sources(${BOOT_FIRMWARE_TARGET} PRIVATE
     app/src/boot_entry.cpp
     app/src/application.cpp
     bsp/src/application_launcher.cpp
+    bsp/src/application_slot_flash.cpp
     bsp/src/internal_flash.cpp
     bsp/src/journal_storage.cpp
     bsp/src/status_led.cpp
@@ -47,6 +49,7 @@ target_link_libraries(${BOOT_FIRMWARE_TARGET}
     byte_codec
     checksum
     firmware_image
+    image_installer
     flash_layout
     product_id
 )
