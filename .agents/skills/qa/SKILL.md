@@ -65,6 +65,21 @@ Fixing each kind of red:
 Spawn them FRESH and in PARALLEL (one message, several subagents). Never let the code's author
 review its own work in the same context — that is the whole point of the fan-out.
 
+**Size the change before you size the fan-out.** Measure the C++ delta only, not the diff as a
+whole — tooling, markdown and generated files inflate it and are nobody's review surface:
+
+```sh
+git diff --shortstat origin/main...HEAD -- 'firmwares/*.cpp' 'firmwares/*.hpp' 'libs/*.cpp' 'libs/*.hpp'
+```
+
+The table below says WHICH dimension a surface calls for; the size says HOW MANY reviewers are
+worth paying for:
+
+- **Under ~100 changed C++ lines, or a mechanical rename**: ONE reviewer, the dimension the change
+  is actually about. Four reviewers over a small refactor costs more than reading it yourself.
+- **Up to ~500 lines**: the one or two rows that match most directly.
+- **A completed deliverable set, or new logic across several packages**: every matching row.
+
 | The diff touches | Dispatch |
 |---|---|
 | a `libs/` domain library | `conventions-reviewer`, `test-coverage-auditor` |
@@ -76,9 +91,14 @@ review its own work in the same context — that is the whole point of the fan-o
 | any new or renamed public symbol, file or directory | `conventions-reviewer` |
 | tests only | `test-coverage-auditor` |
 
-A single-file change usually matches one or two rows: dispatch only those. A multi-surface
-deliverable dispatches all four. Give each reviewer the file list from step 1 so it does not
-re-derive the scope.
+Write each dispatch prompt to protect the reviewer's budget, because a reviewer that runs out of
+turns delivers NOTHING — not a partial report, nothing:
+
+- name the exact files in scope and say what is out of scope, so it does not re-derive the perimeter;
+- state its turn budget explicitly and tell it to start with one `git diff` over the scope rather
+  than opening files one by one;
+- state the questions this change actually raises, not just "review it": a reviewer given a thesis
+  to test converges, a reviewer given a file list explores.
 
 ## 4. Check the CubeMX contract yourself (no agent)
 
