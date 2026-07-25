@@ -73,3 +73,20 @@ set(tmp_header "${OUTPUT_HEADER}.tmp")
 file(WRITE "${tmp_header}" "${header_contents}")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${tmp_header}" "${OUTPUT_HEADER}")
 file(REMOVE "${tmp_header}")
+
+# Same values, consumable by the packaging step, so the .msfw container always announces the
+# version that is actually compiled into the binary it wraps.
+if(DEFINED OUTPUT_CMAKE_FILE)
+  set(cmake_contents
+"set(MIDISMITH_VERSION_FULL \"${full_version_escaped}\")
+set(MIDISMITH_VERSION_COMMIT_DATE \"${commit_date_escaped}\")
+set(MIDISMITH_VERSION_BUILD_TYPE \"${build_type_escaped}\")
+")
+  get_filename_component(cmake_output_dir "${OUTPUT_CMAKE_FILE}" DIRECTORY)
+  file(MAKE_DIRECTORY "${cmake_output_dir}")
+  set(tmp_cmake_file "${OUTPUT_CMAKE_FILE}.tmp")
+  file(WRITE "${tmp_cmake_file}" "${cmake_contents}")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${tmp_cmake_file}" "${OUTPUT_CMAKE_FILE}")
+  file(REMOVE "${tmp_cmake_file}")
+endif()
