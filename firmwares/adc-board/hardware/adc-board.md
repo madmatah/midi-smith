@@ -155,9 +155,19 @@ The jumper has 2 possible configurations:
 
 - NORMAL (Default / No Jumper): The microcontroller boots from the Main Flash Memory, executing the user application.
 
-- BOOTLOADER (Jumper installed): The microcontroller boots from System Memory. This activates the internal ST Bootloader, allowing firmware updates via USB or UART without the need for an external debugger (ST-Link).
+- BOOTLOADER (Jumper installed): The microcontroller boots from System Memory, which runs the ST factory bootloader burned into the device.
 
 Note: To enter Bootloader mode, the jumper must be installed before powering on the board or performing a hardware reset.
+
+**None of the interfaces that factory bootloader exposes is reachable on this board.** AN2606
+lists, for STM32H74x devices, USB DFU on `PA11`/`PA12`, USART1 on `PB14`/`PB15`, USART2 on
+`PA2`/`PA3`, USART3 on `PB10`/`PB11`, I2C1 on `PB6`/`PB9`, SPI4 on `PE11`–`PE14` and FDCAN1 on
+`PH13`/`PH14`. On this board those pins carry the FDCAN transceiver, the USB HS lines, two sensor
+inputs and the virtual COM port; `PE11`–`PE14` are not routed, and `PH13`/`PH14` do not exist on
+the LQFP144 package. The jumper does enter System Memory, but nothing can then talk to it.
+
+The recovery path for this board is therefore the **STDC14 connector**, over SWD. The jumper is
+kept for board bring-up and for a future revision that might route one of those interfaces.
 
 
 ## Microcontroller setup
