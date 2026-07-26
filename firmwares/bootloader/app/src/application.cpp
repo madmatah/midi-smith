@@ -6,9 +6,9 @@
 #include "boot-control/boot_journal.hpp"
 #include "boot-control/boot_journal_record.hpp"
 #include "boot-control/boot_journal_writer.hpp"
+#include "bsp-flash/journal_storage.hpp"
 #include "bsp/application_launcher.hpp"
 #include "bsp/application_slot_flash.hpp"
-#include "bsp/journal_storage.hpp"
 #include "bsp/status_led.hpp"
 #include "firmware-image/image_installability.hpp"
 #include "firmware-installer/staged_image_installer.hpp"
@@ -49,7 +49,7 @@ StagedImageDescription AnnouncedBy(const BootJournalRecord& record) noexcept {
 }  // namespace
 
 void Application::Run() noexcept {
-  bsp::JournalStorage journal_storage;
+  midismith::bsp_flash::JournalStorage journal_storage;
   bsp::ApplicationSlotFlash application_slot;
   BootJournalWriter journal_writer{journal_storage};
   StagedImageInstaller installer{application_slot, SlotConstraints()};

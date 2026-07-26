@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace midismith::bootloader::bsp {
+namespace midismith::bsp_flash {
 
 class InternalFlash {
  public:
@@ -19,4 +19,4 @@ class InternalFlash {
                                           std::span<const std::uint8_t> data) noexcept;
 };
 
-}  // namespace midismith::bootloader::bsp
+}  // namespace midismith::bsp_flash

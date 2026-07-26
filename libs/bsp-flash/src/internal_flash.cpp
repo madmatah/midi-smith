@@ -1,9 +1,9 @@
-#include "bsp/internal_flash.hpp"
+#include "bsp-flash/internal_flash.hpp"
 
 #include "flash-layout/flash_layout.hpp"
 #include "stm32h7xx_hal.h"
 
-namespace midismith::bootloader::bsp {
+namespace midismith::bsp_flash {
 
 namespace {
 
@@ -83,4 +83,4 @@ bool InternalFlash::ProgramRegion(std::uint32_t address,
   return programmed;
 }
 
-}  // namespace midismith::bootloader::bsp
+}  // namespace midismith::bsp_flash

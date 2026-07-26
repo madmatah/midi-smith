@@ -16,7 +16,11 @@
 └── CMakeLists.txt                # Standalone target with project() and Host-Debug preset
 ```
 
-**Infrastructure lib** (`os`, `bsp`):
+**Infrastructure lib** — a library named after an infrastructure layer, or **prefixed with one**:
+`os`, `bsp`, `bsp-flash`, and any future `bsp-*` or `os-*` package. The prefix is what declares the
+nature of the package, so a reader knows from the directory name alone that it carries the HAL and
+owns no tests. The `*-types` packages are excluded: they are the HAL-free data contracts the layers
+above include, and they stay host-buildable with their own tests.
 
 ```
 <lib-name>/

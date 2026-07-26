@@ -40,15 +40,28 @@ FREERTOS_INCLUDE_PATTERN = re.compile(
     r"|portmacro\.h|cmsis_os.*\.h)$"
 )
 
-INFRASTRUCTURE_LIBS = ("bsp", "os")
+INFRASTRUCTURE_LIB_PREFIXES = ("bsp", "os")
 INFRASTRUCTURE_LAYERS = ("bsp", "os")
 INTERFACE_HEADER_SUFFIX = "_requirements.hpp"
 DATA_TYPES_HEADER_SUFFIX = "_types.hpp"
+DATA_TYPES_LIB_SUFFIX = "-types"
 VIRTUAL_PATTERN = re.compile(r"\bvirtual\b")
 
 # libs/AGENTS.md maps a library directory to a namespace scope; the two interface-only libs
 # publish the namespace of the layer they describe rather than their own directory name.
 LIBRARY_NAMESPACE_ALIASES = {"bsp-types": "bsp", "os-types": "os"}
+
+
+def IsInfrastructureLib(library: str | None) -> bool:
+    """A library named after an infrastructure layer, or prefixed with one, carries the HAL and
+    owns no tests (libs/AGENTS.md L.0). The *-types packages are excluded: they are the HAL-free
+    data contracts the layers above include, and they stay host-buildable."""
+    if library is None or library.endswith(DATA_TYPES_LIB_SUFFIX):
+        return False
+    return any(
+        library == prefix or library.startswith(f"{prefix}-")
+        for prefix in INFRASTRUCTURE_LIB_PREFIXES
+    )
 
 
 @dataclass(frozen=True)
@@ -137,7 +150,7 @@ def IsInfrastructureFile(relative_path: str) -> bool:
     firmware_layer = FirmwareLayerOf(relative_path)
     return (
         firmware_layer is not None and firmware_layer[1] in INFRASTRUCTURE_LAYERS
-    ) or LibraryOf(relative_path) in INFRASTRUCTURE_LIBS
+    ) or IsInfrastructureLib(LibraryOf(relative_path))
 
 
 def CheckHalConfinement(source: SourceFile) -> list[Violation]:
@@ -145,7 +158,7 @@ def CheckHalConfinement(source: SourceFile) -> list[Violation]:
     library = LibraryOf(source.relative_path)
     hal_is_allowed = (
         (firmware_layer is not None and firmware_layer[1] in ("bsp", "os"))
-        or library in INFRASTRUCTURE_LIBS
+        or IsInfrastructureLib(library)
         or IsCompositionRoot(source.relative_path)
     )
     if hal_is_allowed:
@@ -190,7 +203,7 @@ def CheckFreertosConfinement(source: SourceFile) -> list[Violation]:
 def CheckDomainPurity(source: SourceFile) -> list[Violation]:
     library = LibraryOf(source.relative_path)
     firmware_layer = FirmwareLayerOf(source.relative_path)
-    is_domain_code = (library is not None and library not in INFRASTRUCTURE_LIBS) or (
+    is_domain_code = (library is not None and not IsInfrastructureLib(library)) or (
         firmware_layer is not None and firmware_layer[1] == "domain"
     )
     if not is_domain_code:
@@ -336,7 +349,7 @@ def CheckNamespaceMirrorsDirectory(source: SourceFile) -> list[Violation]:
 def CheckPackageTestContract(repo_root: Path) -> list[Violation]:
     violations = []
     for library_path in sorted((repo_root / "libs").glob("*")):
-        if not library_path.is_dir() or library_path.name in INFRASTRUCTURE_LIBS:
+        if not library_path.is_dir() or IsInfrastructureLib(library_path.name):
             continue
         if not (library_path / "src").is_dir():
             continue
