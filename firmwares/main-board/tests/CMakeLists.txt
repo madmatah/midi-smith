@@ -15,6 +15,7 @@ midismith_add_firmware_test(NAME main
         app/shell/calibration_command.test.cpp
         app/shell/ui_command.test.cpp
         app/shell/sdcard_command.test.cpp
+        app/update/self_update_service.test.cpp
         app/supervisor/network_supervisor_task.test.cpp
         app/adc/adc_board_state.test.cpp
         app/adc/adc_board_controller.test.cpp

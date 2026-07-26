@@ -36,6 +36,9 @@ midismith_require_lib(config)
 midismith_require_lib(sensor-linearization)
 midismith_require_lib(calibration)
 midismith_require_lib(update-catalogue)
+midismith_require_lib(firmware-staging)
+midismith_require_lib(bsp-flash)
+midismith_require_lib(boot-control)
 
 if(HOST_TESTS)
     enable_testing()
@@ -61,6 +64,7 @@ if(HOST_TESTS)
         app/src/shell/adc_command.cpp
         app/src/shell/keymap_command.cpp
         app/src/shell/sdcard_command.cpp
+        app/src/update/self_update_service.cpp
         app/src/shell/calibration_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
@@ -88,7 +92,7 @@ if(HOST_TESTS)
     target_include_directories(main_app_lib PUBLIC
         app/include
     )
-    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display splash midi_monitor update_catalogue)
+    target_link_libraries(main_app_lib PUBLIC protocol protocol_can shell io bsp_types shell_cmd_stats stats calibration shell_cmd_reboot menu text_display splash midi_monitor update_catalogue firmware_staging boot_control flash_layout)
     target_link_libraries(main_app_lib PRIVATE main_domain piano_controller midi logging)
     midismith_enable_coverage_compile(main_app_lib)
 
@@ -128,6 +132,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     bsp/src/stm32_spi_flash.cpp
     bsp/src/storage/spi_flash_sector_storage.cpp
     bsp/src/storage/sd_card_bring_up.cpp
+    bsp/src/storage/staging_slot_flash.cpp
     bsp/src/storage/sd_card_image_source.cpp
     bsp/src/usb_midi.cpp
     bsp/src/usb_midi_init.cpp
@@ -162,6 +167,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/adc_command.cpp
     app/src/shell/keymap_command.cpp
     app/src/shell/sdcard_command.cpp
+    app/src/update/self_update_service.cpp
     app/src/shell/calibration_command.cpp
     app/src/shell/ui_command.cpp
     app/src/shell/os_clock_blocking_delay.cpp
@@ -219,6 +225,9 @@ target_link_libraries(${MAIN_FIRMWARE_TARGET}
     calibration
     flash_layout
     update_catalogue
+    firmware_staging
+    bsp_flash
+    boot_control
 
     # Add user defined libraries
 )
