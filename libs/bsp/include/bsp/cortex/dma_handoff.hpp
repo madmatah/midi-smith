@@ -4,7 +4,7 @@
 
 namespace midismith::bsp::cortex {
 
-inline void EnsureBufferWritesLandBeforeStartingDma() noexcept {
+inline void OrderBufferWritesBeforeStartingDma() noexcept {
   __DSB();
 }
 

@@ -28,7 +28,7 @@ class SelfUpdateService final : public midismith::main_board::app::shell::SelfUp
   }
 
  private:
-  static constexpr std::size_t kCopyBufferSizeBytes = 512;
+  static constexpr std::size_t kCopyBufferSizeBytes = 2048;
 
   midismith::update_catalogue::ImageSourceRequirements& images_;
   midismith::firmware_staging::StagingSlotRequirements& staging_;

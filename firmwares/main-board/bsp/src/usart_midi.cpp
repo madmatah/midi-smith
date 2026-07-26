@@ -31,7 +31,7 @@ midismith::midi::TransportStatus UsartMidi::TrySendRawMessage(const uint8_t* dat
 
   std::memcpy(tx_buffer_, data, length);
 
-  midismith::bsp::cortex::EnsureBufferWritesLandBeforeStartingDma();
+  midismith::bsp::cortex::OrderBufferWritesBeforeStartingDma();
   const HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart_, tx_buffer_, length);
   if (status == HAL_OK) {
     return midismith::midi::TransportStatus::kSuccess;
