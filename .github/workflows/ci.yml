@@ -50,6 +50,10 @@ jobs:
             preset: main-Release
             elf: main-board.elf
             package_dir: firmwares/main-board
+          - name: bootloader
+            preset: boot-Release
+            elf: bootloader.elf
+            package_dir: firmwares/bootloader
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -67,7 +71,7 @@ jobs:
           if-no-files-found: error
           path: |
             build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.elf }}
-            build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.name }}.map
+            build/${{ matrix.preset }}/${{ matrix.name }}.map
 
   firmware_size_analysis:
     name: Firmware size analysis (${{ matrix.name }})
