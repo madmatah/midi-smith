@@ -101,8 +101,8 @@ class FakeCard final : public ImageSourceRequirements {
 TEST_CASE("The ImagePathFor function") {
   SECTION("When asked for a board the instrument carries") {
     SECTION("Should name the file the operator copies onto the card") {
-      REQUIRE(ImagePathFor(ProductId::kMainBoard) == kMainBoardImagePath);
-      REQUIRE(ImagePathFor(ProductId::kAdcBoard) == kAdcBoardImagePath);
+      REQUIRE(ImagePathFor(ProductId::kMainBoard) == "/midismith/main-board.msfw");
+      REQUIRE(ImagePathFor(ProductId::kAdcBoard) == "/midismith/adc-board.msfw");
     }
   }
 
