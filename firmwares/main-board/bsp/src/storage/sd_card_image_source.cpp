@@ -26,6 +26,24 @@ alignas(32) BSP_AXI_SRAM_NOCACHE FATFS file_system;
 alignas(32) BSP_AXI_SRAM_NOCACHE FIL open_file;
 alignas(32) BSP_AXI_SRAM_NOCACHE std::array<std::uint8_t, kTransferBufferSizeBytes> transfer_buffer;
 
+midismith::bsp::storage::VolumeMountResult TranslateMountResult(FRESULT result) noexcept {
+  using midismith::bsp::storage::VolumeMountResult;
+  switch (result) {
+    case FR_OK:
+      return VolumeMountResult::kMounted;
+    case FR_NOT_READY:
+      return VolumeMountResult::kDriveNotReady;
+    case FR_NO_FILESYSTEM:
+      return VolumeMountResult::kNoFileSystem;
+    case FR_TIMEOUT:
+      return VolumeMountResult::kVolumeLockTimedOut;
+    case FR_INT_ERR:
+      return VolumeMountResult::kFileSystemInternalError;
+    default:
+      return VolumeMountResult::kOtherFailure;
+  }
+}
+
 bool CopyToNullTerminated(std::string_view path, std::array<char, kPathCapacity>& out) noexcept {
   if (path.empty() || path.size() >= out.size()) {
     return false;
@@ -58,8 +76,14 @@ bool SdCardImageSource::Mount() noexcept {
     return true;
   }
   BeginSdCardBringUpAttempt();
-  mounted_ = f_mount(&file_system, SDPath, 1) == FR_OK;
+  const FRESULT result = f_mount(&file_system, SDPath, 1);
+  mount_result_ = TranslateMountResult(result);
+  mounted_ = result == FR_OK;
   return mounted_;
+}
+
+midismith::bsp::storage::VolumeMountResult SdCardImageSource::last_mount_result() const noexcept {
+  return mount_result_;
 }
 
 midismith::bsp::storage::SdCardBringUpOutcome SdCardImageSource::last_bring_up_outcome()
