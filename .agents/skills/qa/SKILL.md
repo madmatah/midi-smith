@@ -17,8 +17,10 @@ git diff --name-only                                          # uncommitted work
 git diff --name-only "$(git merge-base HEAD origin/main)"..HEAD   # committed work on a branch
 ```
 
-Use both when both are non-empty. If the diff is documentation only, output
-**"QA gate: out of scope (documentation only)."** and stop.
+Use both when both are non-empty. If the diff is documentation only, there is nothing to build and
+nothing to review but the history: check the branch's commit messages yourself against
+`.agents/skills/writing-commits/SKILL.md`, then output
+**"QA gate: out of scope (documentation only), commit messages checked."** and stop.
 
 ## 2. Run the deterministic floor FIRST
 
@@ -94,6 +96,12 @@ worth paying for:
 | a fixed buffer, a formatter, an ISR, a shared or static object, a DMA path, a per-sample or per-tick path | `embedded-safety-reviewer` |
 | any new or renamed public symbol, file or directory | `conventions-reviewer` |
 | tests only | `test-coverage-auditor` |
+| any commit already on the branch | `conventions-reviewer`, given the commit range |
+
+The commit-message row is not subject to the sizing rule above: the sizing rule rations the C++
+dimensions, and reading a handful of subject lines costs nothing. Whenever the branch carries
+commits, whichever reviewer you dispatch gets the range and the instruction to cover them, and if
+the size rule left you dispatching nobody, check the messages yourself.
 
 Write each dispatch prompt to protect the reviewer's budget, because a reviewer that runs out of
 turns delivers NOTHING, not a partial report, nothing:
@@ -123,8 +131,10 @@ you act on it. Discard the ones that do not hold, and say how many you discarded
 
 ## 6. Fix and report
 
-Fix every BLOCKING and SHOULD-FIX finding that survived. One commit per finding, in the project's
-one-line gitmoji format. Re-run the affected part of the floor after the fixes.
+Fix every BLOCKING and SHOULD-FIX finding that survived. One commit per finding, written to
+`.agents/skills/writing-commits/SKILL.md`. A finding against a message already in the branch is
+fixed by rewording that commit, not by adding one. Re-run the affected part of the floor after the
+fixes.
 
 End with:
 
