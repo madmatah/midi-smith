@@ -27,13 +27,14 @@ CMakeUserPresets.json
 **/install_manifest.txt
 **/.cmake/
 
-# --- Caches ---
+# --- Caches & scratch ---
 .cache/
 **/.cache/
 .venv/
 **/.venv/
 __pycache__/
 **/__pycache__/
+/tmp/
 
 # --- IDEs & editors ---
 **/.history/
