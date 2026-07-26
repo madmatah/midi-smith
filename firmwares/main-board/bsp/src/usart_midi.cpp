@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "bsp/cortex/dma_handoff.hpp"
+
 namespace midismith::main_board::bsp {
 
 UsartMidi::UsartMidi(UART_HandleTypeDef& huart) noexcept : huart_(huart) {
@@ -29,6 +31,7 @@ midismith::midi::TransportStatus UsartMidi::TrySendRawMessage(const uint8_t* dat
 
   std::memcpy(tx_buffer_, data, length);
 
+  midismith::bsp::cortex::EnsureBufferWritesLandBeforeStartingDma();
   const HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart_, tx_buffer_, length);
   if (status == HAL_OK) {
     return midismith::midi::TransportStatus::kSuccess;
