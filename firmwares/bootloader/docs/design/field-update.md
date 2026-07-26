@@ -20,9 +20,9 @@ microSD  ──►  main-board  ──►  FDCAN  ──►  8 ADC boards
              (reads .msfw)              (receive, stage, install)
 ```
 
-The bootloader and the flash map are in place, and the main board can read a card and judge what it
-carries. Nothing yet copies an image into the staging slot, so no board updates itself yet; the
-FDCAN leg is the target design and is not built at all.
+The main board updates itself from the card today: `firmware update self` stages the container,
+records the pending decision, and reboots into the bootloader, which installs it. The FDCAN leg is
+the target design and is not built at all.
 
 Every board runs the **same bootloader binary**. It is built without HSE and without the PLL, on the
 64 MHz HSI alone, so a single byte-identical image serves boards carrying different crystals
@@ -172,6 +172,8 @@ hardware seams and the wiring.
 | `libs/update-catalogue` | What the card offers, and whether it is worth installing |
 | `firmwares/bootloader` | The composition root and the flash, journal and LED seams |
 | `firmwares/main-board/bsp/src/storage/sd_card_image_source.cpp` | FATFS + SDMMC1 behind `ImageSourceRequirements` |
+| `libs/firmware-staging` | Fill the staging slot from any transport, verified on read-back |
+| `libs/bsp-flash` | Erase, program and read the internal flash; the boot journal sector |
 | `tools/firmware_packager.py` | ELF → `.msfw` |
 | `tools/flash_board.py` | Build and flash a board over SWD, without the debugger |
 
