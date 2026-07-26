@@ -24,14 +24,19 @@ using midismith::product_id::ProductId;
 using midismith::update_catalogue::kAdcBoardImagePath;
 using midismith::update_catalogue::kMainBoardImagePath;
 
+constexpr std::uint32_t kApplicationLoadAddress = 0x08100000;
+constexpr std::uint32_t kSamplePayloadSizeBytes = 64;
+constexpr std::uint32_t kSurvivingPayloadSizeBytes = 8;
+
 std::vector<std::uint8_t> MakeContainer(ProductId product, std::string_view version,
                                         std::uint32_t payload_size_bytes) {
   ImageHeader header;
   header.product_id = product;
   header.payload_size_bytes = payload_size_bytes;
-  header.load_address = 0x08100000;
+  header.load_address = kApplicationLoadAddress;
   std::copy_n(version.begin(), version.size(), header.version_string.begin());
-  std::copy_n(std::string_view{"2026-07-25"}.begin(), 10, header.build_date.begin());
+  const std::string_view build_date{"2026-07-25"};
+  std::copy_n(build_date.begin(), build_date.size(), header.build_date.begin());
 
   std::vector<std::uint8_t> container(kImageHeaderSizeBytes + payload_size_bytes, 0xFF);
   const auto written =
@@ -189,6 +194,7 @@ TEST_CASE("The SdCardCommand class") {
           command.Run(1, argv, stream);
           REQUIRE(storage.mount_attempts() == 1);
           REQUIRE(stream.Contains("no card answered"));
+          REQUIRE(storage.unmount_calls() == 0);
         }
       }
 
@@ -216,16 +222,35 @@ TEST_CASE("The SdCardCommand class") {
 
   SECTION("The Run() method") {
     SECTION("When the card carries no image at all") {
-      SECTION("Should report both paths as absent") {
+      SECTION("Should name both paths, so the operator sees which file is missing") {
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
+        REQUIRE(stream.Contains(kMainBoardImagePath));
+        REQUIRE(stream.Contains(kAdcBoardImagePath));
         REQUIRE(stream.Contains("absent"));
+      }
+    }
+
+    SECTION("When an image is present") {
+      SECTION("Should show the product, version and byte counts checked against the release note") {
+        images.Place(kMainBoardImagePath,
+                     MakeContainer(ProductId::kMainBoard, "d4e5f6", kSamplePayloadSizeBytes));
+        SdCardCommand command(storage, images, "a1b2c3");
+        command.Run(1, argv, stream);
+        REQUIRE(stream.Contains("present"));
+        REQUIRE(stream.Contains("product    main-board"));
+        REQUIRE_FALSE(stream.Contains("product    adc-board"));
+        REQUIRE(stream.Contains("d4e5f6"));
+        REQUIRE(stream.Contains("2026-07-25"));
+        REQUIRE(stream.Contains("64 bytes"));
+        REQUIRE(stream.Contains("160 bytes"));
       }
     }
 
     SECTION("When the card carries the build the board is already running") {
       SECTION("Should report it as up to date rather than offering it") {
-        images.Place(kMainBoardImagePath, MakeContainer(ProductId::kMainBoard, "a1b2c3", 64));
+        images.Place(kMainBoardImagePath,
+                     MakeContainer(ProductId::kMainBoard, "a1b2c3", kSamplePayloadSizeBytes));
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
         REQUIRE(stream.Contains("already running this build"));
@@ -234,7 +259,8 @@ TEST_CASE("The SdCardCommand class") {
 
     SECTION("When the card carries a different build") {
       SECTION("Should offer it as an update") {
-        images.Place(kMainBoardImagePath, MakeContainer(ProductId::kMainBoard, "d4e5f6", 64));
+        images.Place(kMainBoardImagePath,
+                     MakeContainer(ProductId::kMainBoard, "d4e5f6", kSamplePayloadSizeBytes));
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
         REQUIRE(stream.Contains("update available"));
@@ -243,7 +269,8 @@ TEST_CASE("The SdCardCommand class") {
 
     SECTION("When an image sits under the path of another board") {
       SECTION("Should refuse it on the product it declares, not on its file name") {
-        images.Place(kMainBoardImagePath, MakeContainer(ProductId::kAdcBoard, "d4e5f6", 64));
+        images.Place(kMainBoardImagePath,
+                     MakeContainer(ProductId::kAdcBoard, "d4e5f6", kSamplePayloadSizeBytes));
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
         REQUIRE(stream.Contains("targets another board"));
@@ -252,8 +279,9 @@ TEST_CASE("The SdCardCommand class") {
 
     SECTION("When a copy onto the card was interrupted, leaving the payload short") {
       SECTION("Should call the image unusable, its header alone being valid") {
-        images.Place(kAdcBoardImagePath, MakeContainer(ProductId::kAdcBoard, "d4e5f6", 64));
-        images.Truncate(kAdcBoardImagePath, kImageHeaderSizeBytes + 8);
+        images.Place(kAdcBoardImagePath,
+                     MakeContainer(ProductId::kAdcBoard, "d4e5f6", kSamplePayloadSizeBytes));
+        images.Truncate(kAdcBoardImagePath, kImageHeaderSizeBytes + kSurvivingPayloadSizeBytes);
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
         REQUIRE(stream.Contains("unusable"));
