@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace midismith::image_installer {
+namespace midismith::firmware_installer {
 
 class ApplicationSlotRequirements {
  public:
@@ -20,4 +20,4 @@ class ApplicationSlotRequirements {
       std::span<const std::uint8_t> payload) noexcept = 0;
 };
 
-}  // namespace midismith::image_installer
+}  // namespace midismith::firmware_installer

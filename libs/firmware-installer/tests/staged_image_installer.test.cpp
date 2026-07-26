@@ -1,6 +1,6 @@
 #if defined(UNIT_TESTS)
 
-#include "image-installer/staged_image_installer.hpp"
+#include "firmware-installer/staged_image_installer.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,7 +13,7 @@
 #include "checksum/crc32.hpp"
 #include "firmware-image/image_header.hpp"
 #include "firmware-image/image_installability.hpp"
-#include "image-installer/application_slot_requirements.hpp"
+#include "firmware-installer/application_slot_requirements.hpp"
 #include "product-id/product_id.hpp"
 
 namespace {
@@ -22,10 +22,10 @@ using midismith::checksum::ComputeCrc32;
 using midismith::firmware_image::ImageHeader;
 using midismith::firmware_image::kImageHeaderSizeBytes;
 using midismith::firmware_image::TargetConstraints;
-using midismith::image_installer::ApplicationSlotRequirements;
-using midismith::image_installer::InstallOutcome;
-using midismith::image_installer::StagedImageDescription;
-using midismith::image_installer::StagedImageInstaller;
+using midismith::firmware_installer::ApplicationSlotRequirements;
+using midismith::firmware_installer::InstallOutcome;
+using midismith::firmware_installer::StagedImageDescription;
+using midismith::firmware_installer::StagedImageInstaller;
 using midismith::product_id::ProductId;
 
 constexpr std::uint32_t kApplicationLoadAddress = 0x08100000;

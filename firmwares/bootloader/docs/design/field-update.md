@@ -168,7 +168,7 @@ hardware seams and the wiring.
 | `libs/firmware-image` | Parse, serialize and validate `.msfw` containers |
 | `libs/flash-layout` | Generated addresses; derives bank and sector *from* the address so the two can never disagree |
 | `libs/boot-control` | The append-only journal, its coherence rules, and `DecideBootAction` |
-| `libs/image-installer` | Copy a staged image into the application slot, verified and restartable |
+|  `libs/firmware-installer` | Copy a staged image into the application slot, verified and restartable |
 | `libs/update-catalogue` | What the card offers, and whether it is worth installing |
 | `firmwares/bootloader` | The composition root and the flash, journal and LED seams |
 | `firmwares/main-board/bsp/src/storage/sd_card_image_source.cpp` | FATFS + SDMMC1 behind `ImageSourceRequirements` |

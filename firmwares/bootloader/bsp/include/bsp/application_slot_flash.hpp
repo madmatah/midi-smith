@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <span>
 
-#include "image-installer/application_slot_requirements.hpp"
+#include "firmware-installer/application_slot_requirements.hpp"
 
 namespace midismith::bootloader::bsp {
 
-class ApplicationSlotFlash final : public midismith::image_installer::ApplicationSlotRequirements {
+class ApplicationSlotFlash final
+    : public midismith::firmware_installer::ApplicationSlotRequirements {
  public:
   [[nodiscard]] std::span<const std::uint8_t> StagedContainer() const noexcept override;
 
