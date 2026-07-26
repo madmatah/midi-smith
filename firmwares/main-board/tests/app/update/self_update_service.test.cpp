@@ -157,6 +157,7 @@ class FakeJournal final : public BootJournalStorageRequirements {
     }
     std::copy(record.begin(), record.end(), sector_.begin() + offset_bytes);
     ++records_written_;
+    last_record_ = midismith::boot_control::BootJournalRecord::Deserialize(record);
     return true;
   }
 
@@ -173,10 +174,16 @@ class FakeJournal final : public BootJournalStorageRequirements {
     return records_written_;
   }
 
+  [[nodiscard]] const std::optional<midismith::boot_control::BootJournalRecord>& last_record()
+      const noexcept {
+    return last_record_;
+  }
+
  private:
   std::vector<std::uint8_t> sector_;
   bool programming_succeeds_ = true;
   int records_written_ = 0;
+  std::optional<midismith::boot_control::BootJournalRecord> last_record_;
 };
 
 }  // namespace
@@ -224,6 +231,16 @@ TEST_CASE("The SelfUpdateService class") {
 
         const auto staged = staging.Contents().first(container.size());
         REQUIRE(std::equal(container.begin(), container.end(), staged.begin()));
+
+        const auto parsed = midismith::firmware_image::ParseImageHeader(staged);
+        REQUIRE(parsed.is_valid());
+        const auto& record_slot = journal_storage.last_record();
+        REQUIRE(record_slot.has_value());
+        const auto& record = *record_slot;
+        REQUIRE(record.state == midismith::boot_control::UpdateState::kUpdatePending);
+        REQUIRE(record.staged_payload_crc32 == parsed.header.payload_crc32);
+        REQUIRE(record.staged_payload_size_bytes == parsed.header.payload_size_bytes);
+        REQUIRE(record.staged_product_id == ProductId::kMainBoard);
       }
     }
   }

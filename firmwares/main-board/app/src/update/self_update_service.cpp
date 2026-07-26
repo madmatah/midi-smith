@@ -91,7 +91,8 @@ SelfUpdateOutcome SelfUpdateService::Run() noexcept {
     return SelfUpdateOutcome::kStagingFailed;
   }
 
-  if (!journal_.Append(midismith::boot_control::UpdateState::kUpdatePending)) {
+  if (!journal_.AppendPendingUpdate(entry.header.payload_crc32, entry.header.payload_size_bytes,
+                                    entry.header.product_id)) {
     return SelfUpdateOutcome::kJournalWriteFailed;
   }
 

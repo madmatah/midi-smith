@@ -94,6 +94,35 @@ BootJournalRecord MakePendingRecord() {
 }  // namespace
 
 TEST_CASE("The BootJournalWriter class") {
+  SECTION("The AppendPendingUpdate() method") {
+    SECTION(
+        "The bootloader refuses to install a staged image whose header disagrees with what the "
+        "journal announced, so the announcement must describe the image that was just staged and "
+        "must still outrank every record already in the sector") {
+      SECTION("When a pending update is recorded over an existing journal") {
+        SECTION("Should carry the staged image's own identity, and a successor sequence number") {
+          FakeJournalSector sector;
+          BootJournalWriter writer{sector};
+          REQUIRE(writer.Append(UpdateState::kIdle));
+
+          constexpr std::uint32_t kStagedCrc32 = 0xC0FFEE01;
+          constexpr std::uint32_t kStagedSizeBytes = 151712;
+          REQUIRE(writer.AppendPendingUpdate(kStagedCrc32, kStagedSizeBytes,
+                                             midismith::product_id::ProductId::kMainBoard));
+
+          const AppendOnlyBootJournal journal{sector.Sector()};
+          const auto latest = journal.LastValidRecord();
+          REQUIRE(latest.has_value());
+          REQUIRE(latest->state == UpdateState::kUpdatePending);
+          REQUIRE(latest->staged_payload_crc32 == kStagedCrc32);
+          REQUIRE(latest->staged_payload_size_bytes == kStagedSizeBytes);
+          REQUIRE(latest->staged_product_id == midismith::product_id::ProductId::kMainBoard);
+          REQUIRE(latest->sequence_number == 1);
+        }
+      }
+    }
+  }
+
   SECTION("The Append() method") {
     SECTION("When the journal is empty") {
       SECTION("Should land in the first slot and be the record the bootloader then reads") {

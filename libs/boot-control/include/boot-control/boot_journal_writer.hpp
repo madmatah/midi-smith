@@ -14,6 +14,10 @@ class BootJournalWriter {
 
   [[nodiscard]] bool Append(const BootJournalRecord& record) noexcept;
 
+  [[nodiscard]] bool AppendPendingUpdate(std::uint32_t staged_payload_crc32,
+                                         std::uint32_t staged_payload_size_bytes,
+                                         product_id::ProductId staged_product_id) noexcept;
+
  private:
   BootJournalStorageRequirements& storage_;
 };
