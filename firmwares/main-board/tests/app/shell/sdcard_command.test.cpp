@@ -196,7 +196,7 @@ TEST_CASE("The SdCardCommand class") {
         SECTION("Should separate that from an empty slot, the two having different remedies") {
           storage.set_bring_up_outcome(midismith::bsp::storage::SdCardBringUpOutcome::kReady);
           command.Run(1, argv, stream);
-          REQUIRE(stream.Contains("file system could not be read"));
+          REQUIRE(stream.Contains("the volume was unreadable"));
           REQUIRE_FALSE(stream.Contains("no card answered"));
         }
       }
@@ -208,7 +208,7 @@ TEST_CASE("The SdCardCommand class") {
               midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted);
           command.Run(1, argv, stream);
           REQUIRE(stream.Contains("volume lock timed out"));
-          REQUIRE(stream.Contains("before the driver ever reached the card"));
+          REQUIRE(stream.Contains("the driver was never reached"));
         }
       }
     }

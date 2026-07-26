@@ -51,13 +51,13 @@ std::string_view DescribeStatus(CatalogueStatus status) noexcept {
 std::string_view DescribeMountResult(midismith::bsp::storage::VolumeMountResult result) noexcept {
   switch (result) {
     case midismith::bsp::storage::VolumeMountResult::kDriveNotReady:
-      return "the drive reported itself not ready";
+      return "drive not ready";
     case midismith::bsp::storage::VolumeMountResult::kNoFileSystem:
-      return "no FAT file system was found, is the card FAT32?";
+      return "no FAT file system, is the card FAT32?";
     case midismith::bsp::storage::VolumeMountResult::kVolumeLockTimedOut:
-      return "the volume lock timed out, another task still holds it";
+      return "volume lock timed out";
     case midismith::bsp::storage::VolumeMountResult::kFileSystemInternalError:
-      return "the file system layer could not create its lock";
+      return "the file system could not create its lock";
     case midismith::bsp::storage::VolumeMountResult::kMounted:
     case midismith::bsp::storage::VolumeMountResult::kNotAttempted:
     case midismith::bsp::storage::VolumeMountResult::kOtherFailure:
@@ -70,15 +70,15 @@ std::string_view DescribeMountFailure(
     midismith::bsp::storage::SdCardBringUpOutcome outcome) noexcept {
   switch (outcome) {
     case midismith::bsp::storage::SdCardBringUpOutcome::kNoCardAnswered:
-      return "no card answered, is one inserted?";
+      return "no card answered";
     case midismith::bsp::storage::SdCardBringUpOutcome::kWideBusRefused:
       return "the card refused the 4-bit bus";
     case midismith::bsp::storage::SdCardBringUpOutcome::kReady:
-      return "the card answered but its file system could not be read, is it FAT32?";
+      return "the card answered but the volume was unreadable";
     case midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted:
-      return "the file system layer refused before the driver ever reached the card";
+      return "the driver was never reached";
   }
-  return "could not mount the card";
+  return "the card could not be brought up";
 }
 
 std::string_view DescribeNeed(UpdateNeed need) noexcept {
@@ -152,7 +152,7 @@ void SdCardCommand::Run(int argc, char** argv,
   if (!storage_.Mount()) {
     out.Write("sdcard: ");
     out.Write(DescribeMountResult(storage_.last_mount_result()));
-    out.Write("\r\n        card bring-up: ");
+    out.Write("; ");
     out.Write(DescribeMountFailure(storage_.last_bring_up_outcome()));
     out.Write("\r\n");
     return;
