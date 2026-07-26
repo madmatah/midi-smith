@@ -167,6 +167,21 @@ D-cache is not coherent with it. `ReadAt` therefore never DMAs into the caller's
 into a non-cacheable AXI transfer buffer and copies out, so callers may pass stack or `.bss` memory
 freely. A `static_assert` states the constraint at the buffer declaration.
 
+Two traps in that path cost a full day of bring-up, and both will bite again anywhere a removable
+volume is mounted:
+
+**The uncached window must be Normal memory, not Strongly-ordered.** An MPU region left at TEX
+level 0 while non-cacheable and non-bufferable is Strongly-ordered, where *every* unaligned access
+raises a UsageFault. FatFs reads BPB fields with byte-wise `ld_dword()`, which `-Os` merges into one
+unaligned word load — so the fault appeared only in Release. `libs/bsp/include/bsp/cortex/`
+`mpu_memory_attributes.hpp` now names the encoding once, with the reasoning in its `static_assert`.
+
+**`disk_initialize()` is one-shot.** The generated `Middlewares/Third_Party/FatFs/src/diskio.c`
+skips the driver entirely once `is_initialized[pdrv]` is set, so a card swapped after a successful
+mount is never re-identified: reads then run against a card that has power-cycled back to idle, and
+`SD_read` burns its 30-second timeout before returning `FR_DISK_ERR`. `Mount()` therefore unlinks
+and relinks the drive on every attempt — `FATFS_LinkDriverEx` is what clears that flag.
+
 ---
 
 ## 7. Flashing Workflows
