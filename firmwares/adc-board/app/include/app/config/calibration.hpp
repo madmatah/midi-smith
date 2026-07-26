@@ -8,7 +8,7 @@
 namespace midismith::adc_board::app::config {
 
 // Minimum delta (strike - rest) to consider a calibration coherent.
-// Below this threshold, the sensor is assumed unconnected — ADC noise only.
+// Below this threshold, the sensor is assumed unconnected: ADC noise only.
 constexpr float kMinimumCalibrationDeltaMa = 0.05f;
 
 // Maximum valid strike current: Vref / Rf = 2048 mV / 1800 Ω ≈ 1.138 mA

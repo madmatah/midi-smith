@@ -89,8 +89,8 @@ bootloader has no RTOS and keeps SysTick.
 
 The **Memory Protection Unit for Cortex-M7** dialog offers to preconfigure the MPU for speculative
 reads: answer **Yes**, as in the other two packages. CubeMX emits region 0 covering 4 GB with
-`SubRegionDisable = 0x87`, whose only effect is to mark `0x6000_0000`–`0xDFFF_FFFF` — external
-memory space, where nothing answers on these boards — as inaccessible, so the M7's speculative
+`SubRegionDisable = 0x87`, whose only effect is to mark `0x6000_0000`–`0xDFFF_FFFF` (external
+memory space, where nothing answers on these boards) as inaccessible, so the M7's speculative
 prefetch cannot raise an imprecise bus fault there.
 
 Keeping the same answer across the three firmwares removes one difference to reason about at the
@@ -117,7 +117,7 @@ subdirectory named after the project itself.
 ⚠️ `Application Structure` must be **Advanced**. It is what produces `Core/Inc` and `Core/Src`
 rather than `Inc/` and `Src/` at the package root; `.gitattributes` and `.clang-format-ignore` rely
 on `Core/` to exclude generated code. **CubeMX does not allow switching from `Basic` to `Advanced`
-after creation** — the field is greyed out. Getting it wrong means deleting
+after creation**: the field is greyed out. Getting it wrong means deleting
 `firmwares/bootloader/` and starting over, so check it before the first `GENERATE CODE`.
 
 ### Code Generator tab
@@ -140,9 +140,9 @@ CubeMX owns the generated tree; the monorepo owns the rest. After any `GENERATE 
 | `STM32H743XX_FLASH.ld` | `FLASH : ORIGIN = 0x8000000, LENGTH = 128K` |
 | `CMakeLists.txt` | the monorepo form, not the CubeMX one |
 | `cmake/gcc-arm-none-eabi.cmake` | the monorepo form |
-| `CMakePresets.json`, `cmake/starm-clang.cmake` | absent — CubeMX regenerates them, delete them |
+| `CMakePresets.json`, `cmake/starm-clang.cmake` | absent: CubeMX regenerates them, delete them |
 | `Core/Src/main.c` | `#include "app/boot_entry.h"` and `BootEntry_Run();` inside their USER CODE zones |
 
 The linker script is the one that matters: CubeMX restores `LENGTH = 2048K`, which would let the
 bootloader link past its slot and over the staging area. `midismith_check_flash_layout` catches it
-at build time — the build fails with a `FLASH size mismatch` rather than producing a bad binary.
+at build time: the build fails with a `FLASH size mismatch` rather than producing a bad binary.

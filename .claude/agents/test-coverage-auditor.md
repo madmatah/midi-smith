@@ -17,7 +17,7 @@ preference: any new class or logic outside `bsp/` and `os/` MUST have a unit tes
 not Done if the test file is missing (`AGENTS.md` 7). Business logic is testable without hardware,
 so "it needs the board" is almost never a valid excuse; `*Requirements` interfaces exist precisely
 to be mocked. The conventions for writing them are in `.agents/skills/writing-tests/SKILL.md`
-(Catch2 v3, FakeIt by default, the 4-level BDD hierarchy) — read it before you judge a test file.
+(Catch2 v3, FakeIt by default, the 4-level BDD hierarchy). Read it before you judge a test file.
 
 Your job is to verify that the tests PROTECT the behaviors the change claims, not merely that
 tests exist. You are read-only on source and tests; you MAY run targeted host tests.
@@ -61,9 +61,9 @@ behavior is UNCOVERED.
 ### 3. The self-comparison pin trap (BLOCKING)
 
 `REQUIRE(rendered_width == kRenderedWidth)` where the production code uses that same constant
-proves nothing: both sides move together on an edit. Load-bearing values — wire and MIDI byte
+proves nothing: both sides move together on an edit. Load-bearing values (wire and MIDI byte
 layouts, protocol identifiers, CAN identifiers, buffer capacities, glyph dimensions, timing
-constants — must be pinned to a LITERAL in the test. The accepted mitigation is to assert against
+constants) must be pinned to a LITERAL in the test. The accepted mitigation is to assert against
 the constant and then pin the constant itself to a literal on the next line.
 
 ### 4. Tests the real module, not the mock (BLOCKING)
@@ -80,7 +80,7 @@ The 4 levels are mandatory: `TEST_CASE("The <Name> class")` / `SECTION("The <Met
 `SECTION` name that describes mechanics instead of the rule ("Should return 3" instead of "Should
 drop the sysex message"), and Arrange/Act/Assert phases annotated with comments (the project is
 zero-comment; the section names carry the meaning). A deliberate product decision must be readable
-in a SECTION name — that is where this project records its business rules.
+in a SECTION name, which is where this project records its business rules.
 
 ### 6. Edge and failure paths (SHOULD-FIX)
 

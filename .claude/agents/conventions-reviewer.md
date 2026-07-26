@@ -59,14 +59,14 @@ If the diff has no `.cpp`/`.hpp`/`.h` change, output
    `timeout`, `delay`, `period` or `size` on a physical quantity is a finding. Check constants and
    parameters, not just locals.
 
-6. **Zero-comment policy — read this literally.** The project has NO "legitimate why" comment
+6. **Zero-comment policy, read this literally.** The project has NO "legitimate why" comment
    exception beyond two: a hardware constraint justified against a datasheet, and value
    documentation in a config file. Everything else is a finding, including a comment that explains
    a subtle rationale: the rationale belongs in a name, a `static_assert` message, an enum, or a
    test `SECTION` name. A comment restating what the code does is a finding. A commented-out block
    is a finding. A `TODO` is a finding.
    When you flag a comment, always propose the encoding that replaces it (the extracted function
-   name, the `static_assert`, or the test section wording) — a bare "delete this" is not useful.
+   name, the `static_assert`, or the test section wording). A bare "delete this" is not useful.
 
 7. **Magic numbers.** Every numeric literal that is not 0, 1 or an obvious index bound is a named
    `constexpr` constant. Firmware config values belong under `app/include/app/config/`

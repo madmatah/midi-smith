@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 if(HOST_TESTS)
     enable_testing()
     # Auto-discover standalone domain libs (identified by the presence of CMakePresets.json).
-    # Infra libs (os, bsp) intentionally have no CMakePresets.json and are excluded here —
+    # Infra libs (os, bsp) intentionally have no CMakePresets.json and are excluded here:
     # they depend on FreeRTOS/HAL headers not available in a host build.
     file(GLOB LIB_CANDIDATES RELATIVE ${CMAKE_SOURCE_DIR} libs/*)
     foreach(LIB_CANDIDATE ${LIB_CANDIDATES})
@@ -58,7 +58,7 @@ endif()
 
 # Monorepo-wide lint, format and format_check targets.
 # Covers all project-owned code across all packages.
-# cpplint reads CPPLINT.cfg by walking up from each file — the root CPPLINT.cfg applies to all.
+# cpplint reads CPPLINT.cfg by walking up from each file, so the root CPPLINT.cfg applies to all.
 # clang-format respects .clang-format-ignore for IDE/local tooling; in CI, the explicit file list
 # produced by this GLOB is the authoritative scope (same list for lint and format).
 file(GLOB_RECURSE MONOREPO_SOURCE_FILES CONFIGURE_DEPENDS
@@ -100,6 +100,7 @@ add_custom_target(architecture_check
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Architecture check (monorepo)"
 )
+
 
 # Keep a stable compilation database location for clangd.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)

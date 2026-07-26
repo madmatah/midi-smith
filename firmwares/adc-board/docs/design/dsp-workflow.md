@@ -8,7 +8,7 @@
 
 The `SignalProcessingWorkflow` is the top-level DSP pipeline executed for each of the 22 sensor channels at every acquisition tick. Running at 18,000 Hz on a STM32H743 (ARM Cortex-M7), it must produce low-latency, noise-robust results under strict real-time constraints.
 
-The pipeline takes a single raw ADC sample as input and produces, as side effects, a set of continuously updated physical measurements and — when the appropriate conditions are met — key action events (`OnNoteOn` / `OnNoteOff`) with calibrated velocities, emitted via the `KeyActionRequirements` interface.
+The pipeline takes a single raw ADC sample as input and produces, as side effects, a set of continuously updated physical measurements and, when the appropriate conditions are met, key action events (`OnNoteOn` / `OnNoteOff`) with calibrated velocities, emitted via the `KeyActionRequirements` interface.
 
 ---
 
@@ -60,7 +60,7 @@ flowchart TD
 
 ## 2. Stages
 
-The first four stages form the shared preprocessing chain, whose output — the normalized shank position — is the common input to the four subsequent branches. Two dependency relationships exist between the branches: the Note-On engine consumes the hammer speed produced by the Physical Velocity Pipeline, and the Note Release Detector consumes the falling speed produced by the Damper Release Pipeline.
+The first four stages form the shared preprocessing chain, whose output (the normalized shank position) is the common input to the four subsequent branches. Two dependency relationships exist between the branches: the Note-On engine consumes the hammer speed produced by the Physical Velocity Pipeline, and the Note Release Detector consumes the falling speed produced by the Damper Release Pipeline.
 
 ### 2.1 Filtering Stage
 
@@ -102,7 +102,7 @@ The Note-On pipeline operates under a strict latency budget: the hammer speed mu
 
 ### 2.7 Damper Release Pipeline
 
-Estimates the falling speed of the shank during key release, for use by the Note Release Detector. Unlike the Note-On pipeline, the Note-Off path operates under **relaxed latency constraints** — a few milliseconds of additional delay on a key release is imperceptible to the player. This allows the use of heavier filtering for better noise immunity, at the cost of some amplitude attenuation which is compensated by a fixed scale factor.
+Estimates the falling speed of the shank during key release, for use by the Note Release Detector. Unlike the Note-On pipeline, the Note-Off path operates under **relaxed latency constraints**: a few milliseconds of additional delay on a key release is imperceptible to the player. This allows the use of heavier filtering for better noise immunity, at the cost of some amplitude attenuation which is compensated by a fixed scale factor.
 
 The pipeline uses a heavily smoothed position signal (large-window SMA) to drive a **Central Difference** differentiator. Speed estimation is gated to the active zone and conditioned on an active Note-On, avoiding computation during idle periods.
 

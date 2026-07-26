@@ -79,5 +79,5 @@ The `TiaCurrentConverter` stage is parameterized by three compile-time constants
 
 **Input:** Raw 16-bit ADC value (0–65535).
 
-**Output:** Sensor current in mA — a positive value, increasing as the hammer shank approaches the sensor — passed to the `AnalogSensorLinearizer` stage.
+**Output:** Sensor current in mA (a positive value, increasing as the hammer shank approaches the sensor), passed to the `AnalogSensorLinearizer` stage.
 

@@ -33,7 +33,7 @@ elseif (STARM_TOOLCHAIN_CONFIG STREQUAL "STARM_NEWLIB")
   set(TOOLCHAIN_MULTILIBS "--config=newlib.cfg")
 endif()
 
-# MCU specific flags — provided by the firmware toolchain file
+# MCU specific flags, provided by the firmware toolchain file
 set(TARGET_FLAGS "${MIDISMITH_TARGET_FLAGS} ${TOOLCHAIN_MULTILIBS}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TARGET_FLAGS}")

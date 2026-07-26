@@ -85,7 +85,7 @@ keeps all 4 levels even when it sits next to free functions in the same file.
 ### Cross-cutting contracts
 
 A `TEST_CASE` may name a contract rather than a symbol when what is under test is an agreement
-between two implementations — a wire format, a file layout, a container written by one tool and
+between two implementations: a wire format, a file layout, a container written by one tool and
 read by another. Name the contract and its other side, then keep the `When`/`Should` levels:
 `"The .msfw container produced by tools/firmware_packager.py"`.
 
@@ -93,7 +93,7 @@ read by another. Name the contract and its other side, then keep the `When`/`Sho
 
 Two strategies are available. **Use FakeIt by default**; fall back to manual stubs when FakeIt doesn't fit.
 
-### Strategy 1 — FakeIt (default)
+### Strategy 1: FakeIt (default)
 
 Use **FakeIt** to mock `*Requirements` interfaces. It provides concise mock setup, built-in call verification, and avoids writing boilerplate stub classes.
 
@@ -107,7 +107,7 @@ using fakeit::Verify;
 using fakeit::When;
 ```
 
-**Macro workaround** — FakeIt's `Method()` macro conflicts with some toolchains. Always define this alias at the top of the test file:
+**Macro workaround**: FakeIt's `Method()` macro conflicts with some toolchains. Always define this alias at the top of the test file:
 
 ```cpp
 #define fakeit_Method(mock, method) Method(mock, method)
@@ -139,14 +139,14 @@ When(fakeit_Method(mock, Method)).Return(value);      // stub a return value
 When(fakeit_Method(mock, Method)).AlwaysReturn(value); // stub for all calls
 ```
 
-### Strategy 2 — Manual stubs (when FakeIt doesn't fit)
+### Strategy 2: Manual stubs (when FakeIt doesn't fit)
 
 Fall back to hand-written stubs in these situations:
 
-- **Stateful behavior** — the stub must maintain internal state across calls (e.g. a queue that delivers frames sequentially with an index). A struct is more readable than chaining stateful lambdas.
-- **Shared stubs** — the stub is reused across multiple test files. Extract it to a `test_stubs.hpp` with a proper namespace (e.g. `domain::dsp::engine::test`); a struct is more portable than duplicating FakeIt setup.
-- **Non-virtual interfaces** — FakeIt operates via vtable manipulation and only works with virtual methods. If the interface uses C++20 concepts or CRTP, use a manual stub.
-- **Free functions or static methods** — FakeIt cannot mock these.
+- **Stateful behavior**: the stub must maintain internal state across calls (e.g. a queue that delivers frames sequentially with an index). A struct is more readable than chaining stateful lambdas.
+- **Shared stubs**: the stub is reused across multiple test files. Extract it to a `test_stubs.hpp` with a proper namespace (e.g. `domain::dsp::engine::test`); a struct is more portable than duplicating FakeIt setup.
+- **Non-virtual interfaces**: FakeIt operates via vtable manipulation and only works with virtual methods. If the interface uses C++20 concepts or CRTP, use a manual stub.
+- **Free functions or static methods**: FakeIt cannot mock these.
 
 Naming conventions:
 
