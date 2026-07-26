@@ -79,6 +79,10 @@ UpdateNeed EvaluateUpdateNeed(const CatalogueEntry& entry,
     return UpdateNeed::kImageUnusable;
   }
 
+  if (installed_version.empty()) {
+    return UpdateNeed::kInstalledVersionUnknown;
+  }
+
   const std::string_view offered_version{entry.header.version_string.data()};
   if (offered_version == installed_version) {
     return UpdateNeed::kUpToDate;

@@ -231,6 +231,19 @@ TEST_CASE("The SdCardCommand class") {
       }
     }
 
+    SECTION("An adc-board image is never called up to date, whatever version it carries") {
+      SECTION(
+          "Only the main board knows its own running version; the adc boards report theirs "
+          "over CAN, which this command does not speak") {
+        images.Place(kAdcBoardImagePath,
+                     MakeContainer(ProductId::kAdcBoard, "a1b2c3", kSamplePayloadSizeBytes));
+        SdCardCommand command(storage, images, "a1b2c3");
+        command.Run(1, argv, stream);
+        REQUIRE(stream.Contains("cannot know what that one is running"));
+        REQUIRE_FALSE(stream.Contains("already running this build"));
+      }
+    }
+
     SECTION("When an image is present") {
       SECTION("Should show the product, version and byte counts checked against the release note") {
         images.Place(kMainBoardImagePath,

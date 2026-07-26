@@ -4,6 +4,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 
 #include "update-catalogue/update_catalogue.hpp"
 
@@ -18,7 +19,11 @@ using midismith::update_catalogue::ImagePathFor;
 using midismith::update_catalogue::UpdateCatalogue;
 using midismith::update_catalogue::UpdateNeed;
 
-constexpr std::size_t kNumberTextCapacity = 24;
+constexpr std::size_t kNumberTextCapacityBytes = 24;
+
+static_assert(kNumberTextCapacityBytes > std::numeric_limits<std::uint32_t>::digits10 + 2,
+              "the widest rendering plus its terminator must fit, so that widening the value type "
+              "breaks the build here rather than truncating a byte count on screen");
 
 std::string_view NameOf(ProductId product) noexcept {
   switch (product) {
@@ -87,6 +92,8 @@ std::string_view DescribeNeed(UpdateNeed need) noexcept {
       return "already running this build";
     case UpdateNeed::kUpdateAvailable:
       return "update available";
+    case UpdateNeed::kInstalledVersionUnknown:
+      return "offered, this board cannot know what that one is running";
     case UpdateNeed::kNoImage:
       return "nothing offered";
     case UpdateNeed::kImageUnusable:
@@ -96,7 +103,7 @@ std::string_view DescribeNeed(UpdateNeed need) noexcept {
 }
 
 void WriteUnsigned(midismith::io::WritableStreamRequirements& out, std::uint32_t value) noexcept {
-  std::array<char, kNumberTextCapacity> text{};
+  std::array<char, kNumberTextCapacityBytes> text{};
   std::snprintf(text.data(), text.size(), "%" PRIu32, value);
   out.Write(text.data());
 }

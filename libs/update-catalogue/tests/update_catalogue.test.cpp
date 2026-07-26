@@ -23,6 +23,7 @@ using midismith::firmware_image::ImageHeader;
 using midismith::firmware_image::kImageHeaderSizeBytes;
 using midismith::firmware_image::kVersionStringCapacity;
 using midismith::product_id::ProductId;
+using midismith::update_catalogue::CatalogueEntry;
 using midismith::update_catalogue::CatalogueStatus;
 using midismith::update_catalogue::EvaluateUpdateNeed;
 using midismith::update_catalogue::ImagePathFor;
@@ -97,6 +98,24 @@ class FakeCard final : public ImageSourceRequirements {
 };
 
 }  // namespace
+
+TEST_CASE("A board whose running version is unknown is never called up to date") {
+  SECTION(
+      "Only the main board reads its own version string; an adc board reports its own over CAN, "
+      "and an image whose version field is blank would otherwise compare equal to that ignorance") {
+    SECTION("When the caller cannot state the installed version") {
+      SECTION("Should say the comparison is impossible rather than claim a match") {
+        CatalogueEntry entry;
+        entry.status = CatalogueStatus::kImageAvailable;
+        entry.container_size_bytes = kImageHeaderSizeBytes + kSamplePayloadSizeBytes;
+        entry.header.payload_size_bytes = kSamplePayloadSizeBytes;
+
+        REQUIRE(EvaluateUpdateNeed(entry, std::string_view{}) ==
+                UpdateNeed::kInstalledVersionUnknown);
+      }
+    }
+  }
+}
 
 TEST_CASE("The ImagePathFor function") {
   SECTION("When asked for a board the instrument carries") {
