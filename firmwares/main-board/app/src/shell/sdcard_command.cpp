@@ -48,6 +48,24 @@ std::string_view DescribeStatus(CatalogueStatus status) noexcept {
   return "unknown";
 }
 
+std::string_view DescribeMountResult(midismith::bsp::storage::VolumeMountResult result) noexcept {
+  switch (result) {
+    case midismith::bsp::storage::VolumeMountResult::kDriveNotReady:
+      return "the drive reported itself not ready";
+    case midismith::bsp::storage::VolumeMountResult::kNoFileSystem:
+      return "no FAT file system was found, is the card FAT32?";
+    case midismith::bsp::storage::VolumeMountResult::kVolumeLockTimedOut:
+      return "the volume lock timed out, another task still holds it";
+    case midismith::bsp::storage::VolumeMountResult::kFileSystemInternalError:
+      return "the file system layer could not create its lock";
+    case midismith::bsp::storage::VolumeMountResult::kMounted:
+    case midismith::bsp::storage::VolumeMountResult::kNotAttempted:
+    case midismith::bsp::storage::VolumeMountResult::kOtherFailure:
+      break;
+  }
+  return "the mount failed";
+}
+
 std::string_view DescribeMountFailure(
     midismith::bsp::storage::SdCardBringUpOutcome outcome) noexcept {
   switch (outcome) {
@@ -133,6 +151,8 @@ void SdCardCommand::Run(int argc, char** argv,
 
   if (!storage_.Mount()) {
     out.Write("sdcard: ");
+    out.Write(DescribeMountResult(storage_.last_mount_result()));
+    out.Write("\r\n        card bring-up: ");
     out.Write(DescribeMountFailure(storage_.last_bring_up_outcome()));
     out.Write("\r\n");
     return;

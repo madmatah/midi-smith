@@ -20,6 +20,9 @@ class SdCardImageSource final
   [[nodiscard]] midismith::bsp::storage::SdCardBringUpOutcome last_bring_up_outcome()
       const noexcept override;
 
+  [[nodiscard]] midismith::bsp::storage::VolumeMountResult last_mount_result()
+      const noexcept override;
+
   void Unmount() noexcept override;
 
   [[nodiscard]] bool is_mounted() const noexcept {
@@ -33,6 +36,8 @@ class SdCardImageSource final
 
  private:
   bool mounted_ = false;
+  midismith::bsp::storage::VolumeMountResult mount_result_ =
+      midismith::bsp::storage::VolumeMountResult::kNotAttempted;
 };
 
 }  // namespace midismith::main_board::bsp::storage

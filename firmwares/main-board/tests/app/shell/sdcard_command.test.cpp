@@ -57,6 +57,15 @@ class FakeRemovableStorage final
     return outcome_;
   }
 
+  [[nodiscard]] midismith::bsp::storage::VolumeMountResult last_mount_result()
+      const noexcept override {
+    return mount_result_;
+  }
+
+  void set_mount_result(midismith::bsp::storage::VolumeMountResult result) noexcept {
+    mount_result_ = result;
+  }
+
   void set_mount_succeeds(bool succeeds) noexcept {
     mount_succeeds_ = succeeds;
   }
@@ -79,6 +88,8 @@ class FakeRemovableStorage final
   int unmount_calls_ = 0;
   midismith::bsp::storage::SdCardBringUpOutcome outcome_ =
       midismith::bsp::storage::SdCardBringUpOutcome::kReady;
+  midismith::bsp::storage::VolumeMountResult mount_result_ =
+      midismith::bsp::storage::VolumeMountResult::kMounted;
 };
 
 class FakeImageSource final : public midismith::update_catalogue::ImageSourceRequirements {
@@ -187,6 +198,17 @@ TEST_CASE("The SdCardCommand class") {
           command.Run(1, argv, stream);
           REQUIRE(stream.Contains("file system could not be read"));
           REQUIRE_FALSE(stream.Contains("no card answered"));
+        }
+      }
+
+      SECTION("When the file system layer refuses before the driver is ever reached") {
+        SECTION("Should name that layer's own verdict, since the card is not the suspect") {
+          storage.set_mount_result(midismith::bsp::storage::VolumeMountResult::kVolumeLockTimedOut);
+          storage.set_bring_up_outcome(
+              midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted);
+          command.Run(1, argv, stream);
+          REQUIRE(stream.Contains("volume lock timed out"));
+          REQUIRE(stream.Contains("before the driver ever reached the card"));
         }
       }
     }
