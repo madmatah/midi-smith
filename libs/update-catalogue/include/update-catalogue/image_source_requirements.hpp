@@ -8,6 +8,8 @@
 
 namespace midismith::update_catalogue {
 
+inline constexpr std::size_t kMaxImagePathLengthBytes = 63;
+
 class ImageSourceRequirements {
  public:
   virtual ~ImageSourceRequirements() = default;

@@ -7,13 +7,18 @@
 #include "bsp/memory_sections.hpp"
 #include "bsp/storage/sd_card_bring_up.hpp"
 #include "fatfs.h"
+#include "update-catalogue/image_source_requirements.hpp"
 
 namespace midismith::main_board::bsp::storage {
 
 namespace {
 
 constexpr std::size_t kTransferBufferSizeBytes = 2048;
-constexpr std::size_t kPathCapacity = 64;
+constexpr std::size_t kPathCapacityBytes = 64;
+
+static_assert(kPathCapacityBytes > midismith::update_catalogue::kMaxImagePathLengthBytes,
+              "this buffer must hold every path the image source contract admits, terminator "
+              "included, or a legal path is silently answered as a missing file");
 
 constexpr std::size_t kSdBlockSizeBytes = 512;
 
@@ -49,7 +54,8 @@ midismith::bsp::storage::VolumeMountResult TranslateMountResult(FRESULT result) 
   }
 }
 
-bool CopyToNullTerminated(std::string_view path, std::array<char, kPathCapacity>& out) noexcept {
+bool CopyToNullTerminated(std::string_view path,
+                          std::array<char, kPathCapacityBytes>& out) noexcept {
   if (path.empty() || path.size() >= out.size()) {
     return false;
   }
@@ -60,18 +66,13 @@ bool CopyToNullTerminated(std::string_view path, std::array<char, kPathCapacity>
 
 class OpenFileGuard {
  public:
-  explicit OpenFileGuard(bool opened) noexcept : opened_(opened) {}
+  OpenFileGuard() noexcept = default;
   OpenFileGuard(const OpenFileGuard&) = delete;
   OpenFileGuard& operator=(const OpenFileGuard&) = delete;
 
   ~OpenFileGuard() {
-    if (opened_) {
-      f_close(&open_file);
-    }
+    f_close(&open_file);
   }
-
- private:
-  bool opened_;
 };
 
 }  // namespace
@@ -106,7 +107,7 @@ void SdCardImageSource::Unmount() noexcept {
 }
 
 std::optional<std::uint32_t> SdCardImageSource::SizeOf(std::string_view path) noexcept {
-  std::array<char, kPathCapacity> terminated_path{};
+  std::array<char, kPathCapacityBytes> terminated_path{};
   if (!mounted_ || !CopyToNullTerminated(path, terminated_path)) {
     return std::nullopt;
   }
@@ -122,7 +123,7 @@ std::optional<std::uint32_t> SdCardImageSource::SizeOf(std::string_view path) no
 std::optional<std::size_t> SdCardImageSource::ReadAt(std::string_view path,
                                                      std::uint32_t offset_bytes,
                                                      std::span<std::uint8_t> out) noexcept {
-  std::array<char, kPathCapacity> terminated_path{};
+  std::array<char, kPathCapacityBytes> terminated_path{};
   if (!mounted_ || out.empty() || !CopyToNullTerminated(path, terminated_path)) {
     return std::nullopt;
   }
@@ -130,7 +131,7 @@ std::optional<std::size_t> SdCardImageSource::ReadAt(std::string_view path,
   if (f_open(&open_file, terminated_path.data(), FA_READ) != FR_OK) {
     return std::nullopt;
   }
-  const OpenFileGuard guard{true};
+  const OpenFileGuard guard;
 
   if (f_lseek(&open_file, offset_bytes) != FR_OK) {
     return std::nullopt;
