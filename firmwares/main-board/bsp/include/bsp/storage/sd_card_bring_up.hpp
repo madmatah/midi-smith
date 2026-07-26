@@ -4,6 +4,8 @@
 
 namespace midismith::main_board::bsp::storage {
 
+void BeginSdCardBringUpAttempt() noexcept;
+
 [[nodiscard]] midismith::bsp::storage::SdCardBringUpOutcome LastSdCardBringUpOutcome() noexcept;
 
 }  // namespace midismith::main_board::bsp::storage
