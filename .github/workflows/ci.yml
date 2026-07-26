@@ -90,6 +90,10 @@ jobs:
             preset: main-Release
             elf: main-board.elf
             package_dir: firmwares/main-board
+          - name: bootloader
+            preset: boot-Release
+            elf: bootloader.elf
+            package_dir: firmwares/bootloader
     steps:
       - name: Checkout PR
         uses: actions/checkout@v6
