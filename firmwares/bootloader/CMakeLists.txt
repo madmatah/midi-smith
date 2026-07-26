@@ -12,7 +12,7 @@ midismith_require_lib(boot-control)
 midismith_require_lib(byte-codec)
 midismith_require_lib(checksum)
 midismith_require_lib(firmware-image)
-midismith_require_lib(image-installer)
+midismith_require_lib(firmware-installer)
 midismith_require_lib(flash-layout)
 midismith_require_lib(product-id)
 
@@ -49,7 +49,7 @@ target_link_libraries(${BOOT_FIRMWARE_TARGET}
     byte_codec
     checksum
     firmware_image
-    image_installer
+    firmware_installer
     flash_layout
     product_id
 )

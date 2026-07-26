@@ -11,8 +11,8 @@
 #include "bsp/journal_storage.hpp"
 #include "bsp/status_led.hpp"
 #include "firmware-image/image_installability.hpp"
+#include "firmware-installer/staged_image_installer.hpp"
 #include "flash-layout/flash_layout.hpp"
-#include "image-installer/staged_image_installer.hpp"
 #include "product-id/product_id.hpp"
 
 namespace midismith::bootloader::app {
@@ -26,9 +26,9 @@ using boot_control::BootJournalRecord;
 using boot_control::BootJournalWriter;
 using boot_control::DecideBootAction;
 using boot_control::UpdateState;
-using image_installer::InstallOutcome;
-using image_installer::StagedImageDescription;
-using image_installer::StagedImageInstaller;
+using firmware_installer::InstallOutcome;
+using firmware_installer::StagedImageDescription;
+using firmware_installer::StagedImageInstaller;
 
 constexpr std::uint32_t kUnbootableBlinkPeriodMs = 120;
 

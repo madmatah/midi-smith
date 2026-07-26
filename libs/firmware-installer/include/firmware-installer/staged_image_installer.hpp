@@ -3,9 +3,9 @@
 #include <cstdint>
 
 #include "firmware-image/image_installability.hpp"
-#include "image-installer/application_slot_requirements.hpp"
+#include "firmware-installer/application_slot_requirements.hpp"
 
-namespace midismith::image_installer {
+namespace midismith::firmware_installer {
 
 enum class InstallOutcome : std::uint8_t {
   kInstalled = 0,
@@ -40,4 +40,4 @@ class StagedImageInstaller {
   firmware_image::TargetConstraints constraints_;
 };
 
-}  // namespace midismith::image_installer
+}  // namespace midismith::firmware_installer

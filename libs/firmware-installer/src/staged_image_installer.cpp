@@ -1,4 +1,4 @@
-#include "image-installer/staged_image_installer.hpp"
+#include "firmware-installer/staged_image_installer.hpp"
 
 #include <optional>
 #include <span>
@@ -6,7 +6,7 @@
 #include "checksum/crc32.hpp"
 #include "firmware-image/image_header.hpp"
 
-namespace midismith::image_installer {
+namespace midismith::firmware_installer {
 
 namespace {
 
@@ -117,4 +117,4 @@ InstallOutcome StagedImageInstaller::Install() noexcept {
   return InstallOutcome::kInstalled;
 }
 
-}  // namespace midismith::image_installer
+}  // namespace midismith::firmware_installer
