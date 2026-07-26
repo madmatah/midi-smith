@@ -26,6 +26,11 @@ alignas(32) BSP_AXI_SRAM_NOCACHE FATFS file_system;
 alignas(32) BSP_AXI_SRAM_NOCACHE FIL open_file;
 alignas(32) BSP_AXI_SRAM_NOCACHE std::array<std::uint8_t, kTransferBufferSizeBytes> transfer_buffer;
 
+void ForgetThatTheDriveWasEverInitialised() noexcept {
+  FATFS_UnLinkDriver(SDPath);
+  FATFS_LinkDriver(&SD_Driver, SDPath);
+}
+
 midismith::bsp::storage::VolumeMountResult TranslateMountResult(FRESULT result) noexcept {
   using midismith::bsp::storage::VolumeMountResult;
   switch (result) {
@@ -76,6 +81,7 @@ bool SdCardImageSource::Mount() noexcept {
     return true;
   }
   BeginSdCardBringUpAttempt();
+  ForgetThatTheDriveWasEverInitialised();
   const FRESULT result = f_mount(&file_system, SDPath, 1);
   mount_result_ = TranslateMountResult(result);
   mounted_ = result == FR_OK;
