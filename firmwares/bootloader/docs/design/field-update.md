@@ -20,8 +20,9 @@ microSD  ──►  main-board  ──►  FDCAN  ──►  8 ADC boards
              (reads .msfw)              (receive, stage, install)
 ```
 
-The bootloader, the flash map and the SD leg are in place; the FDCAN leg is the target design and is
-not built yet.
+The bootloader and the flash map are in place, and the main board can read a card and judge what it
+carries. Nothing yet copies an image into the staging slot, so no board updates itself yet; the
+FDCAN leg is the target design and is not built at all.
 
 Every board runs the **same bootloader binary**. It is built without HSE and without the PLL, on the
 64 MHz HSI alone, so a single byte-identical image serves boards carrying different crystals
@@ -116,7 +117,19 @@ restore, and the application reconfigures the clock tree from scratch anyway.
 ## 5. The `.msfw` Container
 
 `tools/firmware_packager.py` wraps every firmware binary into a container that the board can
-validate before erasing anything.
+validate before erasing anything. **MSFW** is short for *MidiSmith FirmWare*; the four magic bytes
+at offset 0 and the file extension spell the same thing.
+
+It is a format of this project's own, not a standard, and that was a decision rather than an
+oversight. Intel HEX and SREC carry neither a whole-image checksum nor any identity. ST's DFU/DfuSe
+carries a CRC and a target but no version string, and is shaped around USB rather than around an
+arbitrary transport. UF2's self-describing 512-byte blocks would have suited the CAN leg well, but it
+too has no version string and no whole-image CRC.
+
+The deciding need was **version comparison**: the whole `verdict` line of the `sdcard` command rests
+on a version string in the header, and none of those three formats carries one. Product identity
+mattered just as much, so that an ADC image copied under the main board's file name is refused on
+what it declares rather than on where it sits.
 
 ```
 ┌────────────────────────────── 96-byte header ──────────────────────────────┐
@@ -205,7 +218,33 @@ is why all nine boards must be provisioned with the bootloader *before* being mo
 
 ---
 
-## 8. Debugging Note: OpenOCD and the Second Bank
+## 8. The Instrument Falls Silent for the Whole Session
+
+An update quiesces **every** board on the bus, not only the one being written. The eight ADC boards
+otherwise keep emitting sensor events, which compete with the firmware blocks for the same CAN bus
+and turn the one path that must be reliable into the one with the least predictable latency.
+
+Stopping also removes a question rather than answering it. Writing 384 KB of staging while
+acquisition runs would demand, at every future change, a fresh proof that flash operations cannot
+starve the sampling chain. A quiescent board needs no such proof.
+
+Two rules follow, and both matter more than they look:
+
+**The stop is acknowledged, never merely broadcast.** The orchestrator begins transferring once each
+board has confirmed it is idle, not once it has asked. Otherwise the first blocks arrive while a
+board is still transmitting.
+
+**The board restores acquisition on its own.** With no block received for a guard period, an ADC
+board leaves update mode and resumes sampling. A cable pulled mid-update, an orchestrator that dies,
+an operator who walks away — none of these may leave a silent instrument. Without that timer, a
+failure that was meant to be recoverable becomes permanent by a different route.
+
+The nominal path needs no resume logic: a successful update ends in a reboot, which starts
+acquisition the ordinary way.
+
+---
+
+## 9. Debugging Note: OpenOCD and the Second Bank
 
 `target/stm32h7x.cfg` declares a flash bank at `0x08100000` **only** if `DUAL_BANK` is set:
 
