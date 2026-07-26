@@ -32,7 +32,7 @@ std::string_view DescribeNeed(UpdateNeed need) noexcept {
     case UpdateNeed::kUpToDate:
       return "already running this build";
     case UpdateNeed::kUpdateAvailable:
-      return "update available";
+      return "differs from the running build";
     case UpdateNeed::kInstalledVersionUnknown:
       return "offered, running version unknown until the CAN protocol exists";
     case UpdateNeed::kNoImage:
@@ -123,6 +123,7 @@ void FirmwareCommand::UpdateSelf(midismith::io::WritableStreamRequirements& out)
   out.Write("\r\n");
 
   if (outcome == SelfUpdateOutcome::kStagedAndPending) {
+    out.WaitUntilWritten();
     board_reset_.ResetBoard();
   }
 }

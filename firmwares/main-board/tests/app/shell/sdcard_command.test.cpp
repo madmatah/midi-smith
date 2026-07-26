@@ -278,12 +278,15 @@ TEST_CASE("The SdCardCommand class") {
     }
 
     SECTION("When the card carries a different build") {
-      SECTION("Should offer it as an update") {
+      SECTION(
+          "Should say it differs, never that it is newer: the version is a commit hash, which has "
+          "no order, and offering an older build is the only recovery left once the boards are "
+          "mounted and SWD is out of reach") {
         images.Place(kMainBoardImagePath,
                      MakeContainer(ProductId::kMainBoard, "d4e5f6", kSamplePayloadSizeBytes));
         SdCardCommand command(storage, images, "a1b2c3");
         command.Run(1, argv, stream);
-        REQUIRE(stream.Contains("update available"));
+        REQUIRE(stream.Contains("differs from the running build"));
       }
     }
 
