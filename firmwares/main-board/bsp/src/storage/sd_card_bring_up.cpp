@@ -52,6 +52,10 @@ midismith::bsp::storage::SdCardBringUpOutcome last_outcome =
 
 }  // namespace
 
+void BeginSdCardBringUpAttempt() noexcept {
+  last_outcome = midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted;
+}
+
 midismith::bsp::storage::SdCardBringUpOutcome LastSdCardBringUpOutcome() noexcept {
   return last_outcome;
 }

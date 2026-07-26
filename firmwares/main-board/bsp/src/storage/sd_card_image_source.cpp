@@ -57,6 +57,7 @@ bool SdCardImageSource::Mount() noexcept {
   if (mounted_) {
     return true;
   }
+  BeginSdCardBringUpAttempt();
   mounted_ = f_mount(&file_system, SDPath, 1) == FR_OK;
   return mounted_;
 }

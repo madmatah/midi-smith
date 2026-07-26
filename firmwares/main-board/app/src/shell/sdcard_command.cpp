@@ -58,7 +58,7 @@ std::string_view DescribeMountFailure(
     case midismith::bsp::storage::SdCardBringUpOutcome::kReady:
       return "the card answered but its file system could not be read, is it FAT32?";
     case midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted:
-      return "the driver never reached the card";
+      return "the file system layer refused before the driver ever reached the card";
   }
   return "could not mount the card";
 }
