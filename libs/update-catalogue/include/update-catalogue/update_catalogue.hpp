@@ -13,6 +13,12 @@ inline constexpr std::string_view kImageDirectory = "/midismith";
 inline constexpr std::string_view kMainBoardImagePath = "/midismith/main-board.msfw";
 inline constexpr std::string_view kAdcBoardImagePath = "/midismith/adc-board.msfw";
 
+static_assert(kMainBoardImagePath.size() <= kMaxImagePathLengthBytes &&
+                  kAdcBoardImagePath.size() <= kMaxImagePathLengthBytes,
+              "an image source rejects a longer path, and that rejection is indistinguishable from "
+              "a missing file: a renamed image would be reported absent with nothing saying why");
+
+
 [[nodiscard]] std::string_view ImagePathFor(product_id::ProductId product) noexcept;
 
 enum class CatalogueStatus : std::uint8_t {
@@ -36,6 +42,7 @@ struct CatalogueEntry {
 enum class UpdateNeed : std::uint8_t {
   kUpToDate = 0,
   kUpdateAvailable,
+  kInstalledVersionUnknown,
   kNoImage,
   kImageUnusable,
 };
