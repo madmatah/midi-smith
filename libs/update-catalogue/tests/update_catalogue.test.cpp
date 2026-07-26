@@ -117,6 +117,48 @@ TEST_CASE("A board whose running version is unknown is never called up to date")
   }
 }
 
+TEST_CASE("Every status that is not a usable image refuses installation on its own") {
+  CatalogueEntry entry;
+  entry.container_size_bytes = kImageHeaderSizeBytes + kSamplePayloadSizeBytes;
+  entry.header.payload_size_bytes = kSamplePayloadSizeBytes;
+
+  SECTION("When the file could not be read") {
+    SECTION("Should refuse it, a card that fails mid-read is not a card that offers nothing") {
+      entry.status = CatalogueStatus::kUnreadable;
+      REQUIRE(EvaluateUpdateNeed(entry, kInstalledVersion) == UpdateNeed::kImageUnusable);
+    }
+  }
+
+  SECTION("When the file is not a firmware container") {
+    SECTION("Should refuse it, whatever was dropped on the card is not ours to install") {
+      entry.status = CatalogueStatus::kNotAnImage;
+      REQUIRE(EvaluateUpdateNeed(entry, kInstalledVersion) == UpdateNeed::kImageUnusable);
+    }
+  }
+}
+
+TEST_CASE("A container whose size does not match its header is refused in both directions") {
+  SECTION("A size the header cannot explain means the file is not the image it claims to be") {
+    CatalogueEntry entry;
+    entry.status = CatalogueStatus::kImageAvailable;
+    entry.header.payload_size_bytes = kSamplePayloadSizeBytes;
+
+    SECTION("When the container carries fewer bytes than announced") {
+      SECTION("Should refuse it, the copy was interrupted") {
+        entry.container_size_bytes = kImageHeaderSizeBytes + kSamplePayloadSizeBytes - 1;
+        REQUIRE(EvaluateUpdateNeed(entry, kInstalledVersion) == UpdateNeed::kImageUnusable);
+      }
+    }
+
+    SECTION("When the container carries more bytes than announced") {
+      SECTION("Should refuse it too, trailing bytes no header accounts for are not trustworthy") {
+        entry.container_size_bytes = kImageHeaderSizeBytes + kSamplePayloadSizeBytes + 1;
+        REQUIRE(EvaluateUpdateNeed(entry, kInstalledVersion) == UpdateNeed::kImageUnusable);
+      }
+    }
+  }
+}
+
 TEST_CASE("The ImagePathFor function") {
   SECTION("When asked for a board the instrument carries") {
     SECTION("Should name the file the operator copies onto the card") {
