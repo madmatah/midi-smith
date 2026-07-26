@@ -43,10 +43,6 @@ std::vector<std::uint8_t> MakeContainer(ProductId product, std::string_view vers
 class FakeRemovableStorage final
     : public midismith::main_board::app::shell::RemovableStorageRequirements {
  public:
-  [[nodiscard]] bool IsCardPresent() const noexcept override {
-    return card_present_;
-  }
-
   [[nodiscard]] bool Mount() noexcept override {
     ++mount_attempts_;
     return mount_succeeds_;
@@ -56,12 +52,17 @@ class FakeRemovableStorage final
     ++unmount_calls_;
   }
 
-  void set_card_present(bool present) noexcept {
-    card_present_ = present;
+  [[nodiscard]] midismith::bsp::storage::SdCardBringUpOutcome last_bring_up_outcome()
+      const noexcept override {
+    return outcome_;
   }
 
   void set_mount_succeeds(bool succeeds) noexcept {
     mount_succeeds_ = succeeds;
+  }
+
+  void set_bring_up_outcome(midismith::bsp::storage::SdCardBringUpOutcome outcome) noexcept {
+    outcome_ = outcome;
   }
 
   [[nodiscard]] int mount_attempts() const noexcept {
@@ -73,10 +74,11 @@ class FakeRemovableStorage final
   }
 
  private:
-  bool card_present_ = true;
   bool mount_succeeds_ = true;
   int mount_attempts_ = 0;
   int unmount_calls_ = 0;
+  midismith::bsp::storage::SdCardBringUpOutcome outcome_ =
+      midismith::bsp::storage::SdCardBringUpOutcome::kReady;
 };
 
 class FakeImageSource final : public midismith::update_catalogue::ImageSourceRequirements {
@@ -161,36 +163,36 @@ TEST_CASE("The SdCardCommand class") {
     }
   }
 
-  SECTION("An empty slot is answered without ever touching the bus") {
+  SECTION("A mount is always attempted, whatever the card detect switch says") {
     SECTION(
-        "A mount attempt on an absent card busy-waits 30 seconds inside the SD driver, "
-        "freezing the shell task, so presence is checked first") {
-      storage.set_card_present(false);
+        "The socket's detect contact is a mechanical part in an instrument that vibrates, and a "
+        "contact stuck closed would report an empty slot forever: it may explain a failure, never "
+        "prevent the attempt that would have succeeded") {
+      storage.set_mount_succeeds(false);
       SdCardCommand command(storage, images, "a1b2c3");
 
-      SECTION("When the slot is empty") {
-        SECTION("Should say so and never attempt to mount") {
+      SECTION("When the bring-up reports that no card answered") {
+        SECTION("Should still have tried, and say what the driver observed") {
+          storage.set_bring_up_outcome(
+              midismith::bsp::storage::SdCardBringUpOutcome::kNoCardAnswered);
           command.Run(1, argv, stream);
-          REQUIRE(stream.Contains("no card in the slot"));
-          REQUIRE(storage.mount_attempts() == 0);
+          REQUIRE(storage.mount_attempts() == 1);
+          REQUIRE(stream.Contains("no card answered"));
+        }
+      }
+
+      SECTION("When the card answered but the volume could not be read") {
+        SECTION("Should separate that from an empty slot, the two having different remedies") {
+          storage.set_bring_up_outcome(midismith::bsp::storage::SdCardBringUpOutcome::kReady);
+          command.Run(1, argv, stream);
+          REQUIRE(stream.Contains("file system could not be read"));
+          REQUIRE_FALSE(stream.Contains("no card answered"));
         }
       }
     }
   }
 
   SECTION("The Run() method") {
-    SECTION("When the card cannot be mounted") {
-      SECTION(
-          "Should report the failed action without claiming a card is there, since detection "
-          "is absent until the board's detect switch is wired") {
-        storage.set_mount_succeeds(false);
-        SdCardCommand command(storage, images, "a1b2c3");
-        command.Run(1, argv, stream);
-        REQUIRE(stream.Contains("could not mount the card"));
-        REQUIRE_FALSE(stream.Contains("no card in the slot"));
-      }
-    }
-
     SECTION("When the card carries no image at all") {
       SECTION("Should report both paths as absent") {
         SdCardCommand command(storage, images, "a1b2c3");

@@ -1,3 +1,5 @@
+#include "bsp/storage/sd_card_bring_up.hpp"
+
 #include <cstdint>
 
 #include "bsp_driver_sd.h"
@@ -45,7 +47,15 @@ void ForgetTheCardThatWasThereBefore(SD_HandleTypeDef& sd_card) noexcept {
 
 constexpr GPIO_PinState kDetectPinLevelWhenSlotIsEmpty = GPIO_PIN_RESET;
 
+midismith::bsp::storage::SdCardBringUpOutcome last_outcome =
+    midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted;
+
 }  // namespace
+
+midismith::bsp::storage::SdCardBringUpOutcome LastSdCardBringUpOutcome() noexcept {
+  return last_outcome;
+}
+
 }  // namespace midismith::main_board::bsp::storage
 
 extern "C" std::uint8_t BSP_SD_IsDetected() {
@@ -57,10 +67,7 @@ extern "C" std::uint8_t BSP_SD_IsDetected() {
 
 extern "C" std::uint8_t BSP_SD_Init() {
   namespace storage = midismith::main_board::bsp::storage;
-
-  if (BSP_SD_IsDetected() != SD_PRESENT) {
-    return MSD_ERROR_SD_NOT_PRESENT;
-  }
+  using midismith::bsp::storage::SdCardBringUpOutcome;
 
   if (storage::WasBroughtUpBefore(hsd1)) {
     HAL_SD_DeInit(&hsd1);
@@ -70,12 +77,15 @@ extern "C" std::uint8_t BSP_SD_Init() {
   storage::ApplyBusConfiguration(hsd1);
 
   if (HAL_SD_Init(&hsd1) != HAL_OK) {
+    storage::last_outcome = SdCardBringUpOutcome::kNoCardAnswered;
     return MSD_ERROR;
   }
 
   if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
+    storage::last_outcome = SdCardBringUpOutcome::kWideBusRefused;
     return MSD_ERROR;
   }
 
+  storage::last_outcome = SdCardBringUpOutcome::kReady;
   return MSD_OK;
 }
