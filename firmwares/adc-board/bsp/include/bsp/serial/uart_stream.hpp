@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "bsp/cortex/dma_handoff.hpp"
 #include "io/stream_requirements.hpp"
 #include "stm32h7xx_hal.h"
 
@@ -173,6 +174,7 @@ class UartStream final : public midismith::io::StreamRequirements, public UartSt
       return;
     }
 
+    midismith::bsp::cortex::EnsureBufferWritesLandBeforeStartingDma();
     if (HAL_UART_Transmit_DMA(&huart_, &tx_fifo_[tail], static_cast<uint16_t>(to_send)) != HAL_OK) {
       __disable_irq();
       tx_in_flight_bytes_ = 0;
