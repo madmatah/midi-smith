@@ -14,7 +14,7 @@ env:
 
 jobs:
   lint_and_format_check:
-    name: Lint + format-check + architecture
+    name: Lint + format-check + architecture + prose
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/ci:latest
@@ -22,6 +22,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Trust the workspace inside the container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
@@ -35,6 +37,8 @@ jobs:
       - name: Architecture check (AGENTS.md rules)
         run: cmake --build --preset Host-Debug --target architecture_check
 
+      - name: Prose check (AGENTS.md typography)
+        run: cmake --build --preset Host-Debug --target prose_check
 
   firmware_build:
     name: Build firmware (${{ matrix.name }})

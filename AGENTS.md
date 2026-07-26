@@ -54,6 +54,14 @@ Universal rules (apply to all packages):
 **Unit Suffixes**: always append units to time/frequency/size variables if not implicit.
 - Good: `timeout_ms`, `frequency_hz`, `buffer_size_bytes` · Less good: `timeout`, `freq`, `size`
 
+**No Em Dash**: the em dash (`U+2014`) is banned everywhere the project writes, with no exception:
+documentation, build and tooling files, the text the code emits, and commit messages. This
+paragraph names it by codepoint rather than showing it, because the rule admits no exception and
+this file is checked like any other. Use a semicolon to join two independent clauses, a colon to
+introduce, a comma or parentheses to interrupt, or simply two sentences. The en dash keeps its
+typographic job in ranges (`0–65535`, `S1–S3`, `PE11`–`PE14`).
+- Good: `the erase stalls the bank; the CPU cannot fetch from it`
+- Good: `the flash word is 32 bytes (ECC-protected), so a second write raises an error`
 
 ---
 
@@ -96,7 +104,7 @@ monorepo-root/
 
 **Vendored external code lives in `third_party/`**: never modified, not subject to project style rules. Updates by replacing the vendored subtree.
 
-**Root `CMakeLists.txt` is an orchestrator and tooling host**: no application logic. Routes firmware builds; defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`). See §4.1 for details.
+**Root `CMakeLists.txt` is an orchestrator and tooling host**: no application logic. Routes firmware builds; defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`, `prose_check`). See §4.1 for details.
 
 **Shared tooling at the repository root**: `.clang-format`, `.clang-format-ignore`, `.clangd`, `CPPLINT.cfg` are shared across all packages. A package may override locally.
 
@@ -183,7 +191,7 @@ All packages comply with these constraints, since all code is ultimately compile
 
 CMake is the source of truth for the build; no critical setting depends on the IDE.
 
-- Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`) covering all project-owned code. No application logic.
+- Root `CMakeLists.txt`: routes via `MIDISMITH_ACTIVE_FIRMWARE` (`adc`, `master`) or `HOST_TESTS=ON`. Defines monorepo-wide tooling targets (`lint`, `format`, `format_check`, `architecture_check`, `prose_check`) covering all project-owned code. No application logic.
 - Package-level CMake rules: see @firmwares/AGENTS.md §F.7 and @libs/AGENTS.md §L.1.
 
 **Presets** (`CMakePresets.json` at root):
@@ -197,7 +205,7 @@ CMake is the source of truth for the build; no critical setting depends on the I
 
 - Any rule violation must be explicitly documented; no implicit exceptions.
 - An exception is expressed as a rule, never as a per-file allowlist: it is a named constant in the checking tool plus the line stating it in the AGENTS.md that owns the rule (the `*_types.hpp` data headers of @firmwares/AGENTS.md §F.3.2, the `bsp-types`/`os-types` namespace scopes of @libs/AGENTS.md §L.0). It then applies uniformly to every file that qualifies, and it is auditable in one place. A case that fits no rule is either code to fix or a rule to amend, never a suppression entry, which would make a green check meaningless.
-- The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, data-type header purity, namespace mirroring, per-package test contract.
+- The mechanically checkable rules of this document are enforced by the `architecture_check` target (`tools/architecture_check.py`): layer purity, composition-root confinement, domain purity, data-type header purity, namespace mirroring, per-package test contract. The typography rules are enforced by the `prose_check` target (`tools/prose_check.py`) over every tracked file the project owns; a commit message is not a file, so that one surface is reviewed by the `/qa` gate instead.
 - The rules needing judgement (naming intent, dependency inversion quality, embedded hazards, test decisiveness) are reviewed by the `/qa` gate and its specialist agents in `.claude/agents/`. Calling /qa is an explicit request to launch the reviewing agents for step 3.
 
 ---

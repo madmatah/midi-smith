@@ -101,6 +101,14 @@ add_custom_target(architecture_check
     COMMENT "Architecture check (monorepo)"
 )
 
+# Monorepo-wide prose guard: the typography rules of AGENTS.md over every file the project owns,
+# documentation and build files included. Its scanned scope is the tracked set minus the vendored
+# and CubeMX-generated trees, and it lives in the script.
+add_custom_target(prose_check
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/prose_check.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Prose check (monorepo)"
+)
 
 # Keep a stable compilation database location for clangd.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)

@@ -30,6 +30,7 @@ cmake --preset Host-Debug
 cmake --build --preset Host-Debug --target format_check
 cmake --build --preset Host-Debug --target lint
 cmake --build --preset Host-Debug --target architecture_check
+cmake --build --preset Host-Debug --target prose_check
 bash .agents/skills/running-tests/scripts/run_all_host_tests.sh
 ```
 
@@ -59,6 +60,9 @@ Fixing each kind of red:
   no per-file allowlist, so the only other legitimate outcome is amending the RULE (a named
   constant in the check plus its line in the owning AGENTS.md), and that is the user's call, not
   yours (`AGENTS.md` 5).
+- **`prose_check`**: it cites the offending line and column. Rewrite the sentence; there is no
+  allowlist here either, and no punctuation an em dash can carry that a semicolon, a colon,
+  parentheses or a second sentence cannot.
 
 ## 3. Dispatch the reviewers the diff calls for
 
@@ -128,7 +132,7 @@ End with:
 ## QA Gate: <change>
 
 **Scope:** <files, N across which packages>
-**Floor:** format_check / lint / architecture_check / host tests / adc-Release / main-Release
+**Floor:** format_check / lint / architecture_check / prose_check / host tests / adc-Release / main-Release
 **Reviewers:** <which, and why>
 
 ### Fixed
