@@ -22,6 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+
       - name: Configure (Host-Debug)
         run: cmake --preset Host-Debug
 
@@ -33,6 +34,7 @@ jobs:
 
       - name: Architecture check (AGENTS.md rules)
         run: cmake --build --preset Host-Debug --target architecture_check
+
 
   firmware_build:
     name: Build firmware (${{ matrix.name }})
@@ -107,12 +109,12 @@ jobs:
           cmake --build --preset ${{ matrix.preset }} | tee build_output.txt
           cp build/${{ matrix.preset }}/${{ matrix.package_dir }}/${{ matrix.elf }} ../pr.elf
 
-          echo "## 📊 Memory Usage — ${{ matrix.name }} (PR Branch)" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Memory Usage: ${{ matrix.name }} (PR Branch)" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
           sed -n '/Memory region/,/FLASH/p' build_output.txt >> $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔍 Bloaty Size Analysis — ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Bloaty Size Analysis: ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout Base
         uses: actions/checkout@v6
@@ -132,7 +134,7 @@ jobs:
         with:
           bloaty-args: pr.elf -- base.elf
           output-to-summary: true
-          summary-title: "Memory Impact Report — ${{ matrix.name }} (vs ${{ github.base_ref }})"
+          summary-title: "Memory Impact Report: ${{ matrix.name }} (vs ${{ github.base_ref }})"
 
   host_tests:
     name: Host tests

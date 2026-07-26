@@ -118,7 +118,7 @@ BOARDS = {
 PROBE_SERIAL_PATTERN = re.compile(r"ST-LINK SN\s*:\s*(\S+)")
 
 # Erased flash reads as 0xFF, which the bootloader treats as an empty journal and an absent
-# staged image — the state a freshly provisioned board should start from.
+# staged image: the state a freshly provisioned board should start from.
 REGIONS_A_MASS_ERASE_CLEARS = "bootloader, application, staging, boot journal and configuration"
 
 
@@ -199,7 +199,7 @@ def report_slot_contents(programmer: str, serial: str) -> None:
         words = re.findall(r"0x[0-9A-Fa-f]{8}\s*:\s*(.+)", result.stdout)
         print(f"\n{name} slot at {address:#010x}")
         if not words:
-            print("    unreadable — is the board powered and the probe connected?")
+            print("    unreadable: is the board powered and the probe connected?")
             continue
         first_line = words[0].split()
         stack_pointer = first_line[0] if first_line else "?"

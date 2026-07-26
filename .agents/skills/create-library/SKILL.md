@@ -14,8 +14,8 @@ Before creating files, lock these inputs:
 1. `library-name-kebab` (folder/include path), e.g. `piano-controller`
 2. `library_name_snake` (CMake target + namespace scope), e.g. `piano_controller`
 3. Library type:
-   - `domain-header-only` — no `.cpp` sources (INTERFACE)
-   - `domain-with-src` — has `.cpp` sources (STATIC)
+   - `domain-header-only`: no `.cpp` sources (INTERFACE)
+   - `domain-with-src`: has `.cpp` sources (STATIC)
 4. Internal dependencies (other `libs/*` targets), if any
 5. Test policy:
    - `with-tests` (default for domain libs)

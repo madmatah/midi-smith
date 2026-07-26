@@ -68,7 +68,7 @@ TEST_CASE("The Heartbeat struct") {
   }
 }
 
-TEST_CASE("The Command variant — Serialize()") {
+TEST_CASE("The Command variant: Serialize()") {
   SECTION("AdcStart serializes to a single byte 0x01") {
     Command cmd = AdcStart{};
     std::array<std::uint8_t, 1> buffer{};

@@ -4,19 +4,19 @@
 
 ## L.0 Package Structure
 
-**Domain lib** (standard case — `dsp`, `midi`, `piano`…):
+**Domain lib** (standard case: `dsp`, `midi`, `piano`…):
 
 ```
 <lib-name>/
 │
-├── include/<lib-name>/           # Public headers — namespace midismith::<lib-name>::
+├── include/<lib-name>/           # Public headers, namespace midismith::<lib-name>::
 │   └── <sub-domain>/             # Optional sub-domain grouping (e.g. filters/, math/)
 ├── src/                          # Implementation files (.cpp)
 ├── tests/                        # Host-only unit tests
 └── CMakeLists.txt                # Standalone target with project() and Host-Debug preset
 ```
 
-**Infrastructure lib** — a library named after an infrastructure layer, or **prefixed with one**:
+**Infrastructure lib**: a library named after an infrastructure layer, or **prefixed with one**:
 `os`, `bsp`, `bsp-flash`, and any future `bsp-*` or `os-*` package. The prefix is what declares the
 nature of the package, so a reader knows from the directory name alone that it carries the HAL and
 owns no tests. The `*-types` packages are excluded: they are the HAL-free data contracts the layers
@@ -25,24 +25,24 @@ above include, and they stay host-buildable with their own tests.
 ```
 <lib-name>/
 │
-├── include/<lib-name>/           # Public headers — namespace midismith::<lib-name>::
+├── include/<lib-name>/           # Public headers, namespace midismith::<lib-name>::
 ├── src/                          # Implementation files (.cpp)
 └── CMakeLists.txt                # No project(), no standalone preset.
                                   # Consumed via add_subdirectory() from a firmware.
-                                  # No tests/ — FreeRTOS/HAL not available outside firmware context.
+                                  # No tests/, FreeRTOS/HAL unavailable outside a firmware.
 ```
 
 ### Namespace
 
-**Domain libs** (standard case — `dsp`, `midi`, `piano`…): `midismith::<scope>::<sub-domain>` — no layer level (the entire lib is the domain).
+**Domain libs** (standard case: `dsp`, `midi`, `piano`…): `midismith::<scope>::<sub-domain>`, with no layer level (the entire lib is the domain).
 
 | Level | Value | Purpose | Example |
 |-------|-------|---------|---------|
-| **1 — Root** | `midismith` | Product root, always present | `midismith::` |
-| **2 — Scope** | lib name | Identifies the library | `midismith::dsp::` |
-| **3 — Sub-domain** | functional area (optional) | `filters`, `math`, `engine`… | `midismith::dsp::filters::` |
+| **1. Root** | `midismith` | Product root, always present | `midismith::` |
+| **2. Scope** | lib name | Identifies the library | `midismith::dsp::` |
+| **3. Sub-domain** | functional area (optional) | `filters`, `math`, `engine`… | `midismith::dsp::filters::` |
 
-**Infrastructure libs** (`os`, `bsp`) : `midismith::<scope>::` — scope = lib name, no additional sub-domain expected.
+**Infrastructure libs** (`os`, `bsp`) : `midismith::<scope>::`, where scope is the lib name and no additional sub-domain is expected.
 
 Namespaces mirror the directory structure.
 
@@ -67,7 +67,7 @@ Namespaces mirror the directory structure.
 - Same `include/<lib-name>/` root convention.
 - **Depend on CubeMX-generated headers**: FreeRTOS or STM32 HAL headers must be provided by the consuming firmware's include paths.
 - **Not standalone**: cannot be configured or built independently; must be consumed by a firmware `CMakeLists.txt`.
-- **CMake**: no `project()`, no standalone preset — consumed via `add_subdirectory()` from a firmware.
+- **CMake**: no `project()`, no standalone preset. Consumed via `add_subdirectory()` from a firmware.
 
 ---
 

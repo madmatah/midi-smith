@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Runs the end-of-contribution QA gate over the current change — the deterministic floor (format, lint, architecture, host tests, both firmware builds) then the specialist reviewers the diff calls for. Use before a change is called done.
+description: Runs the end-of-contribution QA gate over the current change: the deterministic floor (format, lint, architecture, host tests, both firmware builds) then the specialist reviewers the diff calls for. Use before a change is called done.
 user-invocable: true
 ---
 
@@ -43,30 +43,30 @@ cmake --preset main-Release && cmake --build --preset main-Release
 
 Run the firmware builds AFTER the host tests: they switch the active preset. Report every red
 result, then sort it: a build or test failure blocks the review (do not dispatch reviewers over a
-broken tree), while a format failure is mechanical — fix it and carry on in the same pass.
+broken tree), while a format failure is mechanical, so fix it and carry on in the same pass.
 
 Fixing each kind of red:
 
-- **`format_check`** — run `cmake --build --preset Host-Debug --target format`. clang-format is
+- **`format_check`**: run `cmake --build --preset Host-Debug --target format`. clang-format is
   idempotent, so it rewrites exactly the files `format_check` just named and leaves the rest
   untouched. Then read `git status`: on a branch off a green `main` the rewritten files are your
   own, but any file this change never touched is pre-existing drift (usually a local clang-format
-  older or newer than the CI container). Do not fold that into the branch silently — report it and
+  older or newer than the CI container). Do not fold that into the branch silently. Report it and
   let the user decide whether it belongs here or in its own commit.
-- **`lint`** — cpplint has no auto-fix; each violation is edited by hand. A line over 100 columns
+- **`lint`**: cpplint has no auto-fix; each violation is edited by hand. A line over 100 columns
   is usually clang-format's job, so run the format fix first and re-check.
-- **`architecture_check`** — cites the rule it breaks. The fix goes in the code. The guard carries
-  no per-file allowlist, so the only other legitimate outcome is amending the RULE — a named
-  constant in the check plus its line in the owning AGENTS.md — and that is the user's call, not
+- **`architecture_check`**: it cites the rule it breaks. The fix goes in the code. The guard carries
+  no per-file allowlist, so the only other legitimate outcome is amending the RULE (a named
+  constant in the check plus its line in the owning AGENTS.md), and that is the user's call, not
   yours (`AGENTS.md` 5).
 
 ## 3. Dispatch the reviewers the diff calls for
 
 Spawn them FRESH and in PARALLEL (one message, several subagents). Never let the code's author
-review its own work in the same context — that is the whole point of the fan-out.
+review its own work in the same context; that is the whole point of the fan-out.
 
 **Size the change before you size the fan-out.** Measure the C++ delta only, not the diff as a
-whole — tooling, markdown and generated files inflate it and are nobody's review surface:
+whole, because tooling, markdown and generated files inflate it and are nobody's review surface:
 
 ```sh
 git diff --shortstat origin/main...HEAD -- 'firmwares/*.cpp' 'firmwares/*.hpp' 'libs/*.cpp' 'libs/*.hpp'
@@ -92,7 +92,7 @@ worth paying for:
 | tests only | `test-coverage-auditor` |
 
 Write each dispatch prompt to protect the reviewer's budget, because a reviewer that runs out of
-turns delivers NOTHING — not a partial report, nothing:
+turns delivers NOTHING, not a partial report, nothing:
 
 - name the exact files in scope and say what is out of scope, so it does not re-derive the perimeter;
 - state its turn budget explicitly and tell it to start with one `git diff` over the scope rather
@@ -102,8 +102,8 @@ turns delivers NOTHING — not a partial report, nothing:
 
 ## 4. Check the CubeMX contract yourself (no agent)
 
-Only when the diff touches `Core/`, `Drivers/`, `Middlewares/`, `USB_DEVICE/` or a `.ioc` file —
-four items, `firmwares/AGENTS.md` F.1 and F.7:
+Only when the diff touches `Core/`, `Drivers/`, `Middlewares/`, `USB_DEVICE/` or a `.ioc` file.
+Four items, `firmwares/AGENTS.md` F.1 and F.7:
 
 - `Drivers/` is unchanged (it is strictly read-only).
 - Every edit to a generated file sits inside a `USER CODE` zone.
@@ -142,6 +142,6 @@ End with:
 READY | NOT READY
 ```
 
-READY is advisory judgement. Anything that cannot be settled from code and host tests — real-time
-behavior on the board, MIDI latency, flash/RAM impact, a peripheral bring-up — is a `[VERIFY]`
+READY is advisory judgement. Anything that cannot be settled from code and host tests (real-time
+behavior on the board, MIDI latency, flash/RAM impact, a peripheral bring-up) is a `[VERIFY]`
 item for the maintainer, never a `[PASS]`.

@@ -40,7 +40,7 @@ This guide describes how to configure the STM32H743VIT6 as the central controlle
 - **PC11** : `SDMMC1_D3`
 - **PC12** : `SDMMC1_CK`
 - **PD2**  : `SDMMC1_CMD`
-- **PD4**  : `SD_SW` — the socket's card-detect contact, which reaches the MCU only through solder
+- **PD4**  : `SD_SW`, the socket's card-detect contact, which reaches the MCU only through solder
   bridge **SB2**. Section 9.C covers what to configure once that bridge is closed.
 
 ### External Storage (SPI Flash (U8) & QSPI (U7))
@@ -113,7 +113,7 @@ Adjust later according to required filters and buffer sizes.
     * **Rx Fifo0 Elmts Nbr**: 32
     * **Rx Fifo0 Elmt Size**: `64 bytes data field`
 
-    *All existing messages (< 8 bytes) are unaffected — the DLC field encodes the actual payload length.*
+    *All existing messages (< 8 bytes) are unaffected: the DLC field encodes the actual payload length.*
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
 
@@ -280,11 +280,11 @@ point of view.
    `Project Manager` step below switches off; the firmware sets the bus up itself in
    `bsp/src/storage/sd_card_bring_up.cpp`.
 
-**[`Clock Configuration` tab]** — confirm `SDMMC` is fed from `PLL1Q` and reads `80 MHz`.
+**[`Clock Configuration` tab]**: confirm `SDMMC` is fed from `PLL1Q` and reads `80 MHz`.
 
-**[`System Core` > `NVIC`]** — enable **SDMMC1 global interrupt**.
+**[`System Core` > `NVIC`]**: enable **SDMMC1 global interrupt**.
 
-**[`Project Manager` > `Advanced Settings`]** — in **Generated Function Calls**, tick **Do Not
+**[`Project Manager` > `Advanced Settings`]**: in **Generated Function Calls**, tick **Do Not
 Generate Function Call** for `MX_SDMMC1_SD_Init` (it routes a failed `HAL_SD_Init()` to
 `Error_Handler()`, so an empty slot would halt the CPU at boot; FATFS brings the card up at mount
 time instead, and reports failure rather than halting).
@@ -293,7 +293,7 @@ time instead, and reports failure rather than halting).
 1. **Mode** : `SD Card`.
 2. **Platform Settings** : set `Detect_SDIO` to `PD4`, and configure `PD4` as `GPIO_Input` with
    **pull-up** in section 10. This needs **SB2 soldered**: the detect contact reaches the MCU only
-   through that bridge. Leaving it `Undefined` is equally valid — generating then warns rather than
+   through that bridge. Leaving it `Undefined` is equally valid, since generating then warns rather than
    errors, answer **Yes**.
 
    Either way the firmware still mounts on demand: **nothing in the mount path consults this pin**.
@@ -301,11 +301,11 @@ time instead, and reports failure rather than halting).
    report an empty slot forever, so it may explain a failure and never prevent an attempt.
 
    This socket's switch **rests closed and is opened by the card**, so the pin reads low on an empty
-   slot — the opposite of what the generated `BSP_PlatformIsDetected()` assumes. CubeMX has no
+   slot, the opposite of what the generated `BSP_PlatformIsDetected()` assumes. CubeMX has no
    polarity setting, so `bsp/src/storage/sd_card_bring_up.cpp` carries the strong
    `BSP_SD_IsDetected()` that replaces ST's `__weak` one. Nothing to click here.
 3. **Set Defines** :
-   - **USE_LFN** : `Enabled with dynamic working buffer on the STACK` — `main-board.msfw` is not an
+   - **USE_LFN** : `Enabled with dynamic working buffer on the STACK`. `main-board.msfw` is not an
      8.3 name, and the heap would mean runtime allocation (`AGENTS.md` §3). Costs
      `(MAX_LFN + 1) × 2` = 512 bytes in the calling task's frame.
    - **MAX_LFN** : `255` (lower it and `f_readdir` fails on any longer name the card happens to

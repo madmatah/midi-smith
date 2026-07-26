@@ -21,7 +21,7 @@ set(CMAKE_EXECUTABLE_SUFFIX_CXX     ".elf")
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-# MCU specific flags — provided by the firmware toolchain file
+# MCU specific flags, provided by the firmware toolchain file
 set(TARGET_FLAGS "${MIDISMITH_TARGET_FLAGS} ")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TARGET_FLAGS}")

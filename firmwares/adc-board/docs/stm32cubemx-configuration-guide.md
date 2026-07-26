@@ -471,7 +471,7 @@ If you use them, repeat the configuration above with the same parameters (115200
    * **Rx Fifo0 Elmts Nbr**: 32
    * **Rx Fifo0 Elmt Size**: `64 bytes data field`
 
-   *All existing messages (< 8 bytes) are unaffected — the DLC field encodes the actual payload length per frame.*
+   *All existing messages (< 8 bytes) are unaffected: the DLC field encodes the actual payload length per frame.*
 
 5. **NVIC Settings**: Enable `FDCAN1 interrupt 0` and `FDCAN1 interrupt 1`.
 

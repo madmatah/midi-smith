@@ -12,13 +12,13 @@ Since the current system only has optical sensors on the **hammer shanks**, the 
 
 This constraint introduces a second, more fundamental problem: to avoid false Note-Off triggers during loud playing, the detection threshold must be placed **beyond the repetition catch point**. In a grand piano action, moving away from the string, the key mechanical positions are approximately:
 
-- **Strike point** — hammer hits the string
-- **Let-off** — escapement, hammer enters free flight
-- **Drop point** — hammer resting on the repetition lever after a failed strike
-- **Damper contact** — damper felt returns to the strings
-- **Catch point** — repetition lever catches the hammer on return
+- **Strike point**: hammer hits the string
+- **Let-off**: escapement, hammer enters free flight
+- **Drop point**: hammer resting on the repetition lever after a failed strike
+- **Damper contact**: damper felt returns to the strings
+- **Catch point**: repetition lever catches the hammer on return
 
-The Note-Off threshold must therefore be set **above the catch point** to prevent a spurious Note-Off from being emitted while the key is still held down — for instance, when playing a forte note causes the hammer to engage the repetition catch mechanism while the finger remains depressed on the key. This means the detection point is physically earlier than the actual moment the damper touches the strings.
+The Note-Off threshold must therefore be set **above the catch point** to prevent a spurious Note-Off from being emitted while the key is still held down, for instance when playing a forte note causes the hammer to engage the repetition catch mechanism while the finger remains depressed on the key. This means the detection point is physically earlier than the actual moment the damper touches the strings.
 
 This inherent imprecision means that a highly accurate physical model of the damper velocity would not yield a meaningfully more realistic result. The system therefore favors a **pragmatic estimation approach**: compute a representative shank speed near the detection zone, and map it directly to MIDI velocity through a perceptually tuned curve.
 
@@ -65,7 +65,7 @@ The logarithmic model ensures that the perceptual difference between a slow and 
 
 ### 2.2 Detection Threshold
 
-The Note-Off is triggered when `last_shank_position_smoothed_norm` crosses `HAMMER_POSITION_DAMPER` while moving toward rest. Using the smoothed position at this stage — rather than the raw position — provides inherent immunity to sensor noise near the threshold, and also improves temporal correlation with the speed signal, which is itself derived from the same smoothed position.
+The Note-Off is triggered when `last_shank_position_smoothed_norm` crosses `HAMMER_POSITION_DAMPER` while moving toward rest. Using the smoothed position at this stage, rather than the raw position, provides inherent immunity to sensor noise near the threshold, and also improves temporal correlation with the speed signal, which is itself derived from the same smoothed position.
 
 ---
 
@@ -98,7 +98,7 @@ The following approaches were considered but not retained for the reasons descri
 
 The most direct solution would be to place optical sensors on the keys or on the damper mechanism itself. This would provide a direct measurement of damper speed, eliminating all estimation and the threshold placement problem described in the introduction.
 
-This approach was not retained due to the significant additional hardware cost and mechanical complexity it would introduce — 22 additional sensors per board, along with the associated wiring and calibration overhead.
+This approach was not retained due to the significant additional hardware cost and mechanical complexity it would introduce: 22 additional sensors per board, along with the associated wiring and calibration overhead.
 
 ### 5.2 Analytical Kinematic Model
 

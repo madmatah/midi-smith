@@ -1,4 +1,4 @@
-# STM32CubeMX generated files — all firmware packages
+# STM32CubeMX generated files, all firmware packages
 firmwares/*/Core/**          linguist-vendored
 firmwares/*/Drivers/**       linguist-vendored
 firmwares/*/Middlewares/**   linguist-vendored
