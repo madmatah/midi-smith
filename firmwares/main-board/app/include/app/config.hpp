@@ -17,7 +17,10 @@ constexpr uint32_t MIDI_TASK_STACK_BYTES = 2048;
 constexpr uint32_t MIDI_INPUT_TASK_STACK_BYTES = 1024;
 
 // Shell
-constexpr uint32_t SHELL_TASK_STACK_BYTES = 2048;
+// The sdcard command reaches FatFs, which places its long-file-name working buffer on the caller's
+// stack: (_MAX_LFN + 1) * 2 = 512 bytes inside f_open and again inside f_stat, plus a ~280-byte
+// FILINFO, on top of the shell's own frames.
+constexpr uint32_t SHELL_TASK_STACK_BYTES = 3072;
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 constexpr std::size_t kConsoleUartRxBufferSize = 256;
 constexpr std::size_t kConsoleUartTxFifoSize = 1024;
