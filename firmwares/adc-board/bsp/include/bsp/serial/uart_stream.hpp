@@ -174,7 +174,7 @@ class UartStream final : public midismith::io::StreamRequirements, public UartSt
       return;
     }
 
-    midismith::bsp::cortex::EnsureBufferWritesLandBeforeStartingDma();
+    midismith::bsp::cortex::OrderBufferWritesBeforeStartingDma();
     if (HAL_UART_Transmit_DMA(&huart_, &tx_fifo_[tail], static_cast<uint16_t>(to_send)) != HAL_OK) {
       __disable_irq();
       tx_in_flight_bytes_ = 0;

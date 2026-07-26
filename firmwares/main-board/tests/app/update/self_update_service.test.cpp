@@ -29,12 +29,18 @@ using midismith::main_board::app::update::SelfUpdateService;
 using midismith::product_id::ProductId;
 using midismith::update_catalogue::kMainBoardImagePath;
 
-constexpr std::size_t kPayloadFlashWordCount = 40;
+constexpr std::size_t kPayloadFlashWordCount = 100;
 constexpr std::uint8_t kErasedFlashByte = 0xFF;
 constexpr std::string_view kRunningVersion = "a1b2c3";
 constexpr std::string_view kOfferedVersion = "d4e5f6";
+constexpr std::uint32_t kWrongLoadAddress = 0x08000000;
+constexpr std::uint32_t kDisagreeingPayloadSizeBytes = 999;
+constexpr std::uint32_t kStallOffsetBytes = 2048;
 
-std::vector<std::uint8_t> MakeContainer(ProductId product, std::string_view version) {
+std::vector<std::uint8_t> MakeContainer(
+    ProductId product, std::string_view version,
+    std::uint32_t load_address = midismith::flash_layout::kApplicationLoadAddress,
+    std::uint32_t announced_payload_override = 0) {
   std::vector<std::uint8_t> payload(kPayloadFlashWordCount * kFlashWordSizeBytes);
   for (std::size_t index = 0; index < payload.size(); ++index) {
     payload[index] = static_cast<std::uint8_t>(index * 3 + 5);
@@ -42,9 +48,11 @@ std::vector<std::uint8_t> MakeContainer(ProductId product, std::string_view vers
 
   ImageHeader header;
   header.product_id = product;
-  header.payload_size_bytes = static_cast<std::uint32_t>(payload.size());
+  header.payload_size_bytes = announced_payload_override != 0
+                                  ? announced_payload_override
+                                  : static_cast<std::uint32_t>(payload.size());
   header.payload_crc32 = ComputeCrc32(payload);
-  header.load_address = midismith::flash_layout::kApplicationLoadAddress;
+  header.load_address = load_address;
   std::copy_n(version.begin(), version.size(), header.version_string.begin());
 
   std::vector<std::uint8_t> container(kImageHeaderSizeBytes);
@@ -76,6 +84,9 @@ class FakeCard final : public midismith::update_catalogue::ImageSourceRequiremen
     if (fail_reads_from_offset_.has_value() && offset_bytes >= *fail_reads_from_offset_) {
       return std::nullopt;
     }
+    if (zero_reads_from_offset_.has_value() && offset_bytes >= *zero_reads_from_offset_) {
+      return std::size_t{0};
+    }
     const std::size_t available = found->second.size() - offset_bytes;
     const std::size_t delivered = std::min({available, out.size(), short_read_limit_});
     std::memcpy(out.data(), found->second.data() + offset_bytes, delivered);
@@ -90,10 +101,15 @@ class FakeCard final : public midismith::update_catalogue::ImageSourceRequiremen
     fail_reads_from_offset_ = offset_bytes;
   }
 
+  void StallWithZeroReadsFrom(std::uint32_t offset_bytes) noexcept {
+    zero_reads_from_offset_ = offset_bytes;
+  }
+
  private:
   std::map<std::string, std::vector<std::uint8_t>> files_;
   std::size_t short_read_limit_ = 1000000;
   std::optional<std::uint32_t> fail_reads_from_offset_;
+  std::optional<std::uint32_t> zero_reads_from_offset_;
 };
 
 class FakeStagingSlot final : public StagingSlotRequirements {
@@ -177,7 +193,19 @@ TEST_CASE("The SelfUpdateService class") {
     SECTION("When the copy cannot complete") {
       SECTION("Should leave the journal untouched, however far the staging got") {
         card.Place(kMainBoardImagePath, MakeContainer(ProductId::kMainBoard, kOfferedVersion));
-        card.FailReadsFrom(512);
+        card.FailReadsFrom(kStallOffsetBytes);
+        SelfUpdateService service{card, staging, journal, kRunningVersion};
+
+        REQUIRE(service.Run() == SelfUpdateOutcome::kStagingFailed);
+        REQUIRE(journal_storage.records_written() == 0);
+      }
+    }
+
+    SECTION("When the staged container fails its read-back check") {
+      SECTION(
+          "Should leave the journal untouched, the slot holding an image nobody should install") {
+        card.Place(kMainBoardImagePath,
+                   MakeContainer(ProductId::kMainBoard, kOfferedVersion, kWrongLoadAddress));
         SelfUpdateService service{card, staging, journal, kRunningVersion};
 
         REQUIRE(service.Run() == SelfUpdateOutcome::kStagingFailed);
@@ -228,6 +256,39 @@ TEST_CASE("The SelfUpdateService class") {
         REQUIRE(service.Run() == SelfUpdateOutcome::kStagedAndPending);
         const auto staged = staging.Contents().first(container.size());
         REQUIRE(std::equal(container.begin(), container.end(), staged.begin()));
+      }
+    }
+
+    SECTION("When the running version is not knowable") {
+      SECTION("Should stage anyway rather than strand a board that cannot report its build") {
+        card.Place(kMainBoardImagePath, MakeContainer(ProductId::kMainBoard, kOfferedVersion));
+        SelfUpdateService service{card, staging, journal, std::string_view{}};
+
+        REQUIRE(service.Run() == SelfUpdateOutcome::kStagedAndPending);
+      }
+    }
+
+    SECTION("When the card carries an image that cannot be used") {
+      SECTION("Should refuse it by name, not report the board up to date") {
+        card.Place(kMainBoardImagePath,
+                   MakeContainer(ProductId::kMainBoard, kOfferedVersion,
+                                 midismith::flash_layout::kApplicationLoadAddress,
+                                 kDisagreeingPayloadSizeBytes));
+        SelfUpdateService service{card, staging, journal, kRunningVersion};
+
+        REQUIRE(service.Run() == SelfUpdateOutcome::kImageUnusable);
+        REQUIRE(journal_storage.records_written() == 0);
+      }
+    }
+
+    SECTION("When the source keeps returning zero bytes") {
+      SECTION("Should abandon the copy rather than spin forever") {
+        card.Place(kMainBoardImagePath, MakeContainer(ProductId::kMainBoard, kOfferedVersion));
+        card.StallWithZeroReadsFrom(kStallOffsetBytes);
+        SelfUpdateService service{card, staging, journal, kRunningVersion};
+
+        REQUIRE(service.Run() == SelfUpdateOutcome::kStagingFailed);
+        REQUIRE(journal_storage.records_written() == 0);
       }
     }
 

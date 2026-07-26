@@ -46,6 +46,7 @@ StagingOutcome StagingWriter::Write(std::span<const std::uint8_t> chunk) noexcep
 
     if (pending_bytes_ == pending_word_.size()) {
       if (!slot_.ProgramFlashWord(programmed_bytes_, pending_word_)) {
+        started_ = false;
         return StagingOutcome::kProgramFailed;
       }
       programmed_bytes_ += pending_word_.size();
@@ -68,6 +69,7 @@ StagingOutcome StagingWriter::Finish(
 
   if (pending_bytes_ != 0) {
     if (!slot_.ProgramFlashWord(programmed_bytes_, pending_word_)) {
+      started_ = false;
       return StagingOutcome::kProgramFailed;
     }
     programmed_bytes_ += pending_word_.size();

@@ -42,7 +42,8 @@ class StagingWriter {
   std::size_t announced_size_bytes_ = 0;
   std::size_t accepted_bytes_ = 0;
   std::size_t programmed_bytes_ = 0;
-  std::array<std::uint8_t, firmware_image::kFlashWordSizeBytes> pending_word_{};
+  alignas(sizeof(
+      std::uint32_t)) std::array<std::uint8_t, firmware_image::kFlashWordSizeBytes> pending_word_{};
   std::size_t pending_bytes_ = 0;
   bool started_ = false;
 };
