@@ -6,7 +6,7 @@
 
 #include "boot-control/boot_journal_storage_requirements.hpp"
 
-namespace midismith::bootloader::bsp {
+namespace midismith::bsp_flash {
 
 class JournalStorage final : public midismith::boot_control::BootJournalStorageRequirements {
  public:
@@ -18,4 +18,4 @@ class JournalStorage final : public midismith::boot_control::BootJournalStorageR
   [[nodiscard]] bool EraseSector() noexcept override;
 };
 
-}  // namespace midismith::bootloader::bsp
+}  // namespace midismith::bsp_flash

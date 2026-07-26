@@ -9,6 +9,7 @@ project(${BOOT_FIRMWARE_TARGET})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 midismith_require_lib(boot-control)
+midismith_require_lib(bsp-flash)
 midismith_require_lib(byte-codec)
 midismith_require_lib(checksum)
 midismith_require_lib(firmware-image)
@@ -31,8 +32,6 @@ target_sources(${BOOT_FIRMWARE_TARGET} PRIVATE
     app/src/application.cpp
     bsp/src/application_launcher.cpp
     bsp/src/application_slot_flash.cpp
-    bsp/src/internal_flash.cpp
-    bsp/src/journal_storage.cpp
     bsp/src/status_led.cpp
 )
 
@@ -51,6 +50,7 @@ target_link_libraries(${BOOT_FIRMWARE_TARGET}
     firmware_image
     firmware_installer
     flash_layout
+    bsp_flash
     product_id
 )
 

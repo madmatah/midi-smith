@@ -1,9 +1,9 @@
-#include "bsp/journal_storage.hpp"
+#include "bsp-flash/journal_storage.hpp"
 
-#include "bsp/internal_flash.hpp"
+#include "bsp-flash/internal_flash.hpp"
 #include "flash-layout/flash_layout.hpp"
 
-namespace midismith::bootloader::bsp {
+namespace midismith::bsp_flash {
 
 std::span<const std::uint8_t> JournalStorage::Sector() const noexcept {
   return InternalFlash::ReadRegion(midismith::flash_layout::kBootJournalAddress,
@@ -26,4 +26,4 @@ bool JournalStorage::EraseSector() noexcept {
                                     midismith::flash_layout::kBootJournalSizeBytes);
 }
 
-}  // namespace midismith::bootloader::bsp
+}  // namespace midismith::bsp_flash
