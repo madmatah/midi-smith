@@ -179,11 +179,10 @@ TEST_CASE("The SdCardCommand class") {
     }
   }
 
-  SECTION("A mount is always attempted, whatever the card detect switch says") {
-    SECTION(
-        "The socket's detect contact is a mechanical part in an instrument that vibrates, and a "
-        "contact stuck closed would report an empty slot forever: it may explain a failure, never "
-        "prevent the attempt that would have succeeded") {
+  SECTION(
+      "A mount is always attempted: the detect contact may explain a failure, never prevent the "
+      "attempt, since one stuck closed would report an empty slot forever") {
+    {
       storage.set_mount_succeeds(false);
       SdCardCommand command(storage, images, "a1b2c3");
 
@@ -204,6 +203,14 @@ TEST_CASE("The SdCardCommand class") {
           command.Run(1, argv, stream);
           REQUIRE(stream.Contains("the volume was unreadable"));
           REQUIRE_FALSE(stream.Contains("no card answered"));
+        }
+      }
+
+      SECTION("When the card is formatted with something other than FAT") {
+        SECTION("Should name the format as the remedy, the card itself being healthy") {
+          storage.set_mount_result(midismith::bsp::storage::VolumeMountResult::kNoFileSystem);
+          command.Run(1, argv, stream);
+          REQUIRE(stream.Contains("is the card FAT32?"));
         }
       }
 
