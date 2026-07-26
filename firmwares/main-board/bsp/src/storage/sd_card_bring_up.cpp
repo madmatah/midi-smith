@@ -39,6 +39,10 @@ void ReturnPeripheralToItsResetState() noexcept {
   __HAL_RCC_SDMMC1_RELEASE_RESET();
 }
 
+void ForgetTheCardThatWasThereBefore(SD_HandleTypeDef& sd_card) noexcept {
+  sd_card = SD_HandleTypeDef{};
+}
+
 constexpr GPIO_PinState kDetectPinLevelWhenSlotIsEmpty = GPIO_PIN_RESET;
 
 }  // namespace
@@ -61,6 +65,7 @@ extern "C" std::uint8_t BSP_SD_Init() {
   if (storage::WasBroughtUpBefore(hsd1)) {
     HAL_SD_DeInit(&hsd1);
     storage::ReturnPeripheralToItsResetState();
+    storage::ForgetTheCardThatWasThereBefore(hsd1);
   }
   storage::ApplyBusConfiguration(hsd1);
 
