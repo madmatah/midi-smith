@@ -91,7 +91,7 @@ std::string_view DescribeNeed(UpdateNeed need) noexcept {
     case UpdateNeed::kUpToDate:
       return "already running this build";
     case UpdateNeed::kUpdateAvailable:
-      return "update available";
+      return "differs from the running build";
     case UpdateNeed::kInstalledVersionUnknown:
       return "offered, this board cannot know what that one is running";
     case UpdateNeed::kNoImage:

@@ -23,6 +23,8 @@ class WritableStreamRequirements {
       Write(c);
     }
   }
+
+  virtual void WaitUntilWritten() noexcept {}
 };
 
 class ReadableStreamRequirements {

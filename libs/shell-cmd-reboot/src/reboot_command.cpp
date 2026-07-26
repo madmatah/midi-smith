@@ -11,6 +11,7 @@ void RebootCommand::Run(int argc, char** argv,
   }
 
   out.Write("rebooting...\r\n");
+  out.WaitUntilWritten();
   board_reset_.ResetBoard();
 }
 

@@ -221,7 +221,7 @@ TEST_CASE("The FirmwareCommand class") {
         command.Run(2, argv, stream);
 
         REQUIRE(stream.Contains("main-board  running a1b2c3"));
-        REQUIRE(stream.Contains("update available"));
+        REQUIRE(stream.Contains("differs from the running build"));
         REQUIRE(stream.Contains("adc-board   running unknown"));
         REQUIRE(stream.Contains("until the CAN protocol exists"));
         REQUIRE(storage.unmount_calls() == 1);

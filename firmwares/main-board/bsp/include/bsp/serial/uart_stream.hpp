@@ -40,6 +40,8 @@ using UartIdleCallback = void (*)(void* ctx) noexcept;
 template <std::size_t kRxBufferSize, std::size_t kTxFifoSize>
 class UartStream final : public midismith::io::StreamRequirements, public UartStreamBase {
  public:
+  static constexpr std::uint32_t kDrainSpinLimit = 20'000'000;
+
   explicit UartStream(UART_HandleTypeDef& huart) noexcept : huart_(huart) {
     RegisterUartStream(*this);
   }
@@ -149,6 +151,17 @@ class UartStream final : public midismith::io::StreamRequirements, public UartSt
 
     if (should_start_tx) {
       StartNextTxDma();
+    }
+  }
+
+  void WaitUntilWritten() noexcept override {
+    for (std::uint32_t spins = 0; spins < kDrainSpinLimit; ++spins) {
+      __disable_irq();
+      const bool drained = tx_fifo_count_ == 0 && tx_in_flight_bytes_ == 0;
+      __enable_irq();
+      if (drained) {
+        return;
+      }
     }
   }
 
