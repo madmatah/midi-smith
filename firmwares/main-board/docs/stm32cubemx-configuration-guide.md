@@ -292,19 +292,18 @@ time instead, and reports failure rather than halting).
 **[`Middleware and Software Packs` > `FATFS`]**
 1. **Mode** : `SD Card`.
 2. **Platform Settings** : set `Detect_SDIO` to `PD4`, and configure `PD4` as `GPIO_Input` with
-   **pull-up** in section 10. This requires **SB2 to be soldered**: the detect contact reaches the
-   MCU only through that bridge, and with it open the firmware would read a floating pin.
+   **pull-up** in section 10. This needs **SB2 soldered**: the detect contact reaches the MCU only
+   through that bridge. Leaving it `Undefined` is equally valid — generating then warns rather than
+   errors, answer **Yes**.
 
-   Without detection the firmware cannot tell an empty slot from an unresponsive card, and only
-   finds out by exhausting a 30-second timeout inside the SD driver — a busy-wait that freezes the
-   task doing the mount. If the bridge is left open, set this back to `Undefined` (generating warns
-   rather than errors: answer **Yes**) and accept that cost.
+   Either way the firmware still mounts on demand: **nothing in the mount path consults this pin**.
+   The contact is a mechanical part in an instrument that vibrates, and one stuck closed would
+   report an empty slot forever, so it may explain a failure and never prevent an attempt.
 
-   This socket's detect switch **rests closed and is opened by the card**, so the pin reads low on
-   an empty slot — the opposite of what the generated `BSP_PlatformIsDetected()` assumes. CubeMX
-   offers no polarity setting, so `bsp/src/storage/sd_card_bring_up.cpp` provides the strong
-   `BSP_SD_IsDetected()` that replaces ST's `__weak` one. Nothing to click here; it is named in
-   case a future socket behaves the other way.
+   This socket's switch **rests closed and is opened by the card**, so the pin reads low on an empty
+   slot — the opposite of what the generated `BSP_PlatformIsDetected()` assumes. CubeMX has no
+   polarity setting, so `bsp/src/storage/sd_card_bring_up.cpp` carries the strong
+   `BSP_SD_IsDetected()` that replaces ST's `__weak` one. Nothing to click here.
 3. **Set Defines** :
    - **USE_LFN** : `Enabled with dynamic working buffer on the STACK` — `main-board.msfw` is not an
      8.3 name, and the heap would mean runtime allocation (`AGENTS.md` §3). Costs

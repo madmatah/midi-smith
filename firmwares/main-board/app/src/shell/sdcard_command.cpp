@@ -48,6 +48,21 @@ std::string_view DescribeStatus(CatalogueStatus status) noexcept {
   return "unknown";
 }
 
+std::string_view DescribeMountFailure(
+    midismith::bsp::storage::SdCardBringUpOutcome outcome) noexcept {
+  switch (outcome) {
+    case midismith::bsp::storage::SdCardBringUpOutcome::kNoCardAnswered:
+      return "no card answered, is one inserted?";
+    case midismith::bsp::storage::SdCardBringUpOutcome::kWideBusRefused:
+      return "the card refused the 4-bit bus";
+    case midismith::bsp::storage::SdCardBringUpOutcome::kReady:
+      return "the card answered but its file system could not be read, is it FAT32?";
+    case midismith::bsp::storage::SdCardBringUpOutcome::kNeverAttempted:
+      return "the driver never reached the card";
+  }
+  return "could not mount the card";
+}
+
 std::string_view DescribeNeed(UpdateNeed need) noexcept {
   switch (need) {
     case UpdateNeed::kUpToDate:
@@ -116,13 +131,10 @@ void SdCardCommand::Run(int argc, char** argv,
     return;
   }
 
-  if (!storage_.IsCardPresent()) {
-    out.Write("sdcard: no card in the slot\r\n");
-    return;
-  }
-
   if (!storage_.Mount()) {
-    out.Write("sdcard: could not mount the card, is it FAT32?\r\n");
+    out.Write("sdcard: ");
+    out.Write(DescribeMountFailure(storage_.last_bring_up_outcome()));
+    out.Write("\r\n");
     return;
   }
 
