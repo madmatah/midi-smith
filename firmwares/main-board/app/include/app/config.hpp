@@ -19,9 +19,9 @@ constexpr uint32_t MIDI_INPUT_TASK_STACK_BYTES = 1024;
 // Shell
 // FatFs places its long-file-name working buffer on the caller's stack: (_MAX_LFN + 1) * 2 = 512
 // bytes inside f_open and again inside f_stat, plus a ~280-byte FILINFO. Measured with `ps` after
-// an sdcard run: 1916 bytes peak. The firmware update path is deeper still and has NOT been
-// measured, so the budget carries a full kilobyte of headroom until it is.
-constexpr uint32_t SHELL_TASK_STACK_BYTES = 4096;
+// an sdcard run: 1916 bytes peak. Measured again on the deeper `firmware update self` path, which
+// reaches f_stat through UpdateCatalogue::Lookup: 1996 bytes peak, leaving 1076 of these 3072.
+constexpr uint32_t SHELL_TASK_STACK_BYTES = 3072;
 constexpr uint32_t SHELL_TASK_IDLE_DELAY_MS = 10;
 constexpr std::size_t kConsoleUartRxBufferSize = 256;
 constexpr std::size_t kConsoleUartTxFifoSize = 1024;
