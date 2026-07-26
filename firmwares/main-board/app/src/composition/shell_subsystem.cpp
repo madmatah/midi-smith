@@ -3,13 +3,18 @@
 #include "app/composition/subsystems.hpp"
 #include "app/shell/adc_command.hpp"
 #include "app/shell/can_command.hpp"
+#include "app/shell/firmware_command.hpp"
 #include "app/shell/keymap_command.hpp"
 #include "app/shell/sdcard_command.hpp"
 #include "app/tasks/shell_task.hpp"
+#include "app/update/self_update_service.hpp"
 #include "app/version.hpp"
+#include "boot-control/boot_journal_writer.hpp"
+#include "bsp-flash/journal_storage.hpp"
 #include "bsp-types/can/can_bus_stats_provider.hpp"
 #include "bsp/stm32_board_reset.hpp"
 #include "bsp/storage/sd_card_image_source.hpp"
+#include "bsp/storage/staging_slot_flash.hpp"
 #include "os/runtime_stats.hpp"
 #include "protocol-can/can_inbound_decode_stats_provider.hpp"
 #include "shell-cmd-os-stats/ps_command.hpp"
@@ -74,6 +79,16 @@ ShellCommandsContext CreateShellSubsystem(
 
   static midismith::bsp::Stm32BoardReset board_reset;
   static midismith::shell_cmd_reboot::RebootCommand reboot_cmd(board_reset);
+
+  static midismith::main_board::bsp::storage::StagingSlotFlash staging_slot;
+  static midismith::bsp_flash::JournalStorage journal_storage;
+  static midismith::boot_control::BootJournalWriter journal_writer(journal_storage);
+  static midismith::main_board::app::update::SelfUpdateService self_update(
+      sd_card, staging_slot, journal_writer, midismith::main_board::app::version::kFullVersion);
+  static midismith::main_board::app::shell::FirmwareCommand firmware_cmd(
+      sd_card, sd_card, self_update, board_reset,
+      midismith::main_board::app::version::kFullVersion);
+  shell_task_ptr->RegisterCommand(firmware_cmd);
   shell_task_ptr->RegisterCommand(reboot_cmd);
 
   shell_task_ptr->RegisterCommand(calibration_ctx.command);

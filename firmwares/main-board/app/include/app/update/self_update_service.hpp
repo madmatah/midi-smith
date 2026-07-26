@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <string_view>
 
+#include "app/shell/self_update_requirements.hpp"
+#include "app/update/self_update_outcome.hpp"
 #include "boot-control/boot_journal_writer.hpp"
 #include "firmware-staging/staging_slot_requirements.hpp"
 #include "firmware-staging/staging_writer.hpp"
@@ -12,23 +14,14 @@
 
 namespace midismith::main_board::app::update {
 
-enum class SelfUpdateOutcome : std::uint8_t {
-  kStagedAndPending = 0,
-  kNoImageOnCard,
-  kImageUnusable,
-  kAlreadyRunningThisBuild,
-  kStagingFailed,
-  kJournalWriteFailed,
-};
-
-class SelfUpdateService {
+class SelfUpdateService final : public midismith::main_board::app::shell::SelfUpdateRequirements {
  public:
   SelfUpdateService(midismith::update_catalogue::ImageSourceRequirements& images,
                     midismith::firmware_staging::StagingSlotRequirements& staging,
                     midismith::boot_control::BootJournalWriter& journal,
                     std::string_view installed_version) noexcept;
 
-  [[nodiscard]] SelfUpdateOutcome Run() noexcept;
+  [[nodiscard]] SelfUpdateOutcome Run() noexcept override;
 
   [[nodiscard]] midismith::firmware_staging::StagingOutcome last_staging_outcome() const noexcept {
     return last_staging_outcome_;

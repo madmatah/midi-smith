@@ -65,6 +65,7 @@ if(HOST_TESTS)
         app/src/shell/keymap_command.cpp
         app/src/shell/sdcard_command.cpp
         app/src/update/self_update_service.cpp
+        app/src/shell/firmware_command.cpp
         app/src/shell/calibration_command.cpp
         app/src/supervisor/network_supervisor_task.cpp
         app/src/adc/adc_board_controller.cpp
@@ -168,6 +169,7 @@ target_sources(${MAIN_FIRMWARE_TARGET} PRIVATE
     app/src/shell/keymap_command.cpp
     app/src/shell/sdcard_command.cpp
     app/src/update/self_update_service.cpp
+    app/src/shell/firmware_command.cpp
     app/src/shell/calibration_command.cpp
     app/src/shell/ui_command.cpp
     app/src/shell/os_clock_blocking_delay.cpp
